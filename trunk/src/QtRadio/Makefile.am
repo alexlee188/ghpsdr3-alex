@@ -65,6 +65,7 @@ nodist_QtRadio_SOURCES = \
     ui_ctl.h \
 About.moc.cpp                  \
 Audio.moc.cpp                  \
+audio_input.moc.cpp		\
 Band.moc.cpp                   \
 Bandscope.moc.cpp              \
 BandStackEntry.moc.cpp         \
@@ -108,6 +109,42 @@ BandLimit.h  BookmarksDialog.h  Configure.h            DIGUFilters.h  FMNFilters
 ctl.h rigctl.h\
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui
+
+
+BUILT_SOURCES=                  \
+    ui_UI.h \
+    ui_Configure.h \
+    ui_Bandscope.h \
+    ui_About.h \
+    ui_Bookmark.h \
+    ui_BookmarksDialog.h \
+    ui_BookmarksEditDialog.h \
+    ui_KeypadDialog.h \
+    ui_vfo.h \
+About.moc.cpp                    \
+Audio.moc.cpp                    \
+audioinput.moc.cpp		\
+Band.moc.cpp                     \
+Bandscope.moc.cpp                \
+BandStackEntry.moc.cpp           \
+Bookmark.moc.cpp                 \
+BookmarkDialog.moc.cpp           \
+Bookmarks.moc.cpp                \
+BookmarksDialog.moc.cpp          \
+BookmarksEditDialog.moc.cpp      \
+Configure.moc.cpp                \
+Connection.moc.cpp               \
+Filter.moc.cpp                   \
+FiltersBase.moc.cpp              \
+Filters.moc.cpp                  \
+KeypadDialog.moc.cpp             \
+Mode.moc.cpp                     \
+Spectrum.moc.cpp                 \
+UI.moc.cpp                       \
+vfo.moc.cpp                      \
+Waterfall.moc.cpp                \
+Xvtr.moc.cpp \
+smeter.moc.cpp 
 
 CLEANFILES =                  \
     ui_UI.h \
