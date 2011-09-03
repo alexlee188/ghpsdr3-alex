@@ -64,6 +64,8 @@ UI::UI() {
     audio->moveToThread(audio_thread);
     audio_thread->start(QThread::TimeCriticalPriority);
 
+    audioinput = new AudioInput();
+    audioinput->get_audioinput_devices(NULL);
 
     // layout the screen
     widget.gridLayout->setContentsMargins(0,0,0,0);

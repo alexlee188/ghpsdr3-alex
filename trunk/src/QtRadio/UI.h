@@ -38,6 +38,7 @@
 #include "About.h"
 #include "Configure.h"
 #include "Audio.h"
+#include "audioinput.h"
 #include "Connection.h"
 #include "Spectrum.h"
 #include "Band.h"
@@ -263,6 +264,9 @@ private:
     int gain;
     int subRxGain;
     bool subRx;
+
+    AudioInput* audioinput;
+    QThread* audioinput_thread;
 
     long long subRxFrequency;
     Connection connection;

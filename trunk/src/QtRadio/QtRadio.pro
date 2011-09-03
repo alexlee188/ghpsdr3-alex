@@ -60,7 +60,9 @@ SOURCES += main.cpp\
     smeter.cpp \
     rigctl.cpp \
     vfo.cpp \
-    ctl.cpp
+    ctl.cpp \
+    aux.cpp \
+    audioinput.cpp
 
 HEADERS  += \ 
     Waterfall.h \
@@ -104,7 +106,9 @@ HEADERS  += \
     smeter.h \
     rigctl.h \
     vfo.h \
-    ctl.h
+    ctl.h \
+    aux.h \
+    audioinput.h
 
 FORMS    += \   
     UI.ui \
