@@ -49,7 +49,9 @@ Waterfall.moc.cpp                \
 Xvtr.moc.cpp \
 smeter.moc.cpp \
 ctl.moc.cpp \
-rigctl.moc.cpp
+rigctl.moc.cpp \
+aux.moc.cpp \
+audioinput.moc.cpp
 
 	
 nodist_QtRadio_SOURCES = \
@@ -65,7 +67,7 @@ nodist_QtRadio_SOURCES = \
     ui_ctl.h \
 About.moc.cpp                  \
 Audio.moc.cpp                  \
-audio_input.moc.cpp		\
+audioinput.moc.cpp		\
 Band.moc.cpp                   \
 Bandscope.moc.cpp              \
 BandStackEntry.moc.cpp         \
@@ -101,86 +103,19 @@ Band.cpp       Bookmarks.cpp            CWLFilters.cpp   FiltersBase.cpp  LSBFil
 BandLimit.cpp  BookmarksDialog.cpp      CWUFilters.cpp   Filters.cpp      main.cpp           USBFilters.cpp                 \
 Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.cpp          vfo.cpp         smeter.cpp     \
 ctl.cpp rigctl.cpp\
+aux.cpp \
+audioinput.cpp \
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  Waterfall.h  \
 Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Spectrum.h    XvtrEntry.h  \
 Band.h       Bookmark.h         codec2.h               DIGLFilters.h  Filters.h      LSBFilters.h     UI.h          Xvtr.h       \
 BandLimit.h  BookmarksDialog.h  Configure.h            DIGUFilters.h  FMNFilters.h   Meter.h          USBFilters.h  smeter.h \
 ctl.h rigctl.h\
+aux.h \
+audioinput.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui
 
-
-BUILT_SOURCES=                  \
-    ui_UI.h \
-    ui_Configure.h \
-    ui_Bandscope.h \
-    ui_About.h \
-    ui_Bookmark.h \
-    ui_BookmarksDialog.h \
-    ui_BookmarksEditDialog.h \
-    ui_KeypadDialog.h \
-    ui_vfo.h \
-About.moc.cpp                    \
-Audio.moc.cpp                    \
-audioinput.moc.cpp		\
-Band.moc.cpp                     \
-Bandscope.moc.cpp                \
-BandStackEntry.moc.cpp           \
-Bookmark.moc.cpp                 \
-BookmarkDialog.moc.cpp           \
-Bookmarks.moc.cpp                \
-BookmarksDialog.moc.cpp          \
-BookmarksEditDialog.moc.cpp      \
-Configure.moc.cpp                \
-Connection.moc.cpp               \
-Filter.moc.cpp                   \
-FiltersBase.moc.cpp              \
-Filters.moc.cpp                  \
-KeypadDialog.moc.cpp             \
-Mode.moc.cpp                     \
-Spectrum.moc.cpp                 \
-UI.moc.cpp                       \
-vfo.moc.cpp                      \
-Waterfall.moc.cpp                \
-Xvtr.moc.cpp \
-smeter.moc.cpp 
-
-
-BUILT_SOURCES=                  \
-    ui_UI.h \
-    ui_Configure.h \
-    ui_Bandscope.h \
-    ui_About.h \
-    ui_Bookmark.h \
-    ui_BookmarksDialog.h \
-    ui_BookmarksEditDialog.h \
-    ui_KeypadDialog.h \
-    ui_vfo.h \
-About.moc.cpp                    \
-Audio.moc.cpp                    \
-audioinput.moc.cpp		\
-Band.moc.cpp                     \
-Bandscope.moc.cpp                \
-BandStackEntry.moc.cpp           \
-Bookmark.moc.cpp                 \
-BookmarkDialog.moc.cpp           \
-Bookmarks.moc.cpp                \
-BookmarksDialog.moc.cpp          \
-BookmarksEditDialog.moc.cpp      \
-Configure.moc.cpp                \
-Connection.moc.cpp               \
-Filter.moc.cpp                   \
-FiltersBase.moc.cpp              \
-Filters.moc.cpp                  \
-KeypadDialog.moc.cpp             \
-Mode.moc.cpp                     \
-Spectrum.moc.cpp                 \
-UI.moc.cpp                       \
-vfo.moc.cpp                      \
-Waterfall.moc.cpp                \
-Xvtr.moc.cpp \
-smeter.moc.cpp 
 
 CLEANFILES =                  \
     ui_UI.h \
@@ -217,7 +152,9 @@ Waterfall.moc.cpp                \
 Xvtr.moc.cpp                     \
 smeter.moc.cpp                   \
 ctl.moc.cpp \
-rigctl.moc.cpp
+rigctl.moc.cpp \
+aux.moc.cpp			\
+audioinput.moc.cpp
 
 #
 # auxiliary services, git string, icons

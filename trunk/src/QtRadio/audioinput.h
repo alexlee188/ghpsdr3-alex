@@ -3,9 +3,9 @@
 
 #include <QObject>
 #include <QtCore>
-#include <QtMultimedia/QAudioFormat>
-#include <QtMultimedia/QAudioInput>
-#include <QtMultimedia/QAudioDeviceInfo>
+#include <QAudioFormat>
+#include <QAudioInput>
+#include <QAudioDeviceInfo>
 #include <QtGui/QComboBox>
 #include <QMutex>
 
