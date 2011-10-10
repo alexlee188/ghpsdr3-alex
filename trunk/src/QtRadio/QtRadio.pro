@@ -61,7 +61,6 @@ SOURCES += main.cpp\
     rigctl.cpp \
     vfo.cpp \
     ctl.cpp \
-    aux.cpp \
     audioinput.cpp
 
 HEADERS  += \ 

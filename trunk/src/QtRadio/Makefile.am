@@ -50,7 +50,6 @@ Xvtr.moc.cpp \
 smeter.moc.cpp \
 ctl.moc.cpp \
 rigctl.moc.cpp \
-aux.moc.cpp \
 audioinput.moc.cpp
 
 	
@@ -103,7 +102,6 @@ Band.cpp       Bookmarks.cpp            CWLFilters.cpp   FiltersBase.cpp  LSBFil
 BandLimit.cpp  BookmarksDialog.cpp      CWUFilters.cpp   Filters.cpp      main.cpp           USBFilters.cpp                 \
 Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.cpp          vfo.cpp         smeter.cpp     \
 ctl.cpp rigctl.cpp\
-aux.cpp \
 audioinput.cpp \
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  Waterfall.h  \
@@ -111,7 +109,6 @@ Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBas
 Band.h       Bookmark.h         codec2.h               DIGLFilters.h  Filters.h      LSBFilters.h     UI.h          Xvtr.h       \
 BandLimit.h  BookmarksDialog.h  Configure.h            DIGUFilters.h  FMNFilters.h   Meter.h          USBFilters.h  smeter.h \
 ctl.h rigctl.h\
-aux.h \
 audioinput.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui
