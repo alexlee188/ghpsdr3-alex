@@ -8,8 +8,8 @@
 QT       += core gui network multimedia mobility
 
 # Uncomment the lines below for Ubuntu 11.04
-#CONFIG	+= mobility
-#MOBILITY += multimedia
+CONFIG	+= mobility
+MOBILITY += multimedia
 
 # Comment the line below for Ubuntu 11.04
 #INCLUDEPATH += /usr/include/QtMobility
@@ -100,7 +100,6 @@ HEADERS  += \
     XvtrEntry.h \
     Bookmarks.h \
     KeypadDialog.h \
-    codec2.h \
     smeter.h \
     rigctl.h \
     vfo.h \
@@ -120,8 +119,8 @@ FORMS    += \
 
 OTHER_FILES +=
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/release/ -lcodec2
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/debug/ -lcodec2
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/release/
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/debug/
 else:symbian: LIBS += -lcodec2
 else:unix: LIBS += -lcodec2
 
