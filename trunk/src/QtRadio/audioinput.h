@@ -19,7 +19,7 @@ public:
 signals:
 
 public slots:
-
+    void stateChanged(QAudio::State);
 private:
     QAudioDeviceInfo m_device;
     QAudioFormat m_format;

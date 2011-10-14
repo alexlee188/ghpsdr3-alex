@@ -82,4 +82,42 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
         i++;
     }
 
+    qDebug() << "Audioinput::get_audio_devices: default is " << m_device.deviceName();
+
+    m_audioInput = new QAudioInput(m_device, m_format, this);
+    connect(m_audioInput,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
+
+    qDebug() << "QAudioOutput: error=" << m_audioInput->error() << " state=" << m_audioInput->state();
+
+    m_input = m_audioInput->start();
+
+    if(m_audioInput->error()!=0) {
+        qDebug() << "QAudioOutput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
+
+        qDebug() << "Format:";
+        qDebug() << "    sample rate: " << m_format.frequency();
+        qDebug() << "    codec: " << m_format.codec();
+        qDebug() << "    byte order: " << m_format.byteOrder();
+        qDebug() << "    sample size: " << m_format.sampleSize();
+        qDebug() << "    sample type: " << m_format.sampleType();
+        qDebug() << "    channels: " << m_format.channels();
+        m_input = NULL;
+        delete m_audioInput;
+    }
+}
+
+void AudioInput::stateChanged(QAudio::State State){
+    switch (State) {
+        case QAudio::StoppedState:
+            if (m_audioInput->error() != QAudio::NoError) {
+                qDebug() << "QAudioOutput: after start error=" << m_audioInput->error() << " state=" << State;
+            break;
+            }
+        case QAudio::IdleState:
+        case QAudio::SuspendedState:
+        case QAudio::ActiveState:
+        default:
+ //           qDebug() << "QAudioOutput: state changed" << " state=" << State;
+        return;
+    }
 }

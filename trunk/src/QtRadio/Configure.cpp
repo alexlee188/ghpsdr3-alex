@@ -104,6 +104,11 @@ void Configure::initAudioDevices(Audio* audio) {
     audio->get_audio_devices(widget.audioDeviceComboBox); // TODO: how to change this to signal/slot
 }
 
+void Configure::initMicDevices(AudioInput* mic) {
+    qDebug() << "Configure: initAudioDevices";
+    mic->get_audioinput_devices(widget.MicComboBox); // TODO: how to change this to signal/slot
+}
+
 void Configure::updateXvtrList(Xvtr* xvtr) {
     // update the list of XVTR entries
     XvtrEntry* entry;

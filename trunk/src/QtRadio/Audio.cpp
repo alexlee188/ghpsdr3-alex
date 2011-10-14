@@ -128,7 +128,6 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
 
     qDebug() << "QAudioOutput: error=" << audio_output->error() << " state=" << audio_output->state();
 
-  //  audio_output->setBufferSize(1024*48);
     audio_out = audio_output->start();
 
     if(audio_output->error()!=0) {

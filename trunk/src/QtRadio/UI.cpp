@@ -58,6 +58,7 @@ UI::UI() {
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
     audio = new Audio();
+
     configure.initAudioDevices(audio);
 
     audio_thread = new QThread();
@@ -65,7 +66,7 @@ UI::UI() {
     audio_thread->start(QThread::TimeCriticalPriority);
 
     audioinput = new AudioInput();
-    audioinput->get_audioinput_devices(NULL);
+    configure.initMicDevices(audioinput);
 
     // layout the screen
     widget.gridLayout->setContentsMargins(0,0,0,0);

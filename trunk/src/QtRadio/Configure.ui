@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>657</width>
-    <height>399</height>
+    <width>547</width>
+    <height>269</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,14 +32,14 @@
   <widget class="QTabWidget" name="tabWidget">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>631</width>
-     <height>341</height>
+     <x>0</x>
+     <y>0</y>
+     <width>651</width>
+     <height>401</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>3</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="Server">
     <attribute name="title">
@@ -408,6 +408,29 @@
        <y>180</y>
        <width>161</width>
        <height>31</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_28">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>30</y>
+       <width>41</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Mic:</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="MicComboBox">
+     <property name="geometry">
+      <rect>
+       <x>360</x>
+       <y>20</y>
+       <width>171</width>
+       <height>27</height>
       </rect>
      </property>
     </widget>

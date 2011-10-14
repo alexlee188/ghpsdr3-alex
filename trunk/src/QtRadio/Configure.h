@@ -35,6 +35,7 @@
 
 #include "Audio.h"
 #include "Xvtr.h"
+#include "audioinput.h"
 
 class Configure : public QDialog {
     Q_OBJECT
@@ -42,6 +43,7 @@ public:
     Configure();
     virtual ~Configure();
     void initAudioDevices(Audio* audio);
+    void initMicDevices(AudioInput* audioinput);
     void initXvtr(Xvtr* xvtr);
     void loadSettings(QSettings* settings);
     void saveSettings(QSettings* settings);
