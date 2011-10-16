@@ -37,6 +37,13 @@ Configure::Configure() {
     widget.sampleRateComboBox->addItem("8000");
     widget.sampleRateComboBox->addItem("48000");
     widget.audioChannelsSpinBox->setValue(1);
+    widget.MicSampleRateComboBox->addItem("8000");
+    widget.MicSampleRateComboBox->addItem("48000");
+    widget.MicOrderComboBox->addItem("LittleEndian");
+    widget.MicOrderComboBox->addItem("BigEndian");
+    widget.MicOrderComboBox->setCurrentIndex(0);
+    widget.MicChannelsSpinBox->setValue(1);
+
     widget.hostComboBox->addItem("127.0.0.1");
     widget.hostComboBox->addItem("g0orx.homelinux.net");
 //    widget.spectrumHighSpinBox->setValue(-40);
@@ -75,6 +82,11 @@ Configure::Configure() {
     connect(widget.audioChannelsSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotChannelsChanged(int)));
     connect(widget.byteOrderComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotByteOrderChanged(int)));
     connect(widget.sampleRateComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotSampleRateChanged(int)));
+
+    connect(widget.MicComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotMicDeviceChanged(int)));
+    connect(widget.MicChannelsSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotMicChannelsChanged(int)));
+    connect(widget.MicOrderComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotMicOrderChanged(int)));
+    connect(widget.MicSampleRateComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotMicSampleRateChanged(int)));
 
     connect(widget.hostComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotHostChanged(int)));
     connect(widget.rxSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotReceiverChanged(int)));
@@ -196,6 +208,7 @@ void Configure::loadSettings(QSettings* settings) {
     if(settings->contains("samplerate")) widget.sampleRateComboBox->setCurrentIndex(settings->value("samplerate").toInt());
     if(settings->contains("encoding")) widget.encodingComboBox->setCurrentIndex(settings->value("encoding").toInt());
     if(settings->contains("byteorder")) widget.byteOrderComboBox->setCurrentIndex(settings->value("byteorder").toInt());
+    if(settings->contains("mic")) widget.MicComboBox->setCurrentIndex(settings->value("mic").toInt());
     settings->endGroup();
 
     settings->beginGroup("NR");
@@ -249,6 +262,7 @@ void Configure::saveSettings(QSettings* settings) {
     settings->setValue("samplerate",widget.sampleRateComboBox->currentIndex());
     settings->setValue("encoding",widget.encodingComboBox->currentIndex());
     settings->setValue("byteorder",widget.byteOrderComboBox->currentIndex());
+    settings->setValue("mic",widget.MicComboBox->currentIndex());
     settings->endGroup();
     settings->beginGroup("NR");
     settings->setValue("taps",widget.nrTapsSpinBox->value());
@@ -334,6 +348,38 @@ void Configure::slotByteOrderChanged(int selection) {
                             );
 }
 
+void Configure::slotMicDeviceChanged(int selection) {
+    qDebug() << "Mic selected is device number: " << selection;
+    emit micDeviceChanged(widget.MicComboBox->itemData(selection).value<QAudioDeviceInfo >(),
+                          widget.MicSampleRateComboBox->currentText().toInt(),
+                          widget.MicChannelsSpinBox->value(),
+                          widget.MicOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
+                          );
+}
+
+void Configure::slotMicSampleRateChanged(int selection) {
+    emit micDeviceChanged(widget.MicComboBox->itemData(selection).value<QAudioDeviceInfo >(),
+                          widget.MicSampleRateComboBox->currentText().toInt(),
+                          widget.MicChannelsSpinBox->value(),
+                          widget.MicOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
+                          );
+}
+
+void Configure::slotMicChannelsChanged(int channels) {
+    emit micDeviceChanged(widget.MicComboBox->itemData(channels).value<QAudioDeviceInfo >(),
+                          widget.MicSampleRateComboBox->currentText().toInt(),
+                          widget.MicChannelsSpinBox->value(),
+                          widget.MicOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
+                          );
+}
+
+void Configure::slotMicOrderChanged(int selection) {
+    emit micDeviceChanged(widget.MicComboBox->itemData(selection).value<QAudioDeviceInfo >(),
+                          widget.MicSampleRateComboBox->currentText().toInt(),
+                          widget.MicChannelsSpinBox->value(),
+                          widget.MicOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
+                          );
+}
 
 void Configure::slotNrTapsChanged(int taps) {
     emit nrValuesChanged(widget.nrTapsSpinBox->value(),widget.nrDelaySpinBox->value(),(double)widget.nrGainSpinBox->value()*0.00001,(double)widget.nrLeakSpinBox->value()*0.0000001);

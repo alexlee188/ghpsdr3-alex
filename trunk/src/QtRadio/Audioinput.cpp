@@ -1,19 +1,19 @@
-#include "audioinput.h"
+#include "Audioinput.h"
 
 AudioInput::AudioInput(QObject *parent) :
     QObject(parent)
 {
     m_audioInput=NULL;
-    sampleRate=8000;
-    audio_encoding = 0;
-    audio_byte_order=QAudioFormat::LittleEndian;
+    m_sampleRate=8000;
+    m_audio_encoding = 0;
+    m_byte_order=QAudioFormat::LittleEndian;
 
     m_format.setSampleType(QAudioFormat::SignedInt);
-    m_format.setFrequency(sampleRate);
+    m_format.setFrequency(m_sampleRate);
     m_format.setChannels(1);
     m_format.setSampleSize(16);
     m_format.setCodec("audio/pcm");
-    m_format.setByteOrder(audio_byte_order);
+    m_format.setByteOrder(m_byte_order);
 }
 
 AudioInput::~AudioInput()
@@ -104,6 +104,13 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
         m_input = NULL;
         delete m_audioInput;
     }
+}
+
+void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAudioFormat::Endian byteOrder){
+    m_device = info;
+    m_sampleRate = rate;
+    m_channels = channels;
+    m_byte_order = byteOrder;
 }
 
 void AudioInput::stateChanged(QAudio::State State){

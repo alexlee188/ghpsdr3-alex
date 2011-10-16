@@ -50,7 +50,7 @@ Xvtr.moc.cpp \
 smeter.moc.cpp \
 ctl.moc.cpp \
 rigctl.moc.cpp \
-audioinput.moc.cpp
+Audioinput.moc.cpp
 
 	
 nodist_QtRadio_SOURCES = \
@@ -66,7 +66,7 @@ nodist_QtRadio_SOURCES = \
     ui_ctl.h \
 About.moc.cpp                  \
 Audio.moc.cpp                  \
-audioinput.moc.cpp		\
+Audioinput.moc.cpp		\
 Band.moc.cpp                   \
 Bandscope.moc.cpp              \
 BandStackEntry.moc.cpp         \
@@ -102,14 +102,14 @@ Band.cpp       Bookmarks.cpp            CWLFilters.cpp   FiltersBase.cpp  LSBFil
 BandLimit.cpp  BookmarksDialog.cpp      CWUFilters.cpp   Filters.cpp      main.cpp           USBFilters.cpp                 \
 Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.cpp          vfo.cpp         smeter.cpp     \
 ctl.cpp rigctl.cpp\
-audioinput.cpp \
+Audioinput.cpp \
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  Waterfall.h  \
 Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Spectrum.h    XvtrEntry.h  \
 Band.h       Bookmark.h         codec2.h               DIGLFilters.h  Filters.h      LSBFilters.h     UI.h          Xvtr.h       \
 BandLimit.h  BookmarksDialog.h  Configure.h            DIGUFilters.h  FMNFilters.h   Meter.h          USBFilters.h  smeter.h \
 ctl.h rigctl.h\
-audioinput.h \
+Audioinput.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui
 
@@ -151,7 +151,7 @@ smeter.moc.cpp                   \
 ctl.moc.cpp \
 rigctl.moc.cpp \
 aux.moc.cpp			\
-audioinput.moc.cpp
+Audioinput.moc.cpp
 
 #
 # auxiliary services, git string, icons

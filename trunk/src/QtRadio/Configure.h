@@ -35,7 +35,7 @@
 
 #include "Audio.h"
 #include "Xvtr.h"
-#include "audioinput.h"
+#include "Audioinput.h"
 
 class Configure : public QDialog {
     Q_OBJECT
@@ -99,22 +99,11 @@ signals:
     void waterfallLowChanged(int low);
     void waterfallAutomaticChanged(bool state);
     void audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian order);
+    void micDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian order);
     void encodingChanged(int index);
     void get_audio_devices(QComboBox* comboBox);
-//    void sampleRateChanged(int rate);
-//    void channelsChanged(int channels);
-//    void byteOrderChanged(QAudioFormat::Endian order);
-
-//    void nrTapsChanged(int taps);
-//    void nrDelayChanged(int delay);
-//    void nrGainChanged(double gain);
-//    void nrLeakChanged(double leak);
+    void micDeviceChanged(QAudioDeviceInfo info);
     void nrValuesChanged(int taps,int delay,double gain,double leak);
-
-//    void anfTapsChanged(int taps);
-//    void anfDelayChanged(int delay);
-//    void anfGainChanged(double gain);
-//    void anfLeakChanged(double leak);
     void anfValuesChanged(int taps,int delay,double gain,double leak);
 
     void nbThresholdChanged(double threshold);
@@ -134,10 +123,13 @@ public slots:
     void slotWaterfallLowChanged(int low);
     void slotWaterfallAutomaticChanged(bool state);
     void slotAudioDeviceChanged(int selection);
+    void slotMicDeviceChanged(int selection);
     void slotSampleRateChanged(int rate);
     void slotChannelsChanged(int channels);
-//    void slotEncodingChanged(int index);
     void slotByteOrderChanged(int selection);
+    void slotMicSampleRateChanged(int rate);
+    void slotMicChannelsChanged(int channels);
+    void slotMicOrderChanged(int selection);
 
     void slotNrTapsChanged(int taps);
     void slotNrDelayChanged(int delay);

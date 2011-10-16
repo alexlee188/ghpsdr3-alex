@@ -20,6 +20,7 @@ signals:
 
 public slots:
     void stateChanged(QAudio::State);
+    void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
 private:
     QAudioDeviceInfo m_device;
     QAudioFormat m_format;
@@ -28,9 +29,10 @@ private:
     bool m_pullMode;
     QByteArray m_buffer;
 
-    int sampleRate;
-    QAudioFormat::Endian audio_byte_order;
-    int audio_encoding;
+    int m_sampleRate;
+    int m_channels;
+    QAudioFormat::Endian m_byte_order;
+    int m_audio_encoding;
 
     static const QString PushModeLabel;
     static const QString PullModeLabel;

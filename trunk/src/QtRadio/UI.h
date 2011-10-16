@@ -38,7 +38,7 @@
 #include "About.h"
 #include "Configure.h"
 #include "Audio.h"
-#include "audioinput.h"
+#include "Audioinput.h"
 #include "Connection.h"
 #include "Spectrum.h"
 #include "Band.h"
@@ -191,6 +191,8 @@ public slots:
     void audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void encodingChanged(int choice);
     void process_audio_free(int state);
+
+    void micDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
 
 
     void setSubRxGain(int gain);

@@ -61,7 +61,7 @@ SOURCES += main.cpp\
     rigctl.cpp \
     vfo.cpp \
     ctl.cpp \
-    audioinput.cpp
+    Audioinput.cpp
 
 HEADERS  += \ 
     Waterfall.h \
@@ -107,7 +107,7 @@ HEADERS  += \
     vfo.h \
     ctl.h \
     aux.h \
-    audioinput.h
+    Audioinput.h
 
 FORMS    += \   
     UI.ui \
@@ -127,26 +127,3 @@ win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/debug/ -lcodec2
 else:symbian: LIBS += -lcodec2
 else:unix: LIBS += -lcodec2
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
