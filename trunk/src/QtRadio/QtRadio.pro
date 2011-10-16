@@ -106,7 +106,6 @@ HEADERS  += \
     rigctl.h \
     vfo.h \
     ctl.h \
-    aux.h \
     Audioinput.h
 
 FORMS    += \   
