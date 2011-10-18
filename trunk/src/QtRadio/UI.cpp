@@ -232,6 +232,7 @@ UI::UI() {
     connect(widget.vfoFrame,SIGNAL(vfoStepBtnClicked(int)),this,SLOT(vfoStepBtnClicked(int)));
     connect(this,SIGNAL(initialize_audio(int)),audio,SLOT(initialize_audio(int)));
     connect(this,SIGNAL(process_audio(char*,char*,int)),audio,SLOT(process_audio(char*,char*,int)));
+    connect(widget.ctlFrame,SIGNAL(pttChange(int,bool)),this,SLOT(pttChange(int,bool)));
 
 
     bandscope=NULL;
@@ -1832,4 +1833,13 @@ qDebug()<<Q_FUNC_INFO<<": vfo up or down button clicked. Direction = "<<directio
         default : f = (samplerate * 8) / 10;
     }
     frequencyMoved(f, direction);
+}
+
+// The ptt service has been activated. 0 = MOX, 1 = Tune, 2 = VOX, 3 = Extern H'ware
+void UI::pttChange(int caller, bool ptt)
+{
+    txPwr = widget.ctlFrame->getTxPwr();
+    txFrequency = widget.vfoFrame->getTxFrequency();
+    widget.vfoFrame->setVfoBtnColour(ptt);
+    qDebug()<<Q_FUNC_INFO<<": Caller = "<<caller<<", and ptt = "<<ptt<<", txPwr = "<<txPwr<<", txFrequency = "<<txFrequency;
 }

@@ -31,6 +31,9 @@
    <property name="text">
     <string>MOX</string>
    </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QPushButton" name="btnTune">
    <property name="geometry">
@@ -44,8 +47,11 @@
    <property name="text">
     <string>Tune</string>
    </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
   </widget>
-  <widget class="QSlider" name="horizontalSlider">
+  <widget class="QSlider" name="pwrSlider">
    <property name="geometry">
     <rect>
      <x>70</x>

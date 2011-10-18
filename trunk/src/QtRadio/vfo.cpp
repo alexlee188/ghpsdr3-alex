@@ -313,7 +313,7 @@ long long vfo::readB()
 
 void vfo::on_pBtnvfoA_clicked()
 {
-    if (selectedVFO != 'A') {
+    if (selectedVFO != 'A' && ptt == false) {
         if (ui->pBtnRIT->isChecked()) {
             ui->pBtnRIT->setChecked(false);
             on_pBtnRIT_clicked();
@@ -329,7 +329,7 @@ void vfo::on_pBtnvfoA_clicked()
 
 void vfo::on_pBtnvfoB_clicked()
 {
-    if (selectedVFO != 'B') {
+    if (selectedVFO != 'B' && ptt == false) {
         if (ui->pBtnRIT->isChecked()) {
             ui->pBtnRIT->setChecked(false);
             on_pBtnRIT_clicked();
@@ -498,4 +498,54 @@ QString vfo::rigctlGetvfo()
     QString vfo;
     vfo = selectedVFO;
     return "VFO" + vfo;
+}
+
+long long vfo::getTxFrequency()
+{
+    if(selectedVFO == 'A') {
+        return readA();
+    } else {
+        return readB();
+    }
+}
+
+void vfo::setVfoBtnColour(int pttState)
+{
+    ptt = pttState;
+    switch(selectedVFO) {
+        case 'A':
+        if(ptt) {
+            ui->pBtnvfoA->setStyleSheet("background-color: rgb(255, 0, 0)"); //Red
+            ui->pBtnvfoB->setStyleSheet("background-color: normal");
+            ui->pBtnSplit->setStyleSheet("background-color: normal");
+        } else {
+            ui->pBtnvfoA->setStyleSheet("background-color: rgb(85, 255, 0)"); //Green
+            ui->pBtnvfoB->setStyleSheet("background-color: normal");
+            ui->pBtnSplit->setStyleSheet("background-color: normal");
+        }
+            break;
+        case 'B':
+        if(ptt) {
+            ui->pBtnvfoB->setStyleSheet("background-color: rgb(255, 0, 0)"); //Red
+            ui->pBtnvfoA->setStyleSheet("background-color: normal");
+            ui->pBtnSplit->setStyleSheet("background-color: normal");
+        } else {
+            ui->pBtnvfoB->setStyleSheet("background-color: rgb(85, 255, 0)"); //Green
+            ui->pBtnvfoA->setStyleSheet("background-color: normal");
+            ui->pBtnSplit->setStyleSheet("background-color: normal");
+        }
+            break;
+        case 'S':
+        if(ptt) {
+            ui->pBtnvfoA->setStyleSheet("background-color: normal"); //Gray
+            ui->pBtnvfoB->setStyleSheet("background-color: rgb(255, 0, 0)"); //Red
+            ui->pBtnSplit->setStyleSheet("background-color: rgb(0, 170, 255)"); //Blue
+        } else {
+            ui->pBtnvfoA->setStyleSheet("background-color: rgb(85, 255, 0)"); //Green
+            ui->pBtnvfoB->setStyleSheet("background-color: rgb(255, 155, 155)"); //Light Red
+            ui->pBtnSplit->setStyleSheet("background-color: rgb(0, 170, 255)"); //Blue
+        }
+        break;
+    }
+
 }

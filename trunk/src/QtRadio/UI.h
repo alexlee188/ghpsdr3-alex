@@ -228,6 +228,8 @@ public slots:
     void selectBookmark(QAction* action);
     void getBandFrequency();
     void vfoStepBtnClicked(int direction);
+    void vfoScanBtnClicked(int direction);
+    void pttChange(int caller, bool ptt);
 
 signals:
     void subRxStateChanged(bool state);
@@ -312,6 +314,8 @@ private:
     KeypadDialog keypad;
     Meter* sMeter;
     int meter;
+    int txPwr;
+    long long txFrequency;
 };
 
 #endif	/* _UI_H */

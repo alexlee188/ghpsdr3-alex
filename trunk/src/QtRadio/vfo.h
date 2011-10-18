@@ -28,6 +28,8 @@ public:
     void checkBandBtn(int band);
     void setBandFrequency(long long f) {bandFrequency = f;}
     QString rigctlGetvfo();
+    long long getTxFrequency();
+    void setVfoBtnColour(int ptt);
 
 public slots:
     void on_pBtnvfoA_clicked();  // moved from private for rigctl
