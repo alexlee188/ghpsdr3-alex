@@ -228,7 +228,7 @@ public slots:
     void selectBookmark(QAction* action);
     void getBandFrequency();
     void vfoStepBtnClicked(int direction);
-    void vfoScanBtnClicked(int direction);
+//    void vfoScanBtnClicked(int direction);
     void pttChange(int caller, bool ptt);
 
 signals:
