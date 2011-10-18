@@ -68,7 +68,7 @@ UI::UI() {
     audio->moveToThread(audio_thread);
     audio_thread->start(QThread::TimeCriticalPriority);
 
-    audioinput = new AudioInput();
+    audioinput = new AudioInput(0, codec2);
     configure.initMicDevices(audioinput);
 
     // layout the screen

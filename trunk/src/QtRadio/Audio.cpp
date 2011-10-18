@@ -168,9 +168,6 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
     audio_output = new QAudioOutput(audio_device, audio_format, this);
     connect(audio_output,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
 
-    qDebug() << "QAudioOutput: error=" << audio_output->error() << " state=" << audio_output->state();
-
- //   audio_output->setBufferSize(1024*48);
     audio_out = audio_output->start();
 
     if(audio_output->error()!=0) {

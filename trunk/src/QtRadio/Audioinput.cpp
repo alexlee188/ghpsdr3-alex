@@ -1,6 +1,6 @@
 #include "Audioinput.h"
 
-AudioInput::AudioInput(QObject *parent) :
+AudioInput::AudioInput(QObject *parent, void *codec) :
     QObject(parent)
 {
     m_audioInput=NULL;
@@ -14,6 +14,9 @@ AudioInput::AudioInput(QObject *parent) :
     m_format.setSampleSize(16);
     m_format.setCodec("audio/pcm");
     m_format.setByteOrder(m_byte_order);
+    codec2 = codec;                         // pointer to codec2 state
+                                            // codec2 lib is probably NOT re-entrant
+                                            // so make sure only one thread is actively using it
 }
 
 AudioInput::~AudioInput()
@@ -92,7 +95,7 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
     m_input = m_audioInput->start();
 
     if(m_audioInput->error()!=0) {
-        qDebug() << "QAudioOutput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
+        qDebug() << "QAudioInput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
 
         qDebug() << "Format:";
         qDebug() << "    sample rate: " << m_format.frequency();
@@ -111,6 +114,39 @@ void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAu
     m_sampleRate = rate;
     m_channels = channels;
     m_byte_order = byteOrder;
+
+    if(m_audioInput!=NULL) {
+        m_audioInput->stop();
+        m_audioInput->disconnect(this);
+        delete m_audioInput;
+    }
+
+    m_format.setFrequency(m_sampleRate);
+    m_format.setChannels(m_channels);
+    m_format.setByteOrder(m_byte_order);
+
+    if (!m_device.isFormatSupported(m_format)) {
+        qDebug()<<"Audio format not supported by Mic input device.";
+    }
+
+    m_audioInput = new QAudioInput(m_device, m_format, this);
+    connect(m_audioInput,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
+
+    m_input = m_audioInput->start();
+
+    if(m_audioInput->error()!=0) {
+        qDebug() << "QAudioInput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
+
+        qDebug() << "Format:";
+        qDebug() << "    sample rate: " << m_format.frequency();
+        qDebug() << "    codec: " << m_format.codec();
+        qDebug() << "    byte order: " << m_format.byteOrder();
+        qDebug() << "    sample size: " << m_format.sampleSize();
+        qDebug() << "    sample type: " << m_format.sampleType();
+        qDebug() << "    channels: " << m_format.channels();
+        m_input = NULL;
+        delete m_audioInput;
+    }
 }
 
 void AudioInput::stateChanged(QAudio::State State){

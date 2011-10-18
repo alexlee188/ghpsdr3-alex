@@ -13,7 +13,7 @@ class AudioInput : public QObject
 {
     Q_OBJECT
 public:
-    explicit AudioInput(QObject *parent = 0);
+    explicit AudioInput(QObject *parent = 0, void * codec = 0);
     virtual ~AudioInput();
     void get_audioinput_devices(QComboBox* comboBox);
 signals:
@@ -33,6 +33,8 @@ private:
     int m_channels;
     QAudioFormat::Endian m_byte_order;
     int m_audio_encoding;
+
+    void *codec2;
 
     static const QString PushModeLabel;
     static const QString PullModeLabel;

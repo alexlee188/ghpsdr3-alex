@@ -166,6 +166,12 @@ void Configure::connected(bool state) {
     widget.encodingComboBox->setDisabled(state);
     widget.byteOrderComboBox->setDisabled(state);
 
+    widget.MicComboBox->setDisabled(state);
+    widget.MicSampleRateComboBox->setDisabled(state);
+    widget.MicChannelsSpinBox->setDisabled(state);
+    widget.MicEncodingComboBox->setDisabled(state);
+    widget.MicOrderComboBox->setDisabled(state);
+
     widget.hostComboBox->setDisabled(state);
     widget.rxSpinBox->setDisabled(state);
 
