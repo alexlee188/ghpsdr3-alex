@@ -43,10 +43,9 @@
 class Audio : public QObject {
     Q_OBJECT
 public:
-    Audio();
-    Audio(const Audio& orig);
+    Audio(void * codec2);
+//    Audio(const Audio& orig);
     virtual ~Audio();
-    void * codec2;
 
 signals:
     void process_audio_free(int state);
@@ -60,6 +59,7 @@ public slots:
     void set_audio_encoding(int enc);
 
 private:
+    void * codec2;
     void aLawDecode(char* buffer,int length);
     void pcmDecode(char * buffer,int length);
     void codec2Decode(char* buffer, int length);

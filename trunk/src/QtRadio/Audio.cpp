@@ -26,7 +26,7 @@
 #include "Audio.h"
 #include "codec2.h"
 
-Audio::Audio() {
+Audio::Audio(void * codec) {
     audio_output=NULL;
     sampleRate=8000;
     audio_encoding = 0;
@@ -41,12 +41,10 @@ Audio::Audio() {
     audio_format.setSampleSize(16);
     audio_format.setCodec("audio/pcm");
     audio_format.setByteOrder(audio_byte_order);
-    codec2 = codec2_create();
-
+    codec2 = codec;
 }
 
 Audio::~Audio() {
-    codec2_destroy(codec2);
 }
 
 

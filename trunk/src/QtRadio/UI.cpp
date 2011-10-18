@@ -49,6 +49,7 @@
 #include "Meter.h"
 #include "Spectrum.h"
 #include "smeter.h"
+#include "codec2.h"
 
 UI::UI() {
 
@@ -57,7 +58,9 @@ UI::UI() {
     meter=-121;
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
-    audio = new Audio();
+
+    codec2 = codec2_create();
+    audio = new Audio(codec2);
 
     configure.initAudioDevices(audio);
 
