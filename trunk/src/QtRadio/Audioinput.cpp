@@ -92,7 +92,7 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
 
     qDebug() << "QAudioOutput: error=" << m_audioInput->error() << " state=" << m_audioInput->state();
 
-    m_input = m_audioInput->start();
+    // m_input = m_audioInput->start();
 
     if(m_audioInput->error()!=0) {
         qDebug() << "QAudioInput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
@@ -132,7 +132,7 @@ void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAu
     m_audioInput = new QAudioInput(m_device, m_format, this);
     connect(m_audioInput,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
 
-    m_input = m_audioInput->start();
+    // m_input = m_audioInput->start();
 
     if(m_audioInput->error()!=0) {
         qDebug() << "QAudioInput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
