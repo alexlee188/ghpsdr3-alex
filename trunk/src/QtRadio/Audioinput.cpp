@@ -92,7 +92,10 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
 
     qDebug() << "QAudioOutput: error=" << m_audioInput->error() << " state=" << m_audioInput->state();
 
-    // m_input = m_audioInput->start();
+    m_audioInfo  = new AudioInfo(m_format, this);
+    connect(m_audioInfo,SIGNAL(update()),this,SLOT(slotMicUpdated()));
+    m_audioInfo->start();
+    m_audioInput->start(m_audioInfo);
 
     if(m_audioInput->error()!=0) {
         qDebug() << "QAudioInput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
@@ -106,7 +109,13 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
         qDebug() << "    channels: " << m_format.channels();
         m_input = NULL;
         delete m_audioInput;
+
+        if (m_audioInfo != NULL){
+        m_audioInfo->stop();
+        delete m_audioInfo;
+        }
     }
+
 }
 
 void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAudioFormat::Endian byteOrder){
@@ -121,6 +130,11 @@ void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAu
         delete m_audioInput;
     }
 
+    if (m_audioInfo!= NULL){
+        m_audioInfo->stop();
+        delete m_audioInfo;
+    }
+
     m_format.setFrequency(m_sampleRate);
     m_format.setChannels(m_channels);
     m_format.setByteOrder(m_byte_order);
@@ -132,7 +146,11 @@ void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAu
     m_audioInput = new QAudioInput(m_device, m_format, this);
     connect(m_audioInput,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
 
-    // m_input = m_audioInput->start();
+
+    m_audioInfo  = new AudioInfo(m_format, this);
+    connect(m_audioInfo,SIGNAL(update()),this,SLOT(slotMicUpdated()));
+    m_audioInfo->start();
+    m_audioInput->start(m_audioInfo);
 
     if(m_audioInput->error()!=0) {
         qDebug() << "QAudioInput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
@@ -146,7 +164,12 @@ void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAu
         qDebug() << "    channels: " << m_format.channels();
         m_input = NULL;
         delete m_audioInput;
+        if (m_audioInfo != NULL){
+            m_audioInfo->stop();
+            delete m_audioInfo;
+        }
     }
+
 }
 
 void AudioInput::stateChanged(QAudio::State State){
@@ -164,3 +187,106 @@ void AudioInput::stateChanged(QAudio::State State){
         return;
     }
 }
+
+void AudioInput::slotMicUpdated(){
+    qDebug() << m_audioInfo->level();
+}
+
+AudioInfo::AudioInfo(const QAudioFormat &format, QObject *parent)
+    :   QIODevice(parent)
+    ,   m_format(format)
+    ,   m_maxAmplitude(0)
+    ,   m_level(0.0)
+
+{
+    switch (m_format.sampleSize()) {
+    case 8:
+        switch (m_format.sampleType()) {
+        case QAudioFormat::UnSignedInt:
+            m_maxAmplitude = 255;
+            break;
+        case QAudioFormat::SignedInt:
+            m_maxAmplitude = 127;
+            break;
+        default: ;
+        }
+        break;
+    case 16:
+        switch (m_format.sampleType()) {
+        case QAudioFormat::UnSignedInt:
+            m_maxAmplitude = 65535;
+            break;
+        case QAudioFormat::SignedInt:
+            m_maxAmplitude = 32767;
+            break;
+        default: ;
+        }
+        break;
+    }
+}
+
+AudioInfo::~AudioInfo()
+{
+}
+
+void AudioInfo::start()
+{
+    open(QIODevice::WriteOnly);
+}
+
+void AudioInfo::stop()
+{
+    close();
+}
+
+qint64 AudioInfo::readData(char *data, qint64 maxlen)
+ {
+     Q_UNUSED(data)
+     Q_UNUSED(maxlen)
+
+     return 0;
+ }
+
+ qint64 AudioInfo::writeData(const char *data, qint64 len)
+ {
+     if (m_maxAmplitude) {
+         Q_ASSERT(m_format.sampleSize() % 8 == 0);
+         const int channelBytes = m_format.sampleSize() / 8;
+         const int sampleBytes = m_format.channels() * channelBytes;
+         Q_ASSERT(len % sampleBytes == 0);
+         const int numSamples = len / sampleBytes;
+
+         quint16 maxValue = 0;
+         const unsigned char *ptr = reinterpret_cast<const unsigned char *>(data);
+
+         for (int i = 0; i < numSamples; ++i) {
+             for(int j = 0; j < m_format.channels(); ++j) {
+                 quint16 value = 0;
+
+                 if (m_format.sampleSize() == 8 && m_format.sampleType() == QAudioFormat::UnSignedInt) {
+                     value = *reinterpret_cast<const quint8*>(ptr);
+                 } else if (m_format.sampleSize() == 8 && m_format.sampleType() == QAudioFormat::SignedInt) {
+                     value = qAbs(*reinterpret_cast<const qint8*>(ptr));
+                 } else if (m_format.sampleSize() == 16 && m_format.sampleType() == QAudioFormat::UnSignedInt) {
+                     if (m_format.byteOrder() == QAudioFormat::LittleEndian)
+                         value = qFromLittleEndian<quint16>(ptr);
+                     else
+                         value = qFromBigEndian<quint16>(ptr);
+                 } else if (m_format.sampleSize() == 16 && m_format.sampleType() == QAudioFormat::SignedInt) {
+                     if (m_format.byteOrder() == QAudioFormat::LittleEndian)
+                         value = qAbs(qFromLittleEndian<qint16>(ptr));
+                     else
+                         value = qAbs(qFromBigEndian<qint16>(ptr));
+                 }
+
+                 maxValue = qMax(value, maxValue);
+                 ptr += channelBytes;
+             }
+         }
+
+         maxValue = qMin(maxValue, m_maxAmplitude);
+         m_level = qreal(maxValue) / m_maxAmplitude;
+     }
+     emit update();
+     return len;
+ }
