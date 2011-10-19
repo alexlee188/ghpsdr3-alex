@@ -189,7 +189,7 @@ void AudioInput::stateChanged(QAudio::State State){
 }
 
 void AudioInput::slotMicUpdated(){
-    qDebug() << m_audioInfo->level();
+    emit mic_update_level(m_audioInfo->level());
 }
 
 AudioInfo::AudioInfo(const QAudioFormat &format, QObject *parent)

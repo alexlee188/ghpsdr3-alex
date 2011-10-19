@@ -66,6 +66,7 @@
 #include "KeypadDialog.h"
 #include "vfo.h"
 #include "rigctl.h"
+#include "ctl.h"
 
 #define DSPSERVER_BASE_PORT 8000
 

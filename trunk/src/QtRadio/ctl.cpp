@@ -65,3 +65,7 @@ int Ctl::getTxPwr()
 {
     return ui->pwrSlider->value();
 }
+
+void Ctl::update_mic_level(qreal level){
+    ui->MicProgressBar->setValue(100*level);
+}
