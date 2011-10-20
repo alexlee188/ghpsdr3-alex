@@ -214,7 +214,7 @@ void Configure::loadSettings(QSettings* settings) {
     if(settings->contains("samplerate")) widget.sampleRateComboBox->setCurrentIndex(settings->value("samplerate").toInt());
     if(settings->contains("encoding")) widget.encodingComboBox->setCurrentIndex(settings->value("encoding").toInt());
     if(settings->contains("byteorder")) widget.byteOrderComboBox->setCurrentIndex(settings->value("byteorder").toInt());
-    if(settings->contains("mic")) widget.MicComboBox->setCurrentIndex(settings->value("mic").toInt());
+//    if(settings->contains("mic")) widget.MicComboBox->setCurrentIndex(settings->value("mic").toInt());
     settings->endGroup();
 
     settings->beginGroup("NR");
