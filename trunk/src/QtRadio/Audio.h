@@ -48,7 +48,6 @@ public:
     virtual ~Audio();
 
 signals:
-    void process_audio_free(int state);
 
 public slots:
     void stateChanged(QAudio::State);

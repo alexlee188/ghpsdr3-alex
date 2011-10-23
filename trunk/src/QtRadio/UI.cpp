@@ -299,6 +299,7 @@ UI::UI() {
 
 UI::~UI() {
     connection.disconnect();
+    codec2_destroy(codec2);
 }
 
 void UI::actionAbout() {

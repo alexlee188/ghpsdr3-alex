@@ -34,6 +34,7 @@
 #include <QAudioFormat>
 #include <QVector>
 #include <QThread>
+#include <QQueue>
 
 #include "About.h"
 #include "Configure.h"

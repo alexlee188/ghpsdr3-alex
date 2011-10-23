@@ -8,6 +8,7 @@
 #include <QAudioDeviceInfo>
 #include <QtGui/QComboBox>
 #include <QMutex>
+#include <QQueue>
 
 class AudioInfo : public QIODevice
 {
@@ -20,7 +21,6 @@ public:
     void stop();
 
     qreal level() const { return m_level; }
-
     qint64 readData(char *data, qint64 maxlen);
     qint64 writeData(const char *data, qint64 len);
 
@@ -28,9 +28,9 @@ private:
     const QAudioFormat m_format;
     quint16 m_maxAmplitude;
     qreal m_level; // 0.0 <= m_level <= 1.0
-
+    QQueue<qint16> m_queue;
 signals:
-    void update();
+    void update(QQueue<qint16>* queue);
 };
 
 class AudioInput : public QObject
@@ -45,7 +45,7 @@ signals:
 public slots:
     void stateChanged(QAudio::State);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
-    void slotMicUpdated();
+    void slotMicUpdated(QQueue<qint16>*);
 private:
     QAudioDeviceInfo m_device;
     QAudioFormat m_format;

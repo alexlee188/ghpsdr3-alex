@@ -21,7 +21,6 @@ AudioInput::AudioInput(QObject *parent, void *codec) :
 
 AudioInput::~AudioInput()
 {
-
 }
 
 void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
@@ -93,7 +92,7 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
     qDebug() << "QAudioOutput: error=" << m_audioInput->error() << " state=" << m_audioInput->state();
 
     m_audioInfo  = new AudioInfo(m_format, this);
-    connect(m_audioInfo,SIGNAL(update()),this,SLOT(slotMicUpdated()));
+    connect(m_audioInfo,SIGNAL(update(QQueue<qint16>*)),this,SLOT(slotMicUpdated(QQueue<qint16>*)));
     m_audioInfo->start();
     m_audioInput->start(m_audioInfo);
 
@@ -148,7 +147,7 @@ void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAu
 
 
     m_audioInfo  = new AudioInfo(m_format, this);
-    connect(m_audioInfo,SIGNAL(update()),this,SLOT(slotMicUpdated()));
+    connect(m_audioInfo,SIGNAL(update(QQueue<qint16>*)),this,SLOT(slotMicUpdated(QQueue<qint16>*)));
     m_audioInfo->start();
     m_audioInput->start(m_audioInfo);
 
@@ -188,16 +187,20 @@ void AudioInput::stateChanged(QAudio::State State){
     }
 }
 
-void AudioInput::slotMicUpdated(){
+void AudioInput::slotMicUpdated(QQueue<qint16>* queue){
     emit mic_update_level(m_audioInfo->level());
+    while(!queue->isEmpty()){
+        count++;
+        queue->dequeue();
+    }
 }
+
 
 AudioInfo::AudioInfo(const QAudioFormat &format, QObject *parent)
     :   QIODevice(parent)
     ,   m_format(format)
     ,   m_maxAmplitude(0)
     ,   m_level(0.0)
-
 {
     switch (m_format.sampleSize()) {
     case 8:
@@ -249,6 +252,7 @@ qint64 AudioInfo::readData(char *data, qint64 maxlen)
 
  qint64 AudioInfo::writeData(const char *data, qint64 len)
  {
+     qint16 v;
      if (m_maxAmplitude) {
          Q_ASSERT(m_format.sampleSize() % 8 == 0);
          const int channelBytes = m_format.sampleSize() / 8;
@@ -263,6 +267,7 @@ qint64 AudioInfo::readData(char *data, qint64 maxlen)
              for(int j = 0; j < m_format.channels(); ++j) {
                  quint16 value = 0;
 
+                 v = 0;
                  if (m_format.sampleSize() == 8 && m_format.sampleType() == QAudioFormat::UnSignedInt) {
                      value = *reinterpret_cast<const quint8*>(ptr);
                  } else if (m_format.sampleSize() == 8 && m_format.sampleType() == QAudioFormat::SignedInt) {
@@ -273,12 +278,16 @@ qint64 AudioInfo::readData(char *data, qint64 maxlen)
                      else
                          value = qFromBigEndian<quint16>(ptr);
                  } else if (m_format.sampleSize() == 16 && m_format.sampleType() == QAudioFormat::SignedInt) {
-                     if (m_format.byteOrder() == QAudioFormat::LittleEndian)
-                         value = qAbs(qFromLittleEndian<qint16>(ptr));
-                     else
-                         value = qAbs(qFromBigEndian<qint16>(ptr));
+                     if (m_format.byteOrder() == QAudioFormat::LittleEndian){
+                        v = qFromLittleEndian<qint16>(ptr);
+                        value = qAbs(v);
+                     }
+                     else {
+                        v = qFromBigEndian<qint16>(ptr);
+                        value = qAbs(v);
+                     }
                  }
-
+                 if (j == 0) m_queue.enqueue(v);            // use only 1st channel
                  maxValue = qMax(value, maxValue);
                  ptr += channelBytes;
              }
@@ -287,6 +296,6 @@ qint64 AudioInfo::readData(char *data, qint64 maxlen)
          maxValue = qMin(maxValue, m_maxAmplitude);
          m_level = qreal(maxValue) / m_maxAmplitude;
      }
-     emit update();
+     emit update(&m_queue);
      return len;
  }
