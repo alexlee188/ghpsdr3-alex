@@ -71,6 +71,8 @@
 
 #define DSPSERVER_BASE_PORT 8000
 
+#define MIC_BUFFER_SIZE 25        // 2 bytes per Mic sample --> 50 bytes
+
 #define AGC_LONG 1
 #define AGC_SLOW 2
 #define AGC_MEDIUM 3
@@ -193,10 +195,9 @@ public slots:
 
     void audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void encodingChanged(int choice);
-    void process_audio_free(int state);
 
     void micDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
-
+    void micSendAudio(QQueue<qint16>*);
 
     void setSubRxGain(int gain);
 
@@ -265,7 +266,6 @@ private:
     int audio_buffers;
     QAudioFormat::Endian audio_byte_order;
     int audio_encoding;
-    QMutex audio_mutex;
     char* first_audio_buffer;
     char* first_audio_header;
     int gain;
@@ -274,6 +274,8 @@ private:
 
     AudioInput* audioinput;
     QThread* audioinput_thread;
+    int mic_buffer_count;               // counter of mic_buffer, to send buffer if reaches
+                                        // MIC_BUFFER_SIZE
 
     long long subRxFrequency;
     Connection connection;

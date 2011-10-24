@@ -189,10 +189,7 @@ void AudioInput::stateChanged(QAudio::State State){
 
 void AudioInput::slotMicUpdated(QQueue<qint16>* queue){
     emit mic_update_level(m_audioInfo->level());
-    while(!queue->isEmpty()){
-        count++;
-        queue->dequeue();
-    }
+    emit mic_send_audio(queue);
 }
 
 

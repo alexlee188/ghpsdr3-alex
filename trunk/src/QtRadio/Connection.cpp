@@ -119,15 +119,16 @@ void Connection::sendAudio(int length, char* data) {
     QString command;
     char buffer[64];
 
-    QTextStream(&command) << "mic ";
-    strcpy(buffer,command.toUtf8().constData());
-    if (length >= 59){
-        qDebug() << "mic audio data exceeds buffer: " << length;
-        length = 59;
-    }
-    memcpy(&buffer[4], data, length);
 
     if(tcpSocket!=NULL) {
+        QTextStream(&command) << "mic ";
+        strcpy(buffer,command.toUtf8().constData());
+        if (length >= 59){
+            qDebug() << "mic audio data exceeds buffer: " << length;
+            length = 59;
+        }
+        memcpy(&buffer[4], data, length);
+
         mutex.lock();
         tcpSocket->write(buffer,64);
         tcpSocket->flush();

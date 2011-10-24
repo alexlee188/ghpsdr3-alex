@@ -42,6 +42,7 @@ public:
     void get_audioinput_devices(QComboBox* comboBox);
 signals:
     void mic_update_level(qreal level);
+    void mic_send_audio(QQueue<qint16>* queue);
 public slots:
     void stateChanged(QAudio::State);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);

@@ -71,6 +71,8 @@ UI::UI() {
     audioinput = new AudioInput(0, codec2);
     configure.initMicDevices(audioinput);
 
+    mic_buffer_count = 0;
+
     // layout the screen
     widget.gridLayout->setContentsMargins(0,0,0,0);
     widget.gridLayout->setVerticalSpacing(0);
@@ -91,8 +93,8 @@ UI::UI() {
     connect(&connection,SIGNAL(disconnected(QString)),this,SLOT(disconnected(QString)));
     connect(&connection,SIGNAL(audioBuffer(char*,char*)),this,SLOT(audioBuffer(char*,char*)));
     connect(&connection,SIGNAL(spectrumBuffer(char*,char*)),this,SLOT(spectrumBuffer(char*,char*)));
-    connect(audio,SIGNAL(process_audio_free(int)),this,SLOT(process_audio_free(int)));
     connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
+    connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
 
     connect(widget.actionConfig,SIGNAL(triggered()),this,SLOT(actionConfigure()));
 
@@ -500,7 +502,7 @@ void UI::connected() {
     command.clear(); QTextStream(&command) << "setFilter " << low << " " << high;
     connection.sendCommand(command);
 
-    qDebug() << "connected calling widget.spectrumFrame.setFilter";
+    // qDebug() << "connected calling widget.spectrumFrame.setFilter";
 
     widget.spectrumFrame->setFilter(low,high);
     widget.waterfallFrame->setFilter(low,high);
@@ -513,7 +515,7 @@ void UI::connected() {
     // select audio encoding
     command.clear(); QTextStream(&command) << "setEncoding " << audio_encoding;
     connection.sendCommand(command);
-    qDebug() << "Command: " << command;
+    // qDebug() << "Command: " << command;
 
     // start the audio
     audio_buffers=0;
@@ -524,7 +526,7 @@ void UI::connected() {
             << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " " << audio_sample_rate << " "
             << audio_channels;
        connection.sendCommand(command);
-       qDebug() << "command: " << command;
+    //   qDebug() << "command: " << command;
     }
 
     command.clear(); QTextStream(&command) << "SetPan 0.5"; // center
@@ -596,11 +598,6 @@ void UI::spectrumBuffer(char* header,char* buffer) {
     connection.SemSpectrum.release();
 }
 
-void UI::process_audio_free(int state){
-    if (state != 0) audio_mutex.lock();
-    else audio_mutex.unlock();
-}
-
 void UI::audioBuffer(char* header,char* buffer) {
     //qDebug() << "audioBuffer";
     int length;
@@ -620,6 +617,20 @@ void UI::audioBuffer(char* header,char* buffer) {
     }
  }
 
+void UI::micSendAudio(QQueue<qint16>* queue){
+    qint16 buffer[MIC_BUFFER_SIZE];
+
+    while(! queue->isEmpty()){
+        queue->dequeue();       // temporary for debug
+        /*
+        buffer[mic_buffer_count++] = queue->dequeue();
+        if (mic_buffer_count >= MIC_BUFFER_SIZE) {
+            mic_buffer_count = 0;
+            connection.sendAudio((MIC_BUFFER_SIZE * 2), (char*) buffer);
+        }
+        */
+    }
+}
 
 void UI::actionSubRx() {
     QString command;
