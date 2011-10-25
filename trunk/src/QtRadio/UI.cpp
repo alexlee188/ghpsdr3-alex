@@ -584,12 +584,8 @@ void UI::disconnected(QString message) {
 
 void UI::updateSpectrum() {
     QString command;
-/*    if (connection.SemSpectrum.available() > 0){
-        connection.SemSpectrum.acquire();
-*/
         command.clear(); QTextStream(&command) << "getSpectrum " << widget.spectrumFrame->width();
         connection.sendCommand(command);
- //   }
 }
 
 void UI::spectrumBuffer(char* header,char* buffer) {
@@ -599,7 +595,6 @@ void UI::spectrumBuffer(char* header,char* buffer) {
     widget.spectrumFrame->updateSpectrumFrame(header,buffer,length);
     widget.waterfallFrame->updateWaterfall(header,buffer,length);
     connection.freeBuffers(header,buffer);
-//    connection.SemSpectrum.release();
 }
 
 void UI::audioBuffer(char* header,char* buffer) {
@@ -628,8 +623,9 @@ void UI::micSendAudio(QQueue<qint16>* queue){
         buffer[mic_buffer_count++] = queue->dequeue();
         if (mic_buffer_count >= MIC_BUFFER_SIZE) {
             mic_buffer_count = 0;
-            if (connection_valid)
-                connection.sendAudio((MIC_BUFFER_SIZE * 2), (char*) buffer);
+            // if (connection_valid)
+            //    connection.sendAudio((MIC_BUFFER_SIZE * 2), (char*) buffer);
+            //    connection.sendAudio(2,(char*) buffer);     // send a small amount of data
         }
     }
 }
