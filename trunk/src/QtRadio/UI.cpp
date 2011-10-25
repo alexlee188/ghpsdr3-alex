@@ -72,6 +72,7 @@ UI::UI() {
     configure.initMicDevices(audioinput);
 
     mic_buffer_count = 0;
+    connection_valid = FALSE;
 
     // layout the screen
     widget.gridLayout->setContentsMargins(0,0,0,0);
@@ -561,13 +562,15 @@ void UI::connected() {
     connection.SemSpectrum.release();
     spectrumTimer->start(1000/fps);
     printWindowTitle("Remote connected");
+
+    connection_valid = TRUE;
 }
 
 void UI::disconnected(QString message) {
     qDebug() << "UI::disconnected: " << message;
 
+    connection_valid = FALSE;
     spectrumTimer->stop();
-
 //    widget.statusbar->showMessage(message,0); //gvj deleted code
     printWindowTitle(message);
 //    printStatusBar(" .. at line 558");
@@ -621,14 +624,12 @@ void UI::micSendAudio(QQueue<qint16>* queue){
     qint16 buffer[MIC_BUFFER_SIZE];
 
     while(! queue->isEmpty()){
-        queue->dequeue();       // temporary for debug
-        /*
         buffer[mic_buffer_count++] = queue->dequeue();
         if (mic_buffer_count >= MIC_BUFFER_SIZE) {
             mic_buffer_count = 0;
-            connection.sendAudio((MIC_BUFFER_SIZE * 2), (char*) buffer);
+            if (connection_valid)
+                connection.sendAudio((MIC_BUFFER_SIZE * 2), (char*) buffer);
         }
-        */
     }
 }
 

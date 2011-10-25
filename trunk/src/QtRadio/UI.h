@@ -279,6 +279,8 @@ private:
 
     long long subRxFrequency;
     Connection connection;
+    bool connection_valid;
+
     Band band;
     Mode mode;
     Filters filters;
