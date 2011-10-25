@@ -584,11 +584,12 @@ void UI::disconnected(QString message) {
 
 void UI::updateSpectrum() {
     QString command;
-    if (connection.SemSpectrum.available() > 0){
+/*    if (connection.SemSpectrum.available() > 0){
         connection.SemSpectrum.acquire();
+*/
         command.clear(); QTextStream(&command) << "getSpectrum " << widget.spectrumFrame->width();
         connection.sendCommand(command);
-    }
+ //   }
 }
 
 void UI::spectrumBuffer(char* header,char* buffer) {
@@ -598,7 +599,7 @@ void UI::spectrumBuffer(char* header,char* buffer) {
     widget.spectrumFrame->updateSpectrumFrame(header,buffer,length);
     widget.waterfallFrame->updateWaterfall(header,buffer,length);
     connection.freeBuffers(header,buffer);
-    connection.SemSpectrum.release();
+//    connection.SemSpectrum.release();
 }
 
 void UI::audioBuffer(char* header,char* buffer) {

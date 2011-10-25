@@ -103,13 +103,11 @@ void Connection::connected() {
 
 void Connection::sendCommand(QString command) {
 
-    if(tcpSocket!=NULL) {
+    if(tcpSocket!=NULL && tcpSocket->isValid() && tcpSocket->isWritable()) {
         mutex.lock();
-        char buffer[64];
-        if(command.length()>=64) qDebug() << "command too long: " << command;
-        //qDebug() << "sendCommand:" << command;
+        char buffer[SEND_BUFFER_SIZE];
         strcpy(buffer,command.toUtf8().constData());
-        tcpSocket->write(buffer,64);
+        tcpSocket->write(buffer,SEND_BUFFER_SIZE);
         tcpSocket->flush();
         mutex.unlock();
     }
@@ -117,14 +115,14 @@ void Connection::sendCommand(QString command) {
 
 void Connection::sendAudio(int length, char* data) {
     QString command;
-    char buffer[64];
+    char buffer[SEND_BUFFER_SIZE];
 
-    if(tcpSocket!=NULL && tcpSocket->isValid()) {
+    if(tcpSocket!=NULL && tcpSocket->isValid() && tcpSocket->isWritable()) {
         QTextStream(&command) << "mic ";
         strcpy(buffer,command.toUtf8().constData());
-        memcpy(&buffer[4], data, length);
+        memcpy(&buffer[4], data, (length > (SEND_BUFFER_SIZE - 4)) ? (SEND_BUFFER_SIZE - 4): length);
         mutex.lock();
-//      tcpSocket->write(buffer,64);
+        tcpSocket->write(buffer,SEND_BUFFER_SIZE);
         tcpSocket->flush();
         mutex.unlock();
     }

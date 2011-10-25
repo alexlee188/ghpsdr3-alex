@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Connection.h
  * Author: John Melton, G0ORX/N6LYT
  *
@@ -43,6 +43,8 @@
 #define HEADER_SIZE 48
 #define AUDIO_HEADER_SIZE 14
 #define AUDIO_LENGTH_POSITION 1
+
+#define SEND_BUFFER_SIZE 64
 
 #define READ_HEADER 0
 #define READ_BUFFER 1

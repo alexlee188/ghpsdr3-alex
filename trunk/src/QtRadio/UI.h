@@ -71,7 +71,7 @@
 
 #define DSPSERVER_BASE_PORT 8000
 
-#define MIC_BUFFER_SIZE 25        // 2 bytes per Mic sample --> 50 bytes
+#define MIC_BUFFER_SIZE 28        // 2 bytes per Mic sample --> 56 bytes
 
 #define AGC_LONG 1
 #define AGC_SLOW 2
