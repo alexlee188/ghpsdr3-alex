@@ -59,7 +59,7 @@ public:
     virtual ~Connection();
     void connect(QString host,int receiver);
     void sendCommand(QString command);
-    void sendAudio(int length,char* buffer);
+    void sendAudio(int length,unsigned char* buffer);
     void freeBuffers(char* header,char* buffer);
     QSemaphore SemSpectrum;
 

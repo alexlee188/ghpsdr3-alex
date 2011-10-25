@@ -617,15 +617,16 @@ void UI::audioBuffer(char* header,char* buffer) {
  }
 
 void UI::micSendAudio(QQueue<qint16>* queue){
-    qint16 buffer[MIC_BUFFER_SIZE];
+    qint16 buffer[CODEC2_SAMPLES_PER_FRAME];
+    unsigned char bits[BITS_SIZE];
 
     while(! queue->isEmpty()){
         buffer[mic_buffer_count++] = queue->dequeue();
-        if (mic_buffer_count >= MIC_BUFFER_SIZE) {
+        if (mic_buffer_count >= CODEC2_SAMPLES_PER_FRAME) {
             mic_buffer_count = 0;
-            // if (connection_valid)
-            //    connection.sendAudio((MIC_BUFFER_SIZE * 2), (char*) buffer);
-            //    connection.sendAudio(2,(char*) buffer);     // send a small amount of data
+            codec2_encode(codec2, bits, buffer);
+            if (connection_valid)
+                connection.sendAudio(BITS_SIZE,bits);
         }
     }
 }
