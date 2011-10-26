@@ -327,4 +327,11 @@ void Audio::init_decodetable() {
     }
 }
 
-
+void Audio::setSpkrMuteState(bool state)
+{
+    if(state) {
+        audio_output->suspend();
+    } else {
+        audio_output->resume();
+    }
+}

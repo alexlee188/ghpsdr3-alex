@@ -1837,7 +1837,7 @@ void UI::vfoStepBtnClicked(int direction)
     long long f;
     int samplerate = widget.spectrumFrame->samplerate();
 
-qDebug()<<Q_FUNC_INFO<<": vfo up or down button clicked. Direction = "<<direction<<", samplerate = "<<samplerate;
+//qDebug()<<Q_FUNC_INFO<<": vfo up or down button clicked. Direction = "<<direction<<", samplerate = "<<samplerate;
     switch ( samplerate )
     {
         case 24000 : f = 20000; break;
@@ -1850,11 +1850,18 @@ qDebug()<<Q_FUNC_INFO<<": vfo up or down button clicked. Direction = "<<directio
     frequencyMoved(f, direction);
 }
 
-// The ptt service has been activated. 0 = MOX, 1 = Tune, 2 = VOX, 3 = Extern H'ware
+// The ptt service has been activated. Caller values, 0 = MOX, 1 = Tune, 2 = VOX, 3 = Extern H'ware
 void UI::pttChange(int caller, bool ptt)
 {
+    QString command;
+
     txPwr = widget.ctlFrame->getTxPwr();
     txFrequency = widget.vfoFrame->getTxFrequency();
     widget.vfoFrame->setVfoBtnColour(ptt);
     qDebug()<<Q_FUNC_INFO<<": Caller = "<<caller<<", and ptt = "<<ptt<<", txPwr = "<<txPwr<<", txFrequency = "<<txFrequency;
+    if(ptt) { // Going from Rx to Tx
+        audio->setSpkrMuteState(true);
+    } else { // Going from Tx to Rx
+        audio->setSpkrMuteState(false);
+    }
 }
