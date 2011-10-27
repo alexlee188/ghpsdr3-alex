@@ -33,6 +33,7 @@ Connection::Connection() {
     hdr=(char*)malloc(HEADER_SIZE);  // HEADER_SIZE is larger than AUTIO_HEADER_SIZE so it is OK
                                     // for both
     SemSpectrum.release();
+    muted = false;
 }
 
 Connection::Connection(const Connection& orig) {
@@ -203,6 +204,9 @@ void Connection::processBuffer() {
     char* nextHeader;
     char* nextBuffer;
 
+    if(muted) { // If Rx muted, clear queue and don't process buffer - gvj
+        queue.clear();
+    }
     while (!queue.isEmpty()){
         buffer=queue.dequeue();
         nextHeader=buffer->getHeader();
@@ -227,4 +231,10 @@ void Connection::processBuffer() {
 void Connection::freeBuffers(char* header,char* buffer) {
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);
+}
+
+// added by gvj
+void Connection::setMuted(bool muteState)
+{
+    muted = muteState;
 }

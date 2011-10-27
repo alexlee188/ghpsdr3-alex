@@ -46,7 +46,6 @@ public:
     Audio(void * codec2);
 //    Audio(const Audio& orig);
     virtual ~Audio();
-    void setSpkrMuteState(bool);
 
 signals:
 

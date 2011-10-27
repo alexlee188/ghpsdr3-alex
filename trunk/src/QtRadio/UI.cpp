@@ -1860,8 +1860,8 @@ void UI::pttChange(int caller, bool ptt)
     widget.vfoFrame->setVfoBtnColour(ptt);
     qDebug()<<Q_FUNC_INFO<<": Caller = "<<caller<<", and ptt = "<<ptt<<", txPwr = "<<txPwr<<", txFrequency = "<<txFrequency;
     if(ptt) { // Going from Rx to Tx
-        audio->setSpkrMuteState(true);
+        connection.setMuted(true);
     } else { // Going from Tx to Rx
-        audio->setSpkrMuteState(false);
+        connection.setMuted(false);
     }
 }

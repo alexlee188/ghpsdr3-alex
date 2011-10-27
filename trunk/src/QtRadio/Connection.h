@@ -62,6 +62,7 @@ public:
     void sendAudio(int length,unsigned char* buffer);
     void freeBuffers(char* header,char* buffer);
     QSemaphore SemSpectrum;
+    void setMuted(bool);
 
 public slots:
     void connected();
@@ -89,6 +90,7 @@ private:
     char* buffer;
     int length;
     int bytes;
+    bool muted;
 
     QQueue<Buffer*> queue;
 };
