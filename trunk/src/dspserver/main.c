@@ -228,6 +228,7 @@ int main(int argc,char* argv[]) {
     client_init(receiver);
     spectrum_init();
     audio_stream_init(receiver);
+    tx_init();
 
     codec2 = codec2_create();
 

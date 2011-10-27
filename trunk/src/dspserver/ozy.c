@@ -240,14 +240,17 @@ fprintf(stderr,"missing IQ frames\n");
             audio_stream_put_samples(left_rx_sample,right_rx_sample);
         }
 
-/*	// removed by Alex 18 Aug 2010
-        // send the audio back to the server
+	// send Audio to server
+	// right now is decoded audio
+	// to be changed to Tx IQ
+
+	int bytes_written;
         bytes_written=sendto(audio_socket,output_buffer,sizeof(output_buffer),0,(struct sockaddr *)&audio_addr,audio_length);
         if(bytes_written<0) {
            fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
            exit(1);
         }
-*/
+
 
     }
 }

@@ -57,7 +57,7 @@ static int timing=0;
 static struct timeb start_time;
 static struct timeb end_time;
 
-static pthread_t client_thread_id, spectrum_thread_id;
+static pthread_t client_thread_id, spectrum_thread_id, tx_thread_id;
 
 static int client_terminate=0;
 
@@ -79,8 +79,10 @@ static float subrx_meter;
 int encoding = 0;
 
 static sem_t network_semaphore, get_spectrum_semaphore, ready_spectrum_semaphore;
+static sem_t get_mic_semaphore, ready_mic_semaphore;
 
 void* client_thread(void* arg);
+void* tx_thread(void* arg);
 
 void client_send_samples(int size);
 void client_set_samples(float* samples,int size);
@@ -123,6 +125,29 @@ audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels*2)+AUDIO_B
         fprintf(stderr,"pthread_create failed on client_thread: rc=%d\n", rc);
     }
 
+}
+
+void tx_init(){
+    int rc;
+
+    sem_init(&get_mic_semaphore,0,1);
+    sem_init(&ready_mic_semaphore,0,1);
+    sem_post(&ready_mic_semaphore);
+    signal(SIGPIPE, SIG_IGN);
+    fprintf(stderr,"tx_init\n");
+    rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
+    if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
+    sleep(2);
+    sem_post(&get_mic_semaphore);
+}
+
+void *tx_thread(void *arg){
+     while (1){
+        sem_wait(&get_mic_semaphore);
+        sleep(1);
+        fprintf(stderr,"tx_thread called...\n");
+        sem_post(&ready_mic_semaphore);
+	}
 }
 
 void spectrum_init() {
@@ -252,6 +277,7 @@ if(timing) {
                        i++;
                     }
                     if(strcmp(token,"mic")==0){		// This is incoming microphone data
+
 			}
                     else if(strcmp(token,"getspectrum")==0) {
                         token=strtok(NULL," ");
