@@ -176,7 +176,7 @@ void *tx_thread(void *arg){
 	fprintf(stderr,"codec2 decoding done...\n");
 	for (i=0; i < CODEC2_SAMPLES_PER_FRAME; i++){
 		// mic data is mono, so copy to both right and left channels
-		tx_buffer[tx_buffer_counter] = tx_buffer[tx_buffer_counter+TX_BUFFER_SIZE] = (float)codec2_buffer[i] / 32768.0;
+		tx_buffer[tx_buffer_counter] = tx_buffer[tx_buffer_counter+TX_BUFFER_SIZE] = (float)codec2_buffer[i] / 32767.0;
 		tx_buffer_counter++;
 		if (tx_buffer_counter >= TX_BUFFER_SIZE){
 			// send Tx IQ to server
