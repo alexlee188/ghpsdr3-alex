@@ -162,10 +162,14 @@ void tx_init(){
 }
 
 void *tx_thread(void *arg){
-    unsigned char bits[BITS_SIZE];
-    short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
-    int tx_buffer_counter = 0;
-    int i;
+   unsigned char bits[BITS_SIZE];
+   short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
+   int tx_buffer_counter = 0;
+   int rc;
+   int j, i;
+   float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
+   float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz / 8khz = 24
+   SRC_DATA data;
 
     while (1){
         sem_wait(&get_mic_semaphore);
@@ -174,22 +178,39 @@ void *tx_thread(void *arg){
 	memcpy(bits, mic_buffer, BITS_SIZE);		// right now only one frame per buffer
 	codec2_decode(codec2, codec2_buffer, bits);
 	fprintf(stderr,"codec2 decoding done...\n");
-	for (i=0; i < CODEC2_SAMPLES_PER_FRAME; i++){
-		// mic data is mono, so copy to both right and left channels
-		tx_buffer[tx_buffer_counter] = tx_buffer[tx_buffer_counter+TX_BUFFER_SIZE] = (float)codec2_buffer[i] / 32767.0;
-		tx_buffer_counter++;
-		if (tx_buffer_counter >= TX_BUFFER_SIZE){
-			// send Tx IQ to server
-			int bytes_written;
-			bytes_written=sendto(audio_socket,tx_buffer,sizeof(tx_buffer),0,(struct sockaddr *)&audio_addr,audio_length);
-			if(bytes_written<0) {
-			   fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
-			   exit(1);
+	// mic data is mono, so copy to both right and left channels
+           for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
+              data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
+           }
+
+           data.data_in = data_in;
+           data.input_frames = CODEC2_SAMPLES_PER_FRAME;
+
+           data.data_out = data_out;
+           data.output_frames = CODEC2_SAMPLES_PER_FRAME*24 ;
+           data.src_ratio = mic_src_ratio;
+           data.end_of_input = 0;
+
+           rc = src_process (mic_sr_state, &data) ;
+           if (rc) {
+               fprintf (stderr,"SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
+           } else {
+		for (i=0; i < data.output_frames_gen; i++){
+
+			tx_buffer[tx_buffer_counter++] = data_out[i];
+			if (tx_buffer_counter >= (TX_BUFFER_SIZE*2)){
+				// send Tx IQ to server, stereo interleaved
+				int bytes_written;
+				bytes_written=sendto(audio_socket,tx_buffer,sizeof(tx_buffer),0,(struct sockaddr *)&audio_addr,audio_length);
+				if(bytes_written<0) {
+				   fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
+				   exit(1);
+				}
+				fprintf(stderr,"send tx IQ to server: num of bytes = %d\n", bytes_written);
+				tx_buffer_counter = 0;
 			}
-			fprintf(stderr,"send tx IQ to server: num of bytes = %d\n", bytes_written);
-			tx_buffer_counter = 0;
 		}
-	}
+	    } // end else rc
 
         sem_post(&ready_mic_semaphore);
 	}

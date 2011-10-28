@@ -40,4 +40,6 @@ void printcountry();
 void setprintcountry();
 void printcountrythread();
 
+extern double mic_src_ratio;
+
 #endif
