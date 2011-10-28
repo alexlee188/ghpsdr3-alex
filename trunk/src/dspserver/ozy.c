@@ -661,7 +661,8 @@ int ozy_init() {
         exit(1);
     }
 
-        // create sample rate subobjet
+        // create sample rate subobject
+        src_ratio = 48000.0 / ((double) sampleRate) ;
         int sr_error;
         sr_state = src_new (
                              //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
@@ -673,9 +674,9 @@ int ozy_init() {
                            ) ;
 
         if (sr_state == 0) { 
-            fprintf (stderr, "setSpeed: SR INIT ERROR: %s\n", src_strerror (sr_error)); 
+            fprintf (stderr, "ozy_init: SR INIT ERROR: %s\n", src_strerror (sr_error)); 
         } else {
-            fprintf (stderr, "setSpeed: sample rate init successfully at ratio: %f.\n", src_ratio); 
+            fprintf (stderr, "ozy_init: sample rate init successfully at ratio: %f\n", src_ratio); 
         }
 
 

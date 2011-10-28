@@ -41,6 +41,7 @@
 #include <math.h>
 #include <time.h>
 #include <sys/timeb.h>
+#include <samplerate.h>
 
 #include "client.h"
 #include "ozy.h"
@@ -80,7 +81,14 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static float tx_buffer[TX_BUFFER_SIZE*2];
 
 #define MIC_BUFFER_SIZE  BITS_SIZE
-static char mic_buffer[MIC_BUFFER_SIZE];
+static unsigned char mic_buffer[MIC_BUFFER_SIZE];
+
+//
+// samplerate library data structures
+//
+SRC_STATE *mic_sr_state;
+SRC_DATA  *mic_sr_data;
+double mic_src_ratio;
 
 static float meter;
 static float subrx_meter;
@@ -130,22 +138,58 @@ void tx_init(){
     sem_init(&ready_mic_semaphore,0,1);
     sem_post(&ready_mic_semaphore);
     signal(SIGPIPE, SIG_IGN);
-    fprintf(stderr,"tx_init\n");
+
+	mic_src_ratio = (double) sampleRate / 8000.0;
+       // create sample rate subobject
+        int sr_error;
+        mic_sr_state = src_new (
+                             //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
+                             //SRC_SINC_MEDIUM_QUALITY,
+                             SRC_SINC_FASTEST,
+                             //SRC_ZERO_ORDER_HOLD,
+                             //SRC_LINEAR,
+                             2, &sr_error
+                           ) ;
+
+        if (mic_sr_state == 0) { 
+            fprintf (stderr, "tx_init: SR INIT ERROR: %s\n", src_strerror (sr_error)); 
+        } else {
+            fprintf (stderr, "tx_init: sample rate init successful with ratio of : %f\n", mic_src_ratio);
+	}
+
     rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
     if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
 }
 
 void *tx_thread(void *arg){
-     while (1){
-        sem_wait(&get_mic_semaphore);
+    unsigned char bits[BITS_SIZE];
+    short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
+    int tx_buffer_counter = 0;
+    int i;
 
-	// send Tx IQ to server
-	int bytes_written;
-        bytes_written=sendto(audio_socket,tx_buffer,sizeof(tx_buffer),0,(struct sockaddr *)&audio_addr,audio_length);
-        if(bytes_written<0) {
-           fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
-           exit(1);
-        }
+    while (1){
+        sem_wait(&get_mic_semaphore);
+	fprintf(stderr,"mic samples arrived...\n");
+	// process codec2 encoded mic_buffer
+	memcpy(bits, mic_buffer, BITS_SIZE);		// right now only one frame per buffer
+	codec2_decode(codec2, codec2_buffer, bits);
+	fprintf(stderr,"codec2 decoding done...\n");
+	for (i=0; i < CODEC2_SAMPLES_PER_FRAME; i++){
+		// mic data is mono, so copy to both right and left channels
+		tx_buffer[tx_buffer_counter] = tx_buffer[tx_buffer_counter+TX_BUFFER_SIZE] = (float)codec2_buffer[i] / 32768.0;
+		tx_buffer_counter++;
+		if (tx_buffer_counter >= TX_BUFFER_SIZE){
+			// send Tx IQ to server
+			int bytes_written;
+			bytes_written=sendto(audio_socket,tx_buffer,sizeof(tx_buffer),0,(struct sockaddr *)&audio_addr,audio_length);
+			if(bytes_written<0) {
+			   fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
+			   exit(1);
+			}
+			fprintf(stderr,"send tx IQ to server: num of bytes = %d\n", bytes_written);
+			tx_buffer_counter = 0;
+		}
+	}
 
         sem_post(&ready_mic_semaphore);
 	}
