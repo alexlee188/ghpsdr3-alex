@@ -74,6 +74,13 @@ static socklen_t addrlen;
 #define SAMPLE_BUFFER_SIZE 4096
 static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 
+#define TX_BUFFER_SIZE 1024
+// same as BUFFER_SIZE defined in softrock server
+static float tx_buffer[TX_BUFFER_SIZE*2];
+
+#define MIC_BUFFER_SIZE  BITS_SIZE
+static char mic_buffer[MIC_BUFFER_SIZE];
+
 static float meter;
 static float subrx_meter;
 int encoding = 0;
@@ -102,19 +109,7 @@ void client_init(int receiver) {
     int rc;
 
     sem_init(&network_semaphore,0,1);
-
     signal(SIGPIPE, SIG_IGN);
-
-    if (encoding == 0) {
-audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
-}
-    else if (encoding == 1) {
-audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels*2)+AUDIO_BUFFER_HEADER_SIZE); // 2 byte PCM
-	}
-    else {	// encoding = Codec 2
-	audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
-	audio_buffer=(unsigned char*)malloc(audio_buffer_size*audio_channels + AUDIO_BUFFER_HEADER_SIZE);
-	};
 
     fprintf(stderr,"client_init audio_buffer_size=%d\n",audio_buffer_size);
 
@@ -137,15 +132,20 @@ void tx_init(){
     fprintf(stderr,"tx_init\n");
     rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
     if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
-    sleep(2);
-    sem_post(&get_mic_semaphore);
 }
 
 void *tx_thread(void *arg){
      while (1){
         sem_wait(&get_mic_semaphore);
-        sleep(1);
-        fprintf(stderr,"tx_thread called...\n");
+
+	// send Tx IQ to server
+	int bytes_written;
+        bytes_written=sendto(audio_socket,tx_buffer,sizeof(tx_buffer),0,(struct sockaddr *)&audio_addr,audio_length);
+        if(bytes_written<0) {
+           fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
+           exit(1);
+        }
+
         sem_post(&ready_mic_semaphore);
 	}
 }
@@ -192,7 +192,7 @@ void* client_thread(void* arg) {
     char *token;
     int i;
     int bytesRead;
-    char message[64];
+    char message[65];		// to allow for up to 64 bytes client message plus one byte for null terminating string
     int on=1;
 
 fprintf(stderr,"client_thread\n");
@@ -218,8 +218,8 @@ fprintf(stderr,"client_thread\n");
 
 fprintf(stderr,"client_thread: listening on port %d\n",port);
     if (listen(serverSocket, 5) == -1) {
-        perror("client listen");
-        exit(1);
+	perror("client listen");
+	exit(1);
     }
 
     while(1) {
@@ -262,13 +262,13 @@ if(timing) ftime(&start_time);
                 }
                 message[bytesRead]=0;			// for Linux strings terminating in NULL
 
-//fprintf(stderr,"Message: %s\n",message);
-if(timing) {
-    ftime(&end_time);
-    fprintf(stderr,"%s\n",message);
-    fprintf(stderr,"command after %ld ms\n",((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
-    ftime(&start_time);
-}
+		if(timing) {
+		    ftime(&end_time);
+		    fprintf(stderr,"%s\n",message);
+		    fprintf(stderr,"command after %ld ms\n",\
+		    ((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
+		    ftime(&start_time);
+		}
                 token=strtok(message," ");
                     if(token!=NULL) {
                     i=0;
@@ -277,7 +277,9 @@ if(timing) {
                        i++;
                     }
                     if(strcmp(token,"mic")==0){		// This is incoming microphone data
-
+			sem_wait(&ready_mic_semaphore);
+			memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
+			sem_post(&get_mic_semaphore);
 			}
                     else if(strcmp(token,"getspectrum")==0) {
                         token=strtok(NULL," ");
@@ -445,11 +447,12 @@ if(timing) {
                                 audio_channels=1;
                             }
                         }
-
-			if (encoding == 2) audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
                         
 			fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
-            updateStatus("Busy"); 
+			fprintf(stderr,"and with encoding method %d\n", encoding);
+ 
+            		updateStatus("Busy"); 
+
                         audio_stream_reset();
                         send_audio=1;
                     } else if(strcmp(token,"stopaudiostream")==0) {

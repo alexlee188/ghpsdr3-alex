@@ -29,7 +29,9 @@
 #define __CLIENT_H__
 
 extern int encoding;
+extern int tx_length;
 void client_init(int receiver);
+void tx_init(void);
 void spectrum_init();
 void *spectrum_thread(void *);
 void client_set_timing();

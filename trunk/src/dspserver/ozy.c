@@ -5,6 +5,24 @@
  * Created on 10 March 2009, 20:26
  */
 
+
+/* Copyright (C) - modifications of the original program by John Melton
+* 2011 - Alex Lee, 9V1Al
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Pl
+*/
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -124,8 +142,8 @@ static socklen_t command_length=sizeof(command_addr);
 
 int audio_socket;
 int audio_port;
-static struct sockaddr_in audio_addr;
-static socklen_t audio_length=sizeof(audio_addr);
+struct sockaddr_in audio_addr;
+socklen_t audio_length=sizeof(audio_addr);
 
 static struct sockaddr_in server_addr;
 static socklen_t server_length=sizeof(server_addr);
@@ -187,6 +205,8 @@ fprintf(stderr,"iq_thread: socket %d\n",iq_socket);
 
 
 fprintf(stderr,"output_sample_increment=%d\n",output_sample_increment);
+
+
     
     while(1) {
         int bytes_read;
@@ -198,12 +218,12 @@ fprintf(stderr,"output_sample_increment=%d\n",output_sample_increment);
                 exit(1);
             }
 
-if(ozy_debug) {
-    fprintf(stderr,"rcvd UDP packet: sequence=%lld offset=%d length=%d\n",
-            buffer.sequence, buffer.offset, buffer.length);
-}
+	   if(ozy_debug) {
+		fprintf(stderr,"rcvd UDP packet: sequence=%lld offset=%d length=%d\n",
+			buffer.sequence, buffer.offset, buffer.length);
+		}
 
-            if(buffer.offset==0) {
+           if(buffer.offset==0) {
                 offset=0;
                 sequence=buffer.sequence;
                 // start of a frame
@@ -218,7 +238,7 @@ if(ozy_debug) {
                         break;
                     }
                 } else {
-fprintf(stderr,"missing IQ frames\n");
+			fprintf(stderr,"missing IQ frames\n");
                 }
             }
         }
@@ -233,24 +253,13 @@ fprintf(stderr,"missing IQ frames\n");
         Audio_Callback (input_buffer,&input_buffer[BUFFER_SIZE],
                                 output_buffer,&output_buffer[BUFFER_SIZE], buffer_size, 0);
 
+
         // process the output
         for(j=0,c=0;j<buffer_size;j+=output_sample_increment) {
             left_rx_sample=(short)(output_buffer[j]*32767.0);
             right_rx_sample=(short)(output_buffer[j+BUFFER_SIZE]*32767.0);
             audio_stream_put_samples(left_rx_sample,right_rx_sample);
         }
-
-	// send Audio to server
-	// right now is decoded audio
-	// to be changed to Tx IQ
-
-	int bytes_written;
-        bytes_written=sendto(audio_socket,output_buffer,sizeof(output_buffer),0,(struct sockaddr *)&audio_addr,audio_length);
-        if(bytes_written<0) {
-           fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
-           exit(1);
-        }
-
 
     }
 }

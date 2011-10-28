@@ -228,12 +228,12 @@ int main(int argc,char* argv[]) {
     client_init(receiver);
     spectrum_init();
     audio_stream_init(receiver);
-    tx_init();
+    audio_stream_reset();
 
     codec2 = codec2_create();
 
-    // initialize ozy
     ozy_init();
+    tx_init();
 
     while(1) {
         sleep(10000);
