@@ -76,6 +76,7 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 
 #define TX_BUFFER_SIZE 1024
 // same as BUFFER_SIZE defined in softrock server
+// format is float left_buffer[BUFFER_SIZE] followed by right_buffer[BUFFER_SIZE] non-interleaved
 static float tx_buffer[TX_BUFFER_SIZE*2];
 
 #define MIC_BUFFER_SIZE  BITS_SIZE
