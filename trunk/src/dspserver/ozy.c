@@ -161,6 +161,16 @@ int session;
 static int local_audio=0;
 static int port_audio=0;
 
+#include <samplerate.h>
+//
+// samplerate library data structures
+//
+SRC_STATE *sr_state;
+SRC_DATA  *sr_data;
+double src_ratio;
+
+
+
 void dump_udp_buffer(unsigned char* buffer);
 
 void* iq_thread(void* arg) {
@@ -205,8 +215,6 @@ fprintf(stderr,"iq_thread: socket %d\n",iq_socket);
 
 
 fprintf(stderr,"output_sample_increment=%d\n",output_sample_increment);
-
-
     
     while(1) {
         int bytes_read;
@@ -253,15 +261,50 @@ fprintf(stderr,"output_sample_increment=%d\n",output_sample_increment);
         Audio_Callback (input_buffer,&input_buffer[BUFFER_SIZE],
                                 output_buffer,&output_buffer[BUFFER_SIZE], buffer_size, 0);
 
+        // process the output with resampler if odd samplerate
+        if (output_sample_increment == -1) {
+           int rc;
+           int j, i;
+           float data_in [BUFFER_SIZE*2];
+           float data_out[BUFFER_SIZE*2];
+           SRC_DATA data;
+
+           assert(buffer_size<=BUFFER_SIZE);
+           for (j=0; j < buffer_size; j++) {
+              data_in [j*2]   = output_buffer[j];              //left_samples[i];
+              data_in [j*2+1] = output_buffer[j+BUFFER_SIZE];  // right_samples[i];
+           }
+
+           data.data_in = data_in;
+           data.input_frames = buffer_size ;
+
+           data.data_out = data_out;
+           data.output_frames = buffer_size ;
+           data.src_ratio = src_ratio;
+           data.end_of_input = 0;
+
+           rc = src_process (sr_state, &data) ;
+           if (rc) {
+               fprintf (stderr,"SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
+           } else {
+               for (i=0;i < data.output_frames_gen;i++) {
+                  left_rx_sample=(short)(data.data_out[i*2]*32767.0);
+                  right_rx_sample=(short)(data.data_out[i*2+1]*32767.0);
+                  audio_stream_put_samples(left_rx_sample,right_rx_sample);
+                   }
+	     }
+        }
+       	else {
+
 
         // process the output
         for(j=0,c=0;j<buffer_size;j+=output_sample_increment) {
             left_rx_sample=(short)(output_buffer[j]*32767.0);
             right_rx_sample=(short)(output_buffer[j+BUFFER_SIZE]*32767.0);
             audio_stream_put_samples(left_rx_sample,right_rx_sample);
-        }
-
-    }
+            }
+    	}
+     }
 }
 
 /* --------------------------------------------------------------------------*/
@@ -326,6 +369,17 @@ fprintf(stderr,"connect: sampleRate=%d\n",sampleRate);
                     case 192000:
                         setSpeed(SPEED_192KHZ);
                         break;
+                    case 95000:
+                        setSpeed(SPEED_95KHZ);
+                        break;
+                    case 125000:
+                        setSpeed(SPEED_125KHZ);
+                        break;
+                    case 250000:
+                        setSpeed(SPEED_250KHZ);
+                        break;
+                    default:
+                        fprintf (stderr, "make_connection: unexpected sample rate %d\n", sampleRate);
                 }
             } else {
                 fprintf(stderr,"invalid response to connect: %s\n",response);
@@ -510,6 +564,41 @@ fprintf(stderr,"setSpeed %d\n",s);
         output_sample_increment=4;
         SetSampleRate((double)sampleRate);
 //        SetRXOsc(0,0,0.0);
+        SetRXOsc(0,1, LO_offset);
+    }
+    else {
+        if(s==SPEED_95KHZ) {
+            sampleRate=95000;
+        }
+        if(s==SPEED_125KHZ) {
+            sampleRate=125000;
+        }
+        if(s==SPEED_250KHZ) {
+            sampleRate=250000;
+        }
+        output_sample_increment=-1;
+        src_ratio = 48000.0 / ((double) sampleRate) ;
+        //
+        // create sample rate subobjet
+        // sr_state defined in audiostream.c
+        int sr_error;
+        sr_state = src_new (
+                             //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
+                             //SRC_SINC_MEDIUM_QUALITY,
+                             SRC_SINC_FASTEST,
+                             //SRC_ZERO_ORDER_HOLD,
+                             //SRC_LINEAR,
+                             2, &sr_error
+                           ) ;
+
+        if (sr_state == 0) { 
+            fprintf (stderr, "setSpeed: SR INIT ERROR: %s\n", src_strerror (sr_error)); 
+        } else {
+            fprintf (stderr, "setSpeed: sample rate init successfully at ratio: %f.\n", src_ratio); 
+        }
+
+        SetSampleRate((double)sampleRate);
+        //SetRXOsc(0,0,0.0);
         SetRXOsc(0,1, LO_offset);
     }
 }
