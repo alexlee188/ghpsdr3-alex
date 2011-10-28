@@ -173,11 +173,11 @@ void *tx_thread(void *arg){
 
     while (1){
         sem_wait(&get_mic_semaphore);
-	fprintf(stderr,"mic samples arrived...\n");
+//	fprintf(stderr,"mic samples arrived...\n");
 	// process codec2 encoded mic_buffer
 	memcpy(bits, mic_buffer, BITS_SIZE);		// right now only one frame per buffer
 	codec2_decode(codec2, codec2_buffer, bits);
-	fprintf(stderr,"codec2 decoding done...\n");
+//	fprintf(stderr,"codec2 decoding done...\n");
 	// mic data is mono, so copy to both right and left channels
            for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
               data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
@@ -206,7 +206,7 @@ void *tx_thread(void *arg){
 				   fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
 				   exit(1);
 				}
-				fprintf(stderr,"send tx IQ to server: num of bytes = %d\n", bytes_written);
+			//	fprintf(stderr,"send tx IQ to server: num of bytes = %d\n", bytes_written);
 				tx_buffer_counter = 0;
 			}
 		}
