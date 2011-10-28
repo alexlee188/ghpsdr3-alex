@@ -578,24 +578,6 @@ fprintf(stderr,"setSpeed %d\n",s);
         }
         output_sample_increment=-1;
         src_ratio = 48000.0 / ((double) sampleRate) ;
-        //
-        // create sample rate subobjet
-        // sr_state defined in audiostream.c
-        int sr_error;
-        sr_state = src_new (
-                             //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
-                             //SRC_SINC_MEDIUM_QUALITY,
-                             SRC_SINC_FASTEST,
-                             //SRC_ZERO_ORDER_HOLD,
-                             //SRC_LINEAR,
-                             2, &sr_error
-                           ) ;
-
-        if (sr_state == 0) { 
-            fprintf (stderr, "setSpeed: SR INIT ERROR: %s\n", src_strerror (sr_error)); 
-        } else {
-            fprintf (stderr, "setSpeed: sample rate init successfully at ratio: %f.\n", src_ratio); 
-        }
 
         SetSampleRate((double)sampleRate);
         //SetRXOsc(0,0,0.0);
@@ -679,6 +661,24 @@ int ozy_init() {
         exit(1);
     }
 
+        // create sample rate subobjet
+        int sr_error;
+        sr_state = src_new (
+                             //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
+                             //SRC_SINC_MEDIUM_QUALITY,
+                             SRC_SINC_FASTEST,
+                             //SRC_ZERO_ORDER_HOLD,
+                             //SRC_LINEAR,
+                             2, &sr_error
+                           ) ;
+
+        if (sr_state == 0) { 
+            fprintf (stderr, "setSpeed: SR INIT ERROR: %s\n", src_strerror (sr_error)); 
+        } else {
+            fprintf (stderr, "setSpeed: sample rate init successfully at ratio: %f.\n", src_ratio); 
+        }
+
+
     // create a thread to listen for iq frames
     rc=pthread_create(&iq_thread_id,NULL,iq_thread,NULL);
     if(rc != 0) {
@@ -701,6 +701,7 @@ void ozyClose() {
         close_port_audio();
     }
 */
+    src_delete(sr_state);
 }
 
 /* --------------------------------------------------------------------------*/
