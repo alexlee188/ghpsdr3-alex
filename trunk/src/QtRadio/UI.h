@@ -94,6 +94,7 @@ public:
     void rigctlSetFreq(long long f);
     void rigctlSetMode(int newmode);
     void * codec2;
+    void * mic_codec2;
 signals:
     void initialize_audio(int length);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);

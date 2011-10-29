@@ -136,7 +136,6 @@ void tx_init(){
 
     sem_init(&get_mic_semaphore,0,1);
     sem_init(&ready_mic_semaphore,0,1);
-    sem_post(&ready_mic_semaphore);
     signal(SIGPIPE, SIG_IGN);
 
 	mic_src_ratio = (double) sampleRate / 8000.0;
@@ -170,13 +169,14 @@ void *tx_thread(void *arg){
    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz / 8khz = 24
    SRC_DATA data;
+   void *mic_codec2 = codec2_create();
 
     while (1){
         sem_wait(&get_mic_semaphore);
 //	fprintf(stderr,"mic samples arrived...\n");
 	// process codec2 encoded mic_buffer
 	memcpy(bits, mic_buffer, BITS_SIZE);		// right now only one frame per buffer
-	codec2_decode(codec2, codec2_buffer, bits);
+	codec2_decode(mic_codec2, codec2_buffer, bits);
 //	fprintf(stderr,"codec2 decoding done...\n");
 	// mic data is mono, so copy to both right and left channels
            for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
@@ -191,7 +191,8 @@ void *tx_thread(void *arg){
            data.src_ratio = mic_src_ratio;
            data.end_of_input = 0;
 
-           rc = src_process (mic_sr_state, &data) ;
+
+           rc = src_process (mic_sr_state, &data);
            if (rc) {
                fprintf (stderr,"SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
            } else {
@@ -199,14 +200,17 @@ void *tx_thread(void *arg){
 
 			tx_buffer[tx_buffer_counter++] = data_out[i];
 			if (tx_buffer_counter >= (TX_BUFFER_SIZE*2)){
+
 				// send Tx IQ to server, stereo interleaved
 				int bytes_written;
-				bytes_written=sendto(audio_socket,tx_buffer,sizeof(tx_buffer),0,(struct sockaddr *)&audio_addr,audio_length);
+				bytes_written=sendto(audio_socket,tx_buffer,sizeof(tx_buffer),0,\
+					(struct sockaddr *)&audio_addr,audio_length);
 				if(bytes_written<0) {
 				   fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
 				   exit(1);
 				}
-			//	fprintf(stderr,"send tx IQ to server: num of bytes = %d\n", bytes_written);
+				// fprintf(stderr,"send tx IQ to server: num of bytes = %d\n", bytes_written);
+
 				tx_buffer_counter = 0;
 			}
 		}
@@ -214,6 +218,8 @@ void *tx_thread(void *arg){
 
         sem_post(&ready_mic_semaphore);
 	}
+
+	codec2_destroy(mic_codec2);
 }
 
 void spectrum_init() {
@@ -338,11 +344,18 @@ if(timing) ftime(&start_time);
                 token=strtok(message," ");
  
                     if(strcmp(token,"mic")==0){		// This is incoming microphone data
+
+			/*
 			int rc = sem_trywait(&ready_mic_semaphore);
 			if (rc == 0){
 			memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
 			sem_post(&get_mic_semaphore);
 			} else fprintf(stderr,"mic data processing blocking...\n");
+			*/
+
+			sem_wait(&ready_mic_semaphore);				// this will block
+			memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
+			sem_post(&get_mic_semaphore);
 		    }
                     else {
                     	if(token!=NULL) {

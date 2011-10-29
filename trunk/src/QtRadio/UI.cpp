@@ -68,7 +68,9 @@ UI::UI() {
     audio->moveToThread(audio_thread);
     audio_thread->start(QThread::TimeCriticalPriority);
 
-    audioinput = new AudioInput(0, codec2);
+    mic_codec2 = codec2_create();
+    audioinput = new AudioInput(0, mic_codec2); // separate codec2 state so both audio and audioinput
+                                                // can run concurrently in separate threads
     configure.initMicDevices(audioinput);
 
     mic_buffer_count = 0;
