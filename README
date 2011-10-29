@@ -66,6 +66,7 @@ libusb-0.1-4
 libfftw3-dev
 portaudio19-dev
 libpulse-dev
+libsamplerate0-dev
 
 
 Building the software
