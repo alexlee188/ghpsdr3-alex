@@ -109,7 +109,7 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 		audio_buffer[audio_stream_buffer_insert*2+1+AUDIO_BUFFER_HEADER_SIZE] = (left_sample/2+right_sample/2) >> 8;
 		}
 	    else if (encoding == 2) {
-		codec2_buffer[audio_stream_buffer_insert+AUDIO_BUFFER_HEADER_SIZE] = (left_sample+right_sample)/2;
+		codec2_buffer[audio_stream_buffer_insert] = (left_sample+right_sample)/2;
 		}
             else {
 		audio_buffer[audio_stream_buffer_insert+AUDIO_BUFFER_HEADER_SIZE]=alaw((left_sample+right_sample)/2); //encoding == others
