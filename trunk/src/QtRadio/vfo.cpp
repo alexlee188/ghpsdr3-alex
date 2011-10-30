@@ -183,7 +183,7 @@ void vfo::mousePressEvent(QMouseEvent *event)
 //qDebug()<<Q_FUNC_INFO<<": vfoB and subRx mode";
 //                }
                 else if(selectedVFO == 'B') {
-                        emit frequencyMoved(freq, -1);
+                        emit frequencyMoved(freq, 1);
 //qDebug()<<Q_FUNC_INFO<<": Line 187 ... vfoB, emit frequencyMoved(freq, 1) = "<<freq;
                 }
                 else {
