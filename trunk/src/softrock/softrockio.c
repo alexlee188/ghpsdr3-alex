@@ -261,6 +261,7 @@ int softrock_close() {
 int softrock_write(float* left_samples,float* right_samples) {
     int rc;
     int i;
+    int error;
     float audio_buffer[SAMPLES_PER_BUFFER*2];
 
     rc=0;
@@ -271,7 +272,8 @@ int softrock_write(float* left_samples,float* right_samples) {
         audio_buffer[(i*2)+1]=left_samples[i];
     }
 
-    // need to add writing
+    rc = pa_simple_write(stream, audio_buffer, sizeof(audio_buffer),&error);
+    if (rc < 0) fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n", pa_strerror(error), rc);
     return rc;
 }
 

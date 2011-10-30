@@ -76,7 +76,7 @@ char* parse_command(CLIENT* client,char* command) {
     
     char* token;
 
-		fprintf(stderr,"parse_command: '%s'\n",command);
+    fprintf(stderr,"parse_command: '%s'\n",command);
 
     token=strtok(command," \r\n");
     if(token!=NULL) {
@@ -114,16 +114,16 @@ char* parse_command(CLIENT* client,char* command) {
                     token=strtok(NULL," \r\n");
                     if(token!=NULL) {
                         client->iq_port=atoi(token);
-                    }
+                    	}
+		    }
 #ifdef JACKAUDIO
-									if(softrock_get_jack() == 0) 
+		if(softrock_get_jack() == 0) 
 #endif
-										{ //not running jack audio
+		{ //not running jack audio
                     if(pthread_create(&receiver[client->receiver].audio_thread_id,NULL,audio_thread,&receiver[client->receiver])!=0) {
-                        fprintf(stderr,"failed to create audio thread for rx %d\n",client->receiver);
+                        fprintf(stderr,"failed to create audio thread for tx %d\n",client->receiver);
                         exit(1);
                     }
-									}
                     return OK;
                 } else if(strcmp(token,"bandscope")==0) {
                     token=strtok(NULL," \r\n");
@@ -169,6 +169,7 @@ char* parse_command(CLIENT* client,char* command) {
     return 0;
 }
 
+					
 
 void* audio_thread(void* arg) {
     RECEIVER *rx=(RECEIVER*)arg;
@@ -178,7 +179,7 @@ void* audio_thread(void* arg) {
     int bytes_read;
     int on=1;
 
-		fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
+    fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);
@@ -202,7 +203,7 @@ void* audio_thread(void* arg) {
         exit(1);
     }
 
-    fprintf(stderr,"listening for rx %d audio on port %d\n",rx->id,audio_port+(rx->id*2));
+    fprintf(stderr,"listening for tx %d IQ audio on port %d\n",rx->id,audio_port+(rx->id*2));
 
     while(1) {
         // get audio from a client

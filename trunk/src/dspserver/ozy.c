@@ -77,14 +77,8 @@ int buffer_size=BUFFER_SIZE;
 float input_buffer[BUFFER_SIZE*2];
 float output_buffer[BUFFER_SIZE*2];
 
-//float left_input_buffer[BUFFER_SIZE];
-//float right_input_buffer[BUFFER_SIZE];
-
 float mic_left_buffer[BUFFER_SIZE];
 float mic_right_buffer[BUFFER_SIZE];
-
-//float left_output_buffer[BUFFER_SIZE];
-//float right_output_buffer[BUFFER_SIZE];
 
 float left_tx_buffer[BUFFER_SIZE];
 float right_tx_buffer[BUFFER_SIZE];
@@ -210,7 +204,7 @@ void* iq_thread(void* arg) {
         exit(1);
     }
 
-    fprintf(stderr,"ozy_init: iq bound to port %d socket=%d\n",iq_addr.sin_port,iq_socket);
+    fprintf(stderr,"ozy_init: iq bound to port %d socket=%d\n",htons(iq_addr.sin_port),iq_socket);
 
 fprintf(stderr,"iq_thread: socket %d\n",iq_socket);
 
@@ -628,19 +622,32 @@ int ozy_init() {
 
     fprintf(stderr,"ozy_init: command bound to port %d socket %d\n",ntohs(command_addr.sin_port),command_socket);
 
+
+
     // create a socket to send audio to the server
     audio_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
     if(audio_socket<0) {
         perror("ozy_init: create audio socket failed");
         exit(1);
     }
+    // setsockopt(iq_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
     memset(&audio_addr,0,audio_length);
 
-    audio_addr.sin_family=AF_INET;
+    //audio_addr.sin_family=AF_INET;
     audio_addr.sin_family=h->h_addrtype;
     memcpy((char *)&audio_addr.sin_addr.s_addr,h->h_addr_list[0],h->h_length);
     audio_addr.sin_port=htons(AUDIO_PORT+(receiver*2));
+
+/*
+    if(bind(audio_socket,(struct sockaddr*)&audio_addr,audio_length)<0) {
+        perror("ozy_init: bind socket failed for audio socket");
+        exit(1);
+    }
+
+    fprintf(stderr,"ozy_init: audio bound to port %d socket=%d\n",ntohs(audio_addr.sin_port),audio_socket);
+*/
+
 
     // setup the server address
     memset(&server_addr,0,server_length);
