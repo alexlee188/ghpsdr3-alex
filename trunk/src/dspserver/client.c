@@ -25,6 +25,23 @@
 * 
 */
 
+/* Copyright (C) - modifications of the original program by John Melton
+* 2011 - Alex Lee, 9V1Al
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Pl
+*/
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -87,7 +104,6 @@ static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 // samplerate library data structures
 //
 SRC_STATE *mic_sr_state;
-SRC_DATA  *mic_sr_data;
 double mic_src_ratio;
 
 static float meter;
@@ -173,11 +189,9 @@ void *tx_thread(void *arg){
 
     while (1){
         sem_wait(&get_mic_semaphore);
-//	fprintf(stderr,"mic samples arrived...\n");
 	// process codec2 encoded mic_buffer
 	memcpy(bits, mic_buffer, BITS_SIZE);		// right now only one frame per buffer
 	codec2_decode(mic_codec2, codec2_buffer, bits);
-//	fprintf(stderr,"codec2 decoding done...\n");
 	// mic data is mono, so copy to both right and left channels
            for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
               data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
@@ -197,8 +211,9 @@ void *tx_thread(void *arg){
                fprintf (stderr,"SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
            } else {
 		for (i=0; i < data.output_frames_gen; i++){
-
-			tx_buffer[tx_buffer_counter++] = data_out[i];
+			// tx_buffer is non-interleaved, LEFT followed by RIGHT data
+			tx_buffer[tx_buffer_counter] = data_out[2*i];
+			tx_buffer[tx_buffer_counter + TX_BUFFER_SIZE] = data_out[2*i+1];
 			if (tx_buffer_counter >= (TX_BUFFER_SIZE*2)){
 
 				// send Tx IQ to server, stereo interleaved
