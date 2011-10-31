@@ -210,12 +210,14 @@ void* audio_thread(void* arg) {
             exit(1);
         }
 
+/*
 #ifdef JACKAUDIO
-				if(softrock_get_jack () == 1) 
+	if(softrock_get_jack () == 1) 
 #endif
-				{
-        	process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
-				}
+*/
+	{
+        process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
+	}
     }
 }
 

@@ -64,7 +64,7 @@ static int sample_count=0;
 #endif
 
 #ifdef PULSEAUDIO
-static pa_simple* stream;
+static pa_simple *stream, *playback_stream;
 #endif
 #ifdef PORTAUDIO
 static PaStream* stream;
@@ -117,13 +117,20 @@ fprintf(stderr,"softrock_open: %s\n",softrock_get_device());
     attrs.fragsize=SAMPLES_PER_BUFFER*2 * sizeof(float);
     attrs.tlength=SAMPLES_PER_BUFFER*2 * sizeof(float);
 
-fprintf(stderr,"params.rate=%d\n",params.rate);
+    fprintf(stderr,"params.rate=%d\n",params.rate);
 
     stream=pa_simple_new("localhost","Softrock", PA_STREAM_RECORD, NULL, "IQ", &params, NULL, &attrs, &error);
     if(stream==NULL) {
         fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
         exit(0);
     }
+    playback_stream=pa_simple_new("localhost","Softrock", PA_STREAM_PLAYBACK, NULL, "IQ", &params, NULL, &attrs, &error);
+    if(playback_stream==NULL) {
+        fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
+        exit(0);
+    }
+
+
     ftime(&start_time);
 #endif
 #ifdef PORTAUDIO
@@ -272,7 +279,7 @@ int softrock_write(float* left_samples,float* right_samples) {
         audio_buffer[(i*2)+1]=left_samples[i];
     }
 
-    rc = pa_simple_write(stream, audio_buffer, sizeof(audio_buffer),&error);
+    rc = pa_simple_write(playback_stream, audio_buffer, sizeof(audio_buffer),&error);
     if (rc < 0) fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n", pa_strerror(error), rc);
     return rc;
 }
