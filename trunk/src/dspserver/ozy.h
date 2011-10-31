@@ -269,8 +269,8 @@ int ozySetMox(int state);
 int ozySetOpenCollectorOutputs(char* state);
 
 extern int audio_socket;
-extern struct sockaddr_in audio_addr;
-extern socklen_t audio_length;
+extern struct sockaddr_in audio_addr, server_audio_addr;
+extern socklen_t audio_length, server_audio_length;
 
 #endif	/* _OZY_H */
 

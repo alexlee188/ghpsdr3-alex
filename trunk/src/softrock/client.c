@@ -209,6 +209,7 @@ void* audio_thread(void* arg) {
             perror("recvfrom socket failed for audio buffer");
             exit(1);
         }
+
 #ifdef JACKAUDIO
 				if(softrock_get_jack () == 1) 
 #endif

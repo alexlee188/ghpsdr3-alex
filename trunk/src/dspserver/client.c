@@ -205,7 +205,6 @@ void *tx_thread(void *arg){
            data.src_ratio = mic_src_ratio;
            data.end_of_input = 0;
 
-
            rc = src_process (mic_sr_state, &data);
            if (rc) {
                fprintf (stderr,"SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
@@ -214,18 +213,17 @@ void *tx_thread(void *arg){
 			// tx_buffer is non-interleaved, LEFT followed by RIGHT data
 			tx_buffer[tx_buffer_counter] = data_out[2*i];
 			tx_buffer[tx_buffer_counter + TX_BUFFER_SIZE] = data_out[2*i+1];
-			if (tx_buffer_counter >= (TX_BUFFER_SIZE*2)){
-
+			tx_buffer_counter++;
+			if (tx_buffer_counter >= TX_BUFFER_SIZE){
 				// send Tx IQ to server, stereo interleaved
 				int bytes_written;
-				bytes_written=sendto(audio_socket,tx_buffer,sizeof(tx_buffer),0,\
-					(struct sockaddr *)&audio_addr,audio_length);
+				bytes_written=sendto(audio_socket,tx_buffer,sizeof(tx_buffer),0,
+					(struct sockaddr *)&server_audio_addr,server_audio_length);
 				if(bytes_written<0) {
 				   fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
 				   exit(1);
 				}
-				// fprintf(stderr,"send tx IQ to server: num of bytes = %d\n", bytes_written);
-
+				// fprintf(stderr,"bytes written = %d\n",bytes_written);
 				tx_buffer_counter = 0;
 			}
 		}
@@ -294,7 +292,7 @@ fprintf(stderr,"client_thread\n");
 
     memset(&server,0,sizeof(server));
     server.sin_family=AF_INET;
-    server.sin_addr.s_addr=INADDR_ANY;
+    server.sin_addr.s_addr=htonl(INADDR_ANY);
     server.sin_port=htons(port);
 
     if(bind(serverSocket,(struct sockaddr *)&server,sizeof(server))<0) {

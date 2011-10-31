@@ -422,7 +422,7 @@ void process_softrock_input_buffer(char* buffer) {
 
 #ifdef PULSEAUDIO
 void process_softrock_output_buffer(float* left_output_buffer,float* right_output_buffer) {
-
+    fprintf(stderr,"process_softrock_output_buffer called...\n");
     softrock_write(left_output_buffer,right_output_buffer);
     
 }

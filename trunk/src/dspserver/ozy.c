@@ -128,8 +128,7 @@ int dash=0;
 
 #define COMMAND_PORT 12000
 #define SPECTRUM_PORT 13000
-#define SERVER_AUDIO_PORT 15000
-#define AUDIO_PORT 16000
+#define AUDIO_PORT 15000
 
 int command_socket;
 int command_port;
@@ -586,6 +585,7 @@ int ozy_init() {
     int rc;
     struct hostent *h;
     int on=1;
+    int audio_on=1;
 
     h=gethostbyname(server_address);
     if(h==NULL) {
@@ -620,17 +620,17 @@ int ozy_init() {
 
 
     // create a socket to send audio to the server
-    audio_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
+    audio_socket=socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
     if(audio_socket<0) {
         perror("ozy_init: create audio socket failed");
         exit(1);
     }
-    // setsockopt(audio_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+    // setsockopt(audio_socket, SOL_SOCKET, SO_REUSEADDR, &audio_on, sizeof(audio_on));
 
     memset(&audio_addr,0,audio_length);
     audio_addr.sin_family=AF_INET;
-    audio_addr.sin_addr.s_addr = INADDR_ANY;
-    audio_addr.sin_port=htons(AUDIO_PORT+(receiver*2));
+    audio_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    audio_addr.sin_port=htons(0);
 
    if(bind(audio_socket,(struct sockaddr*)&audio_addr,audio_length)<0) {
         perror("ozy_init: bind socket failed for audio socket");
@@ -643,7 +643,9 @@ int ozy_init() {
     memset(&server_audio_addr,0,server_audio_length);
     server_audio_addr.sin_family=h->h_addrtype;
     memcpy((char *)&server_audio_addr.sin_addr.s_addr,h->h_addr_list[0],h->h_length);
-    server_audio_addr.sin_port=htons(SERVER_AUDIO_PORT+(receiver*2));
+    server_audio_addr.sin_port=htons(AUDIO_PORT+(receiver*2));
+
+    fprintf(stderr,"ozy_init: server audio is in port %d\n",ntohs(server_audio_addr.sin_port));
 
     // setup the server address and command port
     memset(&server_addr,0,server_length);
@@ -663,12 +665,6 @@ int ozy_init() {
 
     if(make_connection()) {
         fprintf(stderr,"connect failed\n");
-        exit(1);
-    }
-
-    rc=connect(audio_socket,(struct sockaddr*)&server_audio_addr,server_audio_length);
-    if(rc<0) {
-        perror("ozy_init: connect audio failed");
         exit(1);
     }
 
