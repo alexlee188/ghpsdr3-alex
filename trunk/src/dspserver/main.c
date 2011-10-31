@@ -92,6 +92,7 @@
 #include <math.h>
 #include <getopt.h>
 
+
 #include "client.h"
 #include "dttsp.h"
 #include "audiostream.h"
@@ -99,6 +100,7 @@
 #include "ozy.h"
 #include "version.h"
 #include "codec2loc.h"
+#include "register.h"
 
 char propertyPath[128];
 
@@ -109,6 +111,9 @@ struct option longOptions[] = {
     {"offset",required_argument, 0, 3},
     {"timing",no_argument, 0, 4},
     {"lookupcountry",no_argument, 0, 5},
+    {"share",no_argument, 0, 6},
+    {"shareconfig",required_argument, 0, 6},
+    
     {0,0,0,0}
 };
 
@@ -146,17 +151,29 @@ void processCommands(int argc,char** argv) {
             case 5:
                 setprintcountry();
                 break;
+            case 6:
+                home = getenv("HOME");
+                strcpy(share_config_file, home );
+                strcat(share_config_file, "/dspserver.conf");
+                break;
+            case 7:
+                strcpy(share_config_file,optarg);
+                break;
 	    default:
                 fprintf(stderr,"Usage: \n");
                 fprintf(stderr,"  dspserver --receivers N (default 1)\n");
                 fprintf(stderr,"            --server 0.0.0.0 (default 127.0.0.1)\n");
                 fprintf(stderr,"            --soundcard (machine dependent)\n");
                 fprintf(stderr,"            --offset 0 \n");
+                fprintf(stderr,"            --share (will register this server for other users \n");
+                fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
+                fprintf(stderr,"            --shareconfig filename (use alternate conf file) \n");
                 exit(1);
 
         }
     }
 }
+
 
 /* --------------------------------------------------------------------------*/
 /** 
@@ -168,14 +185,24 @@ void processCommands(int argc,char** argv) {
 * @return 
 */
 /* ----------------------------------------------------------------------------*/
+
+
+
 int main(int argc,char* argv[]) {
+        
     char directory[1024];
 
     strcpy(soundCardName,"HPSDR");
     strcpy(server_address,"127.0.0.1"); // localhost
-
+    strcpy(share_config_file, "");
     processCommands(argc,argv);
-
+    
+    // start web registration if set
+    if  (strlen(share_config_file) > 2) {  //config file must be set
+        fprintf(stderr, "Activating Web register\n");
+		init_register();
+	}
+    
     fprintf(stderr,"gHPSDR rx %d (Version %s)\n",receiver,VERSION);
 
     setSoundcard(getSoundcardId(soundCardName));

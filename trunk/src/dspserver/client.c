@@ -51,6 +51,8 @@
 #include "buffer.h"
 #include "codec2loc.h"
 
+#include "register.h"
+
 static int timing=0;
 static struct timeb start_time;
 static struct timeb end_time;
@@ -421,7 +423,7 @@ if(timing) {
 			if (encoding == 2) audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
                         
 			fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
- 
+            updateStatus("Busy"); 
                         audio_stream_reset();
                         send_audio=1;
                     } else if(strcmp(token,"stopaudiostream")==0) {
@@ -690,6 +692,7 @@ if(timing) {
             time(&tt);
             tod=localtime(&tt);
             fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnected from %s:%d\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
+            updateStatus("Idle"); 
         }
         send_audio=0;
         clientSocket=-1;
@@ -772,7 +775,21 @@ void client_set_samples(float* samples,int size) {
 
 }
 
-void printcountry()
+
+void setprintcountry()
+{
+	prncountry = 0;
+	fprintf(stderr,"Country Lookup is On\n");
+}
+
+void printcountry(){
+	pthread_t lookup_thread;
+    int t_ret1;
+    t_ret1 = pthread_create( &lookup_thread, NULL, printcountrythread, (void*) NULL);
+		
+}
+
+void printcountrythread()
 {
   // looks for the country for the connecting IP
   FILE *fp;
@@ -799,8 +816,3 @@ void printcountry()
   return;
 }
 
-void setprintcountry()
-{
-	prncountry = 0;
-	fprintf(stderr,"Country Lookup is On\n");
-}

@@ -8,7 +8,7 @@ dspserver_LDADD = ../DttSP/libDttSP.a
 
 
 
-# dspserver_LDFLAGS = -lm
+dspserver_LDFLAGS = -lconfig
 dspserver_SOURCES = main.c\
          ozy.c\
          soundcard.c\
@@ -33,4 +33,6 @@ main.h         \
 ozy.h          \
 soundcard.h    \
 splitfields.h  \
-version.h
+version.h	   \
+register.h	   \
+register.c
