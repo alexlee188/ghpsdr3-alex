@@ -43,7 +43,7 @@ void* client_thread(void* arg) {
     int bytes_read;
     char* response;
 
-		fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
+    fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
 
     client->state=RECEIVER_DETACHED;
 
@@ -55,8 +55,7 @@ void* client_thread(void* arg) {
         command[bytes_read]=0;
         response=parse_command(client,command);
         send(client->socket,response,strlen(response),0);
-
-				fprintf(stderr,"response: '%s'\n",response);
+	fprintf(stderr,"response: '%s'\n",response);
     }
 
     if(client->state==RECEIVER_ATTACHED) {
@@ -65,8 +64,7 @@ void* client_thread(void* arg) {
     }
 
     close(client->socket);
-
-		fprintf(stderr,"client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
+    fprintf(stderr,"client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
 
     free(client);
     return 0;
@@ -174,7 +172,7 @@ char* parse_command(CLIENT* client,char* command) {
 void* audio_thread(void* arg) {
     RECEIVER *rx=(RECEIVER*)arg;
     struct sockaddr_in audio;
-    int audio_length;
+    int audio_length=sizeof(audio);
     int old_state, old_type;
     int bytes_read;
     int on=1;
@@ -192,7 +190,6 @@ void* audio_thread(void* arg) {
 
     setsockopt(rx->audio_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
-    audio_length=sizeof(audio);
     memset(&audio,0,audio_length);
     audio.sin_family=AF_INET;
     audio.sin_addr.s_addr=htonl(INADDR_ANY);

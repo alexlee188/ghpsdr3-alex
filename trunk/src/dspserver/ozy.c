@@ -128,7 +128,8 @@ int dash=0;
 
 #define COMMAND_PORT 12000
 #define SPECTRUM_PORT 13000
-#define AUDIO_PORT 15000
+#define SERVER_AUDIO_PORT 15000
+#define AUDIO_PORT 16000
 
 int command_socket;
 int command_port;
@@ -139,6 +140,9 @@ int audio_socket;
 int audio_port;
 struct sockaddr_in audio_addr;
 socklen_t audio_length=sizeof(audio_addr);
+
+struct sockaddr_in server_audio_addr;
+socklen_t server_audio_length=sizeof(server_audio_addr);
 
 static struct sockaddr_in server_addr;
 static socklen_t server_length=sizeof(server_addr);
@@ -172,17 +176,12 @@ void* iq_thread(void* arg) {
     //int bytes_written;
     int iq_socket;
     struct sockaddr_in iq_addr;
-    int iq_length;
-//    struct sockaddr_in client_addr;
-//    int client_length;
+    int iq_length = sizeof(iq_addr);
     int c,j;
     BUFFER buffer;
     unsigned long sequence=0L;
     unsigned short offset=0;;
     int on=1;
-
-    iq_length=sizeof(iq_addr);
-//    client_length=sizeof(client_addr);
 
     // create a socket to receive iq from the server
     iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
@@ -349,7 +348,7 @@ int make_connection() {
             if(token!=NULL) {
                 result=0;
                 sampleRate=atoi(token);
-fprintf(stderr,"connect: sampleRate=%d\n",sampleRate);
+		fprintf(stderr,"connect: sampleRate=%d\n",sampleRate);
                 switch(sampleRate) {
                     case 48000:
                         setSpeed(SPEED_48KHZ);
@@ -626,26 +625,27 @@ int ozy_init() {
         perror("ozy_init: create audio socket failed");
         exit(1);
     }
-    // setsockopt(iq_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+    // setsockopt(audio_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
     memset(&audio_addr,0,audio_length);
-
-    //audio_addr.sin_family=AF_INET;
-    audio_addr.sin_family=h->h_addrtype;
-    memcpy((char *)&audio_addr.sin_addr.s_addr,h->h_addr_list[0],h->h_length);
+    audio_addr.sin_family=AF_INET;
+    audio_addr.sin_addr.s_addr = INADDR_ANY;
     audio_addr.sin_port=htons(AUDIO_PORT+(receiver*2));
 
-/*
-    if(bind(audio_socket,(struct sockaddr*)&audio_addr,audio_length)<0) {
+   if(bind(audio_socket,(struct sockaddr*)&audio_addr,audio_length)<0) {
         perror("ozy_init: bind socket failed for audio socket");
         exit(1);
     }
 
-    fprintf(stderr,"ozy_init: audio bound to port %d socket=%d\n",ntohs(audio_addr.sin_port),audio_socket);
-*/
+    fprintf(stderr,"ozy_init: audio bound to port %d socket %d\n",ntohs(audio_addr.sin_port),audio_socket);
 
 
-    // setup the server address
+    memset(&server_audio_addr,0,server_audio_length);
+    server_audio_addr.sin_family=h->h_addrtype;
+    memcpy((char *)&server_audio_addr.sin_addr.s_addr,h->h_addr_list[0],h->h_length);
+    server_audio_addr.sin_port=htons(SERVER_AUDIO_PORT+(receiver*2));
+
+    // setup the server address and command port
     memset(&server_addr,0,server_length);
     server_addr.sin_family=h->h_addrtype;
     memcpy((char *)&server_addr.sin_addr.s_addr,h->h_addr_list[0],h->h_length);
@@ -663,6 +663,12 @@ int ozy_init() {
 
     if(make_connection()) {
         fprintf(stderr,"connect failed\n");
+        exit(1);
+    }
+
+    rc=connect(audio_socket,(struct sockaddr*)&server_audio_addr,server_audio_length);
+    if(rc<0) {
+        perror("ozy_init: connect audio failed");
         exit(1);
     }
 
