@@ -173,8 +173,8 @@ void* iq_thread(void* arg) {
     int iq_socket;
     struct sockaddr_in iq_addr;
     int iq_length;
-    struct sockaddr_in client_addr;
-    int client_length;
+//    struct sockaddr_in client_addr;
+//    int client_length;
     int c,j;
     BUFFER buffer;
     unsigned long sequence=0L;
@@ -182,7 +182,7 @@ void* iq_thread(void* arg) {
     int on=1;
 
     iq_length=sizeof(iq_addr);
-    client_length=sizeof(client_addr);
+//    client_length=sizeof(client_addr);
 
     // create a socket to receive iq from the server
     iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
@@ -205,17 +205,13 @@ void* iq_thread(void* arg) {
     }
 
     fprintf(stderr,"ozy_init: iq bound to port %d socket=%d\n",htons(iq_addr.sin_port),iq_socket);
-
-fprintf(stderr,"iq_thread: socket %d\n",iq_socket);
-
-
-fprintf(stderr,"output_sample_increment=%d\n",output_sample_increment);
+    fprintf(stderr,"output_sample_increment=%d\n",output_sample_increment);
     
     while(1) {
         int bytes_read;
 #ifdef SMALL_PACKETS
         while(1) {
-            bytes_read=recvfrom(iq_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&client_addr,(socklen_t *)&client_length);
+            bytes_read=recvfrom(iq_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&iq_addr,(socklen_t *)&iq_length);
             if(bytes_read<0) {
                 perror("recvfrom socket failed for iq buffer");
                 exit(1);
@@ -246,7 +242,7 @@ fprintf(stderr,"output_sample_increment=%d\n",output_sample_increment);
             }
         }
 #else
-        bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*2*4,0,(struct sockaddr*)&client_addr,&client_length);
+        bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*2*4,0,(struct sockaddr*)&iq_addr,&iq_length);
         if(bytes_read<0) {
             perror("recvfrom socket failed for iq buffer");
             exit(1);
