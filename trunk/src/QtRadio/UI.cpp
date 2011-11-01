@@ -1863,7 +1863,11 @@ void UI::pttChange(int caller, bool ptt)
     qDebug()<<Q_FUNC_INFO<<": Caller = "<<caller<<", and ptt = "<<ptt<<", txPwr = "<<txPwr<<", txFrequency = "<<txFrequency;
     if(ptt) { // Going from Rx to Tx
         connection.setMuted(true);
+        command.clear(); QTextStream(&command) << "Mox " << "on";
+        connection.sendCommand(command);
     } else { // Going from Tx to Rx
         connection.setMuted(false);
+        command.clear(); QTextStream(&command) << "Mox " << "off";
+        connection.sendCommand(command);
     }
 }
