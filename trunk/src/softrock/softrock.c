@@ -99,7 +99,7 @@ int create_softrock_thread() {
 		// create a thread to read from the audio deice
 		rc=pthread_create(&softrock_io_thread_id,NULL,softrock_io_thread,NULL);
 		if(rc != 0) {
-			fprintf(stderr,"pthread_create failed on softrock_io_thread: rc=%d\n", rc);
+			if(verbose) fprintf(stderr,"pthread_create failed on softrock_io_thread: rc=%d\n", rc);
 			exit(1);
 		}
 		return 0;
@@ -107,7 +107,7 @@ int create_softrock_thread() {
 #ifdef JACKAUDIO //(Using callback)
 	else {
 		if (init_jack_audio() != 0) {
-			fprintf(stderr, "There was a problem initializing Jack Audio.\n");
+			if(verbose) fprintf(stderr, "There was a problem initializing Jack Audio.\n");
 			return 1;
 		}
 		else
@@ -120,38 +120,38 @@ int create_softrock_thread() {
 
 
 void softrock_set_device(char* d) {
-fprintf(stderr,"softrock_set_device %s\n",d);
+if(verbose) fprintf(stderr,"softrock_set_device %s\n",d);
     strcpy(device,d);
 }
 
 char* softrock_get_device() {
-fprintf(stderr,"softrock_get_device %s\n",device);
+if(verbose) fprintf(stderr,"softrock_get_device %s\n",device);
     return device;
 }
 
 void softrock_set_input(char* d) {
-fprintf(stderr,"softrock_set_input %s\n",d);
+if(verbose) fprintf(stderr,"softrock_set_input %s\n",d);
     strcpy(input,d);
 }
 
 char* softrock_get_input() {
-fprintf(stderr,"softrock_get_input %s\n",input);
+if(verbose) fprintf(stderr,"softrock_get_input %s\n",input);
     return input;
 }
 
 void softrock_set_output(char* d) {
-fprintf(stderr,"softrock_set_output %s\n",d);
+if(verbose) fprintf(stderr,"softrock_set_output %s\n",d);
     strcpy(output,d);
 }
 
 char* softrock_get_output() {
-fprintf(stderr,"softrock_get_output %s\n",output);
+if(verbose) fprintf(stderr,"softrock_get_output %s\n",output);
     return output;
 }
 
 void softrock_set_receivers(int r) {
     if(r>MAX_RECEIVERS) {
-        fprintf(stderr,"MAX Receivers is 8!\n");
+        if(verbose) fprintf(stderr,"MAX Receivers is 8!\n");
         exit(1);
     }
     receivers=r;
@@ -160,7 +160,7 @@ void softrock_set_receivers(int r) {
 int softrock_get_receivers() {
     return receivers;
 }
-#ifdef JACKAUDIO
+
 void softrock_set_jack(int flag) {
 	use_jack = flag;
 }
@@ -168,7 +168,7 @@ void softrock_set_jack(int flag) {
 int softrock_get_jack() {
     return use_jack;
 }
-#endif
+
 void softrock_set_rx_frame(int frame) {
 	rx_frame = frame;
 }
@@ -187,7 +187,7 @@ int softrock_get_input_buffers() {
 
 
 void softrock_set_sample_rate(int r) {
-fprintf(stderr,"softrock_set_sample_rate %d\n",r);
+if(verbose) fprintf(stderr,"softrock_set_sample_rate %d\n",r);
     switch(r) {
         case 48000:
             sample_rate=r;
@@ -202,12 +202,12 @@ fprintf(stderr,"softrock_set_sample_rate %d\n",r);
             speed=2;
             break;
         default:
-            fprintf(stderr,"Invalid sample rate (48000,96000,192000)!\n");
+            if(verbose) fprintf(stderr,"Invalid sample rate (48000,96000,192000)!\n");
             exit(1);
             break;
     }
     playback_sleep=(int)(1024.0/(float)sample_rate*1000000.0);
-    fprintf(stderr,"sample_rate=%d playback_sleep=%d\n",sample_rate,playback_sleep);
+    if(verbose) fprintf(stderr,"sample_rate=%d playback_sleep=%d\n",sample_rate,playback_sleep);
 
 }
 
@@ -268,13 +268,13 @@ int softrock_init(void) {
         recording=fopen(filename,"w");
     } else if(playback) {
         recording=fopen(filename,"r");
-				fprintf(stderr,"opening %s\n",filename);
+				if(verbose) fprintf(stderr,"opening %s\n",filename);
     }
 
     // open softrock audio
     rc = softrock_open();
     if (rc != 0) {
-        fprintf(stderr,"Cannot open softrock\n");
+        if(verbose) fprintf(stderr,"Cannot open softrock\n");
         return (-1);
     }
 
@@ -283,7 +283,7 @@ int softrock_init(void) {
         receiver[i].frequency_changed=1;
     }
 
-		fprintf(stderr,"server configured for %d receivers at %d\n",receivers,sample_rate);
+		if(verbose) fprintf(stderr,"server configured for %d receivers at %d\n",receivers,sample_rate);
     return rc;
 }
 
@@ -305,7 +305,7 @@ void softrock_playback_buffer(char* buffer,int length) {
             // assumes eof
             fclose(recording);
             recording=fopen(filename,"r");
-						fprintf(stderr,"playback: re-opening %s\n",filename);
+						if(verbose) fprintf(stderr,"playback: re-opening %s\n",filename);
             bytes=fread(buffer,sizeof(char),length,recording);
         } else {
 					//fprintf(stderr,"playback: read %d bytes\n",bytes);
@@ -333,7 +333,7 @@ void* softrock_io_thread(void* arg) {
             input_buffers++;
             send_IQ_buffer(current_receiver);
         } else {
-            fprintf(stderr,"softrock_read returned %d\n",rc);
+            if(verbose) fprintf(stderr,"softrock_read returned %d\n",rc);
         }
 #endif
 #ifdef PORTAUDIO
@@ -345,16 +345,16 @@ void* softrock_io_thread(void* arg) {
             input_buffers++;
             send_IQ_buffer(current_receiver);
         } else {
-            fprintf(stderr,"softrock_read returned %d\n",rc);
+            if(verbose) fprintf(stderr,"softrock_read returned %d\n",rc);
         }
 #endif
 #ifdef DIRECTAUDIO
         // read an input buffer (blocks until all bytes read)
         bytes=softrock_read(input_buffer,sizeof(input_buffer));
         if (bytes < 0) {
-            fprintf(stderr,"softrock_io_thread: read failed %d\n",bytes);
+            if(verbose) fprintf(stderr,"softrock_io_thread: read failed %d\n",bytes);
         } else if (bytes != sizeof(input_buffer)) {
-            fprintf(stderr,"sfoftrock_io_thread: only read %d bytes\n",bytes);
+            if(verbose) fprintf(stderr,"sfoftrock_io_thread: only read %d bytes\n",bytes);
         } else {
             // process input buffer
             rx_frame++;

@@ -43,31 +43,33 @@
 #include "softrock.h"
 #include "receiver.h"
 #include "operations.h"
+#include "globals.h"
+
 
 static struct option long_options[] = {
-    {"samplerate",required_argument, 0, 0},
-    {"device",required_argument, 0, 1},
-    {"input",required_argument, 0, 2},
-    {"output",required_argument, 0, 3},
+    {"samplerate",required_argument, 0, 's'},
+    {"device",required_argument, 0, 'd'},
+    {"input",required_argument, 0, 'i'},
+    {"output",required_argument, 0, 'o'},
     {"iq",no_argument, 0, 4},
     {"qi",no_argument, 0, 5},
     {"si570",no_argument, 0, 6},
-    {"verbose",no_argument, 0, 7},
-    {"startupfreq",required_argument, 0, 8},
-    {"multiplier",required_argument, 0, 9},
+    {"verbose",no_argument, 0, 'v'},
+    {"startupfreq",required_argument, 0, 'f'},
+    {"multiplier",required_argument, 0, 'm'},
     {"correctedfreq",required_argument, 0, 10},
     {"serialid",required_argument, 0, 11},
-    {"record",required_argument, 0, 12},
-    {"playback",required_argument, 0, 13},
-		{"receivers",required_argument, 0, 14},
-		{"jack",no_argument, 0, 15}
+    {"record",required_argument, 0, 'r'},
+    {"playback",required_argument, 0, 'p'},
+	{"receivers",required_argument, 0, 14},
+	{"jack",no_argument, 0, 'j'},
+	{0, 0, 0, 0}
 };
 
-static char* short_options="sd";
+static char* short_options="s:d:i:o:vf:m:r:p:j";
 static int option_index;
 
 int si570=0;
-int verbose=0;
 double startupFreq=56.32;
 double multiplier=4;
 int i2cAddress = 0x55;
@@ -114,27 +116,34 @@ void process_args(int argc,char* argv[]) {
     // set defaults
     softrock_set_receivers(1);
     softrock_set_sample_rate(96000);
-#ifdef JACKAUDIO
-		softrock_set_jack(0);
-#endif
+	softrock_set_jack(0);
+	
     //softrock_set_device("/dev/dsp");
 
     while((i=getopt_long(argc,argv,short_options,long_options,&option_index))!=EOF) {
-        switch(option_index) {
-            case 0: // sample rate
-								fprintf(stderr,"process_args: samplerate=%s\n",optarg);
+        switch(i) {
+            case 's': // sample rate
+				if (long_options[option_index].flag != 0){
+					fprintf(stderr,"invalid argument\n");
+                	exit(1);
+				}
+				printf ("option %s", long_options[option_index].name);
+               	if (optarg)
+                	printf (" with arg %s", optarg);
+               	printf ("\n");
+				fprintf(stderr,"process_args: samplerate=%s\n",optarg);
                 softrock_set_sample_rate(atoi(optarg));
                 break;
-            case 1: // device
-								fprintf(stderr,"process_args: device=%s\n",optarg);
+            case 'd': // device
+				fprintf(stderr,"process_args: device=%s\n",optarg);
                 softrock_set_device(optarg);
                 break;
-            case 2: // input
-								fprintf(stderr,"process_args: input=%s\n",optarg);
+            case 'i': // input
+				fprintf(stderr,"process_args: input=%s\n",optarg);
                 softrock_set_input(optarg);
                 break;
-            case 3: // output
-								fprintf(stderr,"process_args: output=%s\n",optarg);
+            case 'o': // output
+				fprintf(stderr,"process_args: output=%s\n",optarg);
                 softrock_set_output(optarg);
                 break;
             case 4: // iq
@@ -146,18 +155,18 @@ void process_args(int argc,char* argv[]) {
             case 6: // si570
                 si570=1;
                 break;
-            case 7: // verbose
+            case 'v': // verbose
                 verbose=1;
                 break;
-            case 8: // startupfreq
+            case 'f': // startupfreq
                 startupFreq=atof(optarg);
                 break;
-            case 9: // multiplier
+            case 'm': // multiplier
                 multiplier=atof(optarg);
                 break;
             case 10: // corrected xtal freq
                 fXtall=atof(optarg);
-								setByValue = 0;
+				setByValue = 0;
                 break;
             case 11: // serial ID
                 usbSerialID=optarg;
@@ -168,16 +177,15 @@ void process_args(int argc,char* argv[]) {
             case 13: // playback
                 softrock_set_playback(optarg);
                 break;
-					  case 14: // receivers
+			case 'r': // receivers
                 softrock_set_receivers(atoi(optarg));
                 break;
-#ifdef JACKAUDIO
-						case 15: // jack
+				case 'j': // jack
                 softrock_set_jack(1);
                 break;
-#endif
             default:
-                fprintf(stderr,"invalid argument\n");
+                fprintf(stderr,"invalid argument\n"); 
+				//To do: Make a usage routine that prints out the options.
                 exit(1);
         }
     }

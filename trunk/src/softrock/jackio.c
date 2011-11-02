@@ -32,16 +32,20 @@ static int buffers;
 
 int init_jack_audio()
 {
-	int verbose_flag = 1, error, r;
+	int verbose_flag, error, r;
 
-	const char * capture_port_name[2*MAX_RECEIVERS] = {"system:capture_1","system:capture_2",
+	const char * capture_rx_port_name[2*MAX_RECEIVERS] = {"system:capture_1","system:capture_2",
 		"system:capture_3","system:capture_4","system:capture_5","system:capture_6",
 		"system:capture_7","system:capture_8"};
-	const char * softrock_port_name_left[MAX_RECEIVERS] = {"Softrock Port_1_left",
-		"Softrock Port_2_left","Softrock Port_3_left","Softrock Port_4_left",};
-	const char * softrock_port_name_right[MAX_RECEIVERS] = {"Softrock Port_1_right",
-		"Softrock Port_2_right","Softrock Port_3_right","Softrock Port_4_right"};
+	const char * playback_tx_port_name[2] = {"system:playback_1","system:playback_2"};
+	const char * softrock_rx_port_name_left[MAX_RECEIVERS] = {"Softrock RX Port_1_left",
+		"Softrock RX Port_2_left","Softrock RX Port_3_left","Softrock RX Port_4_left",};
+	const char * softrock_rx_port_name_right[MAX_RECEIVERS] = {"Softrock RX Port_1_right",
+		"Softrock RX Port_2_right","Softrock RX Port_3_right","Softrock RX Port_4_right"};
+	const char * softrock_tx_port_name_left = "Softrock TX Port_left";
+	const char * softrock_tx_port_name_right = "Softrock TX Port_right";
 
+	verbose_flag = verbose;
 	frame = softrock_get_rx_frame ();
 	buffers = softrock_get_input_buffers();
 	//Create a new jack client, then make sure everything went ok.
@@ -65,22 +69,38 @@ int init_jack_audio()
 	}
 
 	//Create and register new audio input ports.
-	for(r=0;r< softrock_get_receivers();r++) {		
-		audio_input_port_left[r] = jack_port_register(softrock_client, softrock_port_name_left[r], 
+	for(r=0;r < softrock_get_receivers();r++) {		
+		audio_input_port_left[r] = jack_port_register(softrock_client, softrock_rx_port_name_left[r], 
 		                                           JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
 		if (audio_input_port_left[r] == NULL) {
-			fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_port_name_left[r]);
+			fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_rx_port_name_left[r]);
 			jack_cleanup();
 			return 1;
 		}
 
-		audio_input_port_right[r] = jack_port_register(softrock_client, softrock_port_name_right[r], 
+		audio_input_port_right[r] = jack_port_register(softrock_client, softrock_rx_port_name_right[r], 
 		                                            JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
 		if (audio_input_port_right[r] == NULL) {
-			fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_port_name_right[r]);
+			fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_rx_port_name_right[r]);
 			jack_cleanup();
 			return 1;
 		}
+	}
+
+	//Create and register new audio output ports.
+	audio_output_port_left = jack_port_register(softrock_client, softrock_tx_port_name_left, 
+		                                           JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+	if (audio_output_port_left == NULL) {
+		fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_tx_port_name_left);
+		jack_cleanup();
+		return 1;
+	}
+	audio_output_port_right = jack_port_register(softrock_client, softrock_tx_port_name_right, 
+		                                            JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+	if (audio_output_port_right == NULL) {
+		fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_tx_port_name_right);
+		jack_cleanup();
+		return 1;
 	}
 	
 	//Tell the jackd server what function call when it wants more audio data.
@@ -98,17 +118,26 @@ int init_jack_audio()
 	}
 	else if(verbose_flag) fprintf(stderr,"Activated client.\n");
 
-	//Connect the ports.
-	for(r=0;r< softrock_get_receivers();r++) {
-		if (jack_connect (softrock_client,capture_port_name[2*r], jack_port_name (audio_input_port_left[r]))) {
-			fprintf (stderr, "cannot connect port: %s\n",capture_port_name[2*r]);
+	//Connect the rx ports.
+	for(r=0;r < softrock_get_receivers();r++) {
+		if (jack_connect (softrock_client,capture_rx_port_name[2*r], jack_port_name (audio_input_port_left[r]))) {
+			fprintf (stderr, "Cannot connect to port: %s\n",capture_rx_port_name[2*r]);
 		}
-		else if(verbose_flag) fprintf(stderr, "Connected to port: %s\n",capture_port_name[2*r]);
-		if (jack_connect (softrock_client,capture_port_name[2*r+1], jack_port_name (audio_input_port_right[r]))) {
-			fprintf (stderr, "cannot connect port:  %s\n",capture_port_name[2*r+1]);
+		else if(verbose_flag) fprintf(stderr, "Connected to port: %s\n",capture_rx_port_name[2*r]);
+		if (jack_connect (softrock_client,capture_rx_port_name[2*r+1], jack_port_name (audio_input_port_right[r]))) {
+			fprintf (stderr, "Cannot connect to port:  %s\n",capture_rx_port_name[2*r+1]);
 		}
-		else if(verbose_flag) fprintf(stderr, "Connected to port:   %s\n",capture_port_name[2*r+1]);
+		else if(verbose_flag) fprintf(stderr, "Connected to port:   %s\n",capture_rx_port_name[2*r+1]);
 	}
+	//Connect the tx ports.
+	if (jack_connect (softrock_client,jack_port_name (audio_output_port_left), playback_tx_port_name[0])) {
+		fprintf (stderr, "Cannot connect to port: %s\n",playback_tx_port_name[0]);
+	}
+	else if(verbose_flag) fprintf(stderr, "Connected to port: %s\n",playback_tx_port_name[0]);
+	if (jack_connect (softrock_client,jack_port_name (audio_output_port_right), playback_tx_port_name[1])) {
+		fprintf (stderr, "Cannot connect to port:  %s\n",playback_tx_port_name[1]);
+	}
+	else if(verbose_flag) fprintf(stderr, "Connected to port:   %s\n",playback_tx_port_name[1]);
 	return 0;
 }
 

@@ -66,4 +66,7 @@ int softrock_get_playback(void);
 
 void process_softrock_output_buffer(float* left_output_buffer,float* right_output_buffer);
 
+
+extern int verbose;
+
 #endif
