@@ -138,6 +138,18 @@ char* set_frequency(CLIENT* client,long frequency) {
     return OK;
 }
 
+char* set_ptt(CLIENT* client, int ptt) { //gvj added
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+    setPTT(handle, (int) ptt);
+    return OK;
+}
+
 void send_IQ_buffer(int rx) {
     struct sockaddr_in client;
     int client_length;
