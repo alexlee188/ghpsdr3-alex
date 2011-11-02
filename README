@@ -111,6 +111,7 @@ http://qtradio.napan.ca/qtradio/qtradio.pl
 To use this feature start dspserver with the "--share" option.  This will look for ~/dspserver.conf for settings.
 If no conf file is found one will be created on startup and is ready for editing.  Editing notes are included in the conf file.
 You may also use option "--shareconfig path_filename" instead to use an alternate conf file. 
+Note that wget is needed for --share to work.
 
 Then you can run QtRadio to connect to the dspserver that is running. 
 
