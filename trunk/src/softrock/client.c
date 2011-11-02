@@ -105,6 +105,17 @@ char* parse_command(CLIENT* client,char* command) {
             } else {
                 return INVALID_COMMAND;
             }
+/*****************************************************************************/
+	} else if(strcmp(token,"mox")==0) {
+            // set ptt
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+               int p=atoi(token);
+               return set_ptt(client,p);
+            } else {
+                return INVALID_COMMAND;
+            }
+/*****************************************************************************/
         } else if(strcmp(token,"start")==0) {
             token=strtok(NULL," \r\n");
             if(token!=NULL) {

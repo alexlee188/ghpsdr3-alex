@@ -67,6 +67,7 @@ void  init_receivers(void);
 char* attach_receiver(int rx,CLIENT* client);
 char* detach_receiver(int rx,CLIENT* client);
 char* set_frequency(CLIENT* client,long f);
+char* set_ptt(CLIENT* client, int ptt);
 void  send_IQ_buffer(int rx);
 
 #endif
