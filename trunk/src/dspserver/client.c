@@ -107,6 +107,8 @@ static float tx_buffer[TX_BUFFER_SIZE*2];
 #define MIC_BUFFER_SIZE  BITS_SIZE
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
+#define MSG_SIZE 64
+
 //
 // samplerate library data structures
 //
@@ -281,9 +283,24 @@ void client_set_timing() {
 }
 
 
+void readcb(struct bufferevent *bev, void *ctx);
 
-void do_read(evutil_socket_t fd, short events, void *arg);
-void do_write(evutil_socket_t fd, short events, void *arg);
+void
+errorcb(struct bufferevent *bev, short error, void *ctx)
+{
+    if (error & BEV_EVENT_EOF) {
+        /* connection has been closed, do any clean up here */
+        /* ... */
+    } else if (error & BEV_EVENT_ERROR) {
+        /* check errno to see what error occurred */
+        /* ... */
+    } else if (error & BEV_EVENT_TIMEOUT) {
+        /* must be a timeout event handle, handle it */
+        /* ... */
+    }
+    bufferevent_free(bev);
+}
+
 void do_accept(evutil_socket_t listener, short event, void *arg);
 
 void* client_thread(void* arg) {
@@ -325,50 +342,22 @@ void* client_thread(void* arg) {
     }
 
     base = event_base_new();
-
-    fprintf(stderr,"base created.\n");
-
     listener_event = event_new(base, serverSocket, EV_READ|EV_PERSIST, do_accept, (void*)base);
 
-    fprintf(stderr,"listener_event\n");
     event_add(listener_event, NULL);
-
-    fprintf(stderr,"event_add.\n");
     event_base_dispatch(base);
 }
 
 void do_accept(evutil_socket_t listener, short event, void *arg){
-    int rc;
-    char *token;
-    int i;
-    int bytesRead;
-    char message[64];
 
-fprintf(stderr,"do_accept called.\n");
 
-/*
     struct event_base *base = arg;
     struct sockaddr_storage ss;
     socklen_t slen = sizeof(ss);
     int fd = accept(listener, (struct sockaddr*)&ss, &slen);
     if (fd < 0) {
-        perror("accept");
-    } else if (fd > FD_SETSIZE) {
-        close(fd);
+        fprintf(stderr,"accept failed\n");
     } else {
-        struct bufferevent *bev;
-        evutil_make_socket_nonblocking(fd);
-        bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_setcb(bev, readcb, NULL, errorcb, NULL);
-        bufferevent_setwatermark(bev, EV_READ, 0, MAX_LINE);
-        bufferevent_enable(bev, EV_READ|EV_WRITE);
-    }
-*/
-        addrlen = sizeof(client); 
-	if ((clientSocket = accept(listener,(struct sockaddr *)&client,&addrlen)) == -1) {
-		perror("client accept");
-	} else {
-
             time_t tt;
             struct tm *tod;
             time(&tt);
@@ -376,40 +365,34 @@ fprintf(stderr,"do_accept called.\n");
             if(prncountry == 0){
                 printcountry();
             }
-            //fprintf(stdout,"wget -O - --post-data 'ip=%s'  http://www.selfseo.com/ip_to_country.php 2>/dev/null |grep ' is assigned to '|perl -ne 'm/border=1> (.*?)</; print \"$1\\n\" '\n",inet_ntoa(client.sin_addr));
-            fflush(stdout);
-            fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connection from %s:%d\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
+            fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connection from %s:%d\n",
+		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
+		receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
+
+        struct bufferevent *bev;
+        evutil_make_socket_nonblocking(fd);
+        bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
+        bufferevent_setcb(bev, readcb, NULL, errorcb, NULL);
+        bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
+        bufferevent_enable(bev, EV_READ|EV_WRITE);
+    }
+}
+
+void readcb(struct bufferevent *bev, void *ctx){
+    struct evbuffer *input, *output;
+    int rc;
+    char *token;
+    int i;
+    int bytesRead;
+    char message[64];
 
 
-            // set timeout on receive
-            struct timeval tv;
-            tv.tv_sec=10;		// changed from 3 sec to 10 sec for remote connection
-            tv.tv_usec=0;
-            rc=setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,(char *)&tv,sizeof tv);
+    input = bufferevent_get_input(bev);
+    output = bufferevent_get_output(bev);
 
-            client_terminate=0;
-if(timing) ftime(&start_time);
-            while(client_terminate==0) {
-                bytesRead=recv(clientSocket, message, sizeof(message), 0);
-                if(bytesRead==0) {
-                    break;
-                }
-         
-                if(bytesRead<0) {
-                    if(errno!=EWOULDBLOCK) {
-                        continue;
-                    }
-                    break;
-                }
+	bytesRead = bufferevent_read(bev, message, MSG_SIZE);
+
                 message[bytesRead]=0;			// for Linux strings terminating in NULL
-
-		if(timing) {
-		    ftime(&end_time);
-		    fprintf(stderr,"%s\n",message);
-		    fprintf(stderr,"command after %ld ms\n",\
-		    ((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
-		    ftime(&start_time);
-		}
                 token=strtok(message," ");
  
                     if(strcmp(token,"mic")==0){		// This is incoming microphone data
@@ -863,21 +846,15 @@ if(timing) ftime(&start_time);
                     fprintf(stderr,"Invalid command: message: '%s'\n",message);
                 	}
 		}
-if(timing) {
-    ftime(&end_time);
-    fprintf(stderr,"command processing %ld ms\n",((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
-    ftime(&start_time);
-}
-            }
 
-            close(clientSocket);
+/*
+            time_t tt;
+            struct tm *tod;
             time(&tt);
             tod=localtime(&tt);
             fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnected from %s:%d\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
             updateStatus("Idle"); 
-        }
-        send_audio=0;
-        clientSocket=-1;
+*/
 
 }
 
