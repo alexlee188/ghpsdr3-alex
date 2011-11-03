@@ -246,36 +246,9 @@ void *tx_thread(void *arg){
 }
 
 void spectrum_init() {
-    int rc;
-
-    sem_init(&get_spectrum_semaphore,0,1);
-    sem_init(&ready_spectrum_semaphore,0,1);
-    sem_post(&ready_spectrum_semaphore);
-
-    signal(SIGPIPE, SIG_IGN);
-
     fprintf(stderr,"spectrum_init\n");
-
-    rc=pthread_create(&spectrum_thread_id,NULL,spectrum_thread,NULL);
-    if(rc != 0) {
-        fprintf(stderr,"pthread_create failed on spectrum_thread: rc=%d\n", rc);
-    }
-
 }
 
-void *spectrum_thread(void *x) {
-    while (1){
-	    sem_wait(&get_spectrum_semaphore);
-	    Process_Panadapter(0,spectrumBuffer);
-	    meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-	    subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-	    client_samples=malloc(BUFFER_HEADER_SIZE+samples);
-	    client_set_samples(spectrumBuffer,samples);
-	    client_send_samples(samples);
-	    free(client_samples);
-	    sem_post(&ready_spectrum_semaphore);
-    }
-}
 
 
 void client_set_timing() {
@@ -291,6 +264,13 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
     if (error & BEV_EVENT_EOF) {
         /* connection has been closed, do any clean up here */
         /* ... */
+            time_t tt;
+            struct tm *tod;
+            time(&tt);
+            tod=localtime(&tt);
+            fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
+		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
+		receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
     } else if (error & BEV_EVENT_ERROR) {
         /* check errno to see what error occurred */
         /* ... */
@@ -352,12 +332,13 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 
 
     struct event_base *base = arg;
-    struct sockaddr_storage ss;
+    struct sockaddr_in ss;
     socklen_t slen = sizeof(ss);
     int fd = accept(listener, (struct sockaddr*)&ss, &slen);
     if (fd < 0) {
         fprintf(stderr,"accept failed\n");
     } else {
+	    memcpy(&client, &ss, sizeof(client));
             time_t tt;
             struct tm *tod;
             time(&tt);
@@ -372,7 +353,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
         struct bufferevent *bev;
         evutil_make_socket_nonblocking(fd);
         bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_setcb(bev, readcb, NULL, errorcb, NULL);
+        bufferevent_setcb(bev, readcb, NULL, errorcb, &ss);
         bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
     }
@@ -396,18 +377,11 @@ void readcb(struct bufferevent *bev, void *ctx){
                 token=strtok(message," ");
  
                     if(strcmp(token,"mic")==0){		// This is incoming microphone data
-
-			/*
-			int rc = sem_trywait(&ready_mic_semaphore);
-			if (rc == 0){
-			memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
-			sem_post(&get_mic_semaphore);
-			} else fprintf(stderr,"mic data processing blocking...\n");
-			*/
-
+/*
 			sem_wait(&ready_mic_semaphore);				// this will block
 			memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
 			sem_post(&get_mic_semaphore);
+*/
 		    }
                     else {
                     	if(token!=NULL) {
@@ -419,11 +393,16 @@ void readcb(struct bufferevent *bev, void *ctx){
  			if(strcmp(token,"getspectrum")==0) {
                         token=strtok(NULL," ");
                         if(token!=NULL) {
-			    int rc = sem_trywait(&ready_spectrum_semaphore);
-			    if (rc == 0){
-                            	samples=atoi(token);
- 			    	sem_post(&get_spectrum_semaphore);		// unblocks the get_spectrum thread
-			    } else fprintf(stderr,"spectrum processing blocking...\n");
+                            	    samples=atoi(token);
+/*
+				    Process_Panadapter(0,spectrumBuffer);
+				    meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+				    subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+				    client_samples=malloc(BUFFER_HEADER_SIZE+samples);
+				    client_set_samples(spectrumBuffer,samples);
+				    evbuffer_add(output, client_samples, BUFFER_HEADER_SIZE+samples);
+				    free(client_samples);
+*/
                         } else {
                             fprintf(stderr,"Invalid command: '%s'\n",message);
                     	    }
@@ -589,7 +568,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             		updateStatus("Busy"); 
 
                         audio_stream_reset();
-                        send_audio=1;
+                        //send_audio=1;
                     } else if(strcmp(token,"stopaudiostream")==0) {
                         send_audio=0;
                     } else if(strcmp(token,"setencoding")==0) {
@@ -858,35 +837,24 @@ void readcb(struct bufferevent *bev, void *ctx){
 
 }
 
-void client_send_samples(int size) {
-    int rc;
-    if(clientSocket!=-1) {
-        sem_wait(&network_semaphore);
-            rc=send(clientSocket,client_samples,size+BUFFER_HEADER_SIZE,MSG_NOSIGNAL);
-            if(rc<0) {
-                // perror("client_send_samples failed");
-            }
-        sem_post(&network_semaphore);
-    } else {
-        fprintf(stderr,"client_send_samples: clientSocket==-1\n");
-    }
-}
-
 void client_send_audio() {
     int rc;
     int audio_buffer_length;
 
         if(clientSocket!=-1) {
             sem_wait(&network_semaphore);
+/*
             if(send_audio && (clientSocket!=-1)) {
 	    	if (encoding == 1) audio_buffer_length = audio_buffer_size*audio_channels*2;
 	   	else if (encoding == 0) audio_buffer_length = audio_buffer_size*audio_channels;
 		else audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
+
                 rc=send(clientSocket,audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE,MSG_NOSIGNAL);
                 if(rc!=(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE)) {
                     fprintf(stderr,"client_send_audio sent %d bytes",rc);
                     }
                 }
+*/
             sem_post(&network_semaphore);
         } else {
             //fprintf(stderr,"client_send_audio: clientSocket==-1\n");
