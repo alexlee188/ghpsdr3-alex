@@ -119,7 +119,6 @@ static float meter;
 static float subrx_meter;
 int encoding = 0;
 
-static sem_t network_semaphore, get_spectrum_semaphore, ready_spectrum_semaphore;
 static sem_t get_mic_semaphore, ready_mic_semaphore;
 
 void* client_thread(void* arg);
@@ -143,8 +142,7 @@ float getFilterSizeCalibrationOffset() {
 void client_init(int receiver) {
     int rc;
 
-    sem_init(&network_semaphore,0,1);
-    signal(SIGPIPE, SIG_IGN);
+//    signal(SIGPIPE, SIG_IGN);
 
     fprintf(stderr,"client_init audio_buffer_size=%d\n",audio_buffer_size);
 
@@ -822,8 +820,6 @@ void client_send_audio() {
     int rc;
     int audio_buffer_length;
 
-        if(clientSocket!=-1) {
-            sem_wait(&network_semaphore);
 /*
             if(send_audio && (clientSocket!=-1)) {
 	    	if (encoding == 1) audio_buffer_length = audio_buffer_size*audio_channels*2;
@@ -836,10 +832,6 @@ void client_send_audio() {
                     }
                 }
 */
-            sem_post(&network_semaphore);
-        } else {
-            //fprintf(stderr,"client_send_audio: clientSocket==-1\n");
-        }
 }
 
 void client_set_samples(float* samples,int size) {
