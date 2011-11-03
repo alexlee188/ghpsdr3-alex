@@ -245,12 +245,6 @@ void *tx_thread(void *arg){
 	codec2_destroy(mic_codec2);
 }
 
-void spectrum_init() {
-    fprintf(stderr,"spectrum_init\n");
-}
-
-
-
 void client_set_timing() {
     timing=1;
 }
@@ -390,7 +384,6 @@ void readcb(struct bufferevent *bev, void *ctx){
                         token=strtok(NULL," ");
                         if(token!=NULL) {
                             	    samples=atoi(token);
-
 				    Process_Panadapter(0,spectrumBuffer);
 				    meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
 				    subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
