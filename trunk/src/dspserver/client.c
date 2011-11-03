@@ -121,6 +121,12 @@ int encoding = 0;
 
 static sem_t get_mic_semaphore, ready_mic_semaphore;
 
+typedef struct audio_queue {
+	char *buff;
+        int length;
+        struct audio_queue *next;
+} audio_queue_t;
+
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
 
@@ -551,11 +557,8 @@ void readcb(struct bufferevent *bev, void *ctx){
                         
 			fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
 			fprintf(stderr,"and with encoding method %d\n", encoding);
- 
-            		updateStatus("Busy"); 
-
                         audio_stream_reset();
-                        //send_audio=1;
+                        send_audio=1;
                     } else if(strcmp(token,"stopaudiostream")==0) {
                         send_audio=0;
                     } else if(strcmp(token,"setencoding")==0) {
@@ -817,21 +820,26 @@ void readcb(struct bufferevent *bev, void *ctx){
 }
 
 void client_send_audio() {
-    int rc;
+    int i;
     int audio_buffer_length;
+    audio_queue_t *audio_ptr;
 
-/*
-            if(send_audio && (clientSocket!=-1)) {
+
+            if(send_audio) {
 	    	if (encoding == 1) audio_buffer_length = audio_buffer_size*audio_channels*2;
 	   	else if (encoding == 0) audio_buffer_length = audio_buffer_size*audio_channels;
 		else audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
 
-                rc=send(clientSocket,audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE,MSG_NOSIGNAL);
-                if(rc!=(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE)) {
-                    fprintf(stderr,"client_send_audio sent %d bytes",rc);
-                    }
+		audio_ptr = (audio_queue_t*) malloc(sizeof(audio_queue_t));
+		audio_ptr->buff = malloc(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+		audio_ptr->length = audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE;
+		audio_ptr->next = audio_ptr;
+
+		free(audio_ptr->buff);
+		free(audio_ptr);
+
                 }
-*/
+
 }
 
 void client_set_samples(float* samples,int size) {
