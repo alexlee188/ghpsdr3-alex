@@ -359,19 +359,19 @@ void readcb(struct bufferevent *bev, void *ctx){
     char *token;
     int i;
     int bytesRead;
-    char message[64];
+    char message[MSG_SIZE];
 
-	bytesRead = bufferevent_read(bev, message, MSG_SIZE);
+	while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 0){
 
                 message[bytesRead]=0;			// for Linux strings terminating in NULL
                 token=strtok(message," ");
  
                     if(strcmp(token,"mic")==0){		// This is incoming microphone data
-/*
+
 			sem_wait(&ready_mic_semaphore);				// this will block
 			memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
 			sem_post(&get_mic_semaphore);
-*/
+
 		    }
                     else {
                     	if(token!=NULL) {
@@ -814,15 +814,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                     fprintf(stderr,"Invalid command: message: '%s'\n",message);
                 	}
 		}
-
-/*
-            time_t tt;
-            struct tm *tod;
-            time(&tt);
-            tod=localtime(&tt);
-            fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnected from %s:%d\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
-            updateStatus("Idle"); 
-*/
+	    } // end while
 
 }
 
