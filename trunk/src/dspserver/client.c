@@ -332,7 +332,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     if (fd < 0) {
         fprintf(stderr,"accept failed\n");
     } else {
-	    memcpy(&client, &ss, sizeof(client));
+	    memcpy(&client, &ss, sizeof(client));	// temporary hack.  Should have info for each of multiple clients
             time_t tt;
             struct tm *tod;
             time(&tt);
@@ -347,7 +347,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
         struct bufferevent *bev;
         evutil_make_socket_nonblocking(fd);
         bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_setcb(bev, readcb, NULL, errorcb, &ss);
+        bufferevent_setcb(bev, readcb, NULL, errorcb, NULL);
         bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
     }
