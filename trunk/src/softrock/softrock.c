@@ -40,6 +40,8 @@
 #include "util.h"
 #include "jackio.h"
 
+int verbose;
+
 static pthread_t softrock_io_thread_id;
 
 static int rx_frame=0;

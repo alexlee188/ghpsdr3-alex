@@ -43,7 +43,6 @@
 #include "softrock.h"
 #include "receiver.h"
 #include "operations.h"
-#include "globals.h"
 
 
 static struct option long_options[] = {

@@ -284,14 +284,10 @@ void client_set_timing() {
 
 void do_read(evutil_socket_t fd, short events, void *arg);
 void do_write(evutil_socket_t fd, short events, void *arg);
-
+void do_accept(evutil_socket_t listener, short event, void *arg);
 
 void* client_thread(void* arg) {
-    int rc;
-    char *token;
-    int i;
-    int bytesRead;
-    char message[64];
+ 
     int on=1;
     struct event_base *base;
     struct event *listener_event;
@@ -303,6 +299,8 @@ void* client_thread(void* arg) {
         perror("client socket");
         return NULL;
     }
+
+    evutil_make_socket_nonblocking(serverSocket);
 
 #ifndef WIN32
     setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
@@ -320,26 +318,54 @@ void* client_thread(void* arg) {
     }
 
     fprintf(stderr,"client_thread: listening on port %d\n",port);
+
     if (listen(serverSocket, 5) == -1) {
 	perror("client listen");
 	exit(1);
     }
 
     base = event_base_new();
-    if (!base)
-	perror("event_base");
-        exit(1);
 
-    listener_event = event_new(base, listener, EV_READ|EV_PERSIST, do_accept, (void*)base);
+    fprintf(stderr,"base created.\n");
+
+    listener_event = event_new(base, serverSocket, EV_READ|EV_PERSIST, do_accept, (void*)base);
+
+    fprintf(stderr,"listener_event\n");
     event_add(listener_event, NULL);
 
+    fprintf(stderr,"event_add.\n");
     event_base_dispatch(base);
 }
 
-void doAccept(evutil_socket_t listener, short event, void *arg){
+void do_accept(evutil_socket_t listener, short event, void *arg){
+    int rc;
+    char *token;
+    int i;
+    int bytesRead;
+    char message[64];
 
+fprintf(stderr,"do_accept called.\n");
+
+/*
+    struct event_base *base = arg;
+    struct sockaddr_storage ss;
+    socklen_t slen = sizeof(ss);
+    int fd = accept(listener, (struct sockaddr*)&ss, &slen);
+    if (fd < 0) {
+        perror("accept");
+    } else if (fd > FD_SETSIZE) {
+        close(fd);
+    } else {
+        struct bufferevent *bev;
+        evutil_make_socket_nonblocking(fd);
+        bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
+        bufferevent_setcb(bev, readcb, NULL, errorcb, NULL);
+        bufferevent_setwatermark(bev, EV_READ, 0, MAX_LINE);
+        bufferevent_enable(bev, EV_READ|EV_WRITE);
+    }
+*/
         addrlen = sizeof(client); 
-	if ((clientSocket = accept(serverSocket,(struct sockaddr *)&client,&addrlen)) == -1) {
+	if ((clientSocket = accept(listener,(struct sockaddr *)&client,&addrlen)) == -1) {
 		perror("client accept");
 	} else {
 
