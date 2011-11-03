@@ -59,6 +59,12 @@
 #include <time.h>
 #include <sys/timeb.h>
 #include <samplerate.h>
+/* For fcntl */
+#include <fcntl.h>
+
+#include <event2/event.h>
+#include <event2/buffer.h>
+#include <event2/bufferevent.h>
 
 #include "client.h"
 #include "ozy.h"
@@ -68,8 +74,9 @@
 #include "dttsp.h"
 #include "buffer.h"
 #include "codec2loc.h"
-
 #include "register.h"
+
+
 
 static int timing=0;
 static struct timeb start_time;
@@ -128,6 +135,7 @@ float getFilterSizeCalibrationOffset() {
     float i=log10((float)size);
     return 3.0f*(11.0f-i);
 }
+
 
 
 void client_init(int receiver) {
@@ -272,6 +280,12 @@ void client_set_timing() {
     timing=1;
 }
 
+
+
+void do_read(evutil_socket_t fd, short events, void *arg);
+void do_write(evutil_socket_t fd, short events, void *arg);
+
+
 void* client_thread(void* arg) {
     int rc;
     char *token;
@@ -279,8 +293,10 @@ void* client_thread(void* arg) {
     int bytesRead;
     char message[64];
     int on=1;
+    struct event_base *base;
+    struct event *listener_event;
 
-fprintf(stderr,"client_thread\n");
+    fprintf(stderr,"client_thread\n");
 
     serverSocket=socket(AF_INET,SOCK_STREAM,0);
     if(serverSocket==-1) {
@@ -288,7 +304,9 @@ fprintf(stderr,"client_thread\n");
         return NULL;
     }
 
+#ifndef WIN32
     setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+#endif
 
     memset(&server,0,sizeof(server));
     server.sin_family=AF_INET;
@@ -301,13 +319,25 @@ fprintf(stderr,"client_thread\n");
         return NULL;
     }
 
-fprintf(stderr,"client_thread: listening on port %d\n",port);
+    fprintf(stderr,"client_thread: listening on port %d\n",port);
     if (listen(serverSocket, 5) == -1) {
 	perror("client listen");
 	exit(1);
     }
 
-    while(1) {
+    base = event_base_new();
+    if (!base)
+	perror("event_base");
+        exit(1);
+
+    listener_event = event_new(base, listener, EV_READ|EV_PERSIST, do_accept, (void*)base);
+    event_add(listener_event, NULL);
+
+    event_base_dispatch(base);
+}
+
+void doAccept(evutil_socket_t listener, short event, void *arg){
+
         addrlen = sizeof(client); 
 	if ((clientSocket = accept(serverSocket,(struct sockaddr *)&client,&addrlen)) == -1) {
 		perror("client accept");
@@ -822,9 +852,7 @@ if(timing) {
         }
         send_audio=0;
         clientSocket=-1;
-//fprintf(stderr,"client disconnected send_audio=%d\n",send_audio);
 
-    }
 }
 
 void client_send_samples(int size) {
