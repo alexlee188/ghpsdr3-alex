@@ -367,10 +367,6 @@ void readcb(struct bufferevent *bev, void *ctx){
     int bytesRead;
     char message[64];
 
-
-    input = bufferevent_get_input(bev);
-    output = bufferevent_get_output(bev);
-
 	bytesRead = bufferevent_read(bev, message, MSG_SIZE);
 
                 message[bytesRead]=0;			// for Linux strings terminating in NULL
@@ -394,15 +390,15 @@ void readcb(struct bufferevent *bev, void *ctx){
                         token=strtok(NULL," ");
                         if(token!=NULL) {
                             	    samples=atoi(token);
-/*
+
 				    Process_Panadapter(0,spectrumBuffer);
 				    meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
 				    subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
 				    client_samples=malloc(BUFFER_HEADER_SIZE+samples);
 				    client_set_samples(spectrumBuffer,samples);
-				    evbuffer_add(output, client_samples, BUFFER_HEADER_SIZE+samples);
+				    bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
 				    free(client_samples);
-*/
+
                         } else {
                             fprintf(stderr,"Invalid command: '%s'\n",message);
                     	    }
