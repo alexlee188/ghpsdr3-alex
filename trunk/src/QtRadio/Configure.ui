@@ -39,7 +39,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>5</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="Server">
     <attribute name="title">
@@ -1120,7 +1120,7 @@
    </widget>
    <widget class="QWidget" name="Transmit">
     <attribute name="title">
-     <string>Page</string>
+     <string>Transmit</string>
     </attribute>
     <widget class="QCheckBox" name="allowTx">
      <property name="geometry">
