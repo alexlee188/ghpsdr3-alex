@@ -1,6 +1,6 @@
 /**
 * @file softrock.h
-* @brief Softrock implementation
+* @brief softrock implementation
 * @author John Melton, G0ORX/N6LYT
 * @version 0.1
 * @date 2009-10-13
@@ -23,8 +23,8 @@
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
 */
-#if !defined __SOFTROCK_H__
-#define __SOFTROCK_H__
+#if !defined __softrock_H__
+#define __softrock_H__
 
 #define PULSEAUDIO
 //#define PORTAUDIO
@@ -66,7 +66,7 @@ int softrock_get_playback(void);
 
 void process_softrock_output_buffer(float* left_output_buffer,float* right_output_buffer);
 
-
-extern int verbose;
+void softrock_set_verbose(int flag);
+int softrock_get_verbose(void);
 
 #endif

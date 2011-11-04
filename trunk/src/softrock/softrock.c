@@ -23,6 +23,8 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
+* This file is where the threads are started, where the get and set routines
+* are for the flags that are set by the command line arguements set in server.c.
 */
 
 #include <stdlib.h>
@@ -75,15 +77,12 @@ static int record=0;
 static int playback=0;
 static int playback_sleep=0;
 static FILE* recording;
+static int verbose;
 
 void* softrock_io_thread(void* arg);
 
 #if (defined PULSEAUDIO || defined DIRECTAUDIO)
 void process_softrock_input_buffer(char* buffer);
-#endif
-
-#ifdef JACKAUDIO
-
 #endif
 
 int softrock_init(void);
@@ -120,22 +119,22 @@ int create_softrock_thread() {
 
 
 void softrock_set_device(char* d) {
-if(verbose) fprintf(stderr,"softrock_set_device %s\n",d);
+	if(verbose) fprintf(stderr,"softrock_set_device %s\n",d);
     strcpy(device,d);
 }
 
 char* softrock_get_device() {
-if(verbose) fprintf(stderr,"softrock_get_device %s\n",device);
+	if(verbose) fprintf(stderr,"softrock_get_device %s\n",device);
     return device;
 }
 
 void softrock_set_input(char* d) {
-if(verbose) fprintf(stderr,"softrock_set_input %s\n",d);
+	if(verbose) fprintf(stderr,"softrock_set_input %s\n",d);
     strcpy(input,d);
 }
 
 char* softrock_get_input() {
-if(verbose) fprintf(stderr,"softrock_get_input %s\n",input);
+	if(verbose) fprintf(stderr,"softrock_get_input %s\n",input);
     return input;
 }
 
@@ -145,7 +144,7 @@ if(verbose) fprintf(stderr,"softrock_set_output %s\n",d);
 }
 
 char* softrock_get_output() {
-if(verbose) fprintf(stderr,"softrock_get_output %s\n",output);
+	if(verbose) fprintf(stderr,"softrock_get_output %s\n",output);
     return output;
 }
 
@@ -187,7 +186,7 @@ int softrock_get_input_buffers() {
 
 
 void softrock_set_sample_rate(int r) {
-if(verbose) fprintf(stderr,"softrock_set_sample_rate %d\n",r);
+	if(verbose) fprintf(stderr,"softrock_set_sample_rate %d\n",r);
     switch(r) {
         case 48000:
             sample_rate=r;
@@ -241,6 +240,14 @@ void softrock_set_playback(char* f) {
     strcpy(filename,f);
     record=0;
     playback=1;
+}
+
+void softrock_set_verbose(int flag) {
+	verbose = flag;
+}
+
+int softrock_get_verbose(void) {
+	return verbose;
 }
 
 int softrock_init(void) {
