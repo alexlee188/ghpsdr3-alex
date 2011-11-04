@@ -79,7 +79,6 @@ static int record=0;
 static int playback=0;
 static int playback_sleep=0;
 static FILE* recording;
-static int verbose;
 
 void* softrock_io_thread(void* arg);
 
