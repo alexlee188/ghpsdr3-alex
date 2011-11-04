@@ -109,6 +109,8 @@ static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
 #define MSG_SIZE 64
 
+TAILQ_HEAD(, audio_entry) IQ_audio_stream;
+
 //
 // samplerate library data structures
 //
@@ -120,6 +122,7 @@ static float subrx_meter;
 int encoding = 0;
 
 static sem_t get_mic_semaphore, ready_mic_semaphore;
+static sem_t bufferevent_semaphore;
 
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
@@ -137,12 +140,52 @@ float getFilterSizeCalibrationOffset() {
     return 3.0f*(11.0f-i);
 }
 
+void audio_stream_init(int receiver) {
+    init_alaw_tables();
+    TAILQ_INIT(&IQ_audio_stream);
+}
 
+void audio_stream_queue_add(int length) {
+    int i;
+    struct audio_entry *item;
+
+
+        if(send_audio) {
+		item = malloc(sizeof(*item));
+		item->buf = audio_buffer;
+		item->length = length;
+		sem_wait(&bufferevent_semaphore);
+		TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
+		sem_post(&bufferevent_semaphore);
+                }
+	allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
+
+}
+
+struct audio_entry *audio_stream_queue_remove(){
+	struct audio_entry *first_item;
+	sem_wait(&bufferevent_semaphore);
+	first_item = TAILQ_FIRST(&IQ_audio_stream);
+	if (first_item != NULL) TAILQ_REMOVE(&IQ_audio_stream, first_item, entries);
+	sem_post(&bufferevent_semaphore);
+	return first_item;
+}
+
+void audio_stream_queue_free(){
+	struct audio_entry *item;
+
+	while ((item = audio_stream_queue_remove()) != NULL){
+		free(item->buf);
+		free(item);
+		}
+}
 
 void client_init(int receiver) {
     int rc;
 
-//    signal(SIGPIPE, SIG_IGN);
+    sem_init(&bufferevent_semaphore,0,1);
+    signal(SIGPIPE, SIG_IGN);
+    sem_post(&bufferevent_semaphore);
 
     fprintf(stderr,"client_init audio_buffer_size=%d\n",audio_buffer_size);
 
@@ -248,7 +291,9 @@ void client_set_timing() {
 }
 
 
+void do_accept(evutil_socket_t listener, short event, void *arg);
 void readcb(struct bufferevent *bev, void *ctx);
+void writecb(struct bufferevent *bev, void *ctx);
 
 void
 errorcb(struct bufferevent *bev, short error, void *ctx)
@@ -274,7 +319,7 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
     bufferevent_free(bev);
 }
 
-void do_accept(evutil_socket_t listener, short event, void *arg);
+
 
 void* client_thread(void* arg) {
  
@@ -346,10 +391,23 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
         struct bufferevent *bev;
         evutil_make_socket_nonblocking(fd);
         bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_setcb(bev, readcb, NULL, errorcb, NULL);
+        bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
         bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
     }
+}
+
+void writecb(struct bufferevent *bev, void *ctx){
+	struct audio_entry *item;
+
+	sem_wait(&bufferevent_semaphore);
+	item = audio_stream_queue_remove();
+	if (item != NULL){
+		bufferevent_write(bev, item->buf, item->length);
+		free(item->buf);
+		free(item);
+	}
+	sem_post(&bufferevent_semaphore);
 }
 
 void readcb(struct bufferevent *bev, void *ctx){

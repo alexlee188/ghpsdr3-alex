@@ -64,7 +64,6 @@ int audio_channels=1;
 unsigned char* audio_buffer=NULL;
 int send_audio=0;
 
-TAILQ_HEAD(, audio_entry) IQ_audio_stream;
 
 void * codec2 = NULL;
 unsigned char bits[BITS_SIZE];
@@ -81,10 +80,6 @@ unsigned char alaw(short sample);
 
 void init_alaw_tables();
 
-void audio_stream_init(int receiver) {
-    init_alaw_tables();
-    TAILQ_INIT(&IQ_audio_stream);
-}
 
 /* --------------------------------------------------------------------------*/
 /**
@@ -169,11 +164,6 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 		    audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
 		    sprintf((char *)&audio_buffer[AUDIO_LENGTH_POSITION],"%d ", audio_buffer_length);
 		    audio_stream_queue_add(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
-		    item = audio_stream_queue_remove();
-		    if (item != NULL) {
-			free(item->buf);
-			free(item);
-			}
 		    codec2_count = 0;
 		    }
 
@@ -186,11 +176,6 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 		else audio_buffer_length = audio_buffer_size*audio_channels;
 		sprintf((char *)&audio_buffer[AUDIO_LENGTH_POSITION],"%d ", audio_buffer_length);
 		audio_stream_queue_add(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
-		item = audio_stream_queue_remove();
-		    if (item != NULL) {
-			free(item->buf);
-			free(item);
-			}
 	    	audio_stream_buffer_insert=0;
         }
     }
@@ -205,36 +190,6 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 }
 
 
-void audio_stream_queue_add(int length) {
-    int i;
-    struct audio_entry *item;
-
-
-        if(send_audio) {
-		item = malloc(sizeof(*item));
-		item->buf = audio_buffer;
-		item->length = length;
-		TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
-                }
-	allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
-
-}
-
-struct audio_entry *audio_stream_queue_remove(){
-	struct audio_entry *first_item;
-	first_item = TAILQ_FIRST(&IQ_audio_stream);
-	if (first_item != NULL) TAILQ_REMOVE(&IQ_audio_stream, first_item, entries);
-	return first_item;
-}
-
-void audio_stream_queue_free(){
-	struct audio_entry *item;
-
-	while ((item = audio_stream_queue_remove()) != NULL){
-		free(item->buf);
-		free(item);
-		}
-}
 
 unsigned char alaw(short sample) {
     return encodetable[sample&0xFFFF];
