@@ -31,6 +31,7 @@
 * @return
 */
 
+#include <sys/queue.h>
 
 #define AUDIO_BUFFER_SIZE 400
 
@@ -40,10 +41,18 @@ int audio_channels;
 unsigned char* audio_buffer;
 int send_audio;
 
+struct audio_entry {
+	unsigned char *buf;
+	int length;
+	TAILQ_ENTRY(audio_entry) entries;
+};
+
 
 void audio_stream_reset();
 void audio_stream_put_samples(short left_sample,short right_sample);
-
 void audio_stream_init(int port);
+void audio_stream_queue_add(int length);
+struct audio_entry  *audio_stream_queue_remove(void);
+void audio_stream_queue_free(void);
 
 

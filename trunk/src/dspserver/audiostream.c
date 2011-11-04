@@ -64,6 +64,8 @@ int audio_channels=1;
 unsigned char* audio_buffer=NULL;
 int send_audio=0;
 
+TAILQ_HEAD(, audio_entry) IQ_audio_stream;
+
 void * codec2 = NULL;
 unsigned char bits[BITS_SIZE];
 short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
@@ -81,6 +83,7 @@ void init_alaw_tables();
 
 void audio_stream_init(int receiver) {
     init_alaw_tables();
+    TAILQ_INIT(&IQ_audio_stream);
 }
 
 /* --------------------------------------------------------------------------*/
@@ -90,12 +93,8 @@ void audio_stream_init(int receiver) {
 * @return
 */
 
-void audio_stream_reset() {
-    if(audio_buffer!=NULL) {
-        free(audio_buffer);
-	audio_buffer = NULL;
-    }
 
+void allocate_audio_buffer(){
     if (encoding == 0) {
 	audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
 	}
@@ -107,9 +106,15 @@ void audio_stream_reset() {
 	audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
 	audio_buffer=(unsigned char*)malloc(audio_buffer_size*audio_channels + AUDIO_BUFFER_HEADER_SIZE);
 	};
-
-    audio_stream_buffer_insert=0;
 }
+
+void audio_stream_reset() {
+    audio_stream_buffer_insert=0;
+ 
+    if (audio_buffer != NULL) free(audio_buffer);
+    allocate_audio_buffer();
+}
+
 
 void audio_stream_put_samples(short left_sample,short right_sample) {
 	int audio_buffer_length;
@@ -161,7 +166,7 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 	//	    sprintf(&audio_buffer[1],"%f",HEADER_VERSION);
 		    audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
 		    sprintf((char *)&audio_buffer[AUDIO_LENGTH_POSITION],"%d ", audio_buffer_length);
-		    client_send_audio();
+//		    audio_stream_queue_add(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
 		    codec2_count = 0;
 		    }
 
@@ -173,7 +178,7 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 		if (encoding == 1) audio_buffer_length = audio_buffer_size*audio_channels*2;
 		else audio_buffer_length = audio_buffer_size*audio_channels;
 		sprintf((char *)&audio_buffer[AUDIO_LENGTH_POSITION],"%d ", audio_buffer_length);
-		client_send_audio();
+//		audio_stream_queue_add(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
 	    	audio_stream_buffer_insert=0;
         }
     }
@@ -185,6 +190,38 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
             sample_count=0;
         }
     }
+}
+
+
+void audio_stream_queue_add(int length) {
+    int i;
+    struct audio_entry *item;
+
+
+        if(send_audio) {
+		item = malloc(sizeof(*item));
+		item->buf = audio_buffer;
+		item->length = length;
+		TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
+                }
+	allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
+
+}
+
+struct audio_entry *audio_stream_queue_remove(){
+	struct audio_entry *first_item;
+	first_item = TAILQ_FIRST(&IQ_audio_stream);
+	if (first_item != NULL) TAILQ_REMOVE(&IQ_audio_stream, first_item, entries);
+	return first_item;
+}
+
+void audio_stream_queue_free(){
+	struct audio_entry *item;
+
+	while ((item = audio_stream_queue_remove()) != NULL){
+		free(item->buf);
+		free(item);
+		}
 }
 
 unsigned char alaw(short sample) {
