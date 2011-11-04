@@ -364,11 +364,9 @@ void readcb(struct bufferevent *bev, void *ctx){
                 token=strtok(message," ");
  
                     if(strcmp(token,"mic")==0){		// This is incoming microphone data
-/*
 			sem_wait(&ready_mic_semaphore);				// this will block
 			memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
 			sem_post(&get_mic_semaphore);
-*/
 		    }
                     else {
                     	if(token!=NULL) {
