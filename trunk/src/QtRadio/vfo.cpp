@@ -319,9 +319,7 @@ void vfo::on_pBtnvfoA_clicked()
             on_pBtnRIT_clicked();
         }
         selectedVFO = 'A';
-        ui->pBtnvfoA->setStyleSheet("background-color: rgb(85, 255, 0)"); //Set button to Green
-        ui->pBtnvfoB->setStyleSheet("background-color: normal");
-        ui->pBtnSplit->setStyleSheet("background-color: normal");
+        setVfoBtnColour();
         vfoEnabled(true, false);
         emit frequencyChanged(readA());
     }
@@ -335,9 +333,7 @@ void vfo::on_pBtnvfoB_clicked()
             on_pBtnRIT_clicked();
         }
         selectedVFO = 'B';
-        ui->pBtnvfoB->setStyleSheet("background-color: rgb(85, 255, 0)");
-        ui->pBtnvfoA->setStyleSheet("background-color: normal");
-        ui->pBtnSplit->setStyleSheet("background-color: normal");
+        setVfoBtnColour();
         vfoEnabled(false, true);
         emit frequencyChanged(readB());
     }
@@ -366,9 +362,7 @@ void vfo::on_pBtnSplit_clicked()
             on_pBtnRIT_clicked();
         }
         selectedVFO = 'S';
-        ui->pBtnvfoA->setStyleSheet("background-color: rgb(85, 255, 0)");
-        ui->pBtnvfoB->setStyleSheet("background-color: rgb(255, 155, 155)");
-        ui->pBtnSplit->setStyleSheet("background-color: rgb(0, 170, 255)");
+        setVfoBtnColour();
         vfoEnabled(true, false);
         emit frequencyChanged(readA());
     }
@@ -509,9 +503,8 @@ long long vfo::getTxFrequency()
     }
 }
 
-void vfo::setVfoBtnColour(int pttState)
+void vfo::setVfoBtnColour()
 {
-    ptt = pttState;
     switch(selectedVFO) {
         case 'A':
         if(ptt) {
@@ -548,4 +541,23 @@ void vfo::setVfoBtnColour(int pttState)
         break;
     }
 
+}
+
+void vfo::pttChange(bool pttState)
+{
+    long long temp;
+
+    ptt = pttState;
+    if(ptt) { // Going from Rx to Tx
+        if(selectedVFO=='S') { //We are going to transmit on vfoB frequency
+            temp = readA();                 //Because we are switched to vfoA we will place the
+            emit frequencyChanged(readB()); //value of vfoB in it when doing the frequency change
+            writeA(temp);                   //hence needing to save and restore vfoA via temp.
+        }
+    } else { // Going from Tx to Rx
+        if(selectedVFO=='S') { //We are going to receive on vfoA frequency
+            emit frequencyChanged(readA());
+        }
+    }
+    setVfoBtnColour();
 }

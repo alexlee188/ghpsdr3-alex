@@ -157,7 +157,7 @@ void process_args(int argc,char* argv[]) {
                 si570=1;
                 break;
             case 'v': // verbose
-                verbose=1;
+                softrock_set_verbose (1);
                 break;
             case 'f': // startupfreq
                 startupFreq=atof(optarg);

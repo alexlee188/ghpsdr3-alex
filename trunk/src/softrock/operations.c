@@ -50,8 +50,8 @@
 #include <usb.h>    /* this is libusb, see http://libusb.sourceforge.net/ */
 
 #include "operations.h"
+#include "softrock.h"
 
-extern int verbose;
 
 extern int major;
 extern int minor;
@@ -186,7 +186,7 @@ double calculateFrequency(unsigned char * buffer) {
 	int HS_DIV = (buffer[0] & 0xE0) >> 5;
 	double fout = fXtall * RFREQ / ((N1 + 1) * HS_DIV_MAP[HS_DIV]);
 	
-	if (verbose >= 2) {
+	if (softrock_get_verbose ()) {
 	   printf("RFREQ = %f\n", RFREQ);
 	   printf("N1 = %d\n", N1);
 	   printf("HS_DIV = %d\n", HS_DIV);
@@ -250,7 +250,7 @@ double getFrequency(usb_dev_handle *handle) {
 
 	if (nBytes > 0) {
 		int i;
-		if (verbose >= 2) {
+		if (softrock_get_verbose ()) {
 			for (i=0; i < 6; i++) {
 				printf("Register %d = %X (%d)\n", i + 7,  (unsigned char) buffer[i], (unsigned char) buffer[i]);
 			}
@@ -318,7 +318,7 @@ int calcDividers(double f, struct solution* solution)
 		solution->f0 = sols[imin].f0;
 		solution->RFREQ = sols[imin].f0 / fXtall;
 
-		if (verbose >= 2) {
+		if (softrock_get_verbose ()) {
 			printf("solution->HS_DIV = %d\n", solution->HS_DIV);
 			printf("solution->N1 = %d\n", solution->N1);
 			printf("solution->f0 = %f\n", solution->f0);
@@ -347,7 +347,7 @@ void setFrequency(usb_dev_handle * handle, double frequency)
 	int value = 0x700 + i2cAddress;
 	int index = 0;
 	double f = frequency * multiplier;
-	if (verbose)
+	if (softrock_get_verbose ())
 		printf("Setting Si570 Frequency by registers to: %f\n", f);
 	
 	struct solution theSolution;
@@ -371,7 +371,7 @@ void setFrequency(usb_dev_handle * handle, double frequency)
 	buffer[0] = buffer[0] + (theSolution.HS_DIV << 5);
 	
 	if (usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, request, value, index, buffer, sizeof(buffer), 5000)) {
-		if (verbose >= 2) printBuffer(buffer, 2);
+		if (softrock_get_verbose ()) printBuffer(buffer, 2);
 		
 	} else {
 		fprintf(stderr, "Failed writing frequency to device\n");
@@ -388,14 +388,14 @@ void setFreqByValue(usb_dev_handle * handle, double frequency)
 	double f = multiplier * frequency;
     
 	setLongWord(round(f * 2097152.0), buffer);
-	if (verbose) {
+	if (softrock_get_verbose ()) {
 		printf("Setting Si570 Frequency by value to: %f\n", f);
-        if (verbose >= 2)
+        if (softrock_get_verbose ())
 		  printBuffer(buffer,4);
 	}
 
 	if (usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, request, value, index, buffer, sizeof(buffer), 5000)) {
-		if (verbose >= 2) printBuffer(buffer, 2);
+		if (softrock_get_verbose ()) printBuffer(buffer, 2);
 		
 	} else {
 		fprintf(stderr, "Failed setting frequency");
