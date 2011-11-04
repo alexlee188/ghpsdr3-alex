@@ -552,7 +552,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 			fprintf(stderr,"and with encoding method %d\n", encoding);
                         audio_stream_reset();
 			audio_stream_queue_free();
-                        send_audio=1;
+ //                       send_audio=1;
                     } else if(strcmp(token,"stopaudiostream")==0) {
                         send_audio=0;
                     } else if(strcmp(token,"setencoding")==0) {
