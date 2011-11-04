@@ -623,3 +623,8 @@ bool Configure::getGeometryState()
 {
     return widget.checkBoxWindowPosn->checkState();
 }
+
+bool Configure::getTxAllowed()
+{
+    return widget.allowTx->checkState();
+}
