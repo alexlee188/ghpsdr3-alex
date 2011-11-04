@@ -70,6 +70,24 @@ libsamplerate0-dev
 libusb-1.0-0-dev
 libconfig8-dev
 
+libevent
+========
+
+For the rxtx-event branch of the software, you will also need a version of libevent that is newer than what
+is available from the Ubuntu distribution.
+
+Download from:
+
+http://libevent.org/
+
+libevent-2.0.15-stable.tar.gz
+
+Uncompress and follow the instructions to build and install:
+
+$ ./configure
+$ make
+$ sudo make install
+$ sudo ldconfig
 
 Building the software
 =====================
