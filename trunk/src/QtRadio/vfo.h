@@ -29,7 +29,7 @@ public:
     void setBandFrequency(long long f) {bandFrequency = f;}
     QString rigctlGetvfo();
     long long getTxFrequency();
-    void setVfoBtnColour(int ptt);
+    void pttChange(bool pttState);
 
 public slots:
     void on_pBtnvfoA_clicked();  // moved from private for rigctl
@@ -60,13 +60,9 @@ private slots:
     void on_pBtnAtoB_clicked();
     void on_pBtnBtoA_clicked();
     void processRIT(int);
-
     void on_pBtnRIT_clicked();
-
     void on_pBtnSubRx_clicked();
-
     void on_toolBtnUp_clicked();
-
     void on_toolBtnDn_clicked();
 
 private:
@@ -78,6 +74,7 @@ private:
     void writeB(long long);
     void vfoEnabled(bool setA, bool setB);
     void storeVFO();
+    void setVfoBtnColour();
     void timerEvent(QTimerEvent *event);
     long long readA();
     long long readB();
