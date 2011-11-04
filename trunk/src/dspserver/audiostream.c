@@ -110,7 +110,7 @@ void allocate_audio_buffer(){
 
 void audio_stream_reset() {
     audio_stream_buffer_insert=0;
- 
+    audio_stream_queue_free();
     if (audio_buffer != NULL) free(audio_buffer);
     allocate_audio_buffer();
 }
@@ -118,6 +118,8 @@ void audio_stream_reset() {
 
 void audio_stream_put_samples(short left_sample,short right_sample) {
 	int audio_buffer_length;
+	struct audio_entry * item;
+
     // samples are delivered at 48K
     // output to stream at 8K (1 in 6) or 48K (1 in 1)
     // codec2 encoding works only for 8K
@@ -166,7 +168,12 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 	//	    sprintf(&audio_buffer[1],"%f",HEADER_VERSION);
 		    audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
 		    sprintf((char *)&audio_buffer[AUDIO_LENGTH_POSITION],"%d ", audio_buffer_length);
-//		    audio_stream_queue_add(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+		    audio_stream_queue_add(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+		    item = audio_stream_queue_remove();
+		    if (item != NULL) {
+			free(item->buf);
+			free(item);
+			}
 		    codec2_count = 0;
 		    }
 
@@ -178,7 +185,12 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 		if (encoding == 1) audio_buffer_length = audio_buffer_size*audio_channels*2;
 		else audio_buffer_length = audio_buffer_size*audio_channels;
 		sprintf((char *)&audio_buffer[AUDIO_LENGTH_POSITION],"%d ", audio_buffer_length);
-//		audio_stream_queue_add(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+		audio_stream_queue_add(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+		item = audio_stream_queue_remove();
+		    if (item != NULL) {
+			free(item->buf);
+			free(item);
+			}
 	    	audio_stream_buffer_insert=0;
         }
     }

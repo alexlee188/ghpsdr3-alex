@@ -364,11 +364,11 @@ void readcb(struct bufferevent *bev, void *ctx){
                 token=strtok(message," ");
  
                     if(strcmp(token,"mic")==0){		// This is incoming microphone data
-
+/*
 			sem_wait(&ready_mic_semaphore);				// this will block
 			memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
 			sem_post(&get_mic_semaphore);
-
+*/
 		    }
                     else {
                     	if(token!=NULL) {
@@ -551,8 +551,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 			fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
 			fprintf(stderr,"and with encoding method %d\n", encoding);
                         audio_stream_reset();
-			audio_stream_queue_free();
- //                       send_audio=1;
+                        send_audio=1;
                     } else if(strcmp(token,"stopaudiostream")==0) {
                         send_audio=0;
                     } else if(strcmp(token,"setencoding")==0) {
