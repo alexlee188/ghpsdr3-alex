@@ -49,6 +49,9 @@ AC_SEARCH_LIBS([jack_client_open], [jack],[have_jack=yes])
 have_config=no
 AC_SEARCH_LIBS([config_init], [config],[have_config=yes])
 
+have_usb-1.0=no
+AC_SEARCH_LIBS([libusb_init], [usb-1.0],[have_usb-1.0=yes])
+
 
 # Checks for header files.
 AC_FUNC_ALLOCA
@@ -151,6 +154,18 @@ if test "x${have_config}" = xno; then
     AC_MSG_ERROR([
 -----------------------------------
   The libconfig8 library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
+if test "x${have_usb-1.0}" = xyes; then
+    AC_CHECK_HEADERS([libusb-1.0/libusb.h], [], [have_usb-1.0=no])
+fi
+
+if test "x${have_usb-1.0}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The libusb-1.0 library and header file required to build ghpsdr3.
 -----------------------------------])
 
 fi
