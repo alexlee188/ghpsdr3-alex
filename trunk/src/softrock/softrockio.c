@@ -94,10 +94,10 @@ int softrock_open(void) {
     int devices;
     int i;
     PaDeviceInfo* deviceInfo;
-if (verbose)  fprintf(stderr,"softrock_open: portaudio\n");
+if (softrock_get_verbose())  fprintf(stderr,"softrock_open: portaudio\n");
 #endif
 #ifdef DIRECTAUDIO
-if (verbose)  fprintf(stderr,"softrock_open: %s\n",softrock_get_device());
+if (softrock_get_verbose())  fprintf(stderr,"softrock_open: %s\n",softrock_get_device());
 #endif
 
     if(softrock_get_playback()) {
@@ -105,7 +105,7 @@ if (verbose)  fprintf(stderr,"softrock_open: %s\n",softrock_get_device());
     }
 
 #ifdef PULSEAUDIO
-    if (verbose)  fprintf(stderr,"Using PulseAudio\n");
+    if (softrock_get_verbose())  fprintf(stderr,"Using PulseAudio\n");
 
     params.format=PA_SAMPLE_FLOAT32LE;
     params.rate=softrock_get_sample_rate();
@@ -117,16 +117,16 @@ if (verbose)  fprintf(stderr,"softrock_open: %s\n",softrock_get_device());
     attrs.fragsize=SAMPLES_PER_BUFFER*2 * sizeof(float);
     attrs.tlength=SAMPLES_PER_BUFFER*2 * sizeof(float);
 
-    if (verbose)  fprintf(stderr,"params.rate=%d\n",params.rate);
+    if (softrock_get_verbose())  fprintf(stderr,"params.rate=%d\n",params.rate);
 
     stream=pa_simple_new("localhost","Softrock", PA_STREAM_RECORD, NULL, "IQ", &params, NULL, &attrs, &error);
     if(stream==NULL) {
-        if (verbose)  fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
+        if (softrock_get_verbose())  fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
         exit(0);
     }
     playback_stream=pa_simple_new("localhost","Softrock", PA_STREAM_PLAYBACK, NULL, "IQ", &params, NULL, &attrs, &error);
     if(playback_stream==NULL) {
-        if (verbose)  fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
+        if (softrock_get_verbose())  fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
         exit(0);
     }
 
@@ -134,30 +134,30 @@ if (verbose)  fprintf(stderr,"softrock_open: %s\n",softrock_get_device());
     ftime(&start_time);
 #endif
 #ifdef PORTAUDIO
-    if (verbose)  fprintf(stderr,"Using PortAudio\n");
+    if (softrock_get_verbose())  fprintf(stderr,"Using PortAudio\n");
 
     rc=Pa_Initialize();
     if(rc!=paNoError) {
-        if (verbose)  fprintf(stderr,"Pa_Initialize failed: %s\n",Pa_GetErrorText(rc));
+        if (softrock_get_verbose())  fprintf(stderr,"Pa_Initialize failed: %s\n",Pa_GetErrorText(rc));
         exit(1);
     }
 
     devices=Pa_GetDeviceCount();
     if(devices<0) {
-        if (verbose)  fprintf(stderr,"Px_GetDeviceCount failed: %s\n",Pa_GetErrorText(devices));
+        if (softrock_get_verbose())  fprintf(stderr,"Px_GetDeviceCount failed: %s\n",Pa_GetErrorText(devices));
     } else {
-        if (verbose)  fprintf(stderr,"default input=%d output=%d devices=%d\n",Pa_GetDefaultInputDevice(),Pa_GetDefaultOutputDevice(),devices);
+        if (softrock_get_verbose())  fprintf(stderr,"default input=%d output=%d devices=%d\n",Pa_GetDefaultInputDevice(),Pa_GetDefaultOutputDevice(),devices);
 
         for(i=0;i<devices;i++) {
             deviceInfo=Pa_GetDeviceInfo(i);
-            if (verbose)  fprintf(stderr,"%d - %s\n",i,deviceInfo->name);
-                if (verbose)  fprintf(stderr,"maxInputChannels: %d\n",deviceInfo->maxInputChannels);
-                if (verbose)  fprintf(stderr,"maxOututChannels: %d\n",deviceInfo->maxOutputChannels);
-                //if (verbose)  fprintf(stderr,"defaultLowInputLatency: %f\n",deviceInfo->defaultLowInputLatency);
-                //if (verbose)  fprintf(stderr,"defaultLowOutputLatency: %f\n",deviceInfo->defaultLowOutputLatency);
-                //if (verbose)  fprintf(stderr,"defaultHighInputLatency: %f\n",deviceInfo->defaultHighInputLatency);
-                //if (verbose)  fprintf(stderr,"defaultHighOutputLatency: %f\n",deviceInfo->defaultHighOutputLatency);
-                //if (verbose)  fprintf(stderr,"defaultSampleRate: %f\n",deviceInfo->defaultSampleRate);
+            if (softrock_get_verbose())  fprintf(stderr,"%d - %s\n",i,deviceInfo->name);
+                if (softrock_get_verbose())  fprintf(stderr,"maxInputChannels: %d\n",deviceInfo->maxInputChannels);
+                if (softrock_get_verbose())  fprintf(stderr,"maxOututChannels: %d\n",deviceInfo->maxOutputChannels);
+                //if (softrock_get_verbose())  fprintf(stderr,"defaultLowInputLatency: %f\n",deviceInfo->defaultLowInputLatency);
+                //if (softrock_get_verbose())  fprintf(stderr,"defaultLowOutputLatency: %f\n",deviceInfo->defaultLowOutputLatency);
+                //if (softrock_get_verbose())  fprintf(stderr,"defaultHighInputLatency: %f\n",deviceInfo->defaultHighInputLatency);
+                //if (softrock_get_verbose())  fprintf(stderr,"defaultHighOutputLatency: %f\n",deviceInfo->defaultHighOutputLatency);
+                //if (softrock_get_verbose())  fprintf(stderr,"defaultSampleRate: %f\n",deviceInfo->defaultSampleRate);
         }
     }
 
@@ -173,31 +173,31 @@ if (verbose)  fprintf(stderr,"softrock_open: %s\n",softrock_get_device());
     outputParameters.suggestedLatency=Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
     outputParameters.hostApiSpecificStreamInfo=NULL;
 
-	if (verbose) fprintf(stderr,"input device=%d output device=%d\n",inputParameters.device,outputParameters.device);
+	if (softrock_get_verbose()) fprintf(stderr,"input device=%d output device=%d\n",inputParameters.device,outputParameters.device);
     rc=Pa_OpenStream(&stream,&inputParameters,&outputParameters,(double)softrock_get_sample_rate(),(unsigned long)SAMPLES_PER_BUFFER,paNoFlag,NULL,NULL);
     if(rc!=paNoError) {
-        if (verbose) fprintf(stderr,"Pa_OpenStream failed: %s\n",Pa_GetErrorText(rc));
+        if (softrock_get_verbose()) fprintf(stderr,"Pa_OpenStream failed: %s\n",Pa_GetErrorText(rc));
         exit(1);
     }
 
     rc=Pa_StartStream(stream);
     if(rc!=paNoError) {
-        if (verbose) fprintf(stderr,"Pa_StartStream failed: %s\n",Pa_GetErrorText(rc));
+        if (softrock_get_verbose()) fprintf(stderr,"Pa_StartStream failed: %s\n",Pa_GetErrorText(rc));
         exit(1);
     }
 
     info=Pa_GetStreamInfo(stream);
     if(info!=NULL) {
-        if (verbose) fprintf(stderr,"stream.sampleRate=%f\n",info->sampleRate);
-        if (verbose) fprintf(stderr,"stream.inputLatency=%f\n",info->inputLatency);
-        if (verbose) fprintf(stderr,"stream.outputLatency=%f\n",info->outputLatency);
+        if (softrock_get_verbose()) fprintf(stderr,"stream.sampleRate=%f\n",info->sampleRate);
+        if (softrock_get_verbose()) fprintf(stderr,"stream.inputLatency=%f\n",info->inputLatency);
+        if (softrock_get_verbose()) fprintf(stderr,"stream.outputLatency=%f\n",info->outputLatency);
     } else {
-        if (verbose) fprintf(stderr,"Pa_GetStreamInfo returned NULL\n");
+        if (softrock_get_verbose()) fprintf(stderr,"Pa_GetStreamInfo returned NULL\n");
     }
 #endif
 #ifdef DIRECTAUDIO
 
-    if (verbose) fprintf(stderr,"Using direct audio\n");
+    if (softrock_get_verbose()) fprintf(stderr,"Using direct audio\n");
     /* open sound device */
     fd = open(softrock_get_device(), O_RDWR);
     if (fd < 0) {
@@ -227,7 +227,7 @@ if (verbose)  fprintf(stderr,"softrock_open: %s\n",softrock_get_device());
         perror("unable to set number of channels");
 
     arg = softrock_get_sample_rate();      /* sampling rate */
-if (verbose) fprintf(stderr,"sample_rate: %d\n",arg);
+if (softrock_get_verbose()) fprintf(stderr,"sample_rate: %d\n",arg);
     status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
     if (status == -1)
         perror("SOUND_PCM_WRITE_WRITE ioctl failed");
@@ -254,7 +254,7 @@ int softrock_close() {
 #ifdef PORTAUDIO
     int rc=Pa_Terminate();
     if(rc!=paNoError) {
-        if (verbose) fprintf(stderr,"Pa_Terminate failed: %s\n",Pa_GetErrorText(rc));
+        if (softrock_get_verbose()) fprintf(stderr,"Pa_Terminate failed: %s\n",Pa_GetErrorText(rc));
         exit(1);
     }
 #endif
@@ -280,7 +280,7 @@ int softrock_write(float* left_samples,float* right_samples) {
     }
 
     rc = pa_simple_write(playback_stream, audio_buffer, sizeof(audio_buffer),&error);
-    if (rc < 0) if (verbose) fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n", pa_strerror(error), rc);
+    if (rc < 0) {if (softrock_get_verbose()) fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n", pa_strerror(error), rc);}
     return rc;
 }
 
@@ -294,14 +294,14 @@ int softrock_read(float* left_samples,float* right_samples) {
     if(softrock_get_playback()) {
         softrock_playback_buffer((char *)audio_buffer,sizeof(audio_buffer));
     } else {
-        //if (verbose) fprintf(stderr,"read available=%ld\n",Pa_GetStreamReadAvailable(stream));
+        //if (softrock_get_verbose()) fprintf(stderr,"read available=%ld\n",Pa_GetStreamReadAvailable(stream));
         //ftime(&start_time);
         rc=pa_simple_read(stream,&audio_buffer[0],sizeof(audio_buffer),&error);
         if(rc<0) {
-            if (verbose) fprintf(stderr,"error reading audio_buffer %s (rc=%d)\n", pa_strerror(error),rc);
+            if (softrock_get_verbose()) fprintf(stderr,"error reading audio_buffer %s (rc=%d)\n", pa_strerror(error),rc);
         }
         //ftime(&end_time);
-        //if (verbose) fprintf(stderr,"read %d bytes in %ld ms\n",sizeof(audio_buffer),((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
+        //if (softrock_get_verbose()) fprintf(stderr,"read %d bytes in %ld ms\n",sizeof(audio_buffer),((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
     }
 
 
@@ -323,7 +323,7 @@ int softrock_read(float* left_samples,float* right_samples) {
             sample_count++;
             if(sample_count==softrock_get_sample_rate()) {
                 ftime(&end_time);
-                if (verbose) fprintf(stderr,"%d samples in %ld ms\n",sample_count,((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
+                if (softrock_get_verbose()) fprintf(stderr,"%d samples in %ld ms\n",sample_count,((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
                 sample_count=0;
                 ftime(&start_time);
             }
@@ -347,10 +347,10 @@ int softrock_write(float* left_samples,float* right_samples) {
         audio_buffer[(i*2)+1]=left_samples[i];
     }
 
-    //if (verbose) fprintf(stderr,"write available=%ld\n",Pa_GetStreamWriteAvailable(stream));
+    //if (softrock_get_verbose()) fprintf(stderr,"write available=%ld\n",Pa_GetStreamWriteAvailable(stream));
     rc=Pa_WriteStream(stream,audio_buffer,SAMPLES_PER_BUFFER);
     if(rc!=0) {
-        if (verbose) fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n",Pa_GetErrorText(rc),rc);
+        if (softrock_get_verbose()) fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n",Pa_GetErrorText(rc),rc);
     }
 
 
@@ -362,10 +362,10 @@ int softrock_read(float* left_samples,float* right_samples) {
     int i;
     float audio_buffer[SAMPLES_PER_BUFFER*2];
 
-    //if (verbose) fprintf(stderr,"read available=%ld\n",Pa_GetStreamReadAvailable(stream));
+    //if (softrock_get_verbose()) fprintf(stderr,"read available=%ld\n",Pa_GetStreamReadAvailable(stream));
     rc=Pa_ReadStream(stream,audio_buffer,SAMPLES_PER_BUFFER);
     if(rc<0) {
-        if (verbose) fprintf(stderr,"error reading audio_buffer %s (rc=%d)\n",Pa_GetErrorText(rc),rc);
+        if (softrock_get_verbose()) fprintf(stderr,"error reading audio_buffer %s (rc=%d)\n",Pa_GetErrorText(rc),rc);
     }
 
     // de-interleave samples
@@ -373,13 +373,13 @@ int softrock_read(float* left_samples,float* right_samples) {
         for(i=0;i<SAMPLES_PER_BUFFER;i++) {
             left_samples[i]=audio_buffer[i*2];
             right_samples[i]=audio_buffer[(i*2)+1];
-					//if (verbose) fprintf(stderr,"%d left=%f right=%f\n",i, left_samples[i],right_samples[i]);
+					//if (softrock_get_verbose()) fprintf(stderr,"%d left=%f right=%f\n",i, left_samples[i],right_samples[i]);
         }
     } else {
         for(i=0;i<SAMPLES_PER_BUFFER;i++) {
             right_samples[i]=audio_buffer[i*2];
             left_samples[i]=audio_buffer[(i*2)+1];
-//if (verbose) fprintf(stderr,"%d left=%f right=%f\n",i, left_samples[i],right_samples[i]);
+//if (softrock_get_verbose()) fprintf(stderr,"%d left=%f right=%f\n",i, left_samples[i],right_samples[i]);
         }
     }
 

@@ -23,6 +23,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
+* This file contains the main program and the command line processing.
 */
 
 #include <stdio.h>
@@ -43,7 +44,6 @@
 #include "softrock.h"
 #include "receiver.h"
 #include "operations.h"
-
 
 static struct option long_options[] = {
     {"samplerate",required_argument, 0, 's'},
@@ -155,7 +155,7 @@ void process_args(int argc,char* argv[]) {
                 si570=1;
                 break;
             case 'v': // verbose
-                verbose=1;
+                softrock_set_verbose (1);
                 break;
             case 'f': // startupfreq
                 startupFreq=atof(optarg);

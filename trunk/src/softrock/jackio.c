@@ -22,6 +22,8 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
+* This file contains the Jack initialization and callback that gets data to
+* and from Jack.
 */
 
 #include "jackio.h"
@@ -32,7 +34,7 @@ static int buffers;
 
 int init_jack_audio()
 {
-	int verbose_flag, error, r;
+	int error, r;
 
 	const char * capture_rx_port_name[2*MAX_RECEIVERS] = {"system:capture_1","system:capture_2",
 		"system:capture_3","system:capture_4","system:capture_5","system:capture_6",
@@ -45,7 +47,6 @@ int init_jack_audio()
 	const char * softrock_tx_port_name_left = "Softrock TX Port_left";
 	const char * softrock_tx_port_name_right = "Softrock TX Port_right";
 
-	verbose_flag = verbose;
 	frame = softrock_get_rx_frame ();
 	buffers = softrock_get_input_buffers();
 	//Create a new jack client, then make sure everything went ok.
@@ -116,28 +117,28 @@ int init_jack_audio()
 		jack_cleanup();
 		return 1;
 	}
-	else if(verbose_flag) fprintf(stderr,"Activated client.\n");
+	else if(softrock_get_verbose()) fprintf(stderr,"Activated client.\n");
 
 	//Connect the rx ports.
 	for(r=0;r < softrock_get_receivers();r++) {
 		if (jack_connect (softrock_client,capture_rx_port_name[2*r], jack_port_name (audio_input_port_left[r]))) {
 			fprintf (stderr, "Cannot connect to port: %s\n",capture_rx_port_name[2*r]);
 		}
-		else if(verbose_flag) fprintf(stderr, "Connected to port: %s\n",capture_rx_port_name[2*r]);
+		else if(softrock_get_verbose()) fprintf(stderr, "Connected to port: %s\n",capture_rx_port_name[2*r]);
 		if (jack_connect (softrock_client,capture_rx_port_name[2*r+1], jack_port_name (audio_input_port_right[r]))) {
 			fprintf (stderr, "Cannot connect to port:  %s\n",capture_rx_port_name[2*r+1]);
 		}
-		else if(verbose_flag) fprintf(stderr, "Connected to port:   %s\n",capture_rx_port_name[2*r+1]);
+		else if(softrock_get_verbose()) fprintf(stderr, "Connected to port:   %s\n",capture_rx_port_name[2*r+1]);
 	}
 	//Connect the tx ports.
 	if (jack_connect (softrock_client,jack_port_name (audio_output_port_left), playback_tx_port_name[0])) {
 		fprintf (stderr, "Cannot connect to port: %s\n",playback_tx_port_name[0]);
 	}
-	else if(verbose_flag) fprintf(stderr, "Connected to port: %s\n",playback_tx_port_name[0]);
+	else if(softrock_get_verbose()) fprintf(stderr, "Connected to port: %s\n",playback_tx_port_name[0]);
 	if (jack_connect (softrock_client,jack_port_name (audio_output_port_right), playback_tx_port_name[1])) {
 		fprintf (stderr, "Cannot connect to port:  %s\n",playback_tx_port_name[1]);
 	}
-	else if(verbose_flag) fprintf(stderr, "Connected to port:   %s\n",playback_tx_port_name[1]);
+	else if(softrock_get_verbose()) fprintf(stderr, "Connected to port:   %s\n",playback_tx_port_name[1]);
 	return 0;
 }
 

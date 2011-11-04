@@ -50,6 +50,7 @@
 
 #include "operations.h"
 #include "config_ops.h"
+#include "softrock.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -59,7 +60,6 @@
 #define FALSE 0
 #endif
 
-extern int verbose;
 
 extern int major;
 extern int minor;
@@ -103,7 +103,7 @@ void calibrate(usb_dev_handle *handle)
 		int HS_DIV = (buffer[0] & 0xE0) >> 5;
 		int HS_DIV_MAP[] = {4,5,6,7,-1,9,-1,11}; 
 		
-		if (verbose){
+		if (softrock_get_verbose ()){
 			printf("RFREQ = %f\n", RFREQ);
 			printf("N1 = %d\n", N1);
 			printf("HS_DIV = %d, HS_DIV_MAP[%d] = %d\n", HS_DIV, HS_DIV, HS_DIV_MAP[HS_DIV]);
@@ -299,12 +299,12 @@ void setXtallFrequency(usb_dev_handle *handle, double xtallFreq) {
 	int nBytes;
 
 	iXtallFreq = (unsigned int)( xtallFreq * (1UL<<24) );
-	if (verbose)
+	if (softrock_get_verbose ())
 		printf("Crystal Freq = %f (%d)\n", xtallFreq, iXtallFreq);
 
 	nBytes = usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, REQUEST_SET_XTALL_FREQ, 0, 0, (char *) &iXtallFreq, sizeof(iXtallFreq), 500);
   
-	if (verbose >= 2)
+	if (softrock_get_verbose ())
 		printf("Return = %d\n", nBytes);
 
 	if (nBytes < 0)

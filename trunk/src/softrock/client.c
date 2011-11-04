@@ -188,7 +188,7 @@ void* audio_thread(void* arg) {
     int bytes_read;
     int on=1;
 
-    fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
+    if (softrock_get_verbose()) fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);
@@ -211,7 +211,7 @@ void* audio_thread(void* arg) {
         exit(1);
     }
 
-    fprintf(stderr,"listening for tx %d IQ audio on port %d\n",rx->id,audio_port+(rx->id*2));
+    if (softrock_get_verbose()) fprintf(stderr,"listening for tx %d IQ audio on port %d\n",rx->id,audio_port+(rx->id*2));
 
     while(1) {
         // get audio from a client

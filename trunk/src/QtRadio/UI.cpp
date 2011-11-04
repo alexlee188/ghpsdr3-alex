@@ -1857,17 +1857,19 @@ void UI::pttChange(int caller, bool ptt)
 {
     QString command;
 
-    txPwr = widget.ctlFrame->getTxPwr();
-    txFrequency = widget.vfoFrame->getTxFrequency();
-    widget.vfoFrame->setVfoBtnColour(ptt);
-    qDebug()<<Q_FUNC_INFO<<": Caller = "<<caller<<", and ptt = "<<ptt<<", txPwr = "<<txPwr<<", txFrequency = "<<txFrequency;
-    if(ptt) { // Going from Rx to Tx
-        connection.setMuted(true);
-        command.clear(); QTextStream(&command) << "Mox " << "on";
-        connection.sendCommand(command);
-    } else { // Going from Tx to Rx
-        connection.setMuted(false);
-        command.clear(); QTextStream(&command) << "Mox " << "off";
-        connection.sendCommand(command);
-    }
+    if(configure.getTxAllowed()) {
+        txPwr = widget.ctlFrame->getTxPwr();
+        qDebug()<<Q_FUNC_INFO<<": Caller = "<<caller<<", and ptt = "<<ptt<<", txPwr = "<<txPwr<<", txFrequency = "<<txFrequency;
+       if(ptt) { // Going from Rx to Tx
+            connection.setMuted(true);
+            command.clear(); QTextStream(&command) << "Mox " << "on";
+            connection.sendCommand(command);
+            widget.vfoFrame->pttChange(ptt);
+        } else { // Going from Tx to Rx
+            connection.setMuted(false);
+            command.clear(); QTextStream(&command) << "Mox " << "off";
+            connection.sendCommand(command);
+            widget.vfoFrame->pttChange(ptt);
+        }
+    } else widget.ctlFrame->clearMoxBtn();
 }
