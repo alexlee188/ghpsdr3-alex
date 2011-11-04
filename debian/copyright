@@ -1,0 +1,32 @@
+Format: http://dep.debian.net/deps/dep5
+Upstream-Name: ghpsdr3
+Source: https://github.com/alexlee188/ghpsdr3-alex/tree/aconf
+
+Files: *
+Copyright: 2009,2010,2011 John Melton G0ORX/N6LYT
+           Robert McGwier <rwmcgwier@gmail.com>
+           Frank Brickle <frank.brickle@gmail.com>
+License: GPL-3
+ Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+ 
+Files: debian/*
+Copyright: 2011 Andrea Montefusco IW0HDV <andrew@montefusco.com>
+License: GPL-2+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
+

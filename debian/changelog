@@ -1,0 +1,70 @@
+ghpsdr3 (1.6~0ubuntu1ppa1~natty) natty; urgency=low
+
+  * Glenn Taylor VE9GJ 
+    Fixed possible memleak in dspserver updatestaus()
+    Added wget requirment to README
+    Fixed some gcc warnings
+
+  * Glenn Taylor VE9GJ
+    Added web register to dspserver ( --share) Note new depend of libconfig8 !
+
+  * Graeme Jury
+    bugfix, vfoB zero on rightclick fixed
+
+  * Alex Lee
+    README: added libsamplerate0-dev
+    Updated README regarding ppa
+    
+  * Andrea Montefusco IW0HDV
+    Bug fixed: spurious files removed from dependecies list.
+    Autotools on widget-server.
+
+  * Alex Lee
+    Updatd README; cleaned up header files for widget-server
+    Added back the original server for hpsdr hardware
+    Renamed server to widget-server
+
+  * Glenn Taylor VE9GJ 
+    Updated top level README with instructions for Windows Users
+
+  * Alex Lee
+    Changed codec2 buffer to 8 frames; increased audio buffer size for testing
+    minor changes to function name
+    Tweaks to make connection more reliable
+    Some error checking of connection data from dspserver
+
+  * Graeme Jury
+    Up/Down buttons programmed at 20/40/80/160
+    Cleaned up some debug statements from vfo.cpp
+    subRx bugs fixed, more adjustments to vfo.cpp
+    Major rework of vfo.cpp
+
+  * Added rigctl to QtRadio default port 19090 added section to top level README, Glenn Taylor VE9GJ
+
+  * More features added, Graeme Jury
+
+  * Band button changes with band shift, band memory changes,
+    merge branch 'band' into gvj
+    WWV button now working
+    Provided Aux panel for TX controls
+    Bugfix - missed settings->endGroup() in band
+    Band limits now saved in config file
+    Fixed checking of band buttons & vfo mouse wheel direction
+    Merge branch 'master' of github.com:alexlee188/ghpsdr3-alex
+    Made the project file work for Ubuntu 11.04 and made notes for th...
+    When --correctedfreq is used assume old firmware.
+     
+  * JACK audio and multiple receivers.
+    This comit makes --jack a command line option.
+
+  * menu machinery
+
+  * git string added in About; Source and PPA release 1.3
+
+  * Bug fixed in debian/control: qtmobility-dev was missing
+
+  * Bug fixed in QtRadio Makefile.am
+
+  * Initial release
+
+ -- Andrea Montefusco IW0HDV (Debian packaging from laptop) <andrew@montefusco.com>  Sat, 6 Oct 2011 22:10:00 +0200

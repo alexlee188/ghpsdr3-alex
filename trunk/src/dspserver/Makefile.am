@@ -6,9 +6,6 @@ dspserver_CFLAGS = -g -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-func
 dspserver_CPPFLAGS = -I/usr/local/include
 dspserver_LDADD = ../DttSP/libDttSP.a
 
-
-
-dspserver_LDFLAGS = -lconfig
 dspserver_SOURCES = main.c\
          ozy.c\
          soundcard.c\
