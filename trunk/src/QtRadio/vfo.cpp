@@ -320,9 +320,6 @@ void vfo::on_pBtnvfoA_clicked()
         }
         selectedVFO = 'A';
         setVfoBtnColour();
-//        ui->pBtnvfoA->setStyleSheet("background-color: rgb(85, 255, 0)"); //Set button to Green
-//        ui->pBtnvfoB->setStyleSheet("background-color: normal");
-//        ui->pBtnSplit->setStyleSheet("background-color: normal");
         vfoEnabled(true, false);
         emit frequencyChanged(readA());
     }
@@ -337,9 +334,6 @@ void vfo::on_pBtnvfoB_clicked()
         }
         selectedVFO = 'B';
         setVfoBtnColour();
-//        ui->pBtnvfoB->setStyleSheet("background-color: rgb(85, 255, 0)");
-//        ui->pBtnvfoA->setStyleSheet("background-color: normal");
-//        ui->pBtnSplit->setStyleSheet("background-color: normal");
         vfoEnabled(false, true);
         emit frequencyChanged(readB());
     }
@@ -369,9 +363,6 @@ void vfo::on_pBtnSplit_clicked()
         }
         selectedVFO = 'S';
         setVfoBtnColour();
-//        ui->pBtnvfoA->setStyleSheet("background-color: rgb(85, 255, 0)");
-//        ui->pBtnvfoB->setStyleSheet("background-color: rgb(255, 155, 155)");
-//        ui->pBtnSplit->setStyleSheet("background-color: rgb(0, 170, 255)");
         vfoEnabled(true, false);
         emit frequencyChanged(readA());
     }

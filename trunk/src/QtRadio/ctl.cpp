@@ -69,3 +69,9 @@ int Ctl::getTxPwr()
 void Ctl::update_mic_level(qreal level){
     ui->MicProgressBar->setValue(100*level);
 }
+
+void Ctl::clearMoxBtn()
+{
+    ui->btnMox->setChecked(false);
+    ui->btnTune->setChecked(false);
+}
