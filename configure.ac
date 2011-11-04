@@ -25,6 +25,9 @@ AC_PROG_RANLIB
 # Check both libraries binary and header files
 #
 
+have_m=no
+AC_SEARCH_LIBS([round], [m],[have_m=yes])
+
 have_pthreads=no
 AC_SEARCH_LIBS([pthread_create], [pthread],[have_pthreads=yes])
 
@@ -49,8 +52,8 @@ AC_SEARCH_LIBS([jack_client_open], [jack],[have_jack=yes])
 have_config=no
 AC_SEARCH_LIBS([config_init], [config],[have_config=yes])
 
-have_usb-1.0=no
-AC_SEARCH_LIBS([libusb_init], [usb-1.0],[have_usb-1.0=yes])
+have_usb10=no
+AC_SEARCH_LIBS([libusb_init], [usb-1.0],[have_usb10=yes])
 
 
 # Checks for header files.
@@ -158,11 +161,11 @@ if test "x${have_config}" = xno; then
 
 fi
 
-if test "x${have_usb-1.0}" = xyes; then
-    AC_CHECK_HEADERS([libusb-1.0/libusb.h], [], [have_usb-1.0=no])
+if test "x${have_usb10}" = xyes; then
+    AC_CHECK_HEADERS([libusb-1.0/libusb.h], [], [have_usb10=no])
 fi
 
-if test "x${have_usb-1.0}" = xno; then
+if test "x${have_usb10}" = xno; then
     AC_MSG_ERROR([
 -----------------------------------
   The libusb-1.0 library and header file required to build ghpsdr3.

@@ -1,4 +1,4 @@
-ghpsdr3 (1.6~0ubuntu1ppa1~natty) natty; urgency=low
+ghpsdr3 (1.6~0ubuntu1ppa1~natty) natty; urgency=high
 
   * Glenn Taylor VE9GJ 
     Fixed possible memleak in dspserver updatestaus()
