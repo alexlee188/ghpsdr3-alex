@@ -46,4 +46,6 @@ rm -f -r	trunk/src/softrock/Makefile
 rm -f -r	trunk/src/softrock/Makefile.in
 rm -f -r	ghpsdr3-1.*.tar.gz
 rm -f		trunk/src/QtRadio/GITSTR
+rm -f           trunk/src/widget-server/Makefile.in
+
 

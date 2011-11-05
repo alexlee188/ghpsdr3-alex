@@ -7,6 +7,8 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <libconfig.h>
+#include <unistd.h>
+#include <ctype.h>
 
 #include "register.h"
 
@@ -96,7 +98,6 @@ void init_register(){
   
   
   config_t cfg;
-  config_setting_t *setting;
   const char *str;
   config_init(&cfg);
   if(! config_read_file(&cfg, share_config_file))
@@ -120,13 +121,16 @@ void init_register(){
      if(config_lookup_string(&cfg, "ant", &str)){
          ant = str;
      }
-	 //fprintf(stderr, "\nCall: %s\n", call);
-	 //fprintf(stderr, "Location: %s\n", location);  
-	 //fprintf(stderr, "Band: %s\n", band);
-	 //fprintf(stderr, "Rig: %s\n", rig);
-	 //fprintf(stderr, "Ant: %s\n\n", ant);
   }	    
   
+    if (strcmp(call, "Unknown") == 0){
+		fprintf(stderr,"%s\n", "**********************************************************");
+		fprintf(stderr,"%s\n", "  Your config file located at: ");
+		fprintf(stderr,"  %s\n", share_config_file);
+		fprintf(stderr,"%s\n", "  Contains Unknown for a Call");
+		fprintf(stderr,"%s\n", "  Please edit this file and fill in your station details!");
+		fprintf(stderr,"%s\n", "***********************************************************");
+	}
     call = url_encode(call);
     location = url_encode(location);
     band = url_encode(band);
@@ -134,23 +138,25 @@ void init_register(){
     ant = url_encode(ant); 
     
     pthread_t thread1;
-    int t_ret1;
-    t_ret1 = pthread_create( &thread1, NULL, doReg, (void*) NULL);
+    int ret;
+    ret = pthread_create( &thread1, NULL, doReg, (void*) NULL);
+    ret = pthread_detach(thread1);
 }
 
 void *doUpdate(){
 	int result;
     char sCmd[255];
-    sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=2%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant, dspstatus);
+    sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant, dspstatus);
 	result = system(sCmd);
-
+    return 0;
 }
 
 
 void updateStatus(char *status){
 	dspstatus = status;
 	pthread_t thread2;
-    int t_ret2;
-    t_ret2 = pthread_create( &thread2, NULL, doUpdate, (void*) NULL);
+    int ret;
+    ret = pthread_create( &thread2, NULL, doUpdate, (void*) NULL );
+    ret = pthread_detach(thread2);
 }
 

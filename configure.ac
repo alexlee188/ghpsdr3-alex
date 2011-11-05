@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.65])
-AC_INIT([ghpsdr3], [1.5], [andrew@montefusco.com])
+AC_INIT([ghpsdr3], [1.6], [andrew@montefusco.com])
 
 AM_INIT_AUTOMAKE
 
@@ -25,6 +25,9 @@ AC_PROG_RANLIB
 # Check both libraries binary and header files
 #
 
+have_m=no
+AC_SEARCH_LIBS([round], [m],[have_m=yes])
+
 have_pthreads=no
 AC_SEARCH_LIBS([pthread_create], [pthread],[have_pthreads=yes])
 
@@ -45,6 +48,12 @@ AC_SEARCH_LIBS([usb_init], [usb],[have_usb=yes])
 
 have_jack=no
 AC_SEARCH_LIBS([jack_client_open], [jack],[have_jack=yes])
+
+have_config=no
+AC_SEARCH_LIBS([config_init], [config],[have_config=yes])
+
+have_usb10=no
+AC_SEARCH_LIBS([libusb_init], [usb-1.0],[have_usb10=yes])
 
 
 # Checks for header files.
@@ -136,6 +145,30 @@ if test "x${have_jack}" = xno; then
     AC_MSG_ERROR([
 -----------------------------------
   The libjack library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
+if test "x${have_config}" = xyes; then
+    AC_CHECK_HEADERS([libconfig.h], [], [have_config=no])
+fi
+
+if test "x${have_config}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The libconfig8 library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
+if test "x${have_usb10}" = xyes; then
+    AC_CHECK_HEADERS([libusb-1.0/libusb.h], [], [have_usb10=no])
+fi
+
+if test "x${have_usb10}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The libusb-1.0 library and header file required to build ghpsdr3.
 -----------------------------------])
 
 fi
