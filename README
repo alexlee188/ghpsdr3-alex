@@ -34,18 +34,23 @@ You will then find the QtRadio app in the Applications > Internet menu
 Subsequently you can use the Ubuntu software update process to update to the latest ppa version.
 The servers are installed in /usr/bin directory and are therefore in PATH.
 
+Subsequently you can use the Ubuntu software update process to update to the latest ppa version.
+
 Windows Users
 =============
 
 At this time the only application working in Windows is the QtRadio client which can connect to
 any dspserver.  A ready to run windows executable is available at:
+
 	http://www.napan.com/ve9gj
 
 You can download the zip file which contains all the needed dlls and qtradio.exe.  Extract the qtradio folder
 to somewhere on your windows drive and double click qtradio.exe to run.
 
 The source for building with QtCreator 2.3.0 based on QT 4.7.4 is available via the win32 branch at:
+
 	https://github.com/alexlee188/ghpsdr3-alex
+
 Note that codec2 is not working in the win32 version.
 
 Note that tx and codec2 is not working in the win32 version.
@@ -81,10 +86,26 @@ glutg3-dev
 Starting from 11.04 install as well:
 qtmobility-dev
 
+libevent
+========
+For the rxtx-event branch of the software, you will also need a version of libevent that is newer than what
+is available from the Ubuntu distribution.  Go to synaptic and completely remove the stock libevent (v1.4) from Ubuntu.
 
-Building the software
-=====================
+Then download from:
 
+http://libevent.org/
+
+libevent-2.0.15-stable.tar.gz
+
+Uncompress and follow the instructions to build and install:
+
+$ ./configure
+$ make
+$ sudo make install
+$ sudo ldconfig
+
+Building the ghpsdr3-alex software
+==================================
 To build:
 
 $ cd ghpsdr3-alex
@@ -98,7 +119,6 @@ Then the 3 programs will be installed in /usr/local/bin.
 
 Running the software
 ====================
-
 To run the softrock server (defaults to using pulse for IQ input.  So 
 use pulse chooser to set the default pulse source to the IQ sound 
 card).  You also need to run pulse in network mode.  Use Pulseaudio Device Chooser
