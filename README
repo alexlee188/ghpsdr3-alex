@@ -4,28 +4,26 @@ http://openhpsdr.org/wiki/index.php?title=Ghpsdr3
 
 The changes are in trunk/src/: 
 
-softrock     - added an IF offset of 9khz (ala PSDR-IQ).  Works with all softrocks.
-dspserver    - added IF offset of 9khz.  More robust audio and spectrum transfers.
-server       - hpsdr protocol with full control of sdr-widget/Mobo/SR.  Only for sdr-widget.
+softrock     - added an IF offset of 9khz (ala PSDR-IQ).  Rx and Tx.  Pulse and Jack audio.  Works with all softrocks.
+dspserver    - added IF offset of 9khz.  More robust audio and spectrum transfers.  Rx and Tx.  Hamlib net backend.  rxtx-event
+               branch has non-blocking networking.  In future multiple client can access the same dspserver.
+widget-server- hpsdr protocol with full control of sdr-widget/Mobo/SR.  Only for sdr-widget.
 receiver     - Makefile modified to compile in x86_64, changed local-audio to direct alsa output, changed portaudio to use callback.
                To run under Ubuntu with pulseaudio:  $ ./ghpsdr --local-audio 1 --audio-device pulse
 
-QtRadio      - added dialog to store server ip addresses.  Fixed high cpu util bug.  Implemented 16 bit PCM audio.  			
-               See below for codec2 encoding and decoding.  Implemented a separate high priority thread for
-		       Audio with improved sound quality.
+QtRadio      - Many improvements to a full functional rxtx with graphical vfo and multiple audio codecs.
 
-The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.
-
-The next major feature to be developed is SSB Tx.
+The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx and rxtx-event branches.
 
 Ubuntu Linux Users
 ==================
 
 There is a ppa for the binaries produced from the master branch, maintained by Andrea.
 
-Now the code base is took from the master branch and in the "about" 
+Now the code base is taken from the master branch and in the "about" 
 panel there is some additional information in order to show where the 
-source is coming from. 
+source is coming from.
+
 In order to add this repository to your apt system (U11.10, U11.04, U10.04) 
 please submit the following commands: 
 
@@ -35,29 +33,27 @@ sudo apt-get install ghpsdr3
 
 You will then find the QtRadio app in the Applications > Internet menu
 
+Subsequently you can use the Ubuntu software update process to update to the latest ppa version.
+
 Windows Users
-=====================
+=============
 
 At this time the only application working in Windows is the QtRadio client which can connect to
 any dspserver.  A ready to run windows executable is avilable at:
+
 	http://www.napan.com/ve9gj
+
 You can download the zip file which contains all the needed dlls and qtradio.exe.  Extract the qtradio folder
 to somewhere on your windows drive and double click qtradio.exe to run.
+
 The source for building with QtCreator 2.3.0 based on QT 4.7.4 is available via the win32 branch at:
 	https://github.com/alexlee188/ghpsdr3-alex
-Note that codec2 is not working in the win32 version.
 
-Building the software
-=====================
+Note that tx and codec2 is not working in the win32 version.
 
-You will need Qt4.  I would recommend downloading and installing the QtSDK from http://qt.nokia.com/downloads/
-instead of using the distributions's Qt.
-
-Set up your path to point to the QtSDK:
-
-For example, in my system:
-
-$ export PATH=/home/alex/QtSDK/Desktop/Qt/473/gcc/bin:$PATH
+Building the software in Linux
+==============================
+You will need Qt4.  Qt4 is available as a package from Ubuntu.
 
 Note that in addition to Qt, you will need some dev packages to be installed for using Qt
 (used by QtRadio), including (Ubuntu/Debian naming convention):
@@ -74,11 +70,10 @@ libconfig8-dev
 
 libevent
 ========
-
 For the rxtx-event branch of the software, you will also need a version of libevent that is newer than what
-is available from the Ubuntu distribution.
+is available from the Ubuntu distribution.  Go to synaptic and completely remove the stock libevent (v1.4) from Ubuntu.
 
-Download from:
+Then download from:
 
 http://libevent.org/
 
@@ -91,9 +86,8 @@ $ make
 $ sudo make install
 $ sudo ldconfig
 
-Building the software
-=====================
-
+Building the ghpsdr3-alex software
+==================================
 To build:
 
 $ cd ghpsdr3-alex
@@ -107,11 +101,15 @@ Then the 3 programs will be installed in /usr/local/bin.
 
 Running the software
 ====================
-
 To run the softrock server (defaults to using pulse for IQ input.  So 
 use pulse chooser to set the default pulse source to the IQ sound 
 card).  You also need to run pulse in network mode.  Use Pulseaudio Device Chooser
-to set up network access by checking the various option boxes.
+to set up network access by checking the various option boxes.  In order to use
+96000 or 192000, you will need to configure pulse audio by editing the /etc/pulse/daemon.conf,
+or better still, copy the file to ~/.pulse/daemon.conf and then edit the file there.
+
+You can also use jack instead of pulse.  For detailed instructions on setting up soundcards with pulse or jack,
+Google and do research.
 
 $ softrock --si570 --iq --samplerate 48000|96000|192000
 
