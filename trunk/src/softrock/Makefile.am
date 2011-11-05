@@ -21,5 +21,5 @@ softrock_SOURCES = client.c        client.h       \
 		   softrock.c      softrock.h     \
 		   softrockio.c    softrockio.h   \
 		   util.c          util.h         \
-		   messages.h    globals.h 	
+		   messages.h 	
 		   
