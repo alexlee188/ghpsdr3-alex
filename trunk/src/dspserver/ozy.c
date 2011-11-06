@@ -567,6 +567,7 @@ fprintf(stderr,"setSpeed %d\n",s);
         //SetRXOsc(0,0,0.0);
         SetRXOsc(0,1, LO_offset);
     }
+	SetTXOsc(1,0.0);
 
         src_ratio = 48000.0 / ((double) sampleRate);
 	mic_src_ratio = (double) sampleRate/ 8000.0;

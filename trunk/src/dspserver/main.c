@@ -223,10 +223,6 @@ int main(int argc,char* argv[]) {
     SetSubRXSt(0,0,1);
     SetRXOutputGain(0,0,0.20);
 
-    SetMode(1, 0, USB);
-    SetTXFilter(1, 150, 2850);
-    SetTXOsc(1,0);
-
     reset_for_buflen(0,1024);
     reset_for_buflen(1,1024);
 
@@ -237,6 +233,10 @@ int main(int argc,char* argv[]) {
     codec2 = codec2_create();
 
     ozy_init();
+
+    SetMode(1, 0, USB);
+    SetTXFilter(1, 150, 2850);
+    SetTXOsc(1,0);
     tx_init();
 
     while(1) {
