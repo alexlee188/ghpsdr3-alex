@@ -103,6 +103,7 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 // same as BUFFER_SIZE defined in softrock server
 // format is float left_buffer[BUFFER_SIZE] followed by right_buffer[BUFFER_SIZE] non-interleaved
 static float tx_buffer[TX_BUFFER_SIZE*2];
+static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
 #define MIC_BUFFER_SIZE  BITS_SIZE
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
@@ -266,9 +267,11 @@ void *tx_thread(void *arg){
 			tx_buffer[tx_buffer_counter + TX_BUFFER_SIZE] = data_out[2*i+1];
 			tx_buffer_counter++;
 			if (tx_buffer_counter >= TX_BUFFER_SIZE){
+				// use DttSP to process Tx
+				Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
 				// send Tx IQ to server, stereo interleaved
 				int bytes_written;
-				bytes_written=sendto(audio_socket,tx_buffer,sizeof(tx_buffer),0,
+				bytes_written=sendto(audio_socket,tx_IQ_buffer,sizeof(tx_IQ_buffer),0,
 					(struct sockaddr *)&server_audio_addr,server_audio_length);
 				if(bytes_written<0) {
 				   fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
