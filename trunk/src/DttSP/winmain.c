@@ -765,7 +765,8 @@ setup (char *app_data_path)
 		top[thread].running = TRUE;
 		top[thread].verbose = FALSE;
 		if (thread != 1) top[thread].state = RUN_PLAY;
-		else top[thread].state = RUN_PASS;
+		//else top[thread].state = RUN_PASS;
+		else top[thread].state = RUN_PLAY;
 		top[thread].offset = 0;
 		top[thread].jack.reset_size = 1024;
 		reset_em =TRUE;
@@ -808,7 +809,7 @@ setup (char *app_data_path)
 		reset_meters (thread);
 		reset_spectrum (thread);
 		reset_counters (thread);
-		//fprintf(stderr,"setup sdr thread %0u: done\n",thread),fflush(stderr);
+		fprintf(stderr,"setup sdr thread %0u: done\n",thread),fflush(stderr);
 	}
 }
 

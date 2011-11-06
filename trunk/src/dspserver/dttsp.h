@@ -172,47 +172,26 @@ extern int SetRXOutputGain(unsigned int thread, unsigned subrx, double gain);
 * @return 
 */
 extern int SetRXPan(unsigned int thread, unsigned subrx, float pos);
-
 extern int SetRingBufferOffset(unsigned int thread, int offset);
-
 extern void SetSpectrumPolyphase (unsigned int thread, BOOLEAN setit);
-
 extern void SetSquelchVal (unsigned int thread, unsigned int subrx, float setit);
-
 extern void SetSquelchState (unsigned int thread, unsigned int subrx, BOOLEAN setit);
-
 extern void SetRXDCBlock(unsigned int thread, unsigned int subrx, BOOLEAN setit);
-
 extern void SetNBvals (unsigned int thread, unsigned subrx, double threshold);
-
 extern void SetNRvals (unsigned int thread, unsigned subrx, int taps, int delay, double gain, double leakage);
-
 extern void SetMode (unsigned int thread, unsigned int subrx, SDRMODE m);
-
 extern void SetRXFilter (unsigned int thread, unsigned int subrx, double low_frequency, double high_frequency);
-
 extern void SetRXAGC (unsigned int thread, unsigned subrx, AGCMODE setit);
-
 extern void SetNR (unsigned int thread, unsigned subrx, BOOLEAN setit);
-
 extern void SetNB (unsigned int thread, unsigned subrx, BOOLEAN setit);
-
 extern void SetSDROM (unsigned int thread, unsigned subrx, BOOLEAN setit);
-
 extern void SetANF (unsigned int thread, unsigned subrx, BOOLEAN setit);
-
 extern void SetSubRXSt(unsigned int thread, unsigned int subrx, BOOLEAN setit);
-
 extern void SetSDROMvals (unsigned int thread, unsigned subrx, double threshold);
-
 extern void SetANFvals (unsigned int thread, unsigned subrx, int taps, int delay, double gain, double leakage);
-
 extern void SetTRX (unsigned int thread, TRXMODE setit);
-
 extern void SetThreadProcessingMode (unsigned int thread, RUNMODE runmode);
-
 extern int reset_for_buflen (unsigned int, int);
-
 extern void SetTXDCBlock (unsigned int thread, BOOLEAN setit);
 extern void SetTXFMDeviation(unsigned int thread, double deviation);
 extern int SetTXFilter (unsigned int thread, double low_frequency, double high_frequency);
@@ -224,8 +203,5 @@ extern void SetTXLevelerSt (unsigned int thread, BOOLEAN state);
 extern void SetTXLevelerAttack (unsigned int thread, int attack);
 extern void SetTXLevelerHang (unsigned int thread, int decay);
 extern void SetTXLevelerTop (unsigned int thread, double maxgain);
-
-
-
 
 #endif

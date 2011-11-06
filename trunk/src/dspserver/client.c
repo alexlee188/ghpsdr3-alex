@@ -110,6 +110,9 @@ static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
 #define MSG_SIZE 64
 
+// IQ_audio_stream is the HEAD of a queue
+// Rx IQ from soundcard is added to the tail of this stream from the IQ thread
+// data from head of this queue is sent to QtRadio client in the client thread
 TAILQ_HEAD(, audio_entry) IQ_audio_stream;
 
 //
@@ -267,9 +270,9 @@ void *tx_thread(void *arg){
 			tx_buffer[tx_buffer_counter + TX_BUFFER_SIZE] = data_out[2*i+1];
 			tx_buffer_counter++;
 			if (tx_buffer_counter >= TX_BUFFER_SIZE){
-				// use DttSP to process Tx
+				// use DttSP to process Mic data into tx IQ
 				Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
-				// send Tx IQ to server, stereo interleaved
+				// send Tx IQ to server, buffer is non-interleaved.
 				int bytes_written;
 				bytes_written=sendto(audio_socket,tx_IQ_buffer,sizeof(tx_IQ_buffer),0,
 					(struct sockaddr *)&server_audio_addr,server_audio_length);
