@@ -115,6 +115,8 @@ static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 // data from head of this queue is sent to QtRadio client in the client thread
 TAILQ_HEAD(, audio_entry) IQ_audio_stream;
 
+// Mic_audio_stream is the HEAD of a queue for encoded Mic audio samples from QtRadio
+TAILQ_HEAD(, audio_entry) Mic_audio_stream;
 //
 // samplerate library data structures
 //
@@ -125,8 +127,7 @@ static float meter;
 static float subrx_meter;
 int encoding = 0;
 
-static sem_t get_mic_semaphore, ready_mic_semaphore;
-static sem_t bufferevent_semaphore;
+static sem_t bufferevent_semaphore, mic_semaphore;
 
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
@@ -147,6 +148,7 @@ float getFilterSizeCalibrationOffset() {
 void audio_stream_init(int receiver) {
     init_alaw_tables();
     TAILQ_INIT(&IQ_audio_stream);
+    TAILQ_INIT(&Mic_audio_stream);
 }
 
 void audio_stream_queue_add(int length) {
@@ -178,18 +180,35 @@ struct audio_entry *audio_stream_queue_remove(){
 void audio_stream_queue_free(){
 	struct audio_entry *item;
 
-	while ((item = audio_stream_queue_remove()) != NULL){
+	sem_wait(&bufferevent_semaphore);
+	while ((item = TAILQ_FIRST(&IQ_audio_stream)) != NULL){
+		TAILQ_REMOVE(&IQ_audio_stream, item, entries);
 		free(item->buf);
 		free(item);
 		}
+	sem_post(&bufferevent_semaphore);
+}
+
+void Mic_stream_queue_free(){
+	struct audio_entry *item;
+
+	sem_wait(&mic_semaphore);
+	while ((item = TAILQ_FIRST(&Mic_audio_stream)) != NULL) {
+		TAILQ_REMOVE(&Mic_audio_stream, item, entries);
+		free(item->buf);
+		free(item);
+		}
+	sem_post(&mic_semaphore);
 }
 
 void client_init(int receiver) {
     int rc;
 
     sem_init(&bufferevent_semaphore,0,1);
+    sem_init(&mic_semaphore,0,1);
     signal(SIGPIPE, SIG_IGN);
     sem_post(&bufferevent_semaphore);
+    sem_post(&mic_semaphore);
 
     fprintf(stderr,"client_init audio_buffer_size=%d\n",audio_buffer_size);
 
@@ -204,10 +223,6 @@ void client_init(int receiver) {
 
 void tx_init(){
     int rc;
-
-    sem_init(&get_mic_semaphore,0,1);
-    sem_init(&ready_mic_semaphore,0,1);
-    signal(SIGPIPE, SIG_IGN);
 
 	mic_src_ratio = (double) sampleRate / 8000.0;
        // create sample rate subobject
@@ -231,8 +246,24 @@ void tx_init(){
     if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
 }
 
+// this is run from the client thread
+void Mic_stream_queue_add(){
+   unsigned char *bits;
+   struct audio_entry *item;
+
+	bits = malloc(BITS_SIZE);
+	memcpy(bits, mic_buffer, BITS_SIZE);		// right now only one frame per buffer
+	item = malloc(sizeof(*item));
+	item->buf = bits;
+	item->length = BITS_SIZE;
+	sem_wait(&mic_semaphore);
+	TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
+	sem_post(&mic_semaphore);
+}
+
 void *tx_thread(void *arg){
-   unsigned char bits[BITS_SIZE];
+   unsigned char *bits;
+   struct audio_entry *item;
    short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
    int tx_buffer_counter = 0;
    int rc;
@@ -243,11 +274,18 @@ void *tx_thread(void *arg){
    void *mic_codec2 = codec2_create();
 
     while (1){
-        sem_wait(&get_mic_semaphore);
-	// process codec2 encoded mic_buffer
-	memcpy(bits, mic_buffer, BITS_SIZE);		// right now only one frame per buffer
-	codec2_decode(mic_codec2, codec2_buffer, bits);
-	// mic data is mono, so copy to both right and left channels
+	sem_wait(&mic_semaphore);
+	item = TAILQ_FIRST(&Mic_audio_stream);
+	sem_post(&mic_semaphore);
+	if (item == NULL){
+		usleep(1000);
+		continue;
+		}
+	else {
+	   bits = item->buf;
+	   // process codec2 encoded mic_buffer
+	   codec2_decode(mic_codec2, codec2_buffer, bits);
+	   // mic data is mono, so copy to both right and left channels
            for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
               data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
            }
@@ -285,9 +323,13 @@ void *tx_thread(void *arg){
 			}
 		}
 	    } // end else rc
-
-        sem_post(&ready_mic_semaphore);
-	}
+	    sem_wait(&mic_semaphore);
+	    TAILQ_REMOVE(&Mic_audio_stream, item, entries);
+	    sem_post(&mic_semaphore);
+	    free(item->buf);
+	    free(item);
+	  } // end else item
+	} // end while
 
 	codec2_destroy(mic_codec2);
 }
@@ -434,9 +476,8 @@ void readcb(struct bufferevent *bev, void *ctx){
                 token=strtok(message," ");
  
                     if(strcmp(token,"mic")==0){		// This is incoming microphone data
-			sem_wait(&ready_mic_semaphore);				// this will block
 			memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
-			sem_post(&get_mic_semaphore);
+			Mic_stream_queue_add();
 		    }
                     else {
                     	if(token!=NULL) {

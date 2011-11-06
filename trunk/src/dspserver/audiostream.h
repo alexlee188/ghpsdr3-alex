@@ -51,7 +51,8 @@ struct audio_entry {
 void audio_stream_reset();
 void audio_stream_put_samples(short left_sample,short right_sample);
 void audio_stream_init(int port);
-void init_alaw_table(void);
+void allocate_audio_buffer(void);
+void init_alaw_tables(void);
 void audio_stream_queue_add(int length);
 struct audio_entry  *audio_stream_queue_remove(void);
 void audio_stream_queue_free(void);
