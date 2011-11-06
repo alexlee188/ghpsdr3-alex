@@ -341,6 +341,12 @@ void* client_thread(void* arg) {
         return NULL;
     }
 
+    // set timeout on receive
+    struct timeval tv;
+    tv.tv_sec=10;		// changed from 3 sec to 10 sec for remote connection
+    tv.tv_usec=0;
+    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,(char *)&tv,sizeof tv);
+
     evutil_make_socket_nonblocking(serverSocket);
 
 #ifndef WIN32
