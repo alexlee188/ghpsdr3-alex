@@ -213,4 +213,19 @@ extern void SetThreadProcessingMode (unsigned int thread, RUNMODE runmode);
 
 extern int reset_for_buflen (unsigned int, int);
 
+extern void SetTXDCBlock (unsigned int thread, BOOLEAN setit);
+extern void SetTXFMDeviation(unsigned int thread, double deviation);
+extern int SetTXFilter (unsigned int thread, double low_frequency, double high_frequency);
+extern int SetTXOsc (unsigned int thread, double newfreq);
+extern void SetTXCompandSt (unsigned int thread, BOOLEAN setit);
+extern void SetTXCompand (unsigned int thread, double setit);
+extern void SetTXAMCarrierLevel (unsigned int thread, double setit);
+extern void SetTXLevelerSt (unsigned int thread, BOOLEAN state);
+extern void SetTXLevelerAttack (unsigned int thread, int attack);
+extern void SetTXLevelerHang (unsigned int thread, int decay);
+extern void SetTXLevelerTop (unsigned int thread, double maxgain);
+
+
+
+
 #endif

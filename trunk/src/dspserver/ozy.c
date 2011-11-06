@@ -80,9 +80,6 @@ float output_buffer[BUFFER_SIZE*2];
 float mic_left_buffer[BUFFER_SIZE];
 float mic_right_buffer[BUFFER_SIZE];
 
-float left_tx_buffer[BUFFER_SIZE];
-float right_tx_buffer[BUFFER_SIZE];
-
 int samples=0;
 
 int left_sample;

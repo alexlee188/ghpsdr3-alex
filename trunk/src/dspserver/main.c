@@ -101,6 +101,7 @@
 #include "version.h"
 #include "codec2loc.h"
 #include "register.h"
+#include "sdrexport.h"
 
 char propertyPath[128];
 
@@ -217,8 +218,8 @@ int main(int argc,char* argv[]) {
     SetTRX(0,0); // thread 0 is for receive
     SetTRX(1,1);  // thread 1 is for transmit
     SetRingBufferOffset(0,offset);
-    SetThreadProcessingMode(0,2);
-    SetThreadProcessingMode(1,2);
+    SetThreadProcessingMode(0,RUN_PLAY);
+    SetThreadProcessingMode(1,RUN_PLAY);
     SetSubRXSt(0,0,1);
     SetRXOutputGain(0,0,0.20);
 
