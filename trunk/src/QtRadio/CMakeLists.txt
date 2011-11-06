@@ -164,5 +164,6 @@ target_link_libraries ( QtRadio
 
 
 
+INSTALL_TARGETS(/bin QtRadio)
 
 
