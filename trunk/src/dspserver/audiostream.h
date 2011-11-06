@@ -56,5 +56,6 @@ void init_alaw_tables(void);
 void audio_stream_queue_add(int length);
 struct audio_entry  *audio_stream_queue_remove(void);
 void audio_stream_queue_free(void);
+void Mic_stream_queue_free(void);
 
 

@@ -524,6 +524,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                    mode=atoi(token);
 		                    SetMode(0,0,mode);
 		                    SetMode(0,1,mode);
+				    SetMode(1,0,mode);
 		                } else {
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }

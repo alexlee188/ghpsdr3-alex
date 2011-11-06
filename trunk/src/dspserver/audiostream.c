@@ -106,6 +106,7 @@ void allocate_audio_buffer(){
 void audio_stream_reset() {
     audio_stream_buffer_insert=0;
     audio_stream_queue_free();
+    Mic_stream_queue_free();
     if (audio_buffer != NULL) free(audio_buffer);
     allocate_audio_buffer();
 }
