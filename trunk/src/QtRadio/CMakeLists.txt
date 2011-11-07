@@ -121,11 +121,76 @@ vfo.ui
 
 )
 
-#SET(QT_USE_QTOPENGL TRUE)
-#SET(QT_USE_QTNETWORK TRUE)
+
+#--------------------------------------------------------------
+#
+# Check for Ubuntu non standard installation
+#
+message ("qmake: ${QT_QMAKE_EXECUTABLE}")  
+
+# get the path of the Qt header 
+#
+execute_process(
+    COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_HEADERS
+    OUTPUT_VARIABLE QT_INSTALL_HEADERS
+    RESULT_VARIABLE rm_retval
+)
+
+# trim the last directory in path
+string(REGEX REPLACE "(.*/)[^/]+$" "\\1" QT_INSTALL_HEADERS_UP ${QT_INSTALL_HEADERS})
+
+# trim the end of line character
+string (REGEX REPLACE "\n" ""  QT_INSTALL_HEADERS ${QT_INSTALL_HEADERS})
+
+message("DIR INCLUDE: ${QT_INSTALL_HEADERS}")
+message("DIR INSTALL HEADERS UP: ${QT_INSTALL_HEADERS_UP}")
+
+# get the path of the Qt librarires 
+#
+execute_process(
+    COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_LIBS
+    OUTPUT_VARIABLE QT_INSTALL_LIBS
+    RESULT_VARIABLE rm_retval
+)
+# trim the end of line character
+string (REGEX REPLACE "\n" ""  QT_INSTALL_LIBS ${QT_INSTALL_LIBS})
 
 
+
+# default for standard QtSDK and binary packages before U11.04
+#
+set (QT_ADDITIONAL_INCLUDE_PATH "")
+set (QT_ADDITIONAL_INCLUDE_PATH2 "")
+set (QT_ADDITIONAL_LDFLAG "QtMultimedia" )
+
+
+# if there is a suspicious QtMultimediaKit (sibling of the standard Qt include path)
+# we are hit an Ubuntu binary package (11.04)
+#
+if ( EXISTS ${QT_INSTALL_HEADERS_UP}QtMultimediaKit/QAudio )
+
+    set (QT_ADDITIONAL_INCLUDE_PATH ${QT_INSTALL_HEADERS_UP}/QtMultimediaKit/ )
+    set (QT_ADDITIONAL_LDFLAG QtMultimediaKit)
+    set (QT_ADDITIONAL_INCLUDE_PATH2 ${QT_INSTALL_HEADERS_UP}/QtMobility/ )
+
+else ( EXISTS ${QT_INSTALL_HEADERS_UP}QtMultimediaKit/QAudio )
+
+    #set (QT_ADDITIONAL_INCLUDE_PATH ${QT_INSTALL_HEADERS} )
+    set (QT_ADDITIONAL_INCLUDE_PATH ${QT_INSTALL_HEADERS}/QtMultimedia/ )
+    set (QT_ADDITIONAL_LINK_DIR ${QT_INSTALL_LIBS})
+
+endif ( EXISTS ${QT_INSTALL_HEADERS_UP}QtMultimediaKit/QAudio )
+
+
+message("QT_ADDITIONAL_INCLUDE_PATH:  ${QT_ADDITIONAL_INCLUDE_PATH}")
+message("QT_ADDITIONAL_INCLUDE_PATH2: ${QT_ADDITIONAL_INCLUDE_PATH2}")
+message("QT_ADDITIONAL_LDFLAG: ${QT_ADDITIONAL_LDFLAG}")
+
+#--------------------------------------------------------------
+
+#
 # Build
+#
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -134,14 +199,21 @@ include_directories(
     ${QT_QTGUI_INCLUDE_DIR}
     ${QT_MULTIMEDIA_INCLUDE_DIR}
     ${QT_QTNETWORK_INCLUDE_DIR}
-    /usr/include/QtMultimediaKit
-    /usr/include/QtMobility
-    )
-    
+
+    #
+    # non standard include path in order to workaround 
+    # Ubuntu binary packages strangeness 
+    #
+    ${QT_ADDITIONAL_INCLUDE_PATH}
+    ${QT_ADDITIONAL_INCLUDE_PATH2}
+)
+
 link_directories(
-/home/andrew/QtSDK/Desktop/Qt/473/gcc/lib/
-/usr/lib/
-/usr/local/lib/
+    #
+    # non standard library path in order to workaround 
+    # Ubuntu binary packages strangeness 
+    #
+    ${QT_ADDITIONAL_LINK_DIR}
 )
 
 QT4_WRAP_UI( QtRadio_UI_HDRS ${QtRadio_UIS} )
@@ -158,7 +230,12 @@ target_link_libraries ( QtRadio
     ${QT_QTNETWORK_LIBRARY}
     ${QT_QTOPENGL_LIBRARY}
     ${QT_MULTIMEDIA_LIBRARY}
-    QtMultimedia
+
+    #
+    # additional library in order to workaround 
+    # Ubuntu binary packages strangeness 
+    #
+    ${QT_ADDITIONAL_LDFLAG}
     codec2
 )
 
