@@ -111,7 +111,7 @@ void Connection::sendCommand(QString command) {
         mutex.lock();
         strcpy(buffer,command.toUtf8().constData());
         tcpSocket->write(buffer,SEND_BUFFER_SIZE);
-        tcpSocket->flush();
+        //tcpSocket->flush();
         mutex.unlock();
     }
 }
@@ -128,7 +128,7 @@ void Connection::sendAudio(int length, unsigned char* data) {
         memcpy(&buffer[4], data,length);
         mutex.lock();
         tcpSocket->write(buffer, SEND_BUFFER_SIZE);
-        tcpSocket->flush();
+        //tcpSocket->flush();
         mutex.unlock();
     }
 }
