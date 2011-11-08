@@ -1,5 +1,5 @@
 /*
- * File:   UI.cpp
+ * File:   UI.cp
  * Author: John Melton, G0ORX/N6LYT
  *
  * Created on 13 August 2010, 14:28
@@ -564,7 +564,6 @@ void UI::connected() {
     connection.SemSpectrum.release();
     spectrumTimer->start(1000/fps);
     printWindowTitle("Remote connected");
-
     connection_valid = TRUE;
 }
 
@@ -627,7 +626,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
         if (mic_buffer_count >= CODEC2_SAMPLES_PER_FRAME) {
             mic_buffer_count = 0;
             codec2_encode(codec2, bits, buffer);
-            if (connection_valid)
+            if (connection_valid && configure.getTxAllowed())
                 connection.sendAudio(BITS_SIZE,bits);
         }
     }

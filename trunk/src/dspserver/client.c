@@ -366,7 +366,6 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
     }
     send_audio = 0;
     bufferevent_free(bev);
-    updateStatus("Idle");
 }
 
 
@@ -450,7 +449,6 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
         bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
         bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
-	updateStatus("Busy");
     }
 }
 
