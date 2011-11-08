@@ -448,6 +448,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
         bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
         bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
         bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
+	bufferevent_setwatermark(bev, EV_WRITE, 4096, 0);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
     }
 }
