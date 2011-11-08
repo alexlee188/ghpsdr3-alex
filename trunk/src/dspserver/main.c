@@ -196,7 +196,7 @@ int main(int argc,char* argv[]) {
     strcpy(server_address,"127.0.0.1"); // localhost
     strcpy(share_config_file, "");
     processCommands(argc,argv);
-    
+    fprintf(stderr, "rxtx-event dspserver\n");
     // start web registration if set
     if  (strlen(share_config_file) > 2) {  //config file must be set
         fprintf(stderr, "Activating Web register\n");

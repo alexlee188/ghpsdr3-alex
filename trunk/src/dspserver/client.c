@@ -308,6 +308,7 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
             fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
 		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
 		receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
+		updateStatus("Idle");
     } else if (error & BEV_EVENT_ERROR) {
         /* check errno to see what error occurred */
         /* ... */
@@ -387,7 +388,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
             fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connection from %s:%d\n",
 		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
 		receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
-
+        updateStatus("Busy");
         struct bufferevent *bev;
         evutil_make_socket_nonblocking(fd);
         bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
