@@ -236,7 +236,7 @@ int main(int argc,char* argv[]) {
 
     SetMode(1, 0, USB);
     SetTXFilter(1, 150, 2850);
-    SetTXOsc(1,0);
+    SetTXOsc(1,LO_offset);
     tx_init();
 
     while(1) {
