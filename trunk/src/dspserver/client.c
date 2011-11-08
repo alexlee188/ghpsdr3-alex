@@ -527,6 +527,14 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                    SetMode(0,0,mode);
 		                    SetMode(0,1,mode);
 				    SetMode(1,0,mode);
+				    switch (mode){
+					USB: SetTXFilter(1,150, 2850); break;
+					LSB: SetTXFilter(1,-2850, -150); break;
+					AM:
+					SAM: SetTXFilter(1, -2850, 2850); break;
+					FMN: SetTXFIlter(1, -4800, 4800); break;
+					default: SetTXFilter(1, -4800, 4800);
+				    }
 		                } else {
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
