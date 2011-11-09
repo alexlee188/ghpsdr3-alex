@@ -472,9 +472,9 @@ void readcb(struct bufferevent *bev, void *ctx){
     int bytesRead;
     char message[MSG_SIZE];
 
-	while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 0){
+	while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) == MSG_SIZE){
 
-                message[bytesRead]=0;			// for Linux strings terminating in NULL
+                message[bytesRead-1]=0;			// for Linux strings terminating in NULL
                 token=strtok(message," ");
  
                     if(strcmp(token,"mic")==0){		// This is incoming microphone data
