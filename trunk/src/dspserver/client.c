@@ -235,7 +235,7 @@ if(timing) ftime(&start_time);
                     }
                     break;
                 }
-                message[bytesRead]=0;			// for Linux strings terminating in NULL
+                message[bytesRead-1]=0;			// for Linux strings terminating in NULL
 
 //fprintf(stderr,"Message: %s\n",message);
 if(timing) {
