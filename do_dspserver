@@ -1,0 +1,5 @@
+#!/bin/bash
+while true; do
+	dspserver --share
+done
+
