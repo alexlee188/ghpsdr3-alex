@@ -238,6 +238,10 @@ void Configure::loadSettings(QSettings* settings) {
     settings->beginGroup("SDROM");
     if(settings->contains("threshold")) widget.nbThresholdSpinBox->setValue(settings->value("threshold").toInt());
     settings->endGroup();
+
+    settings->beginGroup("TxSettings");
+    widget.allowTx->setChecked(settings->value("allowTx",FALSE).toBool());
+    settings->endGroup();
 }
 
 void Configure::saveSettings(QSettings* settings) {
@@ -287,6 +291,9 @@ void Configure::saveSettings(QSettings* settings) {
     settings->endGroup();
     settings->beginGroup("SDROM");
     settings->setValue("threshold",widget.nbThresholdSpinBox->value());
+    settings->endGroup();
+    settings->beginGroup("TxSettings");
+    settings->setValue("allowTx",widget.allowTx->checkState());
     settings->endGroup();
 }
 
