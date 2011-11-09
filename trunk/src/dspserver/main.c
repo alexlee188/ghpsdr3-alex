@@ -237,6 +237,7 @@ int main(int argc,char* argv[]) {
     SetMode(1, 0, USB);
     SetTXFilter(1, 150, 2850);
     SetTXOsc(1,-LO_offset);
+    SetTXAMCarrierLevel(1, 0.25);		// default is 0.5
     tx_init();
 
     while(1) {
