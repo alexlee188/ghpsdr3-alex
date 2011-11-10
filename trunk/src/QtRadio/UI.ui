@@ -199,6 +199,7 @@
     </property>
     <addaction name="actionConnectToServer"/>
     <addaction name="actionDisconnectFromServer"/>
+    <addaction name="actionQuick_Server_List"/>
     <addaction name="separator"/>
     <addaction name="actionSubrx"/>
     <addaction name="separator"/>
@@ -836,6 +837,17 @@
   <action name="actionKeypad">
    <property name="text">
     <string>Keypad</string>
+   </property>
+  </action>
+  <action name="actionQuick_Server_List">
+   <property name="text">
+    <string>Quick Server List  </string>
+   </property>
+   <property name="toolTip">
+    <string>Quickly select a shared SDR  server from a list of online radios</string>
+   </property>
+   <property name="shortcut">
+    <string>L</string>
    </property>
   </action>
  </widget>

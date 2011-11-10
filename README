@@ -12,7 +12,11 @@ receiver     - Makefile modified to compile in x86_64, changed local-audio to di
                To run under Ubuntu with pulseaudio:  $ ./ghpsdr --local-audio 1 --audio-device pulse
 
 QtRadio      - Many improvements to a full functional rxtx with graphical vfo and multiple audio codecs.
+<<<<<<< HEAD
 
+=======
+             - Added a Quick Server Connect Dialog.  Displays a list of all currently online dspservers that were started with the --share option.
+>>>>>>> master
 The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx and rxtx-event branches.
 
 Ubuntu Linux Users
@@ -48,9 +52,15 @@ to somewhere on your windows drive and double click qtradio.exe to run.
 
 The source for building with QtCreator 2.3.0 based on QT 4.7.4 is available via the win32 branch at:
 	https://github.com/alexlee188/ghpsdr3-alex
+<<<<<<< HEAD
 
 Note that tx and codec2 is not working in the win32 version.
 
+=======
+
+Note that tx and codec2 is not working in the win32 version.
+
+>>>>>>> master
 Building the software in Linux
 ==============================
 You will need Qt4.  Qt4 is available as a package from Ubuntu.
@@ -72,11 +82,19 @@ libevent
 ========
 For the rxtx-event branch of the software, you will also need a version of libevent that is newer than what
 is available from the Ubuntu distribution.  Go to synaptic and completely remove the stock libevent (v1.4) from Ubuntu.
+<<<<<<< HEAD
 
 Then download from:
 
 http://libevent.org/
 
+=======
+
+Then download from:
+
+http://libevent.org/
+
+>>>>>>> master
 libevent-2.0.15-stable.tar.gz
 
 Uncompress and follow the instructions to build and install:

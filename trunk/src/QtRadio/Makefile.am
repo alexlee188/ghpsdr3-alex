@@ -25,6 +25,7 @@ BUILT_SOURCES=                  \
     ui_KeypadDialog.h \
     ui_vfo.h \
     ui_ctl.h \
+    ui_servers.h \
 About.moc.cpp                    \
 Audio.moc.cpp                    \
 Band.moc.cpp                     \
@@ -50,7 +51,8 @@ Xvtr.moc.cpp \
 smeter.moc.cpp \
 ctl.moc.cpp \
 rigctl.moc.cpp \
-Audioinput.moc.cpp
+Audioinput.moc.cpp \
+servers.moc.cpp
 
 	
 nodist_QtRadio_SOURCES = \
@@ -89,7 +91,8 @@ Waterfall.moc.cpp              \
 Xvtr.moc.cpp                   \
 smeter.moc.cpp                 \
 ctl.moc.cpp \
-rigctl.moc.cpp
+rigctl.moc.cpp \
+servers.moc.cpp
 
 
 
@@ -103,6 +106,7 @@ BandLimit.cpp  BookmarksDialog.cpp      CWUFilters.cpp   Filters.cpp      main.c
 Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.cpp          vfo.cpp         smeter.cpp     \
 ctl.cpp rigctl.cpp\
 Audioinput.cpp \
+servers.cpp\
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  Waterfall.h  \
 Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Spectrum.h    XvtrEntry.h  \
@@ -110,8 +114,9 @@ Band.h       Bookmark.h         codec2.h               DIGLFilters.h  Filters.h 
 BandLimit.h  BookmarksDialog.h  Configure.h            DIGUFilters.h  FMNFilters.h   Meter.h          USBFilters.h  smeter.h \
 ctl.h rigctl.h\
 Audioinput.h \
+servers.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
-ctl.ui
+ctl.ui servers.ui
 
 
 CLEANFILES =                  \
@@ -125,6 +130,7 @@ CLEANFILES =                  \
     ui_KeypadDialog.h \
     ui_vfo.h \
     ui_ctl.h \
+    ui_servers.h \
 About.moc.cpp                    \
 Audio.moc.cpp                    \
 Band.moc.cpp                     \
@@ -151,7 +157,8 @@ smeter.moc.cpp                   \
 ctl.moc.cpp \
 rigctl.moc.cpp \
 aux.moc.cpp			\
-Audioinput.moc.cpp
+Audioinput.moc.cpp		\
+servers.moc.cpp
 
 #
 # auxiliary services, git string, icons
