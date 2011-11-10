@@ -12,7 +12,7 @@ receiver     - Makefile modified to compile in x86_64, changed local-audio to di
                To run under Ubuntu with pulseaudio:  $ ./ghpsdr --local-audio 1 --audio-device pulse
 
 QtRadio      - Many improvements to a full functional rxtx with graphical vfo and multiple audio codecs.
-
+             - Added a Quick Server Connect Dialog.  Displays a list of all currently online dspservers that were started with the --share option.
 The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx and rxtx-event branches.
 
 Ubuntu Linux Users
@@ -22,17 +22,16 @@ There is a ppa for the binaries produced from the master branch, maintained by A
 
 Now the code base is taken from the master branch and in the "about" 
 panel there is some additional information in order to show where the 
-source is coming from. 
-In order to add this repository to your apt system (at the moment the following Ubuntu 
-releases are supported: 11.10, 11.04, 10.04) please submit the following commands: 
+source is coming from.
+
+In order to add this repository to your apt system (U11.10, U11.04, U10.04) 
+please submit the following commands: 
 
 sudo add-apt-repository ppa:andrew-montefusco/ghpsdr3 
 sudo apt-get update 
 sudo apt-get install ghpsdr3
 
 You will then find the QtRadio app in the Applications > Internet menu
-Subsequently you can use the Ubuntu software update process to update to the latest ppa version.
-The servers are installed in /usr/bin directory and are therefore in PATH.
 
 Subsequently you can use the Ubuntu software update process to update to the latest ppa version.
 
@@ -40,7 +39,7 @@ Windows Users
 =============
 
 At this time the only application working in Windows is the QtRadio client which can connect to
-any dspserver.  A ready to run windows executable is available at:
+any dspserver.  A ready to run windows executable is avilable at:
 
 	http://www.napan.com/ve9gj
 
@@ -48,23 +47,13 @@ You can download the zip file which contains all the needed dlls and qtradio.exe
 to somewhere on your windows drive and double click qtradio.exe to run.
 
 The source for building with QtCreator 2.3.0 based on QT 4.7.4 is available via the win32 branch at:
-
 	https://github.com/alexlee188/ghpsdr3-alex
-
-Note that codec2 is not working in the win32 version.
 
 Note that tx and codec2 is not working in the win32 version.
 
 Building the software in Linux
 ==============================
-
-First off, install the compilers and build tools (packages name are from Debian/Ubuntu distributions):
-
-gcc 
-g++ 
-make
-
-Next, you will need Qt4. Qt4 is available as a package from Ubuntu.
+You will need Qt4.  Qt4 is available as a package from Ubuntu.
 
 Note that in addition to Qt, you will need some dev packages to be installed for using Qt
 (used by QtRadio), including (Ubuntu/Debian naming convention):
@@ -72,19 +61,12 @@ Note that in addition to Qt, you will need some dev packages to be installed for
 libqt4-opengl-dev
 glutg3-dev
 libusb-0.1-4
-libusb-dev
 libfftw3-dev
 portaudio19-dev
 libpulse-dev
 libsamplerate0-dev
 libusb-1.0-0-dev
 libconfig8-dev
-
-On releases older than 11.04, install:
-glutg3-dev
-
-Starting from 11.04 install as well:
-qtmobility-dev
 
 libevent
 ========
@@ -201,24 +183,6 @@ The one big advantage of clang over gcc is the more meaningful error/warning mes
 options to help with debugging.
 
 
-Building from a tarball
-=======================
-
-If one is not interested to develop, the simplest way to get the thing working, is
-download the tarball (example given for PPA 1.6) and compile it:
-
-cd
-wget https://github.com/downloads/alexlee188/ghpsdr3-alex/ghpsdr3-1.6.tar.gz
-tar -zxvf ghpsdr3-1.6.tar.gz
-cd ghpsdr3-1.6
-./configure
-make -j4
-sudo make install
-
-Note: in order to get successfull compilation, you have to install the prerequisite packages 
-(see "Building the software" paragraph above).
-
-
 Autotools building system
 =========================
 An attempt to create a 'standard' building system.
@@ -233,9 +197,9 @@ sudo apt-get install autoconf automake autotools-dev libtool
 Next extract the aconf branch from repository and run autoreconf.
 
 cd
-git clone git@github.com:alexlee188/ghpsdr3-alex.git ghpsdr3-alex
-cd ghpsdr3-alex
-git checkout master
+git clone git@github.com:alexlee188/ghpsdr3-alex.git ghpsdr3-aconf
+cd aconf
+git checkout aconf
 autoreconf -i
 
 Now you are ready to run, as usual, 
@@ -247,23 +211,17 @@ sudo make install
 In order to release a package as tarball:
 
 make distcheck
+make dist
 
-Please note that the 
-
-make distcheck 
-
-step is mandatory in order to verify that the tarball 
-released is autoconsistent and containes all pieces needed for building.
-Doing make dist is not enough.
-
-If you don't want pollute your git sandbox, you can build standing on a 
+Please note that, if you don't want pollute your git sandbox, you can build standing on a 
 different unrelated directory the whole thing.
 
 In order to clean up the sandbox, there exists a convenience script that quickly
 clean the sandbox:
 
-cd ~/ghpsdr3-alex
-make distclean && sh cleanup.sh
+cd ~/aconf
+make clean
+sh cleanup.sh
 
 Using Jack Audio Connection Kit
 ===============================

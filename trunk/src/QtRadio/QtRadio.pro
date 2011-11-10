@@ -5,11 +5,11 @@
 #-------------------------------------------------
 
 # Comment the line below for Ubuntu 11.04
-QT       += core gui network multimedia mobility
+#QT       += core gui network multimedia mobility
 
 # Uncomment the lines below for Ubuntu 11.04
-#CONFIG	+= mobility
-#MOBILITY += multimedia
+CONFIG	+= mobility
+MOBILITY += multimedia
 
 # Comment the line below for Ubuntu 11.04
 #INCLUDEPATH += /usr/include/QtMobility
@@ -60,7 +60,8 @@ SOURCES += main.cpp\
     smeter.cpp \
     rigctl.cpp \
     vfo.cpp \
-    ctl.cpp
+    ctl.cpp \
+    servers.cpp
 
 HEADERS  += \ 
     Waterfall.h \
@@ -104,7 +105,8 @@ HEADERS  += \
     smeter.h \
     rigctl.h \
     vfo.h \
-    ctl.h
+    ctl.h \
+    servers.h
 
 FORMS    += \   
     UI.ui \
@@ -116,7 +118,8 @@ FORMS    += \
     BookmarksEditDialog.ui \
     KeypadDialog.ui \
     vfo.ui \
-    ctl.ui
+    ctl.ui \
+    servers.ui
 
 OTHER_FILES +=
 
@@ -124,26 +127,3 @@ win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/debug/ -lcodec2
 else:symbian: LIBS += -lcodec2
 else:unix: LIBS += -lcodec2
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

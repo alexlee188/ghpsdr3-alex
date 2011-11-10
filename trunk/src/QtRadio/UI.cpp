@@ -27,6 +27,7 @@
 #include <QSettings>
 #include <QPainter>
 #include <QThread>
+#include <QMessageBox>
 
 #include "UI.h"
 #include "About.h"
@@ -49,11 +50,11 @@
 #include "Meter.h"
 #include "Spectrum.h"
 #include "smeter.h"
+#include "servers.h"
 
 UI::UI() {
 
     widget.setupUi(this);
-
     meter=-121;
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
@@ -63,7 +64,7 @@ UI::UI() {
     audio_thread = new QThread();
     audio->moveToThread(audio_thread);
     audio_thread->start(QThread::TimeCriticalPriority);
-
+    isConnected = false;
 
     // layout the screen
     widget.gridLayout->setContentsMargins(0,0,0,0);
@@ -75,6 +76,7 @@ UI::UI() {
     // connect up all the menus
     connect(widget.actionAbout,SIGNAL(triggered()),this,SLOT(actionAbout()));
     connect(widget.actionConnectToServer,SIGNAL(triggered()),this,SLOT(actionConnect()));
+    connect(widget.actionQuick_Server_List,SIGNAL(triggered()),this,SLOT(actionQuick_Server_List()));
     connect(widget.actionDisconnectFromServer,SIGNAL(triggered()),this,SLOT(actionDisconnect()));
 
     connect(widget.actionSubrx,SIGNAL(triggered()),this,SLOT(actionSubRx()));
@@ -436,7 +438,21 @@ void UI::actionConnect() {
 //    setWindowTitle("QtRadio - Server: "+configure.getHost()); //gvj may need to change this to printWindowTitle
 //    printStatusBar(" .. at line 438");
     widget.spectrumFrame->setReceiver(configure.getReceiver());
+    isConnected = true;
 }
+
+
+void UI::actionDisconnectNow(){
+
+    if(isConnected == false){
+       QMessageBox msgBox;
+       msgBox.setText("Not connected to a server!");
+       msgBox.exec();
+    }else{
+       actionDisconnect();
+    }
+}
+
 
 void UI::actionDisconnect() {
     //qDebug() << "UI::actionDisconnect";
@@ -450,13 +466,21 @@ void UI::actionDisconnect() {
     widget.actionMuteSubRx->setDisabled(TRUE);
 
     configure.connected(FALSE);
+    isConnected = false;
+}
+void UI::actionQuick_Server_List() {
+   Servers *servers = new Servers();
+   QObject::connect(servers, SIGNAL(disconnectNow()), this, SLOT(actionDisconnectNow()));
+   QObject::connect(servers, SIGNAL(connectNow(QString)), this, SLOT(actionConnectNow(QString)));
+   servers->show();
+   servers->refreshList();
 }
 
 void UI::connected() {
     QString command;
 
     qDebug() << "UI::connected";
-
+    isConnected = true;
     configure.connected(TRUE);
 
     // send initial settings
@@ -549,7 +573,7 @@ void UI::connected() {
 
 void UI::disconnected(QString message) {
     qDebug() << "UI::disconnected: " << message;
-
+    isConnected = false;
     spectrumTimer->stop();
 
 //    widget.statusbar->showMessage(message,0); //gvj deleted code
@@ -1824,4 +1848,20 @@ qDebug()<<Q_FUNC_INFO<<": vfo up or down button clicked. Direction = "<<directio
         default : f = (samplerate * 8) / 10;
     }
     frequencyMoved(f, direction);
+}
+
+
+
+void UI::actionConnectNow(QString IP)
+{
+    qDebug() << "Connect Slot:"  << IP;
+    if (isConnected == false)
+    {
+       connection.connect(IP, DSPSERVER_BASE_PORT+configure.getReceiver());
+       widget.spectrumFrame->setReceiver(configure.getReceiver());
+    }else{
+        QMessageBox msgBox;
+        msgBox.setText("Already Connected to a server!\nDisconnect first.");
+        msgBox.exec();
+    }
 }

@@ -25,6 +25,7 @@ BUILT_SOURCES=                  \
     ui_KeypadDialog.h \
     ui_vfo.h \
     ui_ctl.h \
+    ui_servers.h \
 About.moc.cpp                    \
 Audio.moc.cpp                    \
 Band.moc.cpp                     \
@@ -49,7 +50,8 @@ Waterfall.moc.cpp                \
 Xvtr.moc.cpp \
 smeter.moc.cpp \
 ctl.moc.cpp \
-rigctl.moc.cpp
+rigctl.moc.cpp \
+servers.moc.cpp
 
 	
 nodist_QtRadio_SOURCES = \
@@ -87,7 +89,8 @@ Waterfall.moc.cpp              \
 Xvtr.moc.cpp                   \
 smeter.moc.cpp                 \
 ctl.moc.cpp \
-rigctl.moc.cpp
+rigctl.moc.cpp \
+servers.moc.cpp
 
 
 
@@ -99,15 +102,15 @@ Audio.cpp      BookmarkDialog.cpp       Connection.cpp   Filter.cpp       Keypad
 Band.cpp       Bookmarks.cpp            CWLFilters.cpp   FiltersBase.cpp  LSBFilters.cpp     UI.cpp                         \
 BandLimit.cpp  BookmarksDialog.cpp      CWUFilters.cpp   Filters.cpp      main.cpp           USBFilters.cpp                 \
 Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.cpp          vfo.cpp         smeter.cpp     \
-ctl.cpp rigctl.cpp\
+ctl.cpp rigctl.cpp servers.cpp\
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  Waterfall.h  \
 Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Spectrum.h    XvtrEntry.h  \
 Band.h       Bookmark.h         codec2.h               DIGLFilters.h  Filters.h      LSBFilters.h     UI.h          Xvtr.h       \
 BandLimit.h  BookmarksDialog.h  Configure.h            DIGUFilters.h  FMNFilters.h   Meter.h          USBFilters.h  smeter.h \
-ctl.h rigctl.h\
+ctl.h rigctl.h servers.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
-ctl.ui
+ctl.ui servers.ui
 
 CLEANFILES =                  \
     ui_UI.h \
@@ -120,6 +123,7 @@ CLEANFILES =                  \
     ui_KeypadDialog.h \
     ui_vfo.h \
     ui_ctl.h \
+    ui_servers.h \
 About.moc.cpp                    \
 Audio.moc.cpp                    \
 Band.moc.cpp                     \
@@ -144,7 +148,8 @@ Waterfall.moc.cpp                \
 Xvtr.moc.cpp                     \
 smeter.moc.cpp                   \
 ctl.moc.cpp \
-rigctl.moc.cpp
+rigctl.moc.cpp \
+servers.moc.cpp
 
 #
 # auxiliary services, git string, icons

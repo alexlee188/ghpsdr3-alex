@@ -34,7 +34,7 @@
 #include <QAudioFormat>
 #include <QVector>
 #include <QThread>
-
+#include "servers.h"
 #include "About.h"
 #include "Configure.h"
 #include "Audio.h"
@@ -66,6 +66,7 @@
 #include "vfo.h"
 #include "rigctl.h"
 
+
 #define DSPSERVER_BASE_PORT 8000
 
 #define AGC_LONG 1
@@ -90,6 +91,7 @@ public:
     void rigctlSetVFOB();
     void rigctlSetFreq(long long f);
     void rigctlSetMode(int newmode);
+
 signals:
     void initialize_audio(int length);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
@@ -101,7 +103,10 @@ public slots:
     void actionConfigure();
     void actionAbout();
     void actionConnect();
+    void actionConnectNow(QString IP);
+    void actionDisconnectNow();
     void actionDisconnect();
+    void actionQuick_Server_List();
     void actionSubRx();
     void actionBandscope();
     void actionRecord();
@@ -226,6 +231,7 @@ public slots:
     void getBandFrequency();
     void vfoStepBtnClicked(int direction);
 
+
 signals:
     void subRxStateChanged(bool state);
 
@@ -306,6 +312,8 @@ private:
     KeypadDialog keypad;
     Meter* sMeter;
     int meter;
+    bool isConnected;
+
 };
 
 #endif	/* _UI_H */
