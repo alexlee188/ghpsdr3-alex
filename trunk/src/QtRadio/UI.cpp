@@ -246,7 +246,6 @@ UI::UI() {
     connect(this,SIGNAL(initialize_audio(int)),audio,SLOT(initialize_audio(int)));
     connect(this,SIGNAL(process_audio(char*,char*,int)),audio,SLOT(process_audio(char*,char*,int)));
     connect(widget.ctlFrame,SIGNAL(pttChange(int,bool)),this,SLOT(pttChange(int,bool)));
-//    connect(widget.ctlFrame,SIGNAL(on_pwrSlider_valueChanged(double)),this, SLOT(pwrSlider_valueChanged(double)));
     connect(widget.ctlFrame,SIGNAL(pwrSlider_valueChanged(double)),this,SLOT(pwrSlider_valueChanged(double)));
 
     bandscope=NULL;
@@ -1918,7 +1917,6 @@ void UI::pttChange(int caller, bool ptt)
             connection.sendCommand(command);
             widget.vfoFrame->pttChange(ptt); //Set band select buttons etc. to Rx state on VFO
         }
-        qDebug()<<Q_FUNC_INFO<<": Caller = "<<caller<<", and ptt = "<<ptt<<", txPwr = "<<widget.ctlFrame->getTxPwr()<<", txFrequency = "<<txFrequency;
     } else widget.ctlFrame->clearMoxBtn();
 }
 
