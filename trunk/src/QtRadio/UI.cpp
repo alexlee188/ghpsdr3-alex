@@ -1882,16 +1882,27 @@ void UI::vfoStepBtnClicked(int direction)
 void UI::pttChange(int caller, bool ptt)
 {
     QString command;
+    static int workingMode = 1;
+    int txPwr;
 
     if(configure.getTxAllowed()) {
-        txPwr = widget.ctlFrame->getTxPwr();
         qDebug()<<Q_FUNC_INFO<<": Caller = "<<caller<<", and ptt = "<<ptt<<", txPwr = "<<txPwr<<", txFrequency = "<<txFrequency;
        if(ptt) { // Going from Rx to Tx
+            if(caller==1) {
+               workingMode = mode.getMode();
+               txPwr = widget.ctlFrame->getTxPwr();
+               command.clear(); QTextStream(&command) << "setMode " << MODE_AM;
+               connection.sendCommand(command);
+            }
             connection.setMuted(true);
             command.clear(); QTextStream(&command) << "Mox " << "on";
             connection.sendCommand(command);
             widget.vfoFrame->pttChange(ptt);
         } else { // Going from Tx to Rx
+            if(caller==1) {
+               command.clear(); QTextStream(&command) << "setMode " << workingMode;
+               connection.sendCommand(command);
+            }
             connection.setMuted(false);
             command.clear(); QTextStream(&command) << "Mox " << "off";
             connection.sendCommand(command);

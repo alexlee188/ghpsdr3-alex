@@ -327,7 +327,7 @@ private:
     KeypadDialog keypad;
     Meter* sMeter;
     int meter;
-    int txPwr;
+//    int txPwr;
     long long txFrequency;
     bool isConnected;
 
