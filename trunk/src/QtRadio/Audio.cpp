@@ -22,9 +22,26 @@
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
 */
-
-#include "Audio.h"
 #include "codec2.h"
+#include "Audio.h"
+
+
+#include <qthread.h>
+
+
+class SleeperThread : public QThread
+{
+public:
+static void sleep(unsigned long secs) {
+QThread::sleep(secs);
+}
+static void msleep(unsigned long msecs) {
+QThread::msleep(msecs);
+}
+static void usleep(unsigned long usecs) {
+QThread::usleep(usecs);
+}
+};
 
 Audio::Audio() {
     audio_output=NULL;
@@ -226,7 +243,7 @@ void Audio::process_audio(char* header,char* buffer,int length) {
         //qDebug() << "writing audio data length=: " <<  decoded_buffer.length();
         total_to_write = decoded_buffer.length();
         while( written< total_to_write) {
-            if (audio_output->bytesFree() < 4) usleep(1000);
+            if (audio_output->bytesFree() < 4) SleeperThread::usleep(1000);//usleep(1000);
             length_to_write = (audio_output->periodSize() > (decoded_buffer.length()-written)) ?
                         (decoded_buffer.length()-written) : audio_output->periodSize();
             written+=audio_out->write(&decoded_buffer.data()[written],length_to_write);
