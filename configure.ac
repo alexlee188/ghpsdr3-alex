@@ -253,7 +253,10 @@ if test "x${usrp}" = xyes; then
     AC_CONFIG_SUBDIRS([trunk/src/usrp])
 fi
 AM_CONDITIONAL([MAKE_USRP], [test "x${usrp}" = xyes])
-AC_CONFIG_FILES([trunk/src/usrp/Makefile])
+#
+# Uncomment the following line when the usrp directory gets populated
+#
+#AC_CONFIG_FILES([trunk/src/usrp/Makefile])
 
 AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
 AC_CONFIG_FILES([Makefile
