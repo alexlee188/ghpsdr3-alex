@@ -241,6 +241,8 @@ if test "x${perseus}" = xyes; then
     AC_CONFIG_SUBDIRS([trunk/src/perseus])
 fi
 AM_CONDITIONAL([MAKE_PERSEUS], [test "x${perseus}" = xyes])
+AC_CONFIG_FILES([trunk/src/perseus/Makefile])
+
 
 if test "x${usrp}" = xyes; then
     AC_MSG_NOTICE([
@@ -251,6 +253,7 @@ if test "x${usrp}" = xyes; then
     AC_CONFIG_SUBDIRS([trunk/src/usrp])
 fi
 AM_CONDITIONAL([MAKE_USRP], [test "x${usrp}" = xyes])
+AC_CONFIG_FILES([trunk/src/usrp/Makefile])
 
 AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
 AC_CONFIG_FILES([Makefile

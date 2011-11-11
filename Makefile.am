@@ -4,6 +4,7 @@ if MAKE_PERSEUS
 endif
 
 if MAKE_USRP
+   ###### uncomment the following line when usrp come in
    ###### USRP_DIR =  trunk/src/usrp
 endif
 
