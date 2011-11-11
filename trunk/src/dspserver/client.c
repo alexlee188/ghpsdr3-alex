@@ -854,6 +854,16 @@ void readcb(struct bufferevent *bev, void *ctx){
                         } else {
                             fprintf(stderr,"Invalid command: '%s'\n",message);
                         }
+                    } else if(strcmp(token,"settxamcarrierlevel")==0) {
+                        double pwr;
+                        token=strtok(NULL," ");
+                        if(token >= 0 &&
+                           token <= 1) {
+                            pwr=atof(token);
+                            SetTXAMCarrierLevel(1,pwr);
+                        } else {
+                            fprintf(stderr,"Invalid command: '%s'\n",message);
+                        }
                     } else if(strcmp(token,"setsquelchval")==0) {
                         token=strtok(NULL," ");
                         if(token!=NULL) {

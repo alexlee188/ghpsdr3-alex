@@ -58,6 +58,7 @@ void Ctl::on_pwrSlider_valueChanged(int value)
         moxPwr = ui->pwrSlider->value();
     } else if(ui->btnTune->isChecked()) {
         TunePwr = ui->pwrSlider->value();
+        emit pwrSlider_valueChanged(TunePwr/100);
     }
 }
 

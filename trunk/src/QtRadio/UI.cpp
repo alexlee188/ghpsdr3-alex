@@ -1893,6 +1893,8 @@ void UI::pttChange(int caller, bool ptt)
                txPwr = widget.ctlFrame->getTxPwr();
                command.clear(); QTextStream(&command) << "setMode " << MODE_AM;
                connection.sendCommand(command);
+               command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << txPwr/100;
+               connection.sendCommand(command);
             }
             connection.setMuted(true);
             command.clear(); QTextStream(&command) << "Mox " << "on";
