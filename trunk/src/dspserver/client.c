@@ -79,12 +79,8 @@
 
 
 static int timing=0;
-static struct timeb start_time;
-static struct timeb end_time;
 
-static pthread_t client_thread_id, spectrum_thread_id, tx_thread_id;
-
-static int client_terminate=0;
+static pthread_t client_thread_id, tx_thread_id;
 
 #define BASE_PORT 8000
 
@@ -94,7 +90,6 @@ static int serverSocket;
 static int clientSocket;
 static struct sockaddr_in server;
 static struct sockaddr_in client;
-static socklen_t addrlen;
 
 #define SAMPLE_BUFFER_SIZE 4096
 static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
@@ -152,7 +147,6 @@ void audio_stream_init(int receiver) {
 }
 
 void audio_stream_queue_add(int length) {
-    int i;
     struct audio_entry *item;
 
 
@@ -419,6 +413,7 @@ void* client_thread(void* arg) {
 
     event_add(listener_event, NULL);
     event_base_dispatch(base);
+    return NULL;
 }
 
 void do_accept(evutil_socket_t listener, short event, void *arg){
@@ -528,11 +523,11 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                    SetMode(0,1,mode);
 				    SetMode(1,0,mode);
 				    switch (mode){
-					USB: SetTXFilter(1,150, 2850); break;
-					LSB: SetTXFilter(1,-2850, -150); break;
-					AM:
-					SAM: SetTXFilter(1, -2850, 2850); break;
-					FMN: SetTXFIlter(1, -4800, 4800); break;
+					case USB: SetTXFilter(1,150, 2850); break;
+					case LSB: SetTXFilter(1,-2850, -150); break;
+					case AM:
+					case SAM: SetTXFilter(1, -2850, 2850); break;
+					case FMN: SetTXFilter(1, -4800, 4800); break;
 					default: SetTXFilter(1, -4800, 4800);
 				    }
 		                } else {
@@ -990,7 +985,6 @@ void printcountrythread()
 {
   // looks for the country for the connecting IP
   FILE *fp;
-  int status;
   char path[1035];
   char sCmd[255];
   /* Open the command for reading. */
