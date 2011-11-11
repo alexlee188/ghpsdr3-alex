@@ -855,12 +855,15 @@ void readcb(struct bufferevent *bev, void *ctx){
                             fprintf(stderr,"Invalid command: '%s'\n",message);
                         }
                     } else if(strcmp(token,"settxamcarrierlevel")==0) {
-                        double pwr;
                         token=strtok(NULL," ");
-                        if(token >= 0 &&
-                           token <= 1) {
-                            pwr=atof(token);
-                            SetTXAMCarrierLevel(1,pwr);
+                        if(token!=NULL) {
+                            double pwr=atof(token);
+                            if(pwr >= 0 &&
+                               pwr <= 1) {
+                                SetTXAMCarrierLevel(1,pwr);
+                            } else {
+                                fprintf(stderr,"Invalid command arguement: '%s'\n",message);
+                            }
                         } else {
                             fprintf(stderr,"Invalid command: '%s'\n",message);
                         }

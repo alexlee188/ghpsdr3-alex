@@ -1883,33 +1883,41 @@ void UI::pttChange(int caller, bool ptt)
 {
     QString command;
     static int workingMode = 1;
-    int txPwr;
 
     if(configure.getTxAllowed()) {
-        qDebug()<<Q_FUNC_INFO<<": Caller = "<<caller<<", and ptt = "<<ptt<<", txPwr = "<<txPwr<<", txFrequency = "<<txFrequency;
-       if(ptt) { // Going from Rx to Tx
-            if(caller==1) {
-               workingMode = mode.getMode();
-               txPwr = widget.ctlFrame->getTxPwr();
+       if(ptt) {    // Going from Rx to Tx ................
+            if(caller==1) { //We have clicked the tune button so switch to AM and set carrier level
+               workingMode = mode.getMode(); //Save the current mode for restoration when we finish tuning
+               qDebug()<<"The raw value of TxPwr = "<< widget.ctlFrame->getTxPwr()<<" and TxPwr = "<<(double)widget.ctlFrame->getTxPwr()/100;
+               // Set the AM carrier level to match the tune power slider value in a scale 0 to 1.0
+               command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100;
+               connection.sendCommand(command);
                command.clear(); QTextStream(&command) << "setMode " << MODE_AM;
                connection.sendCommand(command);
-               command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << txPwr/100;
-               connection.sendCommand(command);
             }
+            //Mute the receiver audio and freeze the spectrum and waterfall display
             connection.setMuted(true);
+            //Key the radio
             command.clear(); QTextStream(&command) << "Mox " << "on";
             connection.sendCommand(command);
-            widget.vfoFrame->pttChange(ptt);
-        } else { // Going from Tx to Rx
+            widget.vfoFrame->pttChange(ptt); //Update the VFO to reflect that we are transmitting
+        } else {    // Going from Tx to Rx .................
             if(caller==1) {
-               command.clear(); QTextStream(&command) << "setMode " << workingMode;
-               connection.sendCommand(command);
+                //Restore AM carrier level to 0.5 the standard carrier level for AM mode.
+                command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << 0.5;
+                connection.sendCommand(command);
+                //Restore the mode back to original before tuning
+                command.clear(); QTextStream(&command) << "setMode " << workingMode;
+                connection.sendCommand(command);
             }
+            //Un-mute the receiver audio and un-freeze the display
             connection.setMuted(false);
+            //Send signal to sdr to go to Rx
             command.clear(); QTextStream(&command) << "Mox " << "off";
             connection.sendCommand(command);
-            widget.vfoFrame->pttChange(ptt);
+            widget.vfoFrame->pttChange(ptt); //Set band select buttons etc. to Rx state on VFO
         }
+        qDebug()<<Q_FUNC_INFO<<": Caller = "<<caller<<", and ptt = "<<ptt<<", txPwr = "<<widget.ctlFrame->getTxPwr()<<", txFrequency = "<<txFrequency;
     } else widget.ctlFrame->clearMoxBtn();
 }
 
