@@ -6,13 +6,6 @@ dspserver_CFLAGS = -g -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-func
 
 dspserver_LDADD = ../DttSP/libDttSP.a
 
-<<<<<<< HEAD
-=======
-
-dspserver_LDFLAGS = -lpulse-simple -lusb -lm -lfftw3f -lcodec2 -lsamplerate
-
-# dspserver_LDFLAGS = -lm
->>>>>>> More changes to allow for Perseus sample rates.
 dspserver_SOURCES = main.c\
          ozy.c\
          soundcard.c\
