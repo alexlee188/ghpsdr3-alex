@@ -149,7 +149,7 @@ void vfo::mousePressEvent(QMouseEvent *event)
 
         else {  // Check to see if we have clicked outside the vfo display area
             digit = getDigit(event->x(), event->y());
-qDebug()<<Q_FUNC_INFO<<": The value of digit is ..."<<digit;
+//qDebug()<<Q_FUNC_INFO<<": The value of digit is ..."<<digit;
             if (digit != 9) {       // getDigit returns 9 if click was outside display area.
                 if (digit < 9) {    // getDigit returns 0 ... 8 if we clicked on vfoA
                     freq = readA();
@@ -172,23 +172,23 @@ qDebug()<<Q_FUNC_INFO<<": The value of digit is ..."<<digit;
                 if (isVFOa) {   //We right clicked on vfoA
                     if(selectedVFO == 'A' || selectedVFO == 'S') {
                         emit frequencyMoved(freq, 1);
-qDebug()<<Q_FUNC_INFO<<": vfoA, emit frequencyChanged(myStr.toLongLong()) = "<<freq;
+//qDebug()<<Q_FUNC_INFO<<": vfoA, emit frequencyChanged(myStr.toLongLong()) = "<<freq;
                     }
                     else {
                         writeA(myStr.toLongLong());
-qDebug()<<Q_FUNC_INFO<<": vfoA, writeA(myStr.toInt()) = "<<freq;
+//qDebug()<<Q_FUNC_INFO<<": vfoA, writeA(myStr.toInt()) = "<<freq;
                     }
                 }
 //                else if(ui->pBtnSubRx->isChecked()) { //We right clicked on vfoB
 //qDebug()<<Q_FUNC_INFO<<": vfoB and subRx mode";
 //                }
                 else if(selectedVFO == 'B') {
-                        emit frequencyMoved(freq, -1);
-qDebug()<<Q_FUNC_INFO<<": Line 187 ... vfoB, emit frequencyMoved(freq, 1) = "<<freq;
+                        emit frequencyMoved(freq, 1);
+//qDebug()<<Q_FUNC_INFO<<": Line 187 ... vfoB, emit frequencyMoved(freq, 1) = "<<freq;
                 }
                 else {
                         writeB(myStr.toLongLong());
-qDebug()<<Q_FUNC_INFO<<": vfoB, writeA(myStr.toInt()) = "<<freq;
+//qDebug()<<Q_FUNC_INFO<<": vfoB, writeA(myStr.toInt()) = "<<freq;
                 }
             }
         }
@@ -232,7 +232,7 @@ void vfo::wheelEvent(QWheelEvent *event)
         }
         x = mult[digit]*direction;
         if(isVfoA) {    //If true we scrolled on vfoA
-qDebug()<<Q_FUNC_INFO<<"The value of x = "<<", & readA() = "<<readA();
+//qDebug()<<Q_FUNC_INFO<<"The value of x = "<<", & readA() = "<<readA();
             if(selectedVFO == 'A' || selectedVFO == 'S') {
                 emit frequencyMoved(x, 1);
             }
@@ -241,7 +241,7 @@ qDebug()<<Q_FUNC_INFO<<"The value of x = "<<", & readA() = "<<readA();
             }
         }
         else {  //We scrolled on vfoB
-qDebug()<<Q_FUNC_INFO<<"The value of x = "<< x<<", & readB() = "<<readB();
+//qDebug()<<Q_FUNC_INFO<<"The value of x = "<< x<<", & readB() = "<<readB();
             if(selectedVFO == 'B') {
                 emit frequencyMoved(x, 1);
             }
@@ -291,7 +291,7 @@ void vfo::writeB(long long freq)
 
 void vfo::checkBandBtn(int band)
 {
-    qDebug()<<Q_FUNC_INFO<<": Value of band button is ... "<<band;
+//qDebug()<<Q_FUNC_INFO<<": Value of band button is ... "<<band;
     ui->btnGrpBand->button(band)->setChecked(TRUE);
 }
 
@@ -381,7 +381,17 @@ void vfo::on_pBtnScanDn_clicked()
 
 void vfo::on_pBtnScanUp_clicked()
 {
-    ui->pBtnScanDn->setChecked(false);
+    ui->pBtnScanUp->setChecked(false);
+}
+
+void vfo::on_toolBtnUp_clicked()
+{
+    emit vfoStepBtnClicked(-1);  //Direction: 1 = down, -1 = up
+}
+
+void vfo::on_toolBtnDn_clicked()
+{
+    emit vfoStepBtnClicked(1);
 }
 
 void vfo::on_pBtnExch_clicked()
@@ -430,7 +440,7 @@ void vfo::writeSettings(QSettings* settings)
 
 void vfo::on_pBtnSubRx_clicked()
 {
-    qDebug()<<Q_FUNC_INFO<<": Here I am!!!";
+//qDebug()<<Q_FUNC_INFO<<": Here I am!!!";
     emit subRxButtonClicked(); //Connected to "void UI::actionSubRx()"
 }
 
@@ -459,7 +469,7 @@ void vfo::checkSubRx(long long f, int samplerate)
     vfoEnabled(false, true);
 
 //    ui->pBtnvfoA->setEnabled(FALSE);
-qDebug()<<Q_FUNC_INFO<<": About to check pBtnSubRx";
+//qDebug()<<Q_FUNC_INFO<<": About to check pBtnSubRx";
     ui->pBtnSubRx->setChecked(TRUE);
 }
 

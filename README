@@ -4,42 +4,56 @@ http://openhpsdr.org/wiki/index.php?title=Ghpsdr3
 
 The changes are in trunk/src/: 
 
-softrock     - added an IF offset of 9khz (ala PSDR-IQ).  Works with all softrocks.
-dspserver    - added IF offset of 9khz.  More robust audio and spectrum transfers.
-server       - hpsdr protocol with full control of sdr-widget/Mobo/SR.  Only for sdr-widget.
+softrock     - added an IF offset of 9khz (ala PSDR-IQ).  Rx and Tx.  Pulse and Jack audio.  Works with all softrocks.
+dspserver    - added IF offset of 9khz.  More robust audio and spectrum transfers.  Rx and Tx.  Hamlib net backend.  rxtx-event
+               branch has non-blocking networking.  In future multiple client can access the same dspserver.
+widget-server- hpsdr protocol with full control of sdr-widget/Mobo/SR.  Only for sdr-widget.
 receiver     - Makefile modified to compile in x86_64, changed local-audio to direct alsa output, changed portaudio to use callback.
                To run under Ubuntu with pulseaudio:  $ ./ghpsdr --local-audio 1 --audio-device pulse
 
-QtRadio      - added dialog to store server ip addresses.  Fixed high cpu util bug.  Implemented 16 bit PCM audio.  			See below for codec2 encoding and decoding.  Implemented a separate high priority thread for
-		Audio with improved sound quality.
+QtRadio      - Many improvements to a full functional rxtx with graphical vfo and multiple audio codecs.
+             - Added a Quick Server Connect Dialog.  Displays a list of all currently online dspservers that were started with the --share option.
+The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx and rxtx-event branches.
 
-The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.
+Ubuntu Linux Users
+==================
 
-The next major feature to be developed is SSB Tx.
+There is a ppa for the binaries produced from the master branch, maintained by Andrea.
+
+Now the code base is taken from the master branch and in the "about" 
+panel there is some additional information in order to show where the 
+source is coming from.
+
+In order to add this repository to your apt system (U11.10, U11.04, U10.04) 
+please submit the following commands: 
+
+sudo add-apt-repository ppa:andrew-montefusco/ghpsdr3 
+sudo apt-get update 
+sudo apt-get install ghpsdr3
+
+You will then find the QtRadio app in the Applications > Internet menu
+
+Subsequently you can use the Ubuntu software update process to update to the latest ppa version.
 
 Windows Users
-=====================
+=============
 
 At this time the only application working in Windows is the QtRadio client which can connect to
-any dsp server.  A ready to run windows executable is avilable at:
-http://www.napan.com/ve9gj
-You can download the zip file which contains all the needed dlls and qtradio.exe.  Extract tthe qtradio folder
-to your windows machine and double click qtradio.exe to run.
+any dspserver.  A ready to run windows executable is avilable at:
+
+	http://www.napan.com/ve9gj
+
+You can download the zip file which contains all the needed dlls and qtradio.exe.  Extract the qtradio folder
+to somewhere on your windows drive and double click qtradio.exe to run.
+
 The source for building with QtCreator 2.3.0 based on QT 4.7.4 is available via the win32 branch at:
-https://github.com/alexlee188/ghpsdr3-alex
-Note that codec2 is not working in the win32 version.
+	https://github.com/alexlee188/ghpsdr3-alex
 
-Building the software
-=====================
+Note that tx and codec2 is not working in the win32 version.
 
-You will need Qt4.  I would recommend downloading and installing the QtSDK from http://qt.nokia.com/downloads/
-instead of using the distributions's Qt.
-
-Set up your path to point to the QtSDK:
-
-For example, in my system:
-
-$ export PATH=/home/alex/QtSDK/Desktop/Qt/473/gcc/bin:$PATH
+Building the software in Linux
+==============================
+You will need Qt4.  Qt4 is available as a package from Ubuntu.
 
 Note that in addition to Qt, you will need some dev packages to be installed for using Qt
 (used by QtRadio), including (Ubuntu/Debian naming convention):
@@ -50,11 +64,30 @@ libusb-0.1-4
 libfftw3-dev
 portaudio19-dev
 libpulse-dev
+libsamplerate0-dev
+libusb-1.0-0-dev
+libconfig8-dev
 
+libevent
+========
+For the rxtx-event branch of the software, you will also need a version of libevent that is newer than what
+is available from the Ubuntu distribution.  Go to synaptic and completely remove the stock libevent (v1.4) from Ubuntu.
 
-Building the software
-=====================
+Then download from:
 
+http://libevent.org/
+
+libevent-2.0.15-stable.tar.gz
+
+Uncompress and follow the instructions to build and install:
+
+$ ./configure
+$ make
+$ sudo make install
+$ sudo ldconfig
+
+Building the ghpsdr3-alex software
+==================================
 To build:
 
 $ cd ghpsdr3-alex
@@ -68,11 +101,15 @@ Then the 3 programs will be installed in /usr/local/bin.
 
 Running the software
 ====================
-
 To run the softrock server (defaults to using pulse for IQ input.  So 
 use pulse chooser to set the default pulse source to the IQ sound 
 card).  You also need to run pulse in network mode.  Use Pulseaudio Device Chooser
-to set up network access by checking the various option boxes.
+to set up network access by checking the various option boxes.  In order to use
+96000 or 192000, you will need to configure pulse audio by editing the /etc/pulse/daemon.conf,
+or better still, copy the file to ~/.pulse/daemon.conf and then edit the file there.
+
+You can also use jack instead of pulse.  For detailed instructions on setting up soundcards with pulse or jack,
+Google and do research.
 
 $ softrock --si570 --iq --samplerate 48000|96000|192000
 
@@ -82,7 +119,17 @@ To run the dspserver:
 
 $ dspserver 
 dspserver may be started with the option "-- lookupcountry" which will try 
-to determine the Country of incoming connections by IP. Off by default. May block.
+to determine the Country of incoming connections by IP. Off by default. No longer blocks.
+
+dspserver now has the ability to "register" it's status in a web database.
+This data will be used by QtRadio in the future to assist selecting dspservers.
+Another advantage is dspserver will no longer need any form of dyndns service as the current
+IP for the dspserver is registered at the same time.  You can view the current registered dspservers:
+http://qtradio.napan.ca/qtradio/qtradio.pl
+To use this feature start dspserver with the "--share" option.  This will look for ~/dspserver.conf for settings.
+If no conf file is found one will be created on startup and is ready for editing.  Editing notes are included in the conf file.
+You may also use option "--shareconfig path_filename" instead to use an alternate conf file. 
+Note that wget is needed for --share to work.
 
 Then you can run QtRadio to connect to the dspserver that is running. 
 

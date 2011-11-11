@@ -30,7 +30,8 @@ Connection::Connection() {
     tcpSocket=NULL;
     state=READ_HEADER_TYPE;
     bytes=0;
-    hdr=(char*)malloc(HEADER_SIZE);
+    hdr=(char*)malloc(HEADER_SIZE);  // HEADER_SIZE is larger than AUTIO_HEADER_SIZE so it is OK
+                                    // for both
     SemSpectrum.release();
 }
 
@@ -155,9 +156,14 @@ void Connection::socketData() {
             bytes+=thisRead;
             if ((bytes == AUDIO_HEADER_SIZE)){
                     length = atoi(&hdr[AUDIO_LENGTH_POSITION]);
-                    buffer = (char*)malloc(length);
-                    bytes = 0;
-                    state = READ_BUFFER;
+                    if ((length < 0) || (length > 4800 * 8)){
+                        state = READ_HEADER_TYPE;
+                    }
+                    else {
+                        buffer = (char*)malloc(length);
+                        bytes = 0;
+                        state = READ_BUFFER;
+                    }
              }
             break;
 
@@ -166,9 +172,14 @@ void Connection::socketData() {
             bytes+=thisRead;
             if(bytes==HEADER_SIZE) {
                 length=atoi(&hdr[26]);
-                buffer=(char*)malloc(length);
-                bytes=0;
-                state=READ_BUFFER;
+                if ((length < 0) || (length > 4096)){
+                        state = READ_HEADER_TYPE;
+                }
+                else {
+                    buffer=(char*)malloc(length);
+                    bytes=0;
+                    state=READ_BUFFER;
+                }
             }
             break;
 
@@ -195,13 +206,12 @@ void Connection::processBuffer() {
     char* nextHeader;
     char* nextBuffer;
 
-    while (!queue.isEmpty() ){
+    while (!queue.isEmpty()){
         buffer=queue.dequeue();
         nextHeader=buffer->getHeader();
         nextBuffer=buffer->getBuffer();
-
-        //qDebug() << "processBuffer " << nextHeader[0];
         // emit a signal to show what buffer we have
+        //qDebug() << "processBuffer " << nextHeader[0];
         if(nextHeader[0]==SPECTRUM_BUFFER){
             emit spectrumBuffer(nextHeader,nextBuffer);
         }
@@ -212,6 +222,7 @@ void Connection::processBuffer() {
             emit bandscopeBuffer(nextHeader,nextBuffer);
         } else {
             qDebug() << "Connection::socketData: invalid header: " << nextHeader[0];
+            queue.clear();
         }
     }
 }

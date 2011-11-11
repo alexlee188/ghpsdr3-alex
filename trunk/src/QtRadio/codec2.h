@@ -37,11 +37,11 @@
 #define CODEC2_BITS_PER_FRAME     50
 #define BITS_SIZE	((CODEC2_BITS_PER_FRAME + 7) / 8)
 
-void *codec2_create(){}
-void codec2_destroy(void *codec2_state){}
-void codec2_encode(void *codec2_state, unsigned char * bits, short speech_in[]){}
+void *codec2_create();
+void codec2_destroy(void *codec2_state);
+void codec2_encode(void *codec2_state, unsigned char * bits, short speech_in[]);
 void codec2_decode(void *codec2_state, short speech_out[],
-                   const unsigned char * bits){}
+      const unsigned char * bits);
 
 #endif
 

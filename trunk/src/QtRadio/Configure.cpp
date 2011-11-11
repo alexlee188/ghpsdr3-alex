@@ -39,7 +39,6 @@ Configure::Configure() {
     widget.audioChannelsSpinBox->setValue(1);
     widget.hostComboBox->addItem("127.0.0.1");
     widget.hostComboBox->addItem("g0orx.homelinux.net");
-    widget.hostComboBox->addItem("napan.ca");
 //    widget.spectrumHighSpinBox->setValue(-40);
 //    widget.spectrumLowSpinBox->setValue(-160);
     widget.waterfallHighSpinBox->setValue(-60);
@@ -47,7 +46,7 @@ Configure::Configure() {
     widget.fpsSpinBox->setValue(15);
     widget.encodingComboBox->addItem("aLaw");
     widget.encodingComboBox->addItem("16 bit pcm");
-    //widget.encodingComboBox->addItem("Codec 2");
+    widget.encodingComboBox->addItem("Codec 2");
     widget.byteOrderComboBox->addItem("LittleEndian");
     widget.byteOrderComboBox->addItem("BigEndian");
     widget.byteOrderComboBox->setCurrentIndex(0);
