@@ -530,7 +530,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 				    switch (mode){
 					USB: SetTXFilter(1,150, 2850); break;
 					LSB: SetTXFilter(1,-2850, -150); break;
-					AM:
+					AM:  SetTXFilter(1, -2850, 2850); break;
 					SAM: SetTXFilter(1, -2850, 2850); break;
 					FMN: SetTXFIlter(1, -4800, 4800); break;
 					default: SetTXFilter(1, -4800, 4800);
