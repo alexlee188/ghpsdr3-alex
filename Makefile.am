@@ -1,3 +1,9 @@
+#
+# we need to add "manually" to the distribution set the perseus configure.ac
+# (and in the future the usrp/configure.ac as well) because the make dist
+# command doesn't take in account the optional (user selected) subdirectories
+#
+EXTRA_DIST = $(srcdir)/trunk/src/perseus/configure.ac
 
 if MAKE_PERSEUS
    PERSEUS_DIR = trunk/src/perseus
