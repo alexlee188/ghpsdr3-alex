@@ -239,7 +239,7 @@ public slots:
     void vfoStepBtnClicked(int direction);
 //    void vfoScanBtnClicked(int direction);
     void pttChange(int caller, bool ptt);
-
+    void pwrSlider_valueChanged(double pwr);
 
 signals:
     void subRxStateChanged(bool state);
