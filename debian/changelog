@@ -1,4 +1,11 @@
-ghpsdr3 (1.6~0ubuntu1ppa1~natty) natty; urgency=high
+ghpsdr3 (1.7~0ubuntu1ppa1~natty) natty; urgency=high
+
+  * VE9GJ Glenn Taylor 
+    Added Quick Connect server dialog
+
+  * Alex Lee <alexlee188@gmail.com>
+    Updated README
+    dspserver: bug fix message
 
   * Glenn Taylor VE9GJ 
     Fixed possible memleak in dspserver updatestaus()
