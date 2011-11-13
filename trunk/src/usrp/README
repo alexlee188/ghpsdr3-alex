@@ -1,0 +1,129 @@
+An attempt at a server for USRP hardware using UHD - Universal Hardware Driver API.
+
+
+The server program in the ghpsdr3 suite of programs is the the program 
+that forms the interface to the hardware.  One instance of this program 
+must be running to communicate with the USRP hardware.
+
+Currently the server program is a command line program and it has several options.
+
+--receivers (1|2|3|4)
+
+  receivers (note the plural) is the number of simultaneous receiver you 
+want to monitor from your receiver card.  the use of this option is 
+dependent on the version of the FPGA code you are using.  All versions 
+support one receiver.  Bruce Walkers FPGA code supports 4 receivers.  
+
+--samplerate (48000|96000|192000)
+
+  samplerate is the rate at which you want the HPSDR hardware to sample the 
+incoming signals.  
+
+
+1. BUILD
+
+  To build the server, several prerequisite have to be fullfilled.
+
+
+1.1 UHD - Universal Hardware Driver installation
+
+  Extract the code from the git repository:
+  cd
+  git clone git://code.ettus.com/ettus/uhd.git
+
+  that results in a uhd directory being created in your home.
+
+  For the build, please refer to procedure available from the Ettus site:
+  http://www.ettus.com/uhd_docs/manual/html/build.html#build-instructions-unix
+
+  Next, you have to download the FPGA's images and firmware for microntroller embedded into USRP1.
+  The procedure is specified in:
+       http://www.ettus.com/uhd_docs/manual/html/images.html
+
+  Assuming Ubuntu platfom, download the binary image:
+  
+  wget http://www.ettus.com/downloads/uhd_images/UHD-images-0001.20101214004901.3ed60b6/UHD-images-0001.20101214004901.3ed60b6-Linux.deb
+
+  and install it:
+
+  sudo dpkg -i UHD-images-0001.20101214004901.3ed60b6-Linux.deb
+
+  After the installations above are successfully ended, several utility and test program are available in ~/uhd/host/build/examples/
+  Use 
+  
+  uhd_find_devices --args="type=usrp1"
+
+  to test your USRP and UHD installation.
+  Use rx_samples_to_file to verify the end to end working of the platform.
+
+1.2 gpsdr3 package from John Melton
+
+  To install the package do the following steps:
+  
+  sudo apt-get install subversion
+  sudo apt-get install libqt4-dev
+  sudo apt-get install libfftw3-3
+  cd
+  svn co svn://svn.openhpsdr.org/svn/repos_sdr_hpsdr/trunk/N6LYT/ghpsdr3
+  cd ~/ghpsdr3/trunk/src/
+  cd DttSP/
+  make 
+  cd ../dspserver
+  make
+  cd ../QtRadio
+  qmake-qt4 QtRadio.pro
+  make
+
+
+1.3 Extract and build this package
+
+  First, install the usrp server prerequisite:
+
+  sudo apt-get install libportaudio2 portaudio19-dev libsamplerate0-dev libpulse-dev
+
+  Just for convenience, it is better untar this package into the ghpsdr3 
+directory hierarchy.
+
+  cd ~/ghpsdr3/trunk/src/
+  tar -zxvf ~/Download/ghpsdr3-usrp-1.0.tar.gz
+  cd ghpsdr3-usrp-1.0
+  ./configure
+  make
+  sudo mak install
+
+
+1.4 How to run
+
+We have to run three components: server, dsp processing and graphical user interface.
+At the moment you need to run them in three separate terminal windows in the order shown below:
+
+~/ghpsdr3/trunk/src/ghpsdr3-usrp-1.0/usrp_server
+
+~/ghpsdr3/trunk/bin/dspserver --samplerate 48000
+
+cd ~/ghpsdr3/trunk/src/QtRadio ; export QT_RADIO_NO_LOCAL_AUDIO=1 ; ./QtRadio
+
+
+1.5 Troubleshooting
+
+
+1.5.1 usrp_server complains about the libuhd shared library.
+
+Please run 
+
+sudo ldconfig
+
+
+1.6 How to build with the autotools build system
+
+In order to test the build, first off install all prerequisite packages ()
+
+cd /tmp
+wget  http://ghpsdr-servers.googlecode.com/files/ghpsdr3-usrp-1.0.tar.gz
+tar -xvf ghpsdr3-usrp-1.0.tar.gz 
+cd ghpsdr3-usrp-1.0/
+./configure && make
+sudo make install
+
+
+
