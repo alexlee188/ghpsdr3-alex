@@ -12,7 +12,7 @@ receiver     - Makefile modified to compile in x86_64, changed local-audio to di
                To run under Ubuntu with pulseaudio:  $ ./ghpsdr --local-audio 1 --audio-device pulse
 
 QtRadio      - Many improvements to a full functional rxtx with graphical vfo and multiple audio codecs.
-
+             - Added a Quick Server Connect Dialog.  Displays a list of all currently online dspservers that were started with the --share option.
 The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx and rxtx-event branches.
 
 Ubuntu Linux Users
