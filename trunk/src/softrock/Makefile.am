@@ -9,7 +9,7 @@
 
 bin_PROGRAMS = softrock
 
-softrock_CFLAGS = -std=gnu99 -g -O3 -Wall
+softrock_CFLAGS = -std=gnu99 -O3 -Wall
 
 softrock_SOURCES = client.c        client.h       \
                    config_ops.c    config_ops.h   \
