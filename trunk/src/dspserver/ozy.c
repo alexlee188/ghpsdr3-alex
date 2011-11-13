@@ -329,7 +329,7 @@ void* keepalive_thread(void* arg) {
 }
 
 int make_connection() {
-    char *token;
+    char *token, *saveptr;
     int result;
 
     result=0;
@@ -337,10 +337,10 @@ int make_connection() {
     //sprintf(command,"connect %d %d",receiver,SPECTRUM_PORT+(receiver*2));
     send_command(command);
 
-    token=strtok(response," ");
+    token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
-            token=strtok(NULL," ");
+            token=strtok_r(NULL," ",&saveptr);
             if(token!=NULL) {
                 result=0;
                 sampleRate=atoi(token);
@@ -397,11 +397,12 @@ void ozyDisconnect() {
 int ozySetFrequency(long long ddsAFrequency) {
     char *token;
     int result;
+    char *saveptr;
 
     result=0;
     sprintf(command,"frequency %lld", (ddsAFrequency - (long long)LO_offset));
     send_command(command);
-    token=strtok(response," ");
+    token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
             result=0;
@@ -417,13 +418,13 @@ int ozySetFrequency(long long ddsAFrequency) {
 }
 
 int ozySetPreamp(char* state) {
-    char *token;
+    char *token, *saveptr;
     int result;
 
     result=0;
     sprintf(command,"preamp %s",state);
     send_command(command);
-    token=strtok(response," ");
+    token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
             result=0;
@@ -439,13 +440,13 @@ int ozySetPreamp(char* state) {
 }
 
 int ozySetRecord(char* state) {
-    char *token;
+    char *token, *saveptr;
     int result;
 
     result=0;
     sprintf(command,"record %s",state);
     send_command(command);
-    token=strtok(response," ");
+    token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
             result=0;
@@ -461,13 +462,13 @@ int ozySetRecord(char* state) {
 }
 
 int ozySetMox(int state) {
-    char *token;
+    char *token, *saveptr;
     int result;
 
     result=0;
     sprintf(command,"mox %d",state);
     send_command(command);
-    token=strtok(response," ");
+    token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
             result=0;
@@ -483,13 +484,13 @@ int ozySetMox(int state) {
 }
 
 int ozySetOpenCollectorOutputs(char* state) {
-    char *token;
+    char *token, *saveptr;
     int result;
 
     result=0;
     sprintf(command,"setocoutputs %s",state);
     send_command(command);
-    token=strtok(response," ");
+    token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
             result=0;
@@ -567,7 +568,7 @@ fprintf(stderr,"setSpeed %d\n",s);
         //SetRXOsc(0,0,0.0);
         SetRXOsc(0,1, LO_offset);
     }
-	SetTXOsc(1,0.0);
+	SetTXOsc(1, LO_offset);
 
         src_ratio = 48000.0 / ((double) sampleRate);
 	mic_src_ratio = (double) sampleRate/ 8000.0;

@@ -36,6 +36,7 @@
 #include <QThread>
 #include <QQueue>
 
+#include "servers.h"
 #include "About.h"
 #include "Configure.h"
 #include "Audio.h"
@@ -69,6 +70,7 @@
 #include "rigctl.h"
 #include "ctl.h"
 
+
 #define DSPSERVER_BASE_PORT 8000
 
 #define AGC_LONG 1
@@ -95,6 +97,7 @@ public:
     void rigctlSetMode(int newmode);
     void * codec2;
     void * mic_codec2;
+
 signals:
     void initialize_audio(int length);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
@@ -106,7 +109,10 @@ public slots:
     void actionConfigure();
     void actionAbout();
     void actionConnect();
+    void actionConnectNow(QString IP);
+    void actionDisconnectNow();
     void actionDisconnect();
+    void actionQuick_Server_List();
     void actionSubRx();
     void actionBandscope();
     void actionRecord();
@@ -233,6 +239,7 @@ public slots:
     void vfoStepBtnClicked(int direction);
 //    void vfoScanBtnClicked(int direction);
     void pttChange(int caller, bool ptt);
+    void pwrSlider_valueChanged(double pwr);
 
 signals:
     void subRxStateChanged(bool state);
@@ -320,8 +327,10 @@ private:
     KeypadDialog keypad;
     Meter* sMeter;
     int meter;
-    int txPwr;
+//    int txPwr;
     long long txFrequency;
+    bool isConnected;
+
 };
 
 #endif	/* _UI_H */

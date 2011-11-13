@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 # Comment the line below for Ubuntu 11.04
-#QT       += core gui network multimedia mobility
+QT       += core gui network multimedia mobility
 
 # Uncomment the lines below for Ubuntu 11.04
 CONFIG	+= mobility
@@ -61,7 +61,11 @@ SOURCES += main.cpp\
     rigctl.cpp \
     vfo.cpp \
     ctl.cpp \
-    Audioinput.cpp
+#<<<<<<< HEAD
+    Audioinput.cpp\
+#=======
+    servers.cpp
+#>>>>>>> master
 
 HEADERS  += \ 
     Waterfall.h \
@@ -106,7 +110,8 @@ HEADERS  += \
     rigctl.h \
     vfo.h \
     ctl.h \
-    Audioinput.h
+    Audioinput.h \
+    servers.h
 
 FORMS    += \   
     UI.ui \
@@ -118,7 +123,8 @@ FORMS    += \
     BookmarksEditDialog.ui \
     KeypadDialog.ui \
     vfo.ui \
-    ctl.ui
+    ctl.ui \
+    servers.ui
 
 OTHER_FILES +=
 

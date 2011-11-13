@@ -764,9 +764,7 @@ setup (char *app_data_path)
 		top[thread].start_tv = now_tv ();
 		top[thread].running = TRUE;
 		top[thread].verbose = FALSE;
-		if (thread != 1) top[thread].state = RUN_PLAY;
-		//else top[thread].state = RUN_PASS;
-		else top[thread].state = RUN_PLAY;
+		top[thread].state = RUN_PLAY;
 		top[thread].offset = 0;
 		top[thread].jack.reset_size = 1024;
 		reset_em =TRUE;

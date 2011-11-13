@@ -52,6 +52,7 @@ public:
     void updateXvtrList(Xvtr* xvtr);
 
     QString getHost();
+    void addHost(QString host);
     int getReceiver();
     
     int getSpectrumHigh();
