@@ -1857,6 +1857,7 @@ void UI::actionConnectNow(QString IP)
     qDebug() << "Connect Slot:"  << IP;
     if (isConnected == false)
     {
+       configure.addHost(IP);
        connection.connect(IP, DSPSERVER_BASE_PORT+configure.getReceiver());
        widget.spectrumFrame->setReceiver(configure.getReceiver());
     }else{
