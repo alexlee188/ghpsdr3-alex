@@ -37,7 +37,7 @@ void *spectrum_thread(void *);
 void client_set_timing();
 void printcountry();
 void setprintcountry();
-void printcountrythread();
+void *printcountrythread(void *);
 
 extern double mic_src_ratio;
 

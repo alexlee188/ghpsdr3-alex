@@ -464,20 +464,38 @@ void writecb(struct bufferevent *bev, void *ctx){
 void readcb(struct bufferevent *bev, void *ctx){
     char *token, *saveptr;
     int i;
-    int bytesRead;
-    char message[MSG_SIZE];
+    //int bytesRead;
+    char *message;
+    size_t len;
 
-	while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
 
-                message[bytesRead-1]=0;			// for Linux strings terminating in NULL
+    // while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
+
+    struct evbuffer *input = bufferevent_get_input(bev);
+    if (input == 0) return;
+    fprintf (stderr, ">>>>> %s\n", __FUNCTION__); 
+
+    message = evbuffer_readln(input, &len, EVBUFFER_EOL_NULL);
+    if (message) {
+                fprintf (stderr, ">>>>> message: [%s]\n", message); 
+
+                //message[len-1]=0;			// for Linux strings terminating in NULL
                 token=strtok_r(message," ",&saveptr);
- 		if (token == NULL) continue;
+ 		if (token == NULL) return;
 
-                    if(strncmp(token,"mic", 3)==0){		// This is incoming microphone data
-			memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
-			Mic_stream_queue_add();
+#if 1
+                    if(strncmp(token,"mic", 3)==0) {		// This is incoming microphone data
+			size_t datalen=0;
+                        token=strtok_r(NULL," ", &saveptr);
+                        if(token!=NULL) {
+                        	samples=atoi(token);
+				//memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
+                                if (evbuffer_remove (input, mic_buffer, datalen) > 0) Mic_stream_queue_add();
+                        }
 		    }
-                    else {
+                    else
+#endif 
+                    {
                     	if(token!=NULL) {
 		            	i=0;
 		            	while(token[i]!=0) {
@@ -723,10 +741,10 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
                        } else if(strncmp(token,"setanfvals",10)==0) {
-		                int taps;
-		                int delay;
-		                double gain;
-		                double leakage;
+		                int taps = 0;
+		                int delay = 0;
+		                double gain = 0;
+		                double leakage = 0;
 		                int error;
 
 		                error=0;
@@ -761,10 +779,10 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                    SetANFvals(0,1,taps,delay,gain,leakage);
 		                }
                        } else if(strncmp(token,"setnrvals",9)==0) {
-		                int taps;
-		                int delay;
-		                double gain;
-		                double leakage;
+		                int taps = 0;
+		                int delay = 0;
+		                double gain = 0;
+		                double leakage = 0;
 		                int error;
 
 		                error=0;
@@ -937,8 +955,8 @@ void readcb(struct bufferevent *bev, void *ctx){
                     fprintf(stderr,"Invalid command: message: '%s'\n",message);
                 	}
 		}
-	    } // end while
-
+	    } // end if
+	free(message);
 }
 
 
@@ -990,12 +1008,11 @@ void setprintcountry()
 
 void printcountry(){
 	pthread_t lookup_thread;
-    int t_ret1;
-    t_ret1 = pthread_create( &lookup_thread, NULL, printcountrythread, (void*) NULL);
-		
+	int t_ret1;
+	t_ret1 = pthread_create( &lookup_thread, NULL, printcountrythread, (void*) NULL);
 }
 
-void printcountrythread()
+void *printcountrythread (void *p)
 {
   // looks for the country for the connecting IP
   FILE *fp;
@@ -1006,7 +1023,7 @@ void printcountrythread()
   fp = popen(sCmd, "r");
   if (fp == NULL) {
     fprintf(stdout,"Failed to run printcountry command\n" );
-    return;
+    return 0;
   }
 
   /* Read the output a line at a time - output it. */
@@ -1018,6 +1035,6 @@ void printcountrythread()
   /* close */
   pclose(fp);
 
-  return;
+  return 0;
 }
 

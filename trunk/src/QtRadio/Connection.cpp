@@ -106,11 +106,11 @@ void Connection::sendCommand(QString command) {
     int i;
     char buffer[SEND_BUFFER_SIZE];
 
-    for (i=0; i < SEND_BUFFER_SIZE; i++) buffer[i] = 0;
+    // for (i=0; i < SEND_BUFFER_SIZE; i++) buffer[i] = 0;
     if(tcpSocket!=NULL && tcpSocket->isValid() && tcpSocket->isWritable()) {
         mutex.lock();
         strcpy(buffer,command.toUtf8().constData());
-        tcpSocket->write(buffer,SEND_BUFFER_SIZE);
+        tcpSocket->write(buffer,strlen(buffer)+1); // include the NULL termination character
         //tcpSocket->flush();
         mutex.unlock();
     }
@@ -123,11 +123,14 @@ void Connection::sendAudio(int length, unsigned char* data) {
 
     for (i=0; i < SEND_BUFFER_SIZE; i++) buffer[i] = 0;
     if(tcpSocket!=NULL && tcpSocket->isValid() && tcpSocket->isWritable()) {
-        QTextStream(&command) << "mic ";
+        QTextStream(&command) << "mic " << length;
         strcpy(buffer,command.toUtf8().constData());
-        memcpy(&buffer[4], data,length);
+        int blen = strlen(buffer);  
+        buffer[blen] = '\0';
+        blen++;
+        memcpy(buffer+blen, data,length);
         mutex.lock();
-        tcpSocket->write(buffer, SEND_BUFFER_SIZE);
+        tcpSocket->write(buffer, blen+length);
         //tcpSocket->flush();
         mutex.unlock();
     }
