@@ -617,11 +617,12 @@ void Configure::on_pBtnAddHost_clicked()
 
 void Configure::addHost(QString host){
     int current_index;
-    if (widget.hostComboBox->findText(host) == -1){      // not currently on ComboBox
+    if ((current_index = widget.hostComboBox->findText(host)) == -1){      // not currently on ComboBox
         widget.hostComboBox->addItem(host);
         current_index = widget.hostComboBox->findText(host);
-        widget.hostComboBox->setCurrentIndex(current_index);
     }
+    widget.hostComboBox->setCurrentIndex(current_index);
+
 }
 
 void Configure::on_pBtnRemHost_clicked()
