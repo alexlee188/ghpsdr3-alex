@@ -91,6 +91,9 @@
 #include <string.h>
 #include <math.h>
 #include <getopt.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 
 #include "client.h"

@@ -112,6 +112,10 @@ TAILQ_HEAD(, audio_entry) IQ_audio_stream;
 
 // Mic_audio_stream is the HEAD of a queue for encoded Mic audio samples from QtRadio
 TAILQ_HEAD(, audio_entry) Mic_audio_stream;
+
+// Client_list is the HEAD of a queue of connected clients
+TAILQ_HEAD(, client_entry) Client_list;
+
 //
 // samplerate library data structures
 //
@@ -133,6 +137,7 @@ void client_set_samples(float* samples,int size);
 char* client_samples;
 int samples;
 int prncountry = -1;
+char status_buf[32];
 
 float getFilterSizeCalibrationOffset() {
     int size=1024; // dspBufferSize
@@ -197,6 +202,8 @@ void Mic_stream_queue_free(){
 
 void client_init(int receiver) {
     int rc;
+
+    TAILQ_INIT(&Client_list);
 
     sem_init(&bufferevent_semaphore,0,1);
     sem_init(&mic_semaphore,0,1);
@@ -340,17 +347,31 @@ void writecb(struct bufferevent *bev, void *ctx);
 void
 errorcb(struct bufferevent *bev, short error, void *ctx)
 {
+    struct client_entry *item, *tmp_item;
+    int client_count = 0;
+
     if (error & BEV_EVENT_EOF) {
         /* connection has been closed, do any clean up here */
         /* ... */
+
             time_t tt;
             struct tm *tod;
             time(&tt);
             tod=localtime(&tt);
-            fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
-		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
-		receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
-		updateStatus("Idle");
+
+	    for (item = TAILQ_FIRST(&Client_list); item != NULL; item = tmp_item){
+		tmp_item = TAILQ_NEXT(item, entries);
+		if (item->bev == bev){
+		    	fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
+				tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
+				receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
+
+			TAILQ_REMOVE(&Client_list, item, entries);
+			free(item);
+			break;
+		}
+	    }
+
     } else if (error & BEV_EVENT_ERROR) {
         /* check errno to see what error occurred */
         /* ... */
@@ -358,7 +379,14 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
         /* must be a timeout event handle, handle it */
         /* ... */
     }
-    send_audio = 0;
+
+    TAILQ_FOREACH(item, &Client_list, entries){
+	client_count++;
+    }
+    sprintf(status_buf,"%d client(s)", client_count);
+    updateStatus(status_buf);
+
+    if (client_count <= 0) send_audio = 0;
     bufferevent_free(bev);
 }
 
@@ -418,26 +446,33 @@ void* client_thread(void* arg) {
 
 void do_accept(evutil_socket_t listener, short event, void *arg){
 
-
+    struct client_entry *item;
     struct event_base *base = arg;
     struct sockaddr_in ss;
     socklen_t slen = sizeof(ss);
+    char buf[32];
+    int client_count = 0;
+
     int fd = accept(listener, (struct sockaddr*)&ss, &slen);
     if (fd < 0) {
         fprintf(stderr,"accept failed\n");
     } else {
-	    memcpy(&client, &ss, sizeof(client));	// temporary hack.  Should have info for each of multiple clients
+	    // add newly connected client to Client_list
+	    item = malloc(sizeof(*item));
+	    memcpy(&item->client, &ss, sizeof(ss));
+
             time_t tt;
             struct tm *tod;
             time(&tt);
             tod=localtime(&tt);
-            if(prncountry == 0){
-                printcountry();
-            }
             fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connection from %s:%d\n",
 		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
-		receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
-        updateStatus("Busy");
+		receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
+            if(prncountry == 0){
+	    	memcpy(&client, &ss, sizeof(client));
+                printcountry();
+            }
+
         struct bufferevent *bev;
         evutil_make_socket_nonblocking(fd);
         bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
@@ -445,16 +480,26 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
         bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
 	bufferevent_setwatermark(bev, EV_WRITE, 4096, 0);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
+	item->bev = bev;
+	TAILQ_INSERT_TAIL(&Client_list, item, entries);
+	TAILQ_FOREACH(item, &Client_list, entries){
+		client_count++;
+	}
+	sprintf(status_buf,"%d client(s)", client_count);
+        updateStatus(status_buf);
     }
 }
 
 void writecb(struct bufferevent *bev, void *ctx){
 	struct audio_entry *item;
+	struct client_entry *client_item;
 
 	sem_wait(&bufferevent_semaphore);
 	item = audio_stream_queue_remove();
 	if (item != NULL){
-		bufferevent_write(bev, item->buf, item->length);
+		TAILQ_FOREACH(client_item, &Client_list, entries){
+			bufferevent_write(client_item->bev, item->buf, item->length);
+			}
 		free(item->buf);
 		free(item);
 	}
@@ -930,8 +975,8 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                } else {
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
-                    } else {
-                        fprintf(stderr,"Invalid command: token: '%s'\n",token);
+                       } else {
+                        	fprintf(stderr,"Invalid command: token: '%s'\n",token);
                     	}
                 } else {
                     fprintf(stderr,"Invalid command: message: '%s'\n",message);

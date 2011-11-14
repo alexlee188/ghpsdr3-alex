@@ -28,6 +28,8 @@
 #if ! defined __CLIENT_H__
 #define __CLIENT_H__
 
+#include <sys/queue.h>
+
 extern int encoding;
 extern int tx_length;
 void client_init(int receiver);
@@ -38,6 +40,12 @@ void client_set_timing();
 void printcountry();
 void setprintcountry();
 void printcountrythread();
+
+struct client_entry {
+	struct sockaddr_in client;
+	struct bufferevent * bev;
+	TAILQ_ENTRY(client_entry) entries;
+};
 
 extern double mic_src_ratio;
 
