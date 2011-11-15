@@ -511,6 +511,13 @@ void readcb(struct bufferevent *bev, void *ctx){
     int i;
     int bytesRead;
     char message[MSG_SIZE];
+    struct client_entry *item;
+
+	if ((item = TAILQ_FIRST(&Client_list)) == NULL) return;		// should not happen.  No clients !!!
+	if (item->bev != bev){						// only allow the first client on Client_list to command dspserver as master
+		while (bufferevent_read(bev, message, MSG_SIZE) > 0);	// drain all input from slave
+		return;
+		};
 
 	while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
 
