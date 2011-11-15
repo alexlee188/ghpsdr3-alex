@@ -313,7 +313,7 @@ private:
     Meter* sMeter;
     int meter;
     bool isConnected;
-
+    QString QuickIP;
 };
 
 #endif	/* _UI_H */

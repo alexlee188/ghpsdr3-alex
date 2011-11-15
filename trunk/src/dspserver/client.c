@@ -62,8 +62,8 @@ static pthread_t client_thread_id, spectrum_thread_id;
 static int client_terminate=0;
 
 #define BASE_PORT 8000
-
 static int port=BASE_PORT;
+
 
 static int serverSocket;
 static int clientSocket;
@@ -423,7 +423,9 @@ if(timing) {
 			if (encoding == 2) audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
                         
 			fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
-            updateStatus("Busy"); 
+            if  (strlen(share_config_file) > 2) {  //config file must be set
+               updateStatus("1 of 1 Clients"); 
+            }
                         audio_stream_reset();
                         send_audio=1;
                     } else if(strcmp(token,"stopaudiostream")==0) {
@@ -692,7 +694,9 @@ if(timing) {
             time(&tt);
             tod=localtime(&tt);
             fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnected from %s:%d\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
-            updateStatus("Idle"); 
+            if  (strlen(share_config_file) > 2) {  //config file must be set
+               updateStatus("0 of 1 Clients"); 
+		   }
         }
         send_audio=0;
         clientSocket=-1;
