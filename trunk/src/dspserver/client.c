@@ -522,6 +522,39 @@ void readcb(struct bufferevent *bev, void *ctx){
 		               	token[i]=tolower(token[i]);
 		               	i++;
                     		}
+	 			if(strncmp(token,"getspectrum",11)==0) {
+				        token=strtok_r(NULL," ",&saveptr);
+				        if(token!=NULL) {
+		                    	    samples=atoi(token);
+					    Process_Panadapter(0,spectrumBuffer);
+					    meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+					    subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+					    client_samples=malloc(BUFFER_HEADER_SIZE+samples);
+					    client_set_samples(spectrumBuffer,samples);
+					    bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
+					    free(client_samples);
+		                	    } else {
+			 		    fprintf(stderr,"Invalid command: '%s'\n",message);
+					    }
+		               } else if(strncmp(token,"setsubrx",8)==0) {
+		                	int state;
+		                	token=strtok_r(NULL," ",&saveptr);
+		                	if(token!=NULL) {
+		                    	state=atoi(token);
+		                    	SetSubRXSt(0,1,state);
+		                	} else {
+		                    	fprintf(stderr,"Invalid command: '%s'\n",message);
+		                	}
+				} else if(strncmp(token,"setsubrxfrequency",17)==0) {
+				        int offset;
+				        token=strtok_r(NULL," ",&saveptr);
+				        if(token!=NULL) {
+				            offset=atoi(token);
+				            SetRXOsc(0,1,offset - LO_offset);
+				        } else {
+				            fprintf(stderr,"Invalid command: '%s'\n",message);
+				        }
+				}
 			} // end if !=NULL
 		}; // end while
 		return;
