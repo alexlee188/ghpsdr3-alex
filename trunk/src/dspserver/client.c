@@ -466,42 +466,74 @@ void readcb(struct bufferevent *bev, void *ctx){
     int i;
     //int bytesRead;
     char *message;
-    size_t len;
+    size_t totlen;
+	size_t len;
 
 
     // while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
 
     struct evbuffer *input = bufferevent_get_input(bev);
-    if (input == 0) return;
+
     fprintf (stderr, ">>>>> %s\n", __FUNCTION__); 
+    if (input == 0) return;
 
+	// compute the total lenght
+	totlen = evbuffer_get_length(input);
+    //
+    // checks if the buffer contains a whole message
+    //
+	{
+		struct evbuffer_ptr p;
+        size_t out;
+        char cmd[BUFSIZ];
+
+		evbuffer_ptr_set(input, &p, 0, EVBUFFER_PTR_SET); // start from beginning
+
+		p = evbuffer_search_eol(input, &p, &out, EVBUFFER_EOL_NULL); // search for command terminator (NULL)
+		if (p.pos < 0) {
+			fprintf (stderr, "no NULL terminated string found, return leaving the buffer untouched\n");
+			return; // no command found, return leaving the buffer untouched
+		}		
+		evbuffer_copyout(input, cmd, p.pos); /* We use evbuffer_copyout here so that the command field will stay on
+												the buffer for now. */
+
+		// try to scan the MIC message
+		if (sscanf(cmd, "mic %d", &len) == 1) {
+			evbuffer_ptr_set(input, &p, 1, EVBUFFER_PTR_ADD); // advance the pointer, past the NULL character
+			fprintf (stderr, "[%s] %d %d %d\n", cmd, p.pos, len, totlen);
+			if (p.pos+len > totlen) return; // buffer not complete, try again on next event
+		}
+
+	}
+	//
+	// YES !!
+    // read the real message
+	//
     message = evbuffer_readln(input, &len, EVBUFFER_EOL_NULL);
-    if (message) {
-                fprintf (stderr, ">>>>> message: [%s]\n", message); 
 
-                //message[len-1]=0;			// for Linux strings terminating in NULL
-                token=strtok_r(message," ",&saveptr);
- 		if (token == NULL) return;
+	if (message) {
+		fprintf (stderr, "$$$$$ message: [%s]\n", message); 
 
-#if 1
-                    if(strncmp(token,"mic", 3)==0) {		// This is incoming microphone data
+		//message[len-1]=0;			// for Linux strings terminating in NULL
+		token=strtok_r(message," ",&saveptr);
+		if (token == NULL) return;
+
+		if(strncmp(token,"mic", 3)==0) {		// This is incoming microphone data
 			size_t datalen=0;
-                        token=strtok_r(NULL," ", &saveptr);
-                        if(token!=NULL) {
-                        	samples=atoi(token);
+			token=strtok_r(NULL," ", &saveptr);
+			if(token!=NULL) {
+				samples=atoi(token);
 				//memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
-                                if (evbuffer_remove (input, mic_buffer, datalen) > 0) Mic_stream_queue_add();
-                        }
-		    }
-                    else
-#endif 
-                    {
-                    	if(token!=NULL) {
-		            	i=0;
-		            	while(token[i]!=0) {
-		               	token[i]=tolower(token[i]);
-		               	i++;
-                    		}
+				if (evbuffer_remove (input, mic_buffer, datalen) > 0) Mic_stream_queue_add();
+		}
+	}
+	else {
+		if(token!=NULL) {
+			i=0;
+			while(token[i]!=0) {
+				token[i]=tolower(token[i]);
+				i++;
+			}
  			if(strncmp(token,"getspectrum",11)==0) {
                         token=strtok_r(NULL," ",&saveptr);
                         if(token!=NULL) {
