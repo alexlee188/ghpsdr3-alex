@@ -64,6 +64,7 @@ Note that in addition to Qt, you will need some dev packages to be installed for
 (used by QtRadio), including (Ubuntu/Debian naming convention):
 
 libqt4-opengl-dev
+qtmobility-dev
 glutg3-dev
 libusb-0.1-4
 libfftw3-dev
