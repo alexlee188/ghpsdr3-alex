@@ -536,25 +536,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                	    } else {
 			 		    fprintf(stderr,"Invalid command: '%s'\n",message);
 					    }
-		               } else if(strncmp(token,"setsubrx",8)==0) {
-		                	int state;
-		                	token=strtok_r(NULL," ",&saveptr);
-		                	if(token!=NULL) {
-		                    	state=atoi(token);
-		                    	SetSubRXSt(0,1,state);
-		                	} else {
-		                    	fprintf(stderr,"Invalid command: '%s'\n",message);
-		                	}
-				} else if(strncmp(token,"setsubrxfrequency",17)==0) {
-				        int offset;
-				        token=strtok_r(NULL," ",&saveptr);
-				        if(token!=NULL) {
-				            offset=atoi(token);
-				            SetRXOsc(0,1,offset - LO_offset);
-				        } else {
-				            fprintf(stderr,"Invalid command: '%s'\n",message);
-				        }
-				}
+				}  // end getspectrum
 			} // end if !=NULL
 		}; // end while
 		return;
