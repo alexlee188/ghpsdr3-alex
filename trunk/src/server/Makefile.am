@@ -25,10 +25,10 @@ hpsdr_server_SOURCES = \
     server.c \
     bandscope.h \
     client.h \
-    hpsdr_usb.h \ 
+    hpsdr_usb.h \
     messages.h \
     ozy.h \
-    transmitter.h \ 
+    transmitter.h \
     util.h \
     buffer.h \
     getopt.h \
