@@ -264,7 +264,7 @@ void Mic_stream_queue_add(){
 }
 
 void *tx_thread(void *arg){
-   unsigned char *bits;
+   unsigned char bits[BITS_SIZE];
    struct audio_entry *item;
    short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
    int tx_buffer_counter = 0;
@@ -285,7 +285,7 @@ void *tx_thread(void *arg){
 		}
 	else {
 	for (k = 0; k < MIC_NO_OF_FRAMES; k++){		// Do it for the MIC_NO_OF_FRAMES
-	   bits = &item->buf[BITS_SIZE*k];			// each frame is BITS long
+	   memcpy(bits, &item->buf[BITS_SIZE*k], BITS_SIZE);			// each frame is BITS long
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
