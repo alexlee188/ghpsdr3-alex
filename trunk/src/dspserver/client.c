@@ -100,7 +100,7 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static float tx_buffer[TX_BUFFER_SIZE*2];
 static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
-#define MIC_NO_OF_FRAMES 4
+#define MIC_NO_OF_FRAMES 2
 #define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
@@ -254,7 +254,7 @@ void Mic_stream_queue_add(){
    struct audio_entry *item;
 
 	bits = malloc(MIC_BUFFER_SIZE);
-	memcpy(bits, mic_buffer, MIC_BUFFER_SIZE);		// right now only one frame per buffer
+	memcpy(bits, mic_buffer, MIC_BUFFER_SIZE);
 	item = malloc(sizeof(*item));
 	item->buf = bits;
 	item->length = MIC_BUFFER_SIZE;
