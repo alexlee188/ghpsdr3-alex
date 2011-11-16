@@ -30,3 +30,5 @@ float preampOffset;
 
 int cwPitch;
 
+extern int toShareOrNotToShare;
+

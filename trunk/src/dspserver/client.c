@@ -100,7 +100,8 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static float tx_buffer[TX_BUFFER_SIZE*2];
 static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
-#define MIC_BUFFER_SIZE  BITS_SIZE
+#define MIC_NO_OF_FRAMES 2
+#define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
 #define MSG_SIZE 64
@@ -112,6 +113,10 @@ TAILQ_HEAD(, audio_entry) IQ_audio_stream;
 
 // Mic_audio_stream is the HEAD of a queue for encoded Mic audio samples from QtRadio
 TAILQ_HEAD(, audio_entry) Mic_audio_stream;
+
+// Client_list is the HEAD of a queue of connected clients
+TAILQ_HEAD(, client_entry) Client_list;
+
 //
 // samplerate library data structures
 //
@@ -133,6 +138,7 @@ void client_set_samples(float* samples,int size);
 char* client_samples;
 int samples;
 int prncountry = -1;
+char status_buf[32];
 
 float getFilterSizeCalibrationOffset() {
     int size=1024; // dspBufferSize
@@ -198,6 +204,8 @@ void Mic_stream_queue_free(){
 void client_init(int receiver) {
     int rc;
 
+    TAILQ_INIT(&Client_list);
+
     sem_init(&bufferevent_semaphore,0,1);
     sem_init(&mic_semaphore,0,1);
     signal(SIGPIPE, SIG_IGN);
@@ -245,23 +253,23 @@ void Mic_stream_queue_add(){
    unsigned char *bits;
    struct audio_entry *item;
 
-	bits = malloc(BITS_SIZE);
-	memcpy(bits, mic_buffer, BITS_SIZE);		// right now only one frame per buffer
+	bits = malloc(MIC_BUFFER_SIZE);
+	memcpy(bits, mic_buffer, MIC_BUFFER_SIZE);
 	item = malloc(sizeof(*item));
 	item->buf = bits;
-	item->length = BITS_SIZE;
+	item->length = MIC_BUFFER_SIZE;
 	sem_wait(&mic_semaphore);
 	TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
 	sem_post(&mic_semaphore);
 }
 
 void *tx_thread(void *arg){
-   unsigned char *bits;
+   unsigned char bits[BITS_SIZE];
    struct audio_entry *item;
    short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
    int tx_buffer_counter = 0;
    int rc;
-   int j, i;
+   int j, i, k;
    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz / 8khz = 24
    SRC_DATA data;
@@ -276,7 +284,8 @@ void *tx_thread(void *arg){
 		continue;
 		}
 	else {
-	   bits = item->buf;
+	for (k = 0; k < MIC_NO_OF_FRAMES; k++){		// Do it for the MIC_NO_OF_FRAMES
+	   memcpy(bits, &item->buf[BITS_SIZE*k], BITS_SIZE);			// each frame is BITS long
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
@@ -317,6 +326,7 @@ void *tx_thread(void *arg){
 			}
 		}
 	    } // end else rc
+	  } // end for k
 	    sem_wait(&mic_semaphore);
 	    TAILQ_REMOVE(&Mic_audio_stream, item, entries);
 	    sem_post(&mic_semaphore);
@@ -340,17 +350,12 @@ void writecb(struct bufferevent *bev, void *ctx);
 void
 errorcb(struct bufferevent *bev, short error, void *ctx)
 {
+    struct client_entry *item, *tmp_item;
+    int client_count = 0;
+
     if (error & BEV_EVENT_EOF) {
         /* connection has been closed, do any clean up here */
         /* ... */
-            time_t tt;
-            struct tm *tod;
-            time(&tt);
-            tod=localtime(&tt);
-            fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
-		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
-		receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
-		updateStatus("Idle");
     } else if (error & BEV_EVENT_ERROR) {
         /* check errno to see what error occurred */
         /* ... */
@@ -358,7 +363,32 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
         /* must be a timeout event handle, handle it */
         /* ... */
     }
-    send_audio = 0;
+
+    time_t tt;
+    struct tm *tod;
+    time(&tt);
+    tod=localtime(&tt);
+
+    for (item = TAILQ_FIRST(&Client_list); item != NULL; item = tmp_item){
+	tmp_item = TAILQ_NEXT(item, entries);
+	if (item->bev == bev){
+	    	fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
+			tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
+			receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
+
+		TAILQ_REMOVE(&Client_list, item, entries);
+		free(item);
+		break;
+	}
+    }
+
+    TAILQ_FOREACH(item, &Client_list, entries){
+	client_count++;
+    }
+    sprintf(status_buf,"%d client(s)", client_count);
+    if (toShareOrNotToShare) updateStatus(status_buf);
+
+    if (client_count <= 0) send_audio = 0;
     bufferevent_free(bev);
 }
 
@@ -418,26 +448,32 @@ void* client_thread(void* arg) {
 
 void do_accept(evutil_socket_t listener, short event, void *arg){
 
-
+    struct client_entry *item;
     struct event_base *base = arg;
     struct sockaddr_in ss;
     socklen_t slen = sizeof(ss);
+    int client_count = 0;
+
     int fd = accept(listener, (struct sockaddr*)&ss, &slen);
     if (fd < 0) {
         fprintf(stderr,"accept failed\n");
     } else {
-	    memcpy(&client, &ss, sizeof(client));	// temporary hack.  Should have info for each of multiple clients
+	    // add newly connected client to Client_list
+	    item = malloc(sizeof(*item));
+	    memcpy(&item->client, &ss, sizeof(ss));
+
             time_t tt;
             struct tm *tod;
             time(&tt);
             tod=localtime(&tt);
-            if(prncountry == 0){
-                printcountry();
-            }
             fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connection from %s:%d\n",
 		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
-		receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
-        updateStatus("Busy");
+		receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
+            if(prncountry == 0){
+	    	memcpy(&client, &ss, sizeof(client));
+                printcountry();
+            }
+
         struct bufferevent *bev;
         evutil_make_socket_nonblocking(fd);
         bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
@@ -445,16 +481,26 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
         bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
 	bufferevent_setwatermark(bev, EV_WRITE, 4096, 0);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
+	item->bev = bev;
+	TAILQ_INSERT_TAIL(&Client_list, item, entries);
+	TAILQ_FOREACH(item, &Client_list, entries){
+		client_count++;
+	}
+	sprintf(status_buf,"%d client(s)", client_count);
+        if (toShareOrNotToShare) updateStatus(status_buf);
     }
 }
 
 void writecb(struct bufferevent *bev, void *ctx){
 	struct audio_entry *item;
+	struct client_entry *client_item;
 
 	sem_wait(&bufferevent_semaphore);
 	item = audio_stream_queue_remove();
 	if (item != NULL){
-		bufferevent_write(bev, item->buf, item->length);
+		TAILQ_FOREACH(client_item, &Client_list, entries){
+			bufferevent_write(client_item->bev, item->buf, item->length);
+			}
 		free(item->buf);
 		free(item);
 	}
@@ -464,29 +510,62 @@ void writecb(struct bufferevent *bev, void *ctx){
 void readcb(struct bufferevent *bev, void *ctx){
     char *token, *saveptr;
     int i;
-    int bytesRead;
+    int bytesRead = 0;
     char message[MSG_SIZE];
+    struct client_entry *item;
 
+	if ((item = TAILQ_FIRST(&Client_list)) == NULL) return;		// should not happen.  No clients !!!
+	if (item->bev != bev){						// only allow the first client on Client_list to command dspserver as master
+		while (bufferevent_read(bev, message, MSG_SIZE) > 3){
+		        message[bytesRead-1]=0;					// for Linux strings terminating in NULL
+		        token=strtok_r(message," ",&saveptr);
+                  	if(token!=NULL) {
+		            	i=0;
+		            	while(token[i]!=0) {
+		               	token[i]=tolower(token[i]);
+		               	i++;
+                    		}
+	 			if(strncmp(token,"getspectrum",11)==0) {
+				        token=strtok_r(NULL," ",&saveptr);
+				        if(token!=NULL) {
+		                    	    samples=atoi(token);
+					    Process_Panadapter(0,spectrumBuffer);
+					    meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+					    subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+					    client_samples=malloc(BUFFER_HEADER_SIZE+samples);
+					    client_set_samples(spectrumBuffer,samples);
+					    bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
+					    free(client_samples);
+		                	    } else {
+			 		    fprintf(stderr,"Invalid command: '%s'\n",message);
+					    }
+				}  // end getspectrum
+			} // end if !=NULL
+		}; // end while
+		return;
+	}; // end if item->bev != bev
+
+	// So this is the master client
 	while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
 
                 message[bytesRead-1]=0;			// for Linux strings terminating in NULL
                 token=strtok_r(message," ",&saveptr);
  		if (token == NULL) continue;
 
-                    if(strncmp(token,"mic", 3)==0){		// This is incoming microphone data
+                    if(strncmp(token,"mic", 3)==0){		// This is incoming microphone data, binary data after "mic "
 			memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
 			Mic_stream_queue_add();
 		    }
-                    else {
-                    	if(token!=NULL) {
+                    else {	// not mic data, process other commands which are ascii
+                    if(token!=NULL) {
 		            	i=0;
 		            	while(token[i]!=0) {
 		               	token[i]=tolower(token[i]);
 		               	i++;
                     		}
  			if(strncmp(token,"getspectrum",11)==0) {
-                        token=strtok_r(NULL," ",&saveptr);
-                        if(token!=NULL) {
+		                token=strtok_r(NULL," ",&saveptr);
+		                if(token!=NULL) {
                             	    samples=atoi(token);
 				    Process_Panadapter(0,spectrumBuffer);
 				    meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
@@ -495,10 +574,9 @@ void readcb(struct bufferevent *bev, void *ctx){
 				    client_set_samples(spectrumBuffer,samples);
 				    bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
 				    free(client_samples);
-
-                        } else {
-                            fprintf(stderr,"Invalid command: '%s'\n",message);
-                    	    }
+                        	    } else {
+		 		    fprintf(stderr,"Invalid command: '%s'\n",message);
+				    }
                     	} else if(strncmp(token,"setfrequency",12)==0) {
                         long long frequency;
                         token=strtok_r(NULL," ",&saveptr);
@@ -930,13 +1008,13 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                } else {
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
-                    } else {
-                        fprintf(stderr,"Invalid command: token: '%s'\n",token);
+                       } else {
+                        	fprintf(stderr,"Invalid command: token: '%s'\n",token);
                     	}
                 } else {
                     fprintf(stderr,"Invalid command: message: '%s'\n",message);
                 	}
-		}
+		} // end if (mic)
 	    } // end while
 
 }
