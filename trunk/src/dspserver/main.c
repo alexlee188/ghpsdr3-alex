@@ -112,7 +112,8 @@ struct option longOptions[] = {
     {"timing",no_argument, 0, 4},
     {"lookupcountry",no_argument, 0, 5},
     {"share",no_argument, 0, 6},
-    {"shareconfig",required_argument, 0, 6},
+    {"shareconfig",required_argument, 0, 7},
+    {"lo",required_argument, 0, 8},
     {0,0,0,0}
 };
 
@@ -157,6 +158,9 @@ void processCommands(int argc,char** argv) {
                 break;
             case 7:
                 strcpy(share_config_file,optarg);
+                break;
+            case 8:
+                LO_offset=atoi(optarg);
                 break;
        default:
                 fprintf(stderr,"Usage: \n");
