@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 # Comment the line below for Ubuntu 11.04
-QT       += core gui network multimedia mobility
+#QT       += core gui network multimedia mobility
 
 # Uncomment the lines below for Ubuntu 11.04
 CONFIG	+= mobility

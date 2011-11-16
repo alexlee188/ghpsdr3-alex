@@ -53,6 +53,7 @@ public:
 
     QString getHost();
     void addHost(QString host);
+    void removeHost(QString host);
     int getReceiver();
     
     int getSpectrumHigh();

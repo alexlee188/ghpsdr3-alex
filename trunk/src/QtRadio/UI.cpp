@@ -471,13 +471,17 @@ void UI::actionDisconnectNow(){
        msgBox.exec();
     }else{
        actionDisconnect();
+
     }
 }
 
 
 void UI::actionDisconnect() {
     //qDebug() << "UI::actionDisconnect";
-
+    if (QuickIP.length() > 12){    // Remove from saved host list or IP will pile up forever If empty string we did not connect via Quick Connect
+      configure.removeHost(QuickIP);
+    }
+    QuickIP ="";
     spectrumTimer->stop();
 
     connection.disconnect();
@@ -1934,6 +1938,7 @@ void UI::actionConnectNow(QString IP)
     if (isConnected == false)
     {
        configure.addHost(IP);
+       QuickIP = IP;
        connection.connect(IP, DSPSERVER_BASE_PORT+configure.getReceiver());
        widget.spectrumFrame->setReceiver(configure.getReceiver());
     }else{

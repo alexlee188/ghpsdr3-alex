@@ -330,6 +330,7 @@ private:
 //    int txPwr;
     long long txFrequency;
     bool isConnected;
+    QString QuickIP;
 
 };
 
