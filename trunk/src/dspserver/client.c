@@ -383,7 +383,7 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 	client_count++;
     }
     sprintf(status_buf,"%d client(s)", client_count);
-    updateStatus(status_buf);
+    if (toShareOrNotToShare) updateStatus(status_buf);
 
     if (client_count <= 0) send_audio = 0;
     bufferevent_free(bev);
@@ -484,7 +484,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 		client_count++;
 	}
 	sprintf(status_buf,"%d client(s)", client_count);
-        updateStatus(status_buf);
+        if (toShareOrNotToShare) updateStatus(status_buf);
     }
 }
 

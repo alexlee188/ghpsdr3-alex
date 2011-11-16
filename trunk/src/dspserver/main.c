@@ -125,6 +125,8 @@ char* shortOptions="";
 
 int optionIndex;
 
+int toShareOrNotToShare = 0;
+
 /* --------------------------------------------------------------------------*/
 /** 
 * @brief Process program arguments 
@@ -159,6 +161,7 @@ void processCommands(int argc,char** argv) {
                 home = getenv("HOME");
                 strcpy(share_config_file, home );
                 strcat(share_config_file, "/dspserver.conf");
+		toShareOrNotToShare = 1;
                 break;
             case 7:
                 strcpy(share_config_file,optarg);
@@ -202,9 +205,9 @@ int main(int argc,char* argv[]) {
     processCommands(argc,argv);
     fprintf(stderr, "rxtx-event dspserver\n");
     // start web registration if set
-    if  (strlen(share_config_file) > 2) {  //config file must be set
+    if  (toShareOrNotToShare) {
         fprintf(stderr, "Activating Web register\n");
-		init_register();
+	init_register();
 	}
     
     fprintf(stderr,"gHPSDR rx %d (Version %s)\n",receiver,VERSION);
