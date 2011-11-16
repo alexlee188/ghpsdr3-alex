@@ -100,7 +100,8 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static float tx_buffer[TX_BUFFER_SIZE*2];
 static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
-#define MIC_BUFFER_SIZE  BITS_SIZE
+#define MIC_NO_OF_FRAMES 1
+#define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
 #define MSG_SIZE 64
@@ -252,11 +253,11 @@ void Mic_stream_queue_add(){
    unsigned char *bits;
    struct audio_entry *item;
 
-	bits = malloc(BITS_SIZE);
-	memcpy(bits, mic_buffer, BITS_SIZE);		// right now only one frame per buffer
+	bits = malloc(MIC_BUFFER_SIZE);
+	memcpy(bits, mic_buffer, MIC_BUFFER_SIZE);		// right now only one frame per buffer
 	item = malloc(sizeof(*item));
 	item->buf = bits;
-	item->length = BITS_SIZE;
+	item->length = MIC_BUFFER_SIZE;
 	sem_wait(&mic_semaphore);
 	TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
 	sem_post(&mic_semaphore);
@@ -268,7 +269,7 @@ void *tx_thread(void *arg){
    short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
    int tx_buffer_counter = 0;
    int rc;
-   int j, i;
+   int j, i, k;
    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz / 8khz = 24
    SRC_DATA data;
@@ -283,7 +284,8 @@ void *tx_thread(void *arg){
 		continue;
 		}
 	else {
-	   bits = item->buf;
+	for (k = 0; k < MIC_NO_OF_FRAMES; k++){		// Do it for the MIC_NO_OF_FRAMES
+	   bits = &item->buf[BITS_SIZE*k];			// each frame is BITS long
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
@@ -324,6 +326,7 @@ void *tx_thread(void *arg){
 			}
 		}
 	    } // end else rc
+	  } // end for k
 	    sem_wait(&mic_semaphore);
 	    TAILQ_REMOVE(&Mic_audio_stream, item, entries);
 	    sem_post(&mic_semaphore);
@@ -542,6 +545,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 		return;
 	}; // end if item->bev != bev
 
+	// So this is the master client
 	while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
 
                 message[bytesRead-1]=0;			// for Linux strings terminating in NULL

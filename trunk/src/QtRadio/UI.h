@@ -280,8 +280,8 @@ private:
 
     AudioInput* audioinput;
     QThread* audioinput_thread;
-    int mic_buffer_count;               // counter of mic_buffer, to send buffer if reaches
-                                        // MIC_BUFFER_SIZE
+    int mic_buffer_count;       // counter of mic_buffer, to encode if reaches CODEC2_SAMPLE_PER_FRAME
+    int mic_frame_count;        // counter of mic_buffer, to encode enough frames before sending
 
     long long subRxFrequency;
     Connection connection;
