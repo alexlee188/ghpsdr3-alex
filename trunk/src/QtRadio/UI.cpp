@@ -601,8 +601,15 @@ void UI::updateSpectrum() {
 
 void UI::spectrumBuffer(char* header,char* buffer) {
     //qDebug()<<Q_FUNC_INFO << "spectrumBuffer";
+// g0orx binary header
+/*
     int length=atoi(&header[26]);
     sampleRate=atoi(&header[32]);
+*/
+
+    int length=((header[3]&0xFF)<<8)+(header[4]&0xFF);
+    sampleRate=((header[9]&0xFF)<<24)+((header[10]&0xFF)<<16)+((header[11]&0xFF)<<8)+(header[12]&0xFF);
+
     widget.spectrumFrame->updateSpectrumFrame(header,buffer,length);
     widget.waterfallFrame->updateWaterfall(header,buffer,length);
     connection.freeBuffers(header,buffer);
@@ -618,7 +625,9 @@ void UI::audioBuffer(char* header,char* buffer) {
     //qDebug() << "audioBuffer";
     int length;
 
-    length=atoi(&header[AUDIO_LENGTH_POSITION]);
+// g0orx binary header
+    //length=atoi(&header[AUDIO_LENGTH_POSITION]);
+    length=((header[3]&0xFF)<<8)+(header[4]&0xFF);
 
     if(audio_buffers==0) {
         first_audio_header=header;

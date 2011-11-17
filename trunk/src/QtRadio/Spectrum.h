@@ -107,7 +107,7 @@ private:
     int moved;
 
     int sampleRate;
-    int meter;
+    short meter;
     int maxMeter;
     int meterCount;
     int subrx_meter;

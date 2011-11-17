@@ -440,9 +440,17 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
 
     //qDebug() << "updateSpectrum: width=" << width() << " height=" << height();
     //meter = atoi(&header[40]);
+//g0orx binary header
+/*
     meter = atoi(&header[14]);
     subrx_meter = atoi(&header[20]);
     header_sampleRate = atoi(&header[32]);
+*/
+
+    meter=((header[5]&0xFF)<<8)+(header[6]&0xFF);
+    subrx_meter=((header[7]&0xFF)<<8)+(header[8]&0xFF);
+    header_sampleRate=((header[9]&0xFF)<<24)+((header[10]&0xFF)<<16)+((header[11]&0xFF)<<8)+(header[12]&0xFF);
+
     if ((header_sampleRate == 48000)||(header_sampleRate == 96000)||(header_sampleRate == 192000)){
         sampleRate = header_sampleRate;
 

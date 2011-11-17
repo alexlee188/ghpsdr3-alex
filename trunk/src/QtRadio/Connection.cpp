@@ -155,7 +155,9 @@ void Connection::socketData() {
             thisRead=tcpSocket->read(&hdr[bytes],AUDIO_HEADER_SIZE - bytes);
             bytes+=thisRead;
             if ((bytes == AUDIO_HEADER_SIZE)){
-                    length = atoi(&hdr[AUDIO_LENGTH_POSITION]);
+// g0orx binary header
+                    //length = atoi(&hdr[AUDIO_LENGTH_POSITION]);
+                    length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);
                     if ((length < 0) || (length > 4800 * 8)){
                         state = READ_HEADER_TYPE;
                     }
@@ -171,7 +173,9 @@ void Connection::socketData() {
             thisRead=tcpSocket->read(&hdr[bytes],HEADER_SIZE - bytes);
             bytes+=thisRead;
             if(bytes==HEADER_SIZE) {
-                length=atoi(&hdr[26]);
+// g0orx binary header
+                //length=atoi(&hdr[26]);
+                length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);
                 if ((length < 0) || (length > 4096)){
                         state = READ_HEADER_TYPE;
                 }
