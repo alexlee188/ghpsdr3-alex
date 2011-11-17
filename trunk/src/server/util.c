@@ -77,6 +77,7 @@ void dump_iq_buffer(unsigned char* buffer) {
     }
     fprintf(stderr,"\n");
 }
+
 void dump_udp_buffer(unsigned char* buffer) {
     int i;
     fprintf(stderr, "udp ...\n");
@@ -89,3 +90,14 @@ void dump_udp_buffer(unsigned char* buffer) {
     }
     fprintf(stderr,"\n");
 }
+
+void dump_metis_buffer(char* prefix,int frame,unsigned char* buffer) {
+    int i;
+    fprintf(stderr, "%s header\n",prefix);
+    fprintf(stderr, "  %02X%02X%02X%02X%02X%02X%02X%02X\n",
+                buffer[0],buffer[1],buffer[2],buffer[3],
+                buffer[4],buffer[5],buffer[6],buffer[7]);
+    dump_ozy_buffer(prefix,frame,&buffer[8]);
+    dump_ozy_buffer(prefix,frame,&buffer[520]);
+}
+
