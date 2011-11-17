@@ -1767,7 +1767,7 @@ void UI::getMeterValue(int m, int s)
 
 void UI::printWindowTitle(QString message)
 {
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + " .. " + message);
+    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message);
 }
 
 void UI::printStatusBar(QString message)
