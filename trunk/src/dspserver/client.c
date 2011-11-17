@@ -323,7 +323,7 @@ void *tx_thread(void *arg){
 				// fprintf(stderr,"bytes written = %d\n",bytes_written);
 				tx_buffer_counter = 0;
 			}
-		}
+		} // end for i
 	    } // end else rc
 	  } // end for k
 	    sem_wait(&mic_semaphore);
