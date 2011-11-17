@@ -29,9 +29,9 @@ public class Audio {
     }
 
     public void playAudioBuffer(byte[] buffer) {
-        byte[] decodedBuffer=new byte[AUDIO_BUFFER_SIZE*2];
+        byte[] decodedBuffer=new byte[Client.AUDIO_BUFFER_SIZE*2];
         aLawDecode(buffer,decodedBuffer);
-        source.write(decodedBuffer,0,AUDIO_BUFFER_SIZE*2);
+        source.write(decodedBuffer,0,Client.AUDIO_BUFFER_SIZE*2);
     }
 
     public void close() {
@@ -49,8 +49,6 @@ public class Audio {
             decodedBuffer[outIx++]=(byte)(v&0xFF);
         }
     }
-
-    private static final int AUDIO_BUFFER_SIZE=480;
 
     private static final int sampleRate=8000;
 
