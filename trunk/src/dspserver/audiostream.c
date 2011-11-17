@@ -141,9 +141,20 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 		audio_stream_buffer_insert = 0;
 		if (codec2_count >= NO_CODEC2_FRAMES){
 		    audio_buffer[0]=AUDIO_BUFFER;
+
+// g0orx binary header
+/*
 	//	    sprintf(&audio_buffer[1],"%f",HEADER_VERSION);
 		    audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
 		    sprintf((char *)&audio_buffer[AUDIO_LENGTH_POSITION],"%d ", audio_buffer_length);
+*/
+
+		    audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
+                    audio_buffer[1]=HEADER_VERSION;
+                    audio_buffer[2]=HEADER_SUBVERSION;
+                    audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
+                    audio_buffer[4]=audio_buffer_length&0xFF;
+
 		    client_send_audio();
 		    codec2_count = 0;
 		    }
@@ -152,10 +163,21 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 
         if((encoding != 2) && (audio_stream_buffer_insert==audio_buffer_size)) {
 		audio_buffer[0]=AUDIO_BUFFER;
+// g0orx binary header
+/*
 //		sprintf(&audio_buffer[1],"%f",HEADER_VERSION);
 		if (encoding == 1) audio_buffer_length = audio_buffer_size*audio_channels*2;
 		else audio_buffer_length = audio_buffer_size*audio_channels;
 		sprintf((char *)&audio_buffer[AUDIO_LENGTH_POSITION],"%d ", audio_buffer_length);
+*/
+
+		if (encoding == 1) audio_buffer_length = audio_buffer_size*audio_channels*2;
+		else audio_buffer_length = audio_buffer_size*audio_channels;
+                audio_buffer[1]=HEADER_VERSION;
+                audio_buffer[2]=HEADER_SUBVERSION;
+                audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
+                audio_buffer[4]=audio_buffer_length&0xFF;
+
 		client_send_audio();
 	    	audio_stream_buffer_insert=0;
         }
