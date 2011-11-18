@@ -358,6 +358,7 @@ void UI::hostChanged(QString host) {
 
 void UI::receiverChanged(int rx) {
     widget.spectrumFrame->setReceiver(rx);
+    printWindowTitle("Remote disconnected");
 }
 
 void UI::closeEvent(QCloseEvent* event) {
