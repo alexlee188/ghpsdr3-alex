@@ -651,18 +651,16 @@ void UI::audioBuffer(char* header,char* buffer) {
 
 void UI::micSendAudio(QQueue<qint16>* queue){
 
-#define MIC_NO_OF_FRAMES 2      // need to ensure this is the same value in dspserver
+#define MIC_NO_OF_FRAMES 1      // need to ensure this is the same value in dspserver
 #define MIC_ENCODED_BUFFER_SIZE (BITS_SIZE*MIC_NO_OF_FRAMES)
     qint16 buffer[CODEC2_SAMPLES_PER_FRAME];
     unsigned char mic_encoded_buffer[MIC_ENCODED_BUFFER_SIZE];
-    unsigned char bits[BITS_SIZE];
 
     while(! queue->isEmpty()){
         buffer[mic_buffer_count++] = queue->dequeue();
         if (mic_buffer_count >= CODEC2_SAMPLES_PER_FRAME) {
             mic_buffer_count = 0;
-            codec2_encode(codec2, bits , buffer);
-            memcpy(&mic_encoded_buffer[mic_frame_count*BITS_SIZE], bits, BITS_SIZE);
+            codec2_encode(mic_codec2, &mic_encoded_buffer[mic_frame_count*BITS_SIZE], buffer);
             mic_frame_count++;
             if (mic_frame_count >= MIC_NO_OF_FRAMES){
                 mic_frame_count = 0;

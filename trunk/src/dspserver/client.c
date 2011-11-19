@@ -100,7 +100,7 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static float tx_buffer[TX_BUFFER_SIZE*2];
 static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
-#define MIC_NO_OF_FRAMES 2
+#define MIC_NO_OF_FRAMES 1
 #define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
@@ -264,7 +264,7 @@ void Mic_stream_queue_add(){
 }
 
 void *tx_thread(void *arg){
-   unsigned char bits[BITS_SIZE];
+   unsigned char *bits;
    struct audio_entry *item;
    short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
    int tx_buffer_counter = 0;
@@ -285,7 +285,7 @@ void *tx_thread(void *arg){
 		}
 	else {
 	for (k = 0; k < MIC_NO_OF_FRAMES; k++){		// Do it for the MIC_NO_OF_FRAMES
-	   memcpy(bits, &item->buf[BITS_SIZE*k], BITS_SIZE);			// each frame is BITS long
+	   bits = &item->buf[BITS_SIZE*k];		// each frame is BITS_SIZE long
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
@@ -295,7 +295,6 @@ void *tx_thread(void *arg){
 
            data.data_in = data_in;
            data.input_frames = CODEC2_SAMPLES_PER_FRAME;
-
            data.data_out = data_out;
            data.output_frames = CODEC2_SAMPLES_PER_FRAME*24 ;
            data.src_ratio = mic_src_ratio;
@@ -324,7 +323,7 @@ void *tx_thread(void *arg){
 				// fprintf(stderr,"bytes written = %d\n",bytes_written);
 				tx_buffer_counter = 0;
 			}
-		}
+		} // end for i
 	    } // end else rc
 	  } // end for k
 	    sem_wait(&mic_semaphore);

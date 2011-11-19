@@ -105,12 +105,14 @@ void Connection::connected() {
 void Connection::sendCommand(QString command) {
     int i;
     char buffer[SEND_BUFFER_SIZE];
+    int bytesWritten;
 
     for (i=0; i < SEND_BUFFER_SIZE; i++) buffer[i] = 0;
     if(tcpSocket!=NULL && tcpSocket->isValid() && tcpSocket->isWritable()) {
         mutex.lock();
         strcpy(buffer,command.toUtf8().constData());
-        tcpSocket->write(buffer,SEND_BUFFER_SIZE);
+        bytesWritten = tcpSocket->write(buffer,SEND_BUFFER_SIZE);
+        if (bytesWritten != SEND_BUFFER_SIZE) qDebug() << "sendCommand: write error";
         //tcpSocket->flush();
         mutex.unlock();
     }
@@ -120,6 +122,7 @@ void Connection::sendAudio(int length, unsigned char* data) {
     QString command;
     char buffer[SEND_BUFFER_SIZE];
     int i;
+    int bytesWritten;
 
     for (i=0; i < SEND_BUFFER_SIZE; i++) buffer[i] = 0;
     if(tcpSocket!=NULL && tcpSocket->isValid() && tcpSocket->isWritable()) {
@@ -127,7 +130,8 @@ void Connection::sendAudio(int length, unsigned char* data) {
         strcpy(buffer,command.toUtf8().constData());
         memcpy(&buffer[4], data,length);
         mutex.lock();
-        tcpSocket->write(buffer, SEND_BUFFER_SIZE);
+        bytesWritten = tcpSocket->write(buffer, SEND_BUFFER_SIZE);
+        if (bytesWritten != SEND_BUFFER_SIZE) qDebug() << "sendCommand: write error";
         //tcpSocket->flush();
         mutex.unlock();
     }
