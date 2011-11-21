@@ -53,9 +53,9 @@ Audio::~Audio() {
 void Audio::initialize_audio(int buffer_size) {
     qDebug() << "initialize_audio " << buffer_size;
 
-    if ( (buffer_size*4) < CODEC2_SAMPLES_PER_FRAME*8)
+    if ( (buffer_size*6*4) < CODEC2_SAMPLES_PER_FRAME*8)
         decoded_buffer.resize(CODEC2_SAMPLES_PER_FRAME*8); // To cater to 8 frames of codec2
-    else decoded_buffer.resize(buffer_size*4);  // To cater to 2 channels and 16 bits
+    else decoded_buffer.resize(buffer_size*6*4);  // To cater to 2 channels and 16 bits
 
     init_decodetable();
 }
@@ -208,6 +208,10 @@ void Audio::stateChanged(QAudio::State State){
 
 void Audio::set_audio_encoding(int enc){
     audio_encoding = enc;
+}
+
+int Audio::get_audio_encoding() {
+    return audio_encoding;
 }
 
 void Audio::process_audio(char* header,char* buffer,int length) {

@@ -103,10 +103,11 @@ void client_init(int receiver) {
 
     signal(SIGPIPE, SIG_IGN);
 
-    if (encoding == 0) {
+fprintf(stderr,"client_init encoding=%d audio_buffer_size=%d audio_channels=%d\n", encoding,audio_buffer_size,audio_channels);
+    if (encoding == ENCODING_ALAW) {
 audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
 }
-    else if (encoding == 1) {
+    else if (encoding == ENCODING_PCM) {
 audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels*2)+AUDIO_BUFFER_HEADER_SIZE); // 2 byte PCM
 	}
     else {	// encoding = Codec 2
@@ -420,7 +421,7 @@ if(timing) {
                             }
                         }
 
-			if (encoding == 2) audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
+			if (encoding == ENCODING_CODEC2) audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
                         
 			fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
             if  (strlen(share_config_file) > 2) {  //config file must be set
@@ -618,7 +619,8 @@ if(timing) {
                     } else if(strcmp(token,"setsquelchval")==0) {
                         token=strtok(NULL," ");
                         if(token!=NULL) {
-                            float value=atof(token);
+                            // +20.0 purely from observation!!!
+                            float value=atof(token)+20.0F;
                             SetSquelchVal(0,0,value);
                         } else {
                             fprintf(stderr,"Invalid command: '%s'\n",message);
@@ -677,6 +679,13 @@ if(timing) {
                         } else {
                             fprintf(stderr,"Invalid command: '%s'\n",message);
                         }
+                    } else if(strcmp(token,"setclient")==0) {
+                        token=strtok(NULL," ");
+                        if(token!=NULL) {
+                            time(&tt);
+                            tod=localtime(&tt);
+                            fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connected from %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
+                        }
                     } else {
                         fprintf(stderr,"Invalid command: token: '%s'\n",token);
                     }
@@ -726,8 +735,8 @@ void client_send_audio() {
         if(clientSocket!=-1) {
             sem_wait(&network_semaphore);
             if(send_audio && (clientSocket!=-1)) {
-	    	if (encoding == 1) audio_buffer_length = audio_buffer_size*audio_channels*2;
-	   	else if (encoding == 0) audio_buffer_length = audio_buffer_size*audio_channels;
+	    	if (encoding == ENCODING_PCM) audio_buffer_length = audio_buffer_size*audio_channels*2;
+	   	else if (encoding == ENCODING_ALAW) audio_buffer_length = audio_buffer_size*audio_channels;
 		else audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
                 rc=send(clientSocket,audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE,MSG_NOSIGNAL);
                 if(rc!=(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE)) {

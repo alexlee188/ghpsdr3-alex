@@ -107,7 +107,6 @@ void Connection::sendCommand(QString command) {
         mutex.lock();
         char buffer[64];
         if(command.length()>=64) qDebug() << "command too long: " << command;
-        //qDebug() << "sendCommand:" << command;
         strcpy(buffer,command.toUtf8().constData());
         tcpSocket->write(buffer,64);
         tcpSocket->flush();
@@ -158,17 +157,17 @@ void Connection::socketData() {
             bytes+=thisRead;
             if ((bytes == AUDIO_HEADER_SIZE)){
 // g0orx binary header
-                    //length = atoi(&hdr[AUDIO_LENGTH_POSITION]);
-                    length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);
-                    if ((length < 0) || (length > 4800 * 8)){
-                        state = READ_HEADER_TYPE;
-                    }
-                    else {
-                        buffer = (char*)malloc(length);
-                        bytes = 0;
-                        state = READ_BUFFER;
-                    }
-             }
+                //length = atoi(&hdr[AUDIO_LENGTH_POSITION]);
+                length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);
+                if ((length < 0) || (length > 4800 * 8)){
+                    state = READ_HEADER_TYPE;
+                } else {
+                    buffer = (char*)malloc(length);
+                    bytes = 0;
+                    state = READ_BUFFER;
+                }
+            } else {
+            }
             break;
 
          case READ_HEADER:
@@ -186,6 +185,7 @@ void Connection::socketData() {
                     bytes=0;
                     state=READ_BUFFER;
                 }
+            } else {
             }
             break;
 
@@ -208,6 +208,7 @@ void Connection::socketData() {
                 }
                 bytes=0;
                 state=READ_HEADER_TYPE;
+            } else {
             }
             break;
         }

@@ -40,6 +40,10 @@
 #define AUDIO_BUFFER        1
 #define BANDSCOPE_BUFFER    2
 
+// supported header version
+#define HEADER_VERSION 2
+#define HEADER_SUBVERSION 0
+
 // g0orx binary header
 //#define HEADER_SIZE 48
 #define HEADER_SIZE 13

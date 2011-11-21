@@ -61,6 +61,10 @@ Spectrum::Spectrum(QWidget*& widget) {
     subrx_maxMeter=-121;
     subrx_meterCount=0;
 
+    button=-1;
+    showSquelchControl=false;
+    settingSquelch=false;
+
     plot.clear();
 }
 
@@ -128,6 +132,16 @@ void Spectrum::mousePressEvent(QMouseEvent* event) {
     button=event->button();
     startX=lastX=event->pos().x();
     moved=0;
+
+    if(squelch) {
+        if(event->pos().y()>=(squelchY-1) &&
+           event->pos().y()<=(squelchY+1)) {
+            settingSquelch=true;
+        } else {
+            settingSquelch=false;
+        }
+    }
+
 }
 
 void Spectrum::mouseMoveEvent(QMouseEvent* event){
@@ -137,7 +151,28 @@ void Spectrum::mouseMoveEvent(QMouseEvent* event){
 
     moved=1;
 
-    if (! move==0) emit frequencyMoved(move,100);
+    if(button==-1) {
+        if(squelch &&
+           event->pos().y()>=(squelchY-1) &&
+           event->pos().y()<=(squelchY+1)) {
+            showSquelchControl=true;
+            this->setCursor(Qt::SizeVerCursor);
+        } else {
+            showSquelchControl=false;
+            this->setCursor(Qt::ArrowCursor);
+        }
+    } else {
+        if(settingSquelch) {
+            int delta=squelchY-event->pos().y();
+            delta=int((float)delta*((float)(spectrumHigh-spectrumLow)/(float)height()));
+            //qDebug()<<"squelchValueChanged"<<delta<<"squelchY="<<squelchY<<" y="<<event->pos().y();
+            emit squelchValueChanged(delta);
+            //squelchY=event->pos().y();
+        } else {
+            if (!move==0) emit frequencyMoved(move,100);
+        }
+    }
+
 }
 
 void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
@@ -145,41 +180,44 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
     lastX=event->pos().x();
     //qDebug() << __FUNCTION__ << ": " << event->pos().x() << " move:" << move;
 
-    if(moved) {
-        emit frequencyMoved(move,100);
+    if(squelch && settingSquelch) {
+        button=-1;
+        settingSquelch=false;
     } else {
-        float hzPixel = sampleRate/width();  // spectrum resolution: Hz/pixel
-
-        long freqOffsetPixel;
-        long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel);
-        if(subRx) {    
-            freqOffsetPixel = (subRxFrequency-f)/hzPixel;
-            if (button == Qt::LeftButton) {
-                // set frequency to center of filter
-                if(filterLow<0 && filterHigh<0) {
-                    freqOffsetPixel+=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
-                } else if(filterLow>0 && filterHigh>0){
-                    freqOffsetPixel-=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
-                } else {
-                    // no adjustment
-                }
-            }
+        if(moved) {
+            emit frequencyMoved(move,100);
         } else {
-            freqOffsetPixel = (f-frequency)/hzPixel; // compute the offset from the central frequency, in pixel
-            if (button == Qt::LeftButton) {
-                // set frequency to center of filter
-                if(filterLow<0 && filterHigh<0) {
-                    freqOffsetPixel-=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
-                } else if(filterLow>0 && filterHigh>0){
-                    freqOffsetPixel+=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
-                } else {
-                    // no adjustment
+            float hzPixel = sampleRate/width();  // spectrum resolution: Hz/pixel
+            long freqOffsetPixel;
+            long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel);
+            if(subRx) {    
+                freqOffsetPixel = (subRxFrequency-f)/hzPixel;
+                if (button == Qt::LeftButton) {
+                    // set frequency to center of filter
+                    if(filterLow<0 && filterHigh<0) {
+                        freqOffsetPixel+=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
+                    } else if(filterLow>0 && filterHigh>0){
+                        freqOffsetPixel-=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
+                    } else {
+                        // no adjustment
+                    }
+                }
+            } else {
+                freqOffsetPixel = (f-frequency)/hzPixel; // compute the offset from the central frequency, in pixel
+                if (button == Qt::LeftButton) {
+                    // set frequency to center of filter
+                    if(filterLow<0 && filterHigh<0) {
+                        freqOffsetPixel-=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
+                    } else if(filterLow>0 && filterHigh>0){
+                        freqOffsetPixel+=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
+                    } else {
+                        // no adjustment
+                    }
                 }
             }
+            emit frequencyMoved(-(long long)(freqOffsetPixel*hzPixel)/100,100);
         }
-
-        emit frequencyMoved(-(long long)(freqOffsetPixel*hzPixel)/100,100);
-
+        button = -1;
     }
 }
 
@@ -320,6 +358,24 @@ void Spectrum::paintEvent(QPaintEvent*) {
     // draw cursor
     painter.setPen(QPen(Qt::red, 1));
     painter.drawLine(width()/2,0,width()/2,height());
+
+    // draw the squelch
+    if(settingSquelch || showSquelchControl) {
+        squelchY=(int) floor(((float) spectrumHigh - squelchVal)*(float) height() / (float) (spectrumHigh - spectrumLow));
+        painter.setPen(QPen(Qt::red, 1,Qt::DashLine));
+        painter.drawLine(0,squelchY,width(),squelchY);
+        painter.setFont(QFont("Arial", 10));
+        text.sprintf("%s","Squelch");
+        painter.drawText(width()-48,squelchY,text);
+    } else if(squelch) {
+        squelchY=(int) floor(((float) spectrumHigh - squelchVal)*(float) height() / (float) (spectrumHigh - spectrumLow));
+        painter.setPen(QPen(Qt::red, 1));
+        painter.drawLine(0,squelchY,width(),squelchY);
+        painter.setFont(QFont("Arial", 10));
+        text.sprintf("%s","Squelch");
+        painter.drawText(width()-48,squelchY,text);
+    }
+
 
 /*    // show the frequency
     painter.setPen(QPen(Qt::green,1));
@@ -477,4 +533,14 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
     }
 }
 
+void Spectrum::setSquelch(bool state) {
+    squelch=state;
+    QFrame::setMouseTracking(state);
+}
+
+void Spectrum::setSquelchVal(float val) {
+    squelchVal=val;
+    squelchY=(int) floor(((float) spectrumHigh - squelchVal)*(float) height() / (float) (spectrumHigh - spectrumLow));
+    //qDebug()<<"Spectrum::setSquelchVal"<<val<<"squelchY="<<squelchY;
+}
 

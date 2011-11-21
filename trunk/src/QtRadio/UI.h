@@ -125,6 +125,10 @@ public slots:
     void actionGain_90();
     void actionGain_100();
 
+    void actionSquelch();
+    void actionSquelchReset();
+    void squelchValueChanged(int);
+
     void actionKeypad();
     void setKeypadFrequency(long long);
 
@@ -262,7 +266,6 @@ private:
     int audio_channels;
     int audio_buffers;
     QAudioFormat::Endian audio_byte_order;
-    int audio_encoding;
     QMutex audio_mutex;
     char* first_audio_buffer;
     char* first_audio_header;
@@ -314,6 +317,9 @@ private:
     int meter;
     bool isConnected;
     QString QuickIP;
+
+    bool squelch;
+    float squelchValue;
 };
 
 #endif	/* _UI_H */
