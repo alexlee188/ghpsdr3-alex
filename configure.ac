@@ -3,6 +3,9 @@
 
 AC_PREREQ([2.65])
 AC_INIT([ghpsdr3], [1.7], [andrew att montefusco dott com])
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
 
 AM_INIT_AUTOMAKE
 
@@ -13,6 +16,22 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_MAKE_SET
+
+#
+# Checking for build cpu
+# and, if 64 bit, add some linking option
+#
+case $build_cpu in
+
+    x86_64)
+      AC_MSG_NOTICE([Platform: 64 bit])
+      LDFLAGS="$LDFLAGS -L/lib64 -L/usr/lib64"
+      export LDFLAGS
+      AC_MSG_NOTICE([${LDFLAGS}])
+    ;;
+
+
+esac
 
 # compiling `client.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.ac'
 AM_PROG_CC_C_O
@@ -260,5 +279,22 @@ Now type 'make @<:@<target>@:>@'
 
     all           - build all binaries
     install       - install everything
+
+
+build:         ${build}
+build vendor:  ${build_vendor}
+build os:      ${build_os} 
+build cpu:     ${build_cpu}
+
+host:          ${host}
+host cpu:      ${host_cpu}
+host vendor:   ${host_vendor}
+host os:       ${host_os}
+
+
+target:        ${target}
+target cpu:    ${target_cpu}
+target vendor: ${target_vendor}
+target os:     ${target_os} 
 
 -----------------------------------------------------"
