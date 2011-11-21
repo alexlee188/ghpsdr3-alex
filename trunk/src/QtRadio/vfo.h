@@ -67,7 +67,9 @@ private slots:
 
 private:
     Ui::vfo *ui;
-
+    void keyPressEvent( QKeyEvent * event);
+    void vfohotkey(QString cmd);
+    int vfohotstep;
     QSettings *settings;
     QBasicTimer timer;
     void writeA(long long);

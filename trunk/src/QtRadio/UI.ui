@@ -633,6 +633,9 @@
    <property name="text">
     <string>Connect</string>
    </property>
+   <property name="shortcut">
+    <string>C</string>
+   </property>
   </action>
   <action name="actionDisconnectFromServer">
    <property name="enabled">
@@ -640,6 +643,9 @@
    </property>
    <property name="text">
     <string>Disconnect</string>
+   </property>
+   <property name="shortcut">
+    <string>D</string>
    </property>
   </action>
   <action name="actionSubrx">
@@ -837,6 +843,9 @@
   <action name="actionKeypad">
    <property name="text">
     <string>Keypad</string>
+   </property>
+   <property name="shortcut">
+    <string>K</string>
    </property>
   </action>
   <action name="actionQuick_Server_List">

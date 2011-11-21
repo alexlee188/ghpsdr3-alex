@@ -24,6 +24,7 @@
 #include "vfo.h"
 #include "ui_vfo.h"
 #include <QDebug>
+#include <QKeyEvent>
 //#include "Band.h"
 //#include "UI.h"
 
@@ -32,7 +33,7 @@ vfo::vfo(QWidget *parent) :
     ui(new Ui::vfo)
 {
     ui->setupUi(this);
-
+   vfohotstep = 100;
     selectedVFO = 'A';
     ptt = false;
 
@@ -494,6 +495,67 @@ QString vfo::rigctlGetvfo()
     return "VFO" + vfo;
 }
 
+void vfo::keyPressEvent( QKeyEvent * event){
+
+    if(event->key() == Qt::Key_Up) {
+       vfohotkey("StepUp");
+       event->accept();
+    }
+    else if(event->key() == Qt::Key_Down) {
+       vfohotkey("StepDown");
+       event->accept();
+    }
+    else if(event->key() == Qt::Key_Left) {
+       vfohotkey("FreqUp");
+       event->accept();
+    }
+    else if(event->key() == Qt::Key_Right) {
+       vfohotkey("FreqDown");
+       event->accept();
+    }
+    else {
+       event->ignore();
+    }
+
+}
+
+void vfo::vfohotkey(QString cmd)
+{
+    if (cmd.compare("FreqDown") == 0){
+        emit frequencyMoved(vfohotstep, -1);
+        qDebug() <<"cmd=" <<cmd;
+        return;
+    }
+    if (cmd.compare("FreqUp") == 0){
+        emit frequencyMoved(vfohotstep, 1);
+        qDebug() <<"cmd=" <<cmd;
+        return;
+    }
+    // Not a freq move so check for step change
+    static const int mult[9] = {100000000,10000000,1000000,100000,10000,1000,100,10,1};
+    int curstep = 6;
+    for(int i=1;i<=9;i++)
+    {
+      if(mult[i] == vfohotstep){
+          curstep = i;
+      }
+    }
+    if (cmd.compare("StepUp") == 0  && curstep >1){
+        qDebug() <<"old =" <<vfohotstep;
+        curstep--;
+        vfohotstep = mult[curstep];
+        qDebug() <<"new =" <<vfohotstep;
+        return;
+    }
+    if (cmd.compare("StepDown") == 0  && curstep <9){
+        qDebug() <<"old =" <<vfohotstep;
+        curstep++;
+        vfohotstep = mult[curstep];
+        qDebug() <<"new =" <<vfohotstep;
+        return;
+    }
+    return;
+}
 long long vfo::getTxFrequency()
 {
     if(selectedVFO == 'A') {
