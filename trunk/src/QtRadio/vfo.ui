@@ -161,6 +161,9 @@
    <property name="text">
     <string>VFO B</string>
    </property>
+   <property name="shortcut">
+    <string>B</string>
+   </property>
    <property name="checkable">
     <bool>false</bool>
    </property>
@@ -414,6 +417,9 @@
    <property name="text">
     <string>VFO A</string>
    </property>
+   <property name="shortcut">
+    <string>A</string>
+   </property>
    <property name="checkable">
     <bool>false</bool>
    </property>
@@ -468,6 +474,9 @@
    </property>
    <property name="text">
     <string>RIT</string>
+   </property>
+   <property name="shortcut">
+    <string>R</string>
    </property>
    <property name="checkable">
     <bool>true</bool>
