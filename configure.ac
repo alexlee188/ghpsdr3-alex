@@ -3,6 +3,9 @@
 
 AC_PREREQ([2.65])
 AC_INIT([ghpsdr3], [1.7], [andrew att montefusco dott com])
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
 
 AM_INIT_AUTOMAKE
 
@@ -13,6 +16,22 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_MAKE_SET
+
+#
+# Checking for build cpu
+# and, if 64 bit, add some linking option
+#
+case $build_cpu in
+
+    x86_64)
+      AC_MSG_NOTICE([Platform: 64 bit])
+      LDFLAGS="$LDFLAGS -L/lib64 -L/usr/lib64"
+      export LDFLAGS
+      AC_MSG_NOTICE([${LDFLAGS}])
+    ;;
+
+
+esac
 
 # compiling `client.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.ac'
 AM_PROG_CC_C_O
@@ -42,6 +61,9 @@ AC_SEARCH_LIBS([codec2_create], [codec2],[have_codec2=yes])
 
 have_pulse_simple=no
 AC_SEARCH_LIBS([pa_simple_new], [pulse-simple],[have_pulse_simple=yes])
+
+have_pulse=no
+AC_SEARCH_LIBS([pa_strerror], [pulse],[have_pulse=yes])
 
 have_usb=no
 AC_SEARCH_LIBS([usb_init], [usb],[have_usb=yes])
@@ -125,6 +147,19 @@ if test "x${have_pulse_simple}" = xno; then
     AC_MSG_ERROR([
 -----------------------------------
   The pulse-simple library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
+
+if test "x${have_pulse}" = xyes; then
+    AC_CHECK_HEADERS([pulse/error.h], [], [have_pulse=no])
+fi
+
+if test "x${have_pulse}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The pulse library and header file required to build ghpsdr3.
 -----------------------------------])
 
 fi
@@ -244,5 +279,22 @@ Now type 'make @<:@<target>@:>@'
 
     all           - build all binaries
     install       - install everything
+
+
+build:         ${build}
+build vendor:  ${build_vendor}
+build os:      ${build_os} 
+build cpu:     ${build_cpu}
+
+host:          ${host}
+host cpu:      ${host_cpu}
+host vendor:   ${host_vendor}
+host os:       ${host_os}
+
+
+target:        ${target}
+target cpu:    ${target_cpu}
+target vendor: ${target_vendor}
+target os:     ${target_os} 
 
 -----------------------------------------------------"

@@ -466,8 +466,10 @@ void UI::actionDisconnectNow(){
 
 void UI::actionDisconnect() {
     //qDebug() << "UI::actionDisconnect";
-    if (QuickIP.length() > 12){    // Remove from saved host list or IP will pile up forever If empty string we did not connect via Quick Connect
+    qDebug() << "actionDisconnect() QuickIP=" << QuickIP;
+    if (QuickIP.length() > 6){    // Remove from saved host list or IPs will pile up forever. If empty string we did not connect via Quick Connect
       configure.removeHost(QuickIP);
+      qDebug() << "actionDisconnect() removeHost(" << QuickIP <<")";
     }
     QuickIP ="";
     spectrumTimer->stop();
@@ -712,6 +714,7 @@ void UI::setSubRxGain(int gain) {
 }
 
 void UI::actionKeypad() {
+
     keypad.clear();
     keypad.show();
 }

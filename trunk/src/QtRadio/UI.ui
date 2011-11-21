@@ -642,6 +642,12 @@
    <property name="text">
     <string>Connect</string>
    </property>
+   <property name="toolTip">
+    <string>Connect to a dspserver</string>
+   </property>
+   <property name="shortcut">
+    <string>C</string>
+   </property>
   </action>
   <action name="actionDisconnectFromServer">
    <property name="enabled">
@@ -650,6 +656,9 @@
    <property name="text">
     <string>Disconnect</string>
    </property>
+   <property name="shortcut">
+    <string>D</string>
+   </property>
   </action>
   <action name="actionSubrx">
    <property name="checkable">
@@ -657,6 +666,9 @@
    </property>
    <property name="text">
     <string>Subrx</string>
+   </property>
+   <property name="shortcut">
+    <string>S</string>
    </property>
   </action>
   <action name="actionConfig">
@@ -816,6 +828,9 @@
    <property name="text">
     <string>Bookmark This Frequency</string>
    </property>
+   <property name="shortcut">
+    <string>B</string>
+   </property>
   </action>
   <action name="actionXVTRConfigure">
    <property name="text">
@@ -847,6 +862,9 @@
    <property name="text">
     <string>Keypad</string>
    </property>
+   <property name="shortcut">
+    <string>K</string>
+   </property>
   </action>
   <action name="actionQuick_Server_List">
    <property name="text">
@@ -857,6 +875,9 @@
    </property>
    <property name="shortcut">
     <string>L</string>
+   </property>
+   <property name="softKeyRole">
+    <enum>QAction::NoSoftKey</enum>
    </property>
   </action>
   <action name="actionSquelchEnable">
