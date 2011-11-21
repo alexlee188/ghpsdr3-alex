@@ -43,6 +43,9 @@ AC_SEARCH_LIBS([codec2_create], [codec2],[have_codec2=yes])
 have_pulse_simple=no
 AC_SEARCH_LIBS([pa_simple_new], [pulse-simple],[have_pulse_simple=yes])
 
+have_pulse=no
+AC_SEARCH_LIBS([pa_strerror], [pulse],[have_pulse=yes])
+
 have_usb=no
 AC_SEARCH_LIBS([usb_init], [usb],[have_usb=yes])
 
@@ -125,6 +128,19 @@ if test "x${have_pulse_simple}" = xno; then
     AC_MSG_ERROR([
 -----------------------------------
   The pulse-simple library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
+
+if test "x${have_pulse}" = xyes; then
+    AC_CHECK_HEADERS([pulse/error.h], [], [have_pulse=no])
+fi
+
+if test "x${have_pulse}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The pulse library and header file required to build ghpsdr3.
 -----------------------------------])
 
 fi
