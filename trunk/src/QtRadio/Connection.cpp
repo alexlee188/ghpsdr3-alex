@@ -142,6 +142,8 @@ void Connection::socketData() {
     int toRead;
     int bytesRead=0;
     int thisRead;
+    int version;
+    int subversion;
 
     toRead=tcpSocket->bytesAvailable();
     while(bytesRead<toRead) {
@@ -157,23 +159,27 @@ void Connection::socketData() {
             thisRead=tcpSocket->read(&hdr[bytes],AUDIO_HEADER_SIZE - bytes);
             bytes+=thisRead;
             if ((bytes == AUDIO_HEADER_SIZE)){
-                    length = atoi(&hdr[AUDIO_LENGTH_POSITION]);
-                    if ((length < 0) || (length > 4800 * 8)){
-                        state = READ_HEADER_TYPE;
-                    }
-                    else {
-                        buffer = (char*)malloc(length);
-                        bytes = 0;
-                        state = READ_BUFFER;
-                    }
-             }
+// g0orx binary header
+                //length = atoi(&hdr[AUDIO_LENGTH_POSITION]);
+                length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);
+                if ((length < 0) || (length > 4800 * 8)){
+                    state = READ_HEADER_TYPE;
+                } else {
+                    buffer = (char*)malloc(length);
+                    bytes = 0;
+                    state = READ_BUFFER;
+                }
+            } else {
+            }
             break;
 
          case READ_HEADER:
             thisRead=tcpSocket->read(&hdr[bytes],HEADER_SIZE - bytes);
             bytes+=thisRead;
             if(bytes==HEADER_SIZE) {
-                length=atoi(&hdr[26]);
+// g0orx binary header
+                //length=atoi(&hdr[26]);
+                length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);
                 if ((length < 0) || (length > 4096)){
                         state = READ_HEADER_TYPE;
                 }
@@ -182,6 +188,7 @@ void Connection::socketData() {
                     bytes=0;
                     state=READ_BUFFER;
                 }
+            } else {
             }
             break;
 
@@ -190,11 +197,21 @@ void Connection::socketData() {
             bytes+=thisRead;
             //qDebug() << "READ_BUFFER: read " << bytes << " of " << length;
             if(bytes==length) {
-                queue.enqueue(new Buffer(hdr,buffer));
-                QTimer::singleShot(0,this,SLOT(processBuffer()));
-                hdr=(char*)malloc(HEADER_SIZE);
+                version=hdr[1];
+                subversion=hdr[2];
+                if(version==HEADER_VERSION && subversion==HEADER_SUBVERSION) {
+                    queue.enqueue(new Buffer(hdr,buffer));
+                    QTimer::singleShot(0,this,SLOT(processBuffer()));
+                    hdr=(char*)malloc(HEADER_SIZE);
+                } else {
+                    fprintf(stderr,"QtRadio invalid version. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
+                    fprintf(stderr,"Header %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n",hdr[0],hdr[1],hdr[2],hdr[3],hdr[4],hdr[5],hdr[6],hdr[7],hdr[8],hdr[9],hdr[10],hdr[10]);
+
+                    free(buffer);
+                }
                 bytes=0;
                 state=READ_HEADER_TYPE;
+            } else {
             }
             break;
         }

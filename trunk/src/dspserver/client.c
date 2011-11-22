@@ -83,8 +83,8 @@ static int timing=0;
 static pthread_t client_thread_id, tx_thread_id;
 
 #define BASE_PORT 8000
-
 static int port=BASE_PORT;
+
 
 static int serverSocket;
 static int clientSocket;
@@ -212,7 +212,21 @@ void client_init(int receiver) {
     sem_post(&bufferevent_semaphore);
     sem_post(&mic_semaphore);
 
+/*
+fprintf(stderr,"client_init encoding=%d audio_buffer_size=%d audio_channels=%d\n", encoding,audio_buffer_size,audio_channels);
+    if (encoding == ENCODING_ALAW) {
+audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
+}
+    else if (encoding == ENCODING_PCM) {
+audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels*2)+AUDIO_BUFFER_HEADER_SIZE); // 2 byte PCM
+	}
+    else {	// encoding = Codec 2
+	audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
+	audio_buffer=(unsigned char*)malloc(audio_buffer_size*audio_channels + AUDIO_BUFFER_HEADER_SIZE);
+	};
+
     fprintf(stderr,"client_init audio_buffer_size=%d\n",audio_buffer_size);
+*/
 
     port=BASE_PORT+receiver;
     clientSocket=-1;
@@ -1009,13 +1023,26 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                }
                        } else {
                         	fprintf(stderr,"Invalid command: token: '%s'\n",token);
-                    	}
+                    		}
+
+                       } else if(strcmp(token,"setclient")==0) {
+                        	token=strtok(NULL," ");
+                        	if(token!=NULL) {
+/*
+                            		time(&tt);
+                            		tod=localtime(&tt);
+                            		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connected from %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
+
+                        	}
+*/
+                       } else {
+		                fprintf(stderr,"Invalid command: token: '%s'\n",token);
+		            	}
                 } else {
                     fprintf(stderr,"Invalid command: message: '%s'\n",message);
                 	}
 		} // end if (mic)
 	    } // end while
-
 }
 
 
@@ -1025,6 +1052,9 @@ void client_set_samples(float* samples,int size) {
     float max;
     int lindex,rindex;
 
+// g0orx binary header
+
+/*
     // first byte is the buffer type
     client_samples[0]=SPECTRUM_BUFFER;
     sprintf(&client_samples[1],"%f",HEADER_VERSION);
@@ -1043,6 +1073,22 @@ void client_set_samples(float* samples,int size) {
 
     // next 8 bytes contain the meter - for compatability
     sprintf(&client_samples[40],"%d",(int)meter);
+*/
+
+    client_samples[0]=SPECTRUM_BUFFER;
+    client_samples[1]=HEADER_VERSION;
+    client_samples[2]=HEADER_SUBVERSION;
+    client_samples[3]=(size>>8)&0xFF;  // samples length
+    client_samples[4]=size&0xFF;
+    client_samples[5]=((int)meter>>8)&0xFF; // mainn rx meter
+    client_samples[6]=(int)meter&0xFF;
+    client_samples[7]=((int)subrx_meter>>8)&0xFF; // sub rx meter
+    client_samples[8]=(int)subrx_meter&0xFF;
+    client_samples[9]=(sampleRate>>24)&0xFF; // sample rate
+    client_samples[10]=(sampleRate>>16)&0xFF;
+    client_samples[11]=(sampleRate>>8)&0xFF;
+    client_samples[12]=sampleRate&0xFF;
+
 
     slope=(float)SAMPLE_BUFFER_SIZE/(float)size;
     for(i=0;i<size;i++) {

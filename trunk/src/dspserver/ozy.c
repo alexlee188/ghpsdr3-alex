@@ -169,7 +169,7 @@ double src_ratio;
 void dump_udp_buffer(unsigned char* buffer);
 
 void* iq_thread(void* arg) {
-    //int bytes_written;
+    int bytes_written;
     int iq_socket;
     struct sockaddr_in iq_addr;
     int iq_length = sizeof(iq_addr);
@@ -288,10 +288,22 @@ void* iq_thread(void* arg) {
             left_rx_sample=(short)(output_buffer[j]*32767.0);
             right_rx_sample=(short)(output_buffer[j+BUFFER_SIZE]*32767.0);
             audio_stream_put_samples(left_rx_sample,right_rx_sample);
-            }
-    	}
-     }
+        }
+
+/*
+        // send the audio back to the server.  This is for HPSDR hardware.  Right now
+	// the audio channel is used to send the Tx IQ to the softrock hardware
+
+        bytes_written=sendto(audio_socket,output_buffer,sizeof(output_buffer),0,(struct sockaddr *)&audio_addr,audio_length);
+        if(bytes_written<0) {
+           fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
+           exit(1);
+           }
+*/
+   	} // end sample_increment == -1
+    } // end while
 }
+
 
 /* --------------------------------------------------------------------------*/
 /** 
@@ -533,25 +545,26 @@ void getSpectrumSamples(char *samples) {
 */
 void setSpeed(int s) {
 fprintf(stderr,"setSpeed %d\n",s);
+fprintf(stderr,"LO_offset %f\n",LO_offset);
     speed=s;
     if(s==SPEED_48KHZ) {
         sampleRate=48000;
         output_sample_increment=1;
         SetSampleRate((double)sampleRate);
  //       SetRXOsc(0,0,0.0);
-        SetRXOsc(0,1, LO_offset);
+        SetRXOsc(0,0, LO_offset);
     } else if(s==SPEED_96KHZ) {
         sampleRate=96000;
         output_sample_increment=2;
         SetSampleRate((double)sampleRate);
 //        SetRXOsc(0,0,0.0);
-        SetRXOsc(0,1, LO_offset);
+        SetRXOsc(0,0, LO_offset);
     } else if(s==SPEED_192KHZ) {
         sampleRate=192000;
         output_sample_increment=4;
         SetSampleRate((double)sampleRate);
 //        SetRXOsc(0,0,0.0);
-        SetRXOsc(0,1, LO_offset);
+        SetRXOsc(0,0, LO_offset);
     }
     else {
         if(s==SPEED_95KHZ) {
@@ -566,7 +579,7 @@ fprintf(stderr,"setSpeed %d\n",s);
         output_sample_increment=-1;
         SetSampleRate((double)sampleRate);
         //SetRXOsc(0,0,0.0);
-        SetRXOsc(0,1, LO_offset);
+        SetRXOsc(0,0, LO_offset);
     }
 	SetTXOsc(1, LO_offset);
 

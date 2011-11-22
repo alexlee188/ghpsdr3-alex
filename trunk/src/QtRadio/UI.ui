@@ -262,6 +262,14 @@
     </property>
     <addaction name="actionPolyphase"/>
    </widget>
+   <widget class="QMenu" name="menuSquelch">
+    <property name="title">
+     <string>Squelch</string>
+    </property>
+    <addaction name="actionSquelchEnable"/>
+    <addaction name="separator"/>
+    <addaction name="actionSquelchReset"/>
+   </widget>
    <addaction name="menuReceiver"/>
    <addaction name="menuAudio"/>
    <addaction name="menuBand"/>
@@ -270,6 +278,7 @@
    <addaction name="menuNoise_Reduction"/>
    <addaction name="menuAGC"/>
    <addaction name="menuSpectrum"/>
+   <addaction name="menuSquelch"/>
    <addaction name="menuHardware"/>
    <addaction name="menuBookmarks"/>
    <addaction name="menuHelp"/>
@@ -633,6 +642,9 @@
    <property name="text">
     <string>Connect</string>
    </property>
+   <property name="toolTip">
+    <string>Connect to a dspserver</string>
+   </property>
    <property name="shortcut">
     <string>C</string>
    </property>
@@ -654,6 +666,9 @@
    </property>
    <property name="text">
     <string>Subrx</string>
+   </property>
+   <property name="shortcut">
+    <string>S</string>
    </property>
   </action>
   <action name="actionConfig">
@@ -813,6 +828,9 @@
    <property name="text">
     <string>Bookmark This Frequency</string>
    </property>
+   <property name="shortcut">
+    <string>B</string>
+   </property>
   </action>
   <action name="actionXVTRConfigure">
    <property name="text">
@@ -857,6 +875,22 @@
    </property>
    <property name="shortcut">
     <string>L</string>
+   </property>
+   <property name="softKeyRole">
+    <enum>QAction::NoSoftKey</enum>
+   </property>
+  </action>
+  <action name="actionSquelchEnable">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Enable</string>
+   </property>
+  </action>
+  <action name="actionSquelchReset">
+   <property name="text">
+    <string>Reset</string>
    </property>
   </action>
  </widget>

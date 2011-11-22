@@ -475,6 +475,9 @@
    <property name="text">
     <string>RIT</string>
    </property>
+   <property name="shortcut">
+    <string>R</string>
+   </property>
    <property name="checkable">
     <bool>true</bool>
    </property>

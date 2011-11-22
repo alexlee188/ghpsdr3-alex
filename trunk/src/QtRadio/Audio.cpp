@@ -204,6 +204,10 @@ void Audio::set_audio_encoding(int enc){
     audio_encoding = enc;
 }
 
+int Audio::get_audio_encoding() {
+    return audio_encoding;
+}
+
 void Audio::process_audio(char* header,char* buffer,int length) {
     //qDebug() << "process audio";
     int written=0;

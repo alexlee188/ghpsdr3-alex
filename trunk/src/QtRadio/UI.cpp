@@ -120,6 +120,9 @@ UI::UI() {
     connect(widget.actionGain_90,SIGNAL(triggered()),this,SLOT(actionGain_90()));
     connect(widget.actionGain_100,SIGNAL(triggered()),this,SLOT(actionGain_100()));
 
+    connect(widget.actionSquelchEnable,SIGNAL(triggered()),this,SLOT(actionSquelch()));
+    connect(widget.actionSquelchReset,SIGNAL(triggered()),this,SLOT(actionSquelchReset()));
+
     connect(widget.actionKeypad, SIGNAL(triggered()),this,SLOT(actionKeypad()));
     connect(&keypad,SIGNAL(setKeypadFrequency(long long)),this,SLOT(setKeypadFrequency(long long)));
 
@@ -206,6 +209,8 @@ UI::UI() {
             this,SLOT(waterfallLowChanged(int)));
     connect(widget.spectrumFrame, SIGNAL(meterValue(int,int)),
             this, SLOT(getMeterValue(int,int)));
+    connect(widget.spectrumFrame, SIGNAL(squelchValueChanged(int)),
+            this,SLOT(squelchValueChanged(int)));
 
     // connect up waterfall frame
     connect(widget.waterfallFrame, SIGNAL(frequencyMoved(int,int)),
@@ -257,6 +262,8 @@ UI::UI() {
     subRxGain=100;
     agc=AGC_SLOW;
     cwPitch=600;
+    squelchValue=-100;
+    squelch=false;
 
     audio_device=0;
     audio_sample_rate=configure.getSampleRate();
@@ -330,6 +337,7 @@ void UI::loadSettings() {
     settings.beginGroup("UI");
     if(settings.contains("gain")) gain=subRxGain=settings.value("gain").toInt();
     if(settings.contains("agc")) agc=settings.value("agc").toInt();
+    if(settings.contains("squelch")) squelchValue=settings.value("squelch").toInt();
     settings.endGroup();
 
     settings.beginGroup("mainWindow");
@@ -360,6 +368,7 @@ void UI::saveSettings() {
     settings.setValue("gain",gain);
     settings.setValue("subRxGain",subRxGain);
     settings.setValue("agc",agc);
+    settings.setValue("squelch",squelchValue);
     settings.endGroup();
 
     settings.beginGroup("mainWindow");
@@ -376,6 +385,7 @@ void UI::hostChanged(QString host) {
 
 void UI::receiverChanged(int rx) {
     widget.spectrumFrame->setReceiver(rx);
+    printWindowTitle("Remote disconnected");
 }
 
 void UI::closeEvent(QCloseEvent* event) {
@@ -438,8 +448,8 @@ void UI::audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFo
 }
 
 void UI::encodingChanged(int choice){
-    audio_encoding = choice;
-    qDebug() << "UI: encodingChanged: " << audio_encoding;
+    audio->set_audio_encoding(choice);
+    qDebug() << "UI: encodingChanged: " << choice;
     if (choice == 2){               // Codec 2
         configure.setChannels(1);
         configure.setSampleRate(8000);
@@ -478,9 +488,11 @@ void UI::actionDisconnectNow(){
 
 
 void UI::actionDisconnect() {
-    //qDebug() << "UI::actionDisconnect";
-    if (QuickIP.length() > 6){    // Remove from saved host list or IP will pile up forever If empty string we did not connect via Quick Connect
+
+    qDebug() << "actionDisconnect() QuickIP=" << QuickIP;
+    if (QuickIP.length() > 6){    // Remove from saved host list or IPs will pile up forever. If empty string we did not connect via Quick Connect
       configure.removeHost(QuickIP);
+      qDebug() << "actionDisconnect() removeHost(" << QuickIP <<")";
     }
     QuickIP ="";
     spectrumTimer->stop();
@@ -547,7 +559,7 @@ void UI::connected() {
     widget.actionMuteSubRx->setDisabled(TRUE);
 
     // select audio encoding
-    command.clear(); QTextStream(&command) << "setEncoding " << audio_encoding;
+    command.clear(); QTextStream(&command) << "setEncoding " << audio->get_audio_encoding();
     connection.sendCommand(command);
     // qDebug() << "Command: " << command;
 
@@ -578,6 +590,11 @@ void UI::connected() {
     connection.sendCommand(command);
 
     command.clear(); QTextStream(&command) << "SetNBVals " << configure.getNbThreshold();
+    connection.sendCommand(command);
+
+    command.clear(); QTextStream(&command) << "SetSquelchVal " << squelchValue;
+    connection.sendCommand(command);
+    command.clear(); QTextStream(&command) << "SetSquelchState " << (widget.actionSquelchEnable->isChecked()?"on":"off");
     connection.sendCommand(command);
 
     command.clear(); QTextStream(&command) << "SetANF " << (widget.actionANF->isChecked()?"true":"false");
@@ -623,8 +640,15 @@ void UI::updateSpectrum() {
 
 void UI::spectrumBuffer(char* header,char* buffer) {
     //qDebug()<<Q_FUNC_INFO << "spectrumBuffer";
+// g0orx binary header
+/*
     int length=atoi(&header[26]);
     sampleRate=atoi(&header[32]);
+*/
+
+    int length=((header[3]&0xFF)<<8)+(header[4]&0xFF);
+    sampleRate=((header[9]&0xFF)<<24)+((header[10]&0xFF)<<16)+((header[11]&0xFF)<<8)+(header[12]&0xFF);
+
     widget.spectrumFrame->updateSpectrumFrame(header,buffer,length);
     widget.waterfallFrame->updateWaterfall(header,buffer,length);
     connection.freeBuffers(header,buffer);
@@ -634,7 +658,9 @@ void UI::audioBuffer(char* header,char* buffer) {
     //qDebug() << "audioBuffer";
     int length;
 
-    length=atoi(&header[AUDIO_LENGTH_POSITION]);
+// g0orx binary header
+    //length=atoi(&header[AUDIO_LENGTH_POSITION]);
+    length=((header[3]&0xFF)<<8)+(header[4]&0xFF);
 
     if(audio_buffers==0) {
         first_audio_header=header;
@@ -725,6 +751,7 @@ void UI::setSubRxGain(int gain) {
 }
 
 void UI::actionKeypad() {
+
     keypad.clear();
     keypad.show();
 }
@@ -1804,7 +1831,7 @@ void UI::getMeterValue(int m, int s)
 
 void UI::printWindowTitle(QString message)
 {
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + " .. " + message);
+    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message);
 }
 
 void UI::printStatusBar(QString message)
@@ -1945,13 +1972,56 @@ void UI::actionConnectNow(QString IP)
     qDebug() << "Connect Slot:"  << IP;
     if (isConnected == false)
     {
-       QuickIP = IP;
-       configure.addHost(IP);
-      connection.connect(IP, DSPSERVER_BASE_PORT+configure.getReceiver());
-       widget.spectrumFrame->setReceiver(configure.getReceiver());
+        QuickIP = IP;
+        configure.addHost(IP);
+        connection.connect(IP, DSPSERVER_BASE_PORT+configure.getReceiver());
+        widget.spectrumFrame->setReceiver(configure.getReceiver());
     }else{
         QMessageBox msgBox;
         msgBox.setText("Already Connected to a server!\nDisconnect first.");
         msgBox.exec();
     }
 }
+
+void UI::actionSquelch() {
+    if(squelch) {
+        squelch=false;
+        QString command;
+        command.clear(); QTextStream(&command) << "SetSquelchState off";
+        connection.sendCommand(command);
+        widget.spectrumFrame->setSquelch(false);
+        widget.actionSquelchEnable->setChecked(false);
+    } else {
+        squelch=true;
+        QString command;
+        command.clear(); QTextStream(&command) << "SetSquelchVal " << squelchValue;
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "SetSquelchState on";
+        connection.sendCommand(command);
+        widget.spectrumFrame->setSquelch(true);
+        widget.spectrumFrame->setSquelchVal(squelchValue);
+        widget.actionSquelchEnable->setChecked(true);
+    }
+
+}
+
+void UI::actionSquelchReset() {
+    squelchValue=-100;
+    if(squelch) {
+        QString command;
+        command.clear(); QTextStream(&command) << "SetSquelchVal "<<squelchValue;
+        connection.sendCommand(command);
+        widget.spectrumFrame->setSquelchVal(squelchValue);
+    }
+}
+
+void UI::squelchValueChanged(int val) {
+    squelchValue=squelchValue+val;
+    if(squelch) {
+        QString command;
+        command.clear(); QTextStream(&command) << "SetSquelchVal "<<squelchValue;
+        connection.sendCommand(command);
+        widget.spectrumFrame->setSquelchVal(squelchValue);
+    }
+}
+

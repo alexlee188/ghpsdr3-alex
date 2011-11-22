@@ -33,7 +33,7 @@ vfo::vfo(QWidget *parent) :
     ui(new Ui::vfo)
 {
     ui->setupUi(this);
-   vfohotstep = 100;
+    vfohotstep = 100;
     selectedVFO = 'A';
     ptt = false;
 
@@ -556,6 +556,7 @@ void vfo::vfohotkey(QString cmd)
     }
     return;
 }
+
 long long vfo::getTxFrequency()
 {
     if(selectedVFO == 'A') {
@@ -623,3 +624,4 @@ void vfo::pttChange(bool pttState)
     }
     setVfoBtnColour();
 }
+

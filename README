@@ -12,8 +12,9 @@ receiver     - Makefile modified to compile in x86_64, changed local-audio to di
                To run under Ubuntu with pulseaudio:  $ ./ghpsdr --local-audio 1 --audio-device pulse
 
 QtRadio      - Many improvements to a full functional rxtx with graphical vfo and multiple audio codecs.
-             - Added a Quick Server Connect Dialog.  Displays a list of all currently online dspservers that were started with the --share option.
 
+             - Added a Quick Server Connect Dialog.  Displays a list of all currently online dspservers that were started with 
+	       the --share option.
 
 The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx and rxtx-event branches.
 
@@ -63,6 +64,7 @@ Note that in addition to Qt, you will need some dev packages to be installed for
 (used by QtRadio), including (Ubuntu/Debian naming convention):
 
 libqt4-opengl-dev
+qtmobility-dev
 glutg3-dev
 libusb-0.1-4
 libfftw3-dev
@@ -122,7 +124,7 @@ $ softrock --si570 --iq --samplerate 48000|96000|192000
 To run the dspserver: 
 
 $ dspserver 
-dspserver may be started with the option "-- lookupcountry" which will try 
+dspserver may be started with the option "--lookupcountry" which will try 
 to determine the Country of incoming connections by IP. Off by default. No longer blocks.
 
 dspserver now has the ability to "register" it's status in a web database.

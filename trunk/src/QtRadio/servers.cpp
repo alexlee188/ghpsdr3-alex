@@ -22,6 +22,7 @@ Servers::Servers(QDialog *parent) :  QDialog(parent), ui(new Ui::Servers)
     QObject::connect(nam, SIGNAL(finished(QNetworkReply*)), this, SLOT(finishedSlot(QNetworkReply*)));
     ui->treelist->setHeaderLabels(QString("Status;Call;Location;Band;Rig;6Antenna;Last Report;IP").split(";"));
     ui->treelist->setColumnWidth( 0,140);
+    //ui->treelist->setColumnWidth( 0,125);
     ui->treelist->setColumnWidth( 1,100);
     ui->treelist->setColumnWidth( 2,160);
     ui->treelist->setColumnWidth( 3,160);
@@ -96,6 +97,7 @@ void Servers::addLine(QString line)
       pos++;
     }
     if (line.left(4) == "Idle"|| line.left(1) == "0"){
+
       item->setBackgroundColor(1,QColor(Qt::green));
     }
     ui->treelist->addTopLevelItem(item);

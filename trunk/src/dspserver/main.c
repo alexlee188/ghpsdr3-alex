@@ -116,8 +116,8 @@ struct option longOptions[] = {
     {"timing",no_argument, 0, 4},
     {"lookupcountry",no_argument, 0, 5},
     {"share",no_argument, 0, 6},
-    {"shareconfig",required_argument, 0, 6},
-    
+    {"shareconfig",required_argument, 0, 7},
+    {"lo",required_argument, 0, 8},
     {0,0,0,0}
 };
 
@@ -166,7 +166,10 @@ void processCommands(int argc,char** argv) {
             case 7:
                 strcpy(share_config_file,optarg);
                 break;
-	    default:
+            case 8:
+                LO_offset=atoi(optarg);
+                break;
+       default:
                 fprintf(stderr,"Usage: \n");
                 fprintf(stderr,"  dspserver --receivers N (default 1)\n");
                 fprintf(stderr,"            --server 0.0.0.0 (default 127.0.0.1)\n");
@@ -174,7 +177,7 @@ void processCommands(int argc,char** argv) {
                 fprintf(stderr,"            --offset 0 \n");
                 fprintf(stderr,"            --share (will register this server for other users \n");
                 fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
-                fprintf(stderr,"            --shareconfig filename (use alternate conf file) \n");
+		fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
                 exit(1);
 
         }
@@ -198,7 +201,6 @@ void processCommands(int argc,char** argv) {
 int main(int argc,char* argv[]) {
         
     char directory[1024];
-
     strcpy(soundCardName,"HPSDR");
     strcpy(server_address,"127.0.0.1"); // localhost
     strcpy(share_config_file, "");
@@ -209,7 +211,6 @@ int main(int argc,char* argv[]) {
         fprintf(stderr, "Activating Web register\n");
 	init_register();
 	}
-    
     fprintf(stderr,"gHPSDR rx %d (Version %s)\n",receiver,VERSION);
 
     setSoundcard(getSoundcardId(soundCardName));

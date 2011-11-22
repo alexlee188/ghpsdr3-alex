@@ -194,10 +194,10 @@ int create_ozy_thread() {
     if (init_hpsdr() == 0) exit(9);
 #endif
 
-    for(i=0;i<receivers;i++) {
-        receiver[i].frequency=7056000L;
-        receiver[i].frequency_changed=1;
-    }
+    //for(i=0;i<receivers;i++) {
+    //    receiver[i].frequency=7056000L;
+    //    receiver[i].frequency_changed=1;
+    //}
 
     if(!playback) {
         ozy_init();
@@ -360,14 +360,25 @@ ozy_open();
 void ozy_prime() {
     int i;
 
+    for(i=0;i<receivers;i++) {
+        receiver[i].frequency=7056000L;
+        receiver[i].frequency_changed=1;
+    }
+
     memset((char *)&ozy_output_buffer,0,OZY_BUFFER_SIZE);
     while(configure>0) {
+fprintf(stderr,"ozy_prime: configure=%d\n",configure);
         write_ozy_output_buffer();
     }
 
 
     for(i=0;i<receivers;i++) {
         current_receiver=i;
+fprintf(stderr,"ozy_prime: current_receiver=%d\n",current_receiver);
+        write_ozy_output_buffer();
+    }
+
+    if((receivers%2)==1) {
         write_ozy_output_buffer();
     }
 
@@ -398,11 +409,11 @@ void* ozy_ep6_ep2_io_thread(void* arg) {
             }
         }
 
-        current_receiver++;
-
-        if(current_receiver==receivers) {
-            current_receiver=0;
-        }
+        //current_receiver++;
+//
+//       if(current_receiver==receivers) {
+//           current_receiver=0;
+//       }
     }
 }
 
@@ -449,6 +460,7 @@ void write_ozy_output_buffer() {
         ozy_output_buffer[6]=control_out[3];
         ozy_output_buffer[7]=control_out[4];
     } else if(receiver[current_receiver].frequency_changed) {
+//fprintf(stderr,"sending frequency to %d:  %ld\n",current_receiver,receiver[current_receiver].frequency);
         ozy_output_buffer[3]=control_out[0]|((current_receiver+2)<<1);
         ozy_output_buffer[4]=receiver[current_receiver].frequency>>24;
         ozy_output_buffer[5]=receiver[current_receiver].frequency>>16;
@@ -476,9 +488,18 @@ void write_ozy_output_buffer() {
     }
 
 if(tx_frame<10) {
-    dump_ozy_buffer("sent to Ozy:",tx_frame,ozy_output_buffer);
+    if(metis) {
+        dump_ozy_buffer("sent to Metis:",tx_frame,ozy_output_buffer);
+    } else {
+        dump_ozy_buffer("sent to Ozy:",tx_frame,ozy_output_buffer);
+    }
 }
     tx_frame++;
+    current_receiver++;
+
+    if(current_receiver==receivers) {
+        current_receiver=0;
+    }
 
 }
 
@@ -493,7 +514,11 @@ void process_ozy_input_buffer(char* buffer) {
     int bytes;
 
 if(rx_frame<10) {
-    dump_ozy_buffer("received from Ozy:",rx_frame,buffer);
+    if(metis) {
+        dump_ozy_buffer("received from Metis:",rx_frame,buffer);
+    } else {
+        dump_ozy_buffer("received from Ozy:",rx_frame,buffer);
+    }
 }
 
     if(buffer[b++]==SYNC && buffer[b++]==SYNC && buffer[b++]==SYNC) {
@@ -570,6 +595,7 @@ if(rx_frame<10) {
                 right_sample_float=(float)right_sample/8388607.0; // 24 bit sample
                 receiver[r].input_buffer[samples]=left_sample_float;
                 receiver[r].input_buffer[samples+BUFFER_SIZE]=right_sample_float;
+
             }
             mic_sample    = (int)((signed char) buffer[b++]) << 8;
             mic_sample   += (int)((unsigned char)buffer[b++]);

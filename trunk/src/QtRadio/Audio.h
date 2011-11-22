@@ -46,6 +46,7 @@ public:
     Audio(void * codec2);
 //    Audio(const Audio& orig);
     virtual ~Audio();
+    int get_audio_encoding();
 
 signals:
 
