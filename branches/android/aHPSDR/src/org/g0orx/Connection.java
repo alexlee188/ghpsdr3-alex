@@ -82,7 +82,10 @@ public class Connection extends Thread {
 		int bytes;
 		int bytes_read=0;
 		int buffer_type=0;
-		byte[] spectrumHeader = new byte[SPECTRUM_HEADER_SIZE];
+		int version=0;
+		int subversion=0;
+		int header_size=SPECTRUM_HEADER_SIZE_2_0;
+		byte[] spectrumHeader = new byte[SPECTRUM_HEADER_SIZE_2_1]; // largest
 		byte[] audioHeader= new byte[AUDIO_HEADER_SIZE];
 		byte[] spectrumBuffer = new byte[SPECTRUM_BUFFER_SIZE];
 		byte[] audioBuffer = new byte[AUDIO_BUFFER_SIZE];
@@ -93,13 +96,32 @@ public class Connection extends Thread {
 				try {
 
 			        buffer_type=inputStream.read();
+			        version=inputStream.read();
+			        subversion=inputStream.read();
 					
 					//Log.i("Connection","buffer_type="+buffer_type);
 					
 					if(buffer_type==SPECTRUM_BUFFER) {
 						bytes = 0;
-						while (bytes != SPECTRUM_HEADER_SIZE) {
-							bytes_read = inputStream.read(spectrumHeader, bytes, SPECTRUM_HEADER_SIZE
+						switch(version) {
+						    case 2:
+						    	switch(subversion) {
+						    	    case 0:
+						    	    	header_size=SPECTRUM_HEADER_SIZE_2_0;
+						    	    	break;
+						    	    case 1:
+						    	    	header_size=SPECTRUM_HEADER_SIZE_2_1;
+						    	    	break;
+						    	    default:
+						    	    	// invalid subversion
+						    	}
+						    	break;
+							default:
+								// invalid version
+								break;
+						}
+						while (bytes != header_size) {
+							bytes_read = inputStream.read(spectrumHeader, bytes, header_size
 									- bytes);
 							if(bytes_read==-1) break;
 							bytes+=bytes_read;
@@ -150,7 +172,7 @@ public class Connection extends Thread {
 							bytes += inputStream.read(spectrumBuffer, bytes,
 									SPECTRUM_BUFFER_SIZE - bytes);
 						}
-						processSpectrumBuffer(spectrumHeader, spectrumBuffer);
+						processSpectrumBuffer(version,subversion,spectrumHeader, spectrumBuffer);
 						break;
 					case AUDIO_BUFFER:
 						bytes = 0;
@@ -192,20 +214,53 @@ public class Connection extends Thread {
 		return result;
 	}
 	
-	private void processSpectrumBuffer(byte[] header, byte[] buffer) {
+	private void processSpectrumBuffer(int version,int subversion,byte[] header, byte[] buffer) {
+		int offset=0;
 		
-        sampleRate=getInt(header,8);        
-        meter=getShort(header,4);
+		meter=getShort(header,2);
+        sampleRate=getInt(header,6); 
         
+        switch(version) {
+            case 2:
+            	switch(subversion) {
+            	    case 0:
+            	    	LO_offset=0;
+            	    	break;
+            	    case 1:
+            	    	LO_offset=getShort(header,10);
+            	    	break;
+            	    default:
+            	    	// invalid subversion
+            	    	break;
+            	}
+        	    break;
+        	default:
+        		// invalid version
+        		break;
+        }
+
         //Log.i("processSpectrumBuffer","sampeRate="+sampleRate+" meter="+meter+" buffer="+buffer.length);
 
-		for (int i = 0; i < SPECTRUM_BUFFER_SIZE; i++) {
-			samples[i] = -(buffer[i] & 0xFF);
-		}
+        // rotate spectrum display if LO is not 0
+        if(LO_offset==0) {
+        	for (int i = 0; i < SPECTRUM_BUFFER_SIZE; i++) {
+			    samples[i] = -(buffer[i] & 0xFF);
+		    }
+        } else {
+            float step=(float)sampleRate/(float)SPECTRUM_BUFFER_SIZE;
+            offset=(int)((float)LO_offset/step);
+            int j;
+            for(int i=0;i<SPECTRUM_BUFFER_SIZE;i++) {
+                j=i-offset;
+                if(j<0) j+=SPECTRUM_BUFFER_SIZE;
+                if(j>=SPECTRUM_BUFFER_SIZE) j%=SPECTRUM_BUFFER_SIZE;
+                samples[i] = -(buffer[j] & 0xFF);
+            }
+        }
 
 		if (spectrumView != null) {
 			spectrumView.plotSpectrum(samples, filterLow, filterHigh,
-					sampleRate);
+					sampleRate, offset);
 		}
 	}
 
@@ -346,8 +401,10 @@ public class Connection extends Thread {
 	private SpectrumView spectrumView;
 
 	private static final int BUFFER_TYPE_SIZE = 1;
-	private static final int AUDIO_HEADER_SIZE = 4;
-	private static final int SPECTRUM_HEADER_SIZE = 12;
+	private static final int BUFFER_VERSION_SIZE = 2;
+	private static final int AUDIO_HEADER_SIZE = 2;
+	private static final int SPECTRUM_HEADER_SIZE_2_0 = 10;
+	private static final int SPECTRUM_HEADER_SIZE_2_1 = 12;
 	private int SPECTRUM_BUFFER_SIZE = 480;
 	static final int AUDIO_BUFFER_SIZE = 2000;
 
@@ -363,6 +420,8 @@ public class Connection extends Thread {
 	private boolean connected = false;
 	
 
+	private short LO_offset;
+	
 	private long frequency;
 	private int filterLow;
 	private int filterHigh;

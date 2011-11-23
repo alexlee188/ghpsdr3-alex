@@ -61,7 +61,7 @@ Log.i("SpectrumView","width="+width+" height="+height);
 
 			// draw the filter
 			paint.setColor(Color.GRAY);
-			canvas.drawRect(filterLeft, 0, filterRight, HEIGHT, paint);
+			canvas.drawRect(filterLeft+offset, 0, filterRight+offset, HEIGHT, paint);
 
 			// plot the spectrum levels
 			paint.setColor(Color.GRAY);
@@ -101,7 +101,7 @@ Log.i("SpectrumView","width="+width+" height="+height);
 
 			// plot the cursor
 			paint.setColor(Color.RED);
-			canvas.drawLine(WIDTH/2, 0, WIDTH/2, HEIGHT, paint);
+			canvas.drawLine((WIDTH/2)+offset, 0, (WIDTH/2)+offset, HEIGHT, paint);
 
 			// display the frequency and mode
 			paint.setColor(Color.GREEN);
@@ -179,8 +179,10 @@ Log.i("SpectrumView","width="+width+" height="+height);
 	}
 
 	public void plotSpectrum(int[] samples, int filterLow, int filterHigh,
-			int sampleRate) {
+			int sampleRate, int offset) {
 
+		this.offset=offset;
+		
 		// scroll the waterfall down
 		if(waterfall.isRecycled()) {
 			waterfall = Bitmap.createBitmap(WIDTH, HEIGHT,
@@ -333,6 +335,8 @@ Log.i("SpectrumView","width="+width+" height="+height);
 
 	Bitmap waterfall;
 	int[] pixels;
+	
+	int offset;
 
 	private int spectrumHigh = 0;
 	private int spectrumLow = -140;

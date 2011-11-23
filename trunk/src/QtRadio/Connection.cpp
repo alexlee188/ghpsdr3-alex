@@ -30,7 +30,7 @@ Connection::Connection() {
     tcpSocket=NULL;
     state=READ_HEADER_TYPE;
     bytes=0;
-    hdr=(char*)malloc(HEADER_SIZE);  // HEADER_SIZE is larger than AUTIO_HEADER_SIZE so it is OK
+    hdr=(char*)malloc(HEADER_SIZE_2_1);  // HEADER_SIZE is larger than AUTIO_HEADER_SIZE so it is OK
                                     // for both
     SemSpectrum.release();
     muted = false;
@@ -144,15 +144,39 @@ void Connection::socketData() {
     int thisRead;
     int version;
     int subversion;
+    int header_size;
 
     toRead=tcpSocket->bytesAvailable();
     while(bytesRead<toRead) {
         switch(state) {
         case READ_HEADER_TYPE:
-            thisRead=tcpSocket->read(&hdr[0],1);
-            if (thisRead == 1) bytes++;
-            if (hdr[0] == AUDIO_BUFFER) state=READ_AUDIO_HEADER;
-            else state=READ_HEADER;
+            thisRead=tcpSocket->read(&hdr[0],3);
+            if (thisRead == 3) bytes+=3;
+            if (hdr[0] == AUDIO_BUFFER)
+                state=READ_AUDIO_HEADER;
+            else {
+                version=hdr[1];
+                subversion=hdr[2];
+                switch(version) {
+                    case 2:
+                        switch(subversion) {
+                            case 0:
+                                header_size=HEADER_SIZE_2_0;
+                                break;
+                            case 1:
+                                header_size=HEADER_SIZE_2_1;
+                                break;
+                            default:
+                                fprintf(stderr,"QtRadio: Invalid version. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
+                                break;
+                        }
+                        break;
+                    default:
+                        fprintf(stderr,"QtRadio: Invalid version. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
+                        break;
+                }
+                state=READ_HEADER;
+            }
             break;
 
         case READ_AUDIO_HEADER:
@@ -174,11 +198,10 @@ void Connection::socketData() {
             break;
 
          case READ_HEADER:
-            thisRead=tcpSocket->read(&hdr[bytes],HEADER_SIZE - bytes);
+            thisRead=tcpSocket->read(&hdr[bytes],header_size - bytes);
             bytes+=thisRead;
-            if(bytes==HEADER_SIZE) {
+            if(bytes==header_size) {
 // g0orx binary header
-                //length=atoi(&hdr[26]);
                 length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);
                 if ((length < 0) || (length > 4096)){
                         state = READ_HEADER_TYPE;
@@ -199,16 +222,9 @@ void Connection::socketData() {
             if(bytes==length) {
                 version=hdr[1];
                 subversion=hdr[2];
-                if(version==HEADER_VERSION && subversion==HEADER_SUBVERSION) {
-                    queue.enqueue(new Buffer(hdr,buffer));
-                    QTimer::singleShot(0,this,SLOT(processBuffer()));
-                    hdr=(char*)malloc(HEADER_SIZE);
-                } else {
-                    fprintf(stderr,"QtRadio invalid version. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
-                    fprintf(stderr,"Header %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n",hdr[0],hdr[1],hdr[2],hdr[3],hdr[4],hdr[5],hdr[6],hdr[7],hdr[8],hdr[9],hdr[10],hdr[10]);
-
-                    free(buffer);
-                }
+                queue.enqueue(new Buffer(hdr,buffer));
+                QTimer::singleShot(0,this,SLOT(processBuffer()));
+                hdr=(char*)malloc(HEADER_SIZE_2_1);
                 bytes=0;
                 state=READ_HEADER_TYPE;
             } else {

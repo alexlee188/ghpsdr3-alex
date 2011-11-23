@@ -269,6 +269,8 @@ void Spectrum::paintEvent(QPaintEvent*) {
     int filterLeft;
     int filterRight;
     QString text;
+    float step=(float)sampleRate/(float)width();
+    int offset=(int)((float)LO_offset/step);
 
     QLinearGradient gradient(0, 0, 0,height());
     gradient.setColorAt(0, Qt::black);
@@ -282,17 +284,17 @@ void Spectrum::paintEvent(QPaintEvent*) {
     }
 
     // draw filter
-    filterLeft = (filterLow - (-sampleRate / 2)) * width() / sampleRate;
-    filterRight = (filterHigh - (-sampleRate / 2)) * width() / sampleRate;
+    filterLeft = ((filterLow - (-sampleRate / 2)) * width() / sampleRate)+offset;
+    filterRight = ((filterHigh - (-sampleRate / 2)) * width() / sampleRate)+offset;
     painter.setBrush(Qt::SolidPattern);
     painter.setOpacity(0.5);
     painter.fillRect(filterLeft,0,filterRight-filterLeft,height(),Qt::gray);
 
     // draw sub rx filter and cursor
     if(subRx) {
-        int cursor=(subRxFrequency-(frequency-(sampleRate/2))) * width() / sampleRate;
-        filterLeft = (filterLow - (-sampleRate / 2) + (subRxFrequency-frequency)) * width() / sampleRate;
-        filterRight = (filterHigh - (-sampleRate / 2) + (subRxFrequency-frequency)) * width() / sampleRate;
+        int cursor=((subRxFrequency-(frequency-(sampleRate/2))) * width() / sampleRate)+offset;
+        filterLeft = ((filterLow - (-sampleRate / 2) + (subRxFrequency-frequency)) * width() / sampleRate)+offset;
+        filterRight = ((filterHigh - (-sampleRate / 2) + (subRxFrequency-frequency)) * width() / sampleRate)+offset;
         painter.setBrush(Qt::SolidPattern);
         painter.setOpacity(0.5);
         painter.fillRect(filterLeft, 0, filterRight - filterLeft, height(), Qt::lightGray);
@@ -357,7 +359,7 @@ void Spectrum::paintEvent(QPaintEvent*) {
 
     // draw cursor
     painter.setPen(QPen(Qt::red, 1));
-    painter.drawLine(width()/2,0,width()/2,height());
+    painter.drawLine((width()/2)+offset,0,(width()/2)+offset,height());
 
     // draw the squelch
     if(settingSquelch || showSquelchControl) {
@@ -491,8 +493,10 @@ void Spectrum::setFilter(QString f) {
 }
 
 void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
-    int i;
+    int i,j;
+    int version,subversion;
     int header_sampleRate;
+    int offset;
 
     //qDebug() << "updateSpectrum: width=" << width() << " height=" << height();
     //meter = atoi(&header[40]);
@@ -503,9 +507,18 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
     header_sampleRate = atoi(&header[32]);
 */
 
+    version=header[1];
+    subversion=header[2];
     meter=((header[5]&0xFF)<<8)+(header[6]&0xFF);
     subrx_meter=((header[7]&0xFF)<<8)+(header[8]&0xFF);
     header_sampleRate=((header[9]&0xFF)<<24)+((header[10]&0xFF)<<16)+((header[11]&0xFF)<<8)+(header[12]&0xFF);
+
+    if(version==2 && subversion>0) {
+        // only in version 2.1 and above
+        LO_offset=((header[13]&0xFF)<<8)+(header[14]&0xFF);
+    } else {
+        LO_offset=0;
+    }
 
     if ((header_sampleRate == 48000)||(header_sampleRate == 96000)||(header_sampleRate == 192000)){
         sampleRate = header_sampleRate;
@@ -516,8 +529,20 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
         }
         samples = (float*) malloc(width * sizeof (float));
 
-        for(i=0;i<width;i++) {
-            samples[i] = -(buffer[i] & 0xFF);
+        // rotate spectrum display if LO is not 0
+        if(LO_offset==0) {
+            for(i=0;i<width;i++) {
+                samples[i] = -(buffer[i] & 0xFF);
+            }
+        } else {
+            float step=(float)sampleRate/(float)width;
+            offset=(int)((float)LO_offset/step);
+            for(i=0;i<width;i++) {
+                j=i-offset;
+                if(j<0) j+=width;
+                if(j>=width) j%=width;
+                samples[i] = -(buffer[j] & 0xFF);
+            }
         }
 
         //qDebug() << "updateSpectrum: create plot points";

@@ -140,6 +140,8 @@ private:
 
     Meter* sMeterMain;
     Meter* sMeterSub;
+
+    short LO_offset;
 };
 
 

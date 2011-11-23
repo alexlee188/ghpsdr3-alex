@@ -1089,6 +1089,9 @@ void client_set_samples(float* samples,int size) {
     client_samples[11]=(sampleRate>>8)&0xFF;
     client_samples[12]=sampleRate&0xFF;
 
+    // addes for header version 2.1
+    client_samples[13]=((int)LO_offset>>8)&0xFF; // IF
+    client_samples[14]=(int)LO_offset&0xFF;
 
     slope=(float)SAMPLE_BUFFER_SIZE/(float)size;
     for(i=0;i<size;i++) {
