@@ -16,7 +16,13 @@ QtRadio      - Many improvements to a full functional rxtx with graphical vfo an
              - Added a Quick Server Connect Dialog.  Displays a list of all currently online dspservers that were started with 
 	       the --share option.
 
-The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx and rxtx-event branches.
+	     - The LO offset (usually set to 9000 Hz in Si570 controlled softrocks, a la PSDR-IQ) can be set via command line argument --lo
+
+The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx-event branch.
+
+There is a Wiki for more detailed information, especially for new comers:
+
+http://napan.ca/ghpsdr3/index.php/Main_Page
 
 Ubuntu Linux Users
 ==================
@@ -45,6 +51,10 @@ At this time the only application working in Windows is the QtRadio client which
 any dspserver.  A ready to run windows executable is avilable at:
 
 	http://www.napan.com/ve9gj
+
+Also check:
+
+http://napan.ca/ghpsdr3/index.php/QtRadio_on_Windows
 
 You can download the zip file which contains all the needed dlls and qtradio.exe.  Extract the qtradio folder
 to somewhere on your windows drive and double click qtradio.exe to run.
@@ -123,7 +133,10 @@ $ softrock --si570 --iq --samplerate 48000|96000|192000
 
 To run the dspserver: 
 
-$ dspserver 
+$ dspserver --lookupcountry --share --lo 0|9000|12000|...
+
+The LO offset can be set by the --lo argument.  For fixed crystal Softrocks and DDC rigs, use --lo 0.  For si570 controlled Softrocks, the usual offset should be set with --lo 9000.  Of course, you can set other offset values depending on your rig.
+
 dspserver may be started with the option "--lookupcountry" which will try 
 to determine the Country of incoming connections by IP. Off by default. No longer blocks.
 
