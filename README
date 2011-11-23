@@ -4,19 +4,18 @@ http://openhpsdr.org/wiki/index.php?title=Ghpsdr3
 
 The changes are in trunk/src/: 
 
-softrock     - added an IF offset of 9khz (ala PSDR-IQ).  Rx and Tx.  Pulse and Jack audio.  Works with all softrocks.
-dspserver    - added IF offset of 9khz.  More robust audio and spectrum transfers.  Rx and Tx.  Hamlib net backend.  rxtx-event
-               branch has non-blocking networking.  In future multiple client can access the same dspserver.
+softrock     - Rx and Tx.  Pulse and Jack audio.  Works with all softrocks.
+dspserver    - The LO offset (usually set to 9000 Hz in Si570 controlled softrocks, a la PSDR-IQ) can be set via command line argument --lo
+	       Can be changed to 0 for fixed Xtal Softrocks and DDC radios.  
+	       More robust audio and spectrum transfers.  Rx and Tx.  Hamlib net backend.  rxtx-event
+               branch has non-blocking networking.  Multiple client can access the same dspserver in rxtx-event branch.
 widget-server- hpsdr protocol with full control of sdr-widget/Mobo/SR.  Only for sdr-widget.
 receiver     - Makefile modified to compile in x86_64, changed local-audio to direct alsa output, changed portaudio to use callback.
                To run under Ubuntu with pulseaudio:  $ ./ghpsdr --local-audio 1 --audio-device pulse
 
 QtRadio      - Many improvements to a full functional rxtx with graphical vfo and multiple audio codecs.
-
              - Added a Quick Server Connect Dialog.  Displays a list of all currently online dspservers that were started with 
 	       the --share option.
-
-	     - The LO offset (usually set to 9000 Hz in Si570 controlled softrocks, a la PSDR-IQ) can be set via command line argument --lo
 
 The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx-event branch.
 
@@ -62,8 +61,6 @@ to somewhere on your windows drive and double click qtradio.exe to run.
 The source for building with QtCreator 2.3.0 based on QT 4.7.4 is available via the win32 branch at:
 	https://github.com/alexlee188/ghpsdr3-alex
 
-
-Note that tx and codec2 is not working in the win32 version.
 
 
 Building the software in Linux
