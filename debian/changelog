@@ -1,4 +1,41 @@
-ghpsdr3 (1.7~0ubuntu1ppa1~natty) natty; urgency=high
+ghpsdr3 (2.0~0ubuntu4ppa4~oneiric) oneiric; urgency=high
+
+  * Andrea Montefusco IW0HDV
+    PPA 2.0
+    More checks on simple-pulse libraries, due to subtle difference in Fedora 16 binary packages.
+    An attempt to take in account more linking paths on 64 bit platforms.
+    HPSDR server: build system
+
+  * VE9GJ Glenn Taylor
+    Added Cursor Key control of VFO
+    Fixed --share bug reported by Eric in dspserver
+    dspserver now updates 0 of 1 Clients
+    QtRadio deletes quick Connect hosts on disconnect
+    Satus column wider and Green now triggered on 0 also
+
+  * Alex Lee <alexlee188@gmail.com>    
+    Updated README
+    QtRadio/dspserver: bug fix Codec2 for Rx audio
+    QtRadio: Quick Server List selected server is updated to 
+    Configure Server List and displayed correctly on window title bar
+
+  * John Melton G0ORX/N6LYT
+    Added code and menu for Squelch
+    QtRadio check header version/subversion
+    Fixed changing receivers to update title.
+    add Android client aHPSDR
+    QtRadio changes for binary header
+    dspserver changes for binary header
+    Changed code for binary header format
+    Fixed frequency setting when multiplr receivers
+    Changed Title to include selected Rx (For HPSDR)
+    added --lo option to dspserver to set the LO_offset value
+    Fixed S Meter dBm disply to be right aligned
+
+  * kb1lqc
+    Fixed mistake in --lookupcountry command under running the dspserver
+    Added QtMobility-dev package dependency to mitigate the QAudioFormat 
+    compile error experience when Ubuntu 11.10 users compile the project.
 
   * VE9GJ Glenn Taylor 
     Added Quick Connect server dialog
@@ -21,7 +58,7 @@ ghpsdr3 (1.7~0ubuntu1ppa1~natty) natty; urgency=high
   * Alex Lee
     README: added libsamplerate0-dev
     Updated README regarding ppa
-    
+
   * Andrea Montefusco IW0HDV
     Bug fixed: spurious files removed from dependecies list.
     Autotools on widget-server.
@@ -30,6 +67,7 @@ ghpsdr3 (1.7~0ubuntu1ppa1~natty) natty; urgency=high
     Updatd README; cleaned up header files for widget-server
     Added back the original server for hpsdr hardware
     Renamed server to widget-server
+    QtRadio: Quick Server List selected server is updated to Configure Server List and displayed correctly on window title bar
 
   * Glenn Taylor VE9GJ 
     Updated top level README with instructions for Windows Users
@@ -47,6 +85,7 @@ ghpsdr3 (1.7~0ubuntu1ppa1~natty) natty; urgency=high
     Major rework of vfo.cpp
 
   * Added rigctl to QtRadio default port 19090 added section to top level README, Glenn Taylor VE9GJ
+    QtRadio: Quick Server List selected server is updated to Configure Server List and displayed correctly on window title bar
 
   * More features added, Graeme Jury
 
