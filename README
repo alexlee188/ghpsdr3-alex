@@ -16,7 +16,7 @@ QtRadio      - Many improvements to a full functional rxtx with graphical vfo an
              - Added a Quick Server Connect Dialog.  Displays a list of all currently online dspservers that were started with 
 	       the --share option.
 
-The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx and rxtx-event branches.
+The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx-event branch.
 
 Ubuntu Linux Users
 ==================
@@ -123,7 +123,10 @@ $ softrock --si570 --iq --samplerate 48000|96000|192000
 
 To run the dspserver: 
 
-$ dspserver 
+$ dspserver --lookupcountry --share --lo 0|9000|12000|...
+
+The LO offset can be set by the --lo argument.  For fixed crystal Softrocks and DDC rigs, use --lo 0.  For si570 controlled Softrocks, the usual offset should be set with --lo 9000.  Of course, you can set other offset values depending on your rig.
+
 dspserver may be started with the option "--lookupcountry" which will try 
 to determine the Country of incoming connections by IP. Off by default. No longer blocks.
 
