@@ -189,7 +189,7 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
         } else {
             float hzPixel = sampleRate/width();  // spectrum resolution: Hz/pixel
             long freqOffsetPixel;
-            long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel);
+            long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel)-LO_offset;
             if(subRx) {    
                 freqOffsetPixel = (subRxFrequency-f)/hzPixel;
                 if (button == Qt::LeftButton) {
@@ -322,10 +322,10 @@ void Spectrum::paintEvent(QPaintEvent*) {
     
     // plot the vertical frequency lines
     float hzPerPixel=(float)sampleRate/(float)width();
-    long long f=frequency-(sampleRate/2);
+    long long f=(frequency-(sampleRate/2))-LO_offset;
 
     for(int i=0;i<width();i++) {
-        f=frequency-(sampleRate/2)+(long long)(hzPerPixel*(float)i);
+        f=frequency-(sampleRate/2)-LO_offset+(long long)(hzPerPixel*(float)i);
         if(f>0) {
             if((f%10000)<(long long)hzPerPixel) {
                 painter.setOpacity(0.5);

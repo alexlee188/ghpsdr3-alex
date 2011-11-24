@@ -93,6 +93,8 @@ private:
     int colorHighB;
     QImage image;
 
+    short LO_offset;
+
     int sampleRate;
     int filterLow;
     int filterHigh;

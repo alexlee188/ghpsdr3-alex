@@ -59,6 +59,8 @@ Waterfall::Waterfall(QWidget*& widget) {
         }
     }
 
+    samples=NULL;
+
 }
 
 Waterfall::~Waterfall() {
@@ -148,7 +150,7 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
         float hzPixel = sampleRate/width();  // spectrum resolution: Hz/pixel
 
         long freqOffsetPixel;
-        long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel);
+        long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel) - LO_offset;
         if(subRx) {
             freqOffsetPixel = (subRxFrequency-f)/hzPixel;
             if (button == Qt::LeftButton) {
@@ -210,13 +212,47 @@ void Waterfall::paintEvent(QPaintEvent*) {
 
 
 void Waterfall::updateWaterfall(char*header,char* buffer,int size) {
+    int i,j;
     int x,y;
     int sample;
     int average;
+    int version,subversion;
+    int offset;
 
     //qDebug() << "updateWaterfall: " << width() << ":" << height();
 
-    sampleRate = atoi(&header[32]);
+    version=header[1];
+    subversion=header[2];
+    sampleRate=((header[9]&0xFF)<<24)+((header[10]&0xFF)<<16)+((header[11]&0xFF)<<8)+(header[12]&0xFF);
+
+    if(version==2 && subversion>0) {
+        // only in version 2.1 and above
+        LO_offset=((header[13]&0xFF)<<8)+(header[14]&0xFF);
+    } else {
+        LO_offset=0;
+    }
+
+    if(samples!=NULL) {
+        free(samples);
+    }
+    samples = (float*) malloc(width() * sizeof (float));
+
+    // rotate spectrum display if LO is not 0
+    if(LO_offset==0) {
+        for(i=0;i<width();i++) {
+            samples[i] = -(buffer[i] & 0xFF);
+        }
+    } else {
+        float step=(float)sampleRate/(float)width();
+        offset=(int)((float)LO_offset/step);
+        for(i=0;i<width();i++) {
+            j=i-offset;
+            if(j<0) j+=width();
+            if(j>=width()) j%=width();
+            samples[i] = -(buffer[j] & 0xFF);
+        }
+    }
+
 
     if(image.width()!=width() ||
        image.height()!=height()) {
@@ -243,9 +279,8 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int size) {
         average=0;
         // draw the new line
         for(x=0;x<size;x++) {
-            sample=0-(buffer[x]&0xFF);
-            image.setPixel(x,0,this->calculatePixel(sample));
-            average+=sample;
+            image.setPixel(x,0,this->calculatePixel(samples[x]));
+            average+=samples[x];
         }
 
         if(waterfallAutomatic) {
