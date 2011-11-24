@@ -40,6 +40,18 @@ AM_PROG_CC_C_O
 AC_PROG_RANLIB
 
 #
+# Check for user options in order to selectively compile servers
+#
+AC_ARG_ENABLE([perseus],
+              [  --enable-perseus  enable Perseus SDR server generation],
+              [perseus=${enableval}], [perseus=no]
+)
+AC_ARG_ENABLE([usrp],
+              [  --enable-usrp  enable USRP server generation],
+              [usrp=${enableval}], [usrp=no]
+)
+
+#
 # Checks for libraries.
 # Check both libraries binary and header files
 #
@@ -253,6 +265,33 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([floor ftime getcwd gethostbyname gettimeofday inet_ntoa memset pow select socket sqrt strrchr strstr strtol])
 
+
+
+if test "x${perseus}" = xyes; then
+    AC_MSG_NOTICE([
+-----------------------------------
+  Perseus SDR enabled.
+-----------------------------------])  
+
+    AC_CONFIG_SUBDIRS([trunk/src/perseus])
+fi
+AM_CONDITIONAL([MAKE_PERSEUS], [test "x${perseus}" = xyes])
+AC_CONFIG_FILES([trunk/src/perseus/Makefile])
+
+
+if test "x${usrp}" = xyes; then
+    AC_MSG_NOTICE([
+-----------------------------------
+  USRP enabled.
+-----------------------------------])  
+
+    AC_CONFIG_SUBDIRS([trunk/src/usrp])
+fi
+AM_CONDITIONAL([MAKE_USRP], [test "x${usrp}" = xyes])
+#
+# Uncomment the following line when the usrp directory gets populated
+#
+#AC_CONFIG_FILES([trunk/src/usrp/Makefile])
 
 AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
 AC_CONFIG_FILES([Makefile

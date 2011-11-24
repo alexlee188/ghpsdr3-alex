@@ -47,7 +47,7 @@ Windows Users
 =============
 
 At this time the only application working in Windows is the QtRadio client which can connect to
-any dspserver.  A ready to run windows executable is avilable at:
+any dspserver.  A ready to run windows executable is available at:
 
 	http://www.napan.com/ve9gj
 
@@ -61,7 +61,7 @@ to somewhere on your windows drive and double click qtradio.exe to run.
 The source for building with QtCreator 2.3.0 based on QT 4.7.4 is available via the win32 branch at:
 	https://github.com/alexlee188/ghpsdr3-alex
 
-
+Note that tx and codec2 is not working in the win32 version.
 
 Building the software in Linux
 ==============================
@@ -86,7 +86,8 @@ libevent
 For the rxtx-event branch of the software, you will also need a version of libevent that is newer than what
 is available from the Ubuntu distribution.  Go to synaptic and completely remove the stock libevent (v1.4) from Ubuntu.
 
-Then download from:
+Building the software
+=====================
 
 http://libevent.org/
 
@@ -163,6 +164,37 @@ After that, you start dspserver (to connect to this server) and
 QtRadio etc. 
 
 Note that this is for Rx only.  Tx has not been implemented yet.
+
+With hpsdr hardware (Ozy/Metis)
+===============================
+Run the original "server" server.
+
+With Perseus hardware
+=====================
+In order to use Perseus receiver, you have to build the perseus-server process.
+
+First off, download, compile and install the library libperseus-sdr:
+
+cd
+svn checkout http://libperseus-sdr.googlecode.com/svn/tags/REL-0.5 libperseus-sdr
+cd libperseus-sdr
+./configure && make -j4
+sudo make install
+
+Next, install the other prerequisite library:
+
+sudo apt-get install liboost-dev
+
+last, run configure enabling perseus option and build:
+
+cd ~/ghpsdr3-alex
+autoreconf -i && ./configure --enable-perseus && make -j4
+sudo make install
+
+
+With Ettus usrp hardware
+========================
+Use the usrp-server branch.
 
 
 QtRadio with codec2 low bit rate audio encoding and decoding
