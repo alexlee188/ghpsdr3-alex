@@ -1,5 +1,8 @@
 package org.g0orx;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -61,6 +64,7 @@ Log.i("SpectrumView","width="+width+" height="+height);
 
 			// draw the filter
 			paint.setColor(Color.GRAY);
+			paint.setTextSize(10.0F);
 			canvas.drawRect(filterLeft+offset, 0, filterRight+offset, HEIGHT, paint);
 
 			// plot the spectrum levels
@@ -166,7 +170,16 @@ Log.i("SpectrumView","width="+width+" height="+height);
 				paint.setColor(Color.RED);
 				canvas.drawText(status, 0, 10, paint);
 			}
-
+			
+			// draw the job buttons
+			paint.setColor(Color.DKGRAY);
+			canvas.drawRect(0, getHeight()-50, 50, getHeight(), paint);
+            canvas.drawRect(getWidth()-50,getHeight()-50,getWidth(),getHeight(),paint);
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(40.0F);
+            canvas.drawText("<", 12, getHeight()-12, paint);
+            canvas.drawText(">", getWidth()-36, getHeight()-12, paint);
+			
 		} else {
 			paint.setColor(0xffffffff);
 			canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), paint);
@@ -272,21 +285,40 @@ Log.i("SpectrumView","width="+width+" height="+height);
 				if (connection.isConnected()) {
 					// connection.setStatus("onTouch.ACTION_DOWN: "+event.getX());
 					startX = event.getX();
+					startY = event.getY();
 					moved=false;
 					scroll=false;
+					jog=false;
+					if(startX<=50 && startY>=(getHeight()-50)) {
+						// frequency down
+						jog=true;
+						jogAmount=-100;
+						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
+						timer=new Timer();
+						timer.schedule(new JogTask(), 1000);
+					} else if(startX>=(getWidth()-50) && startY>=(getHeight()-50)) {
+						// frequency up
+						jog=true;
+						jogAmount=100;
+						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
+						timer=new Timer();
+						timer.schedule(new JogTask(), 1000);
+					}
 				}
 				break;
 			case MotionEvent.ACTION_MOVE:
 				// Log.i("onTouch","ACTION_MOVE");
 				if (connection.isConnected()) {
+					if(!jog) {
 					// connection.setStatus("onTouch.ACTION_MOVE: "+(int)event.getX());
-					int increment = (int) (startX - event.getX());
-					if(!scroll) {
-						connection.setFrequency((long) (connection.getFrequency() + (increment * (connection
+					    int increment = (int) (startX - event.getX());
+					    if(!scroll) {
+						    connection.setFrequency((long) (connection.getFrequency() + (increment * (connection
 									.getSampleRate() / WIDTH))));
-					startX = event.getX();
-					moved=true;
-			        } 
+					    startX = event.getX();
+	   				    moved=true;
+			            } 
+					}
 				}
 				break;
 			case MotionEvent.ACTION_OUTSIDE:
@@ -295,20 +327,23 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			case MotionEvent.ACTION_UP:
 				// Log.i("onTouch","ACTION_UP");
 				if (connection.isConnected()) {
-					int scrollAmount = (int) ((event.getX() - (WIDTH / 2)) * (connection
+					if(!jog) {
+					    int scrollAmount = (int) ((event.getX() - (WIDTH / 2)) * (connection
 							.getSampleRate() / WIDTH));
 
-					if (!moved & !scroll) {
-						// move this frequency to center of filter
-						if (filterHigh < 0) {
-							connection
-									.setFrequency(connection.getFrequency()
+					    if (!moved & !scroll) {
+						    // move this frequency to center of filter
+						    if (filterHigh < 0) {
+							    connection.setFrequency(connection.getFrequency()
 											+ (scrollAmount + ((filterHigh - filterLow) / 2)));
-						} else {
-							connection
-									.setFrequency(connection.getFrequency()
+						    } else {
+							    connection.setFrequency(connection.getFrequency()
 											+ (scrollAmount - ((filterHigh - filterLow) / 2)));
-						}
+						    }
+					    }
+					} else {
+						jog=false;
+						timer.cancel();
 					}
 				}
 				break;
@@ -322,6 +357,13 @@ Log.i("SpectrumView","width="+width+" height="+height);
 		}
 		
 		return true;
+	}
+	
+	class JogTask extends TimerTask {
+	    public void run() {
+	    	connection.setFrequency((long) (connection.getFrequency() + jogAmount));
+	    	timer.schedule(new JogTask(), 250);
+	    }
 	}
 	
 	private Paint paint;
@@ -353,9 +395,14 @@ Log.i("SpectrumView","width="+width+" height="+height);
 	private boolean vfoLocked = false;
 
 	private float startX;
+	private float startY;
 	private boolean moved;
 	private boolean scroll;
+	private boolean jog;
 	
 	private int average;
+	
+	private Timer timer;
+	private long jogAmount;
 
 }
