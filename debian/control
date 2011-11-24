@@ -1,22 +1,20 @@
-Source: ghpsdr3
+Source: ghpsdr3rxtx
 Section: hamradio
 Priority: extra
 Maintainer: Andrea Montefusco IW0HDV <andrew@montefusco.com>
-Build-Depends: debhelper (>= 7.0.50~), autotools-dev, libqt4-opengl-dev, qtmobility-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libconfig8-dev, libusb-1.0-0-dev
-
-#
+Build-Depends: debhelper (>= 7.0.50~),autotools-dev, libqt4-opengl-dev, glutg3-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libjack-dev, libjack0, libconfig8-dev, libusb-1.0-0-dev, libsamplerate0-dev, libevent-dev
 Standards-Version: 3.9.1
 Homepage: https://github.com/alexlee188/ghpsdr3-alex/tree/master
 
 #
 # please add glutg3-dev on lucid
-# lucid: autotools-dev, libqt4-opengl-dev, glutg3-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libjack-dev, libjack0, libconfig8-dev, libusb-1.0-0-dev
+# lucid: autotools-dev, libqt4-opengl-dev, glutg3-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libjack-dev, libjack0, libconfig8-dev, libusb-1.0-0-dev, libsamplerate0-dev, libevent-dev
 #
 # please add qtmobility-dev on natty
-# natty: autotools-dev, libqt4-opengl-dev, qtmobility-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libconfig8-dev, libusb-1.0-0-dev
+# natty: autotools-dev, libqt4-opengl-dev, qtmobility-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libconfig8-dev, libusb-1.0-0-dev, libevent-dev
 #
 # please add qtmobility-dev and remove glutg3-dev on oneiric
-# oneiric: autotools-dev, libqt4-opengl-dev, qtmobility-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libconfig8-dev, libusb-1.0-0-dev
+# oneiric: autotools-dev, libqt4-opengl-dev, qtmobility-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libconfig8-dev, libusb-1.0-0-dev, libsamplerate0-dev, libevent-dev
 #
 # ghpsdr3 (1.3~0ubuntu1ppa6~natty6) natty; urgency=high
 #
@@ -24,7 +22,7 @@ Homepage: https://github.com/alexlee188/ghpsdr3-alex/tree/master
 #Vcs-Git: git://git.debian.org/collab-maint/ghpsdr3.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/ghpsdr3.git;a=summary
 
-Package: ghpsdr3
+Package: ghpsdr3rxtx
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: This is a modification of the excellent SDR software by John Melton.

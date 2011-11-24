@@ -1,4 +1,4 @@
-ghpsdr3 (1.7~0ubuntu1ppa1~natty) natty; urgency=high
+ghpsdr3rxtx (2.0~0ubuntu8ppa8~lucid) lucid; urgency=high
 
   * VE9GJ Glenn Taylor 
     Added Quick Connect server dialog
