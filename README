@@ -163,8 +163,6 @@ cd ~/ghpsdr3-alex/trunk/bin
 After that, you start dspserver (to connect to this server) and 
 QtRadio etc. 
 
-Note that this is for Rx only.  Tx has not been implemented yet.
-
 With hpsdr hardware (Ozy/Metis)
 ===============================
 Run the original "server" server.
@@ -185,11 +183,19 @@ Next, install the other prerequisite library:
 
 sudo apt-get install liboost-dev
 
-last, run configure enabling perseus option and build:
+last, run configure, enabling perseus option, and build:
 
 cd ~/ghpsdr3-alex
 autoreconf -i && ./configure --enable-perseus && make -j4
 sudo make install
+
+Run, three different xterm windows:
+
+xterm -e './perseus_server -d3 -s96000' &
+cd ../dspserver
+xterm -e './dspserver --lo 0' &
+cd ../QtRadio
+$(export QT_RADIO_NO_LOCAL_AUDIO=1 ; ./QtRadio ) &
 
 
 With Ettus usrp hardware
