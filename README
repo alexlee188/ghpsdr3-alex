@@ -176,6 +176,7 @@ First off, download, compile and install the library libperseus-sdr:
 cd
 svn checkout http://libperseus-sdr.googlecode.com/svn/tags/REL-0.5 libperseus-sdr
 cd libperseus-sdr
+./bootstrap.sh
 ./configure && make -j4
 sudo make install
 

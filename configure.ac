@@ -17,6 +17,9 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_MAKE_SET
 
+# Python checks for pylauncher
+AM_PATH_PYTHON([2.5],, [:])
+
 #
 # Checking for build cpu
 # and, if 64 bit, add some linking option
@@ -299,7 +302,8 @@ AC_CONFIG_FILES([Makefile
                  trunk/src/DttSP/Makefile
                  trunk/src/dspserver/Makefile
                  trunk/src/widget-server/Makefile
-                 trunk/src/server/Makefile])
+                 trunk/src/server/Makefile
+                 trunk/src/pylauncher/Makefile])
 
 
 
