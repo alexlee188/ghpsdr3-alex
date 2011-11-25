@@ -65,7 +65,7 @@ private:
     void aLawDecode(char* buffer,int length);
     void pcmDecode(char * buffer,int length);
     void codec2Decode(char* buffer, int length);
-    void resample(void);
+    void resample(int no_of_samples);
     void init_decodetable();
     QAudioFormat     audio_format;
     QAudioOutput*    audio_output;

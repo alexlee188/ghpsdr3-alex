@@ -27,6 +27,7 @@
 #include "codec2.h"
 
 Audio::Audio(void * codec) {
+    int sr_error;
     audio_output=NULL;
     sampleRate=8000;
     audio_encoding = 0;
@@ -43,7 +44,21 @@ Audio::Audio(void * codec) {
     audio_format.setByteOrder(audio_byte_order);
     codec2 = codec;
 
-    src_ratio = 7950.0 / 8000.0;
+    src_ratio = 7800.0 / 8000.0;
+    sr_state = src_new (
+                         //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
+                         SRC_SINC_MEDIUM_QUALITY,
+                         //SRC_SINC_FASTEST,
+                         //SRC_ZERO_ORDER_HOLD,
+                         //SRC_LINEAR,
+                         1, &sr_error
+                       ) ;
+
+    if (sr_state == 0) {
+        qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
+    } else {
+        qDebug() <<  "ozy_init: sample rate init successfully at ratio:" << src_ratio;
+    }
 }
 
 Audio::~Audio() {
@@ -225,8 +240,6 @@ void Audio::process_audio(char* header,char* buffer,int length) {
         qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
     }
 
-    resample();
-
     if(audio_out!=NULL) {
         //qDebug() << "writing audio data length=: " <<  decoded_buffer.length();
         total_to_write = decoded_buffer.length();
@@ -243,7 +256,37 @@ void Audio::process_audio(char* header,char* buffer,int length) {
     if (buffer != NULL) free(buffer);
 }
 
-void Audio::resample(){
+void Audio::resample(int no_of_samples){
+    int i;
+    short v;
+    int rc;
+
+    decoded_buffer.clear();
+
+    sr_data.data_in = buffer_in;
+    sr_data.data_out = buffer_out;
+    sr_data.input_frames = no_of_samples;
+    sr_data.src_ratio = src_ratio;
+    sr_data.output_frames = 1600*6;
+    sr_data.end_of_input = 0;
+
+    rc = src_process(sr_state, &sr_data);
+    if (rc) qDebug() << "SRATE: error: " << src_strerror (rc) << rc;
+    else {
+        for (i = 0; i < sr_data.output_frames_gen; i++){
+            v = buffer_out[i]*32767.0;
+            switch(audio_byte_order) {
+            case QAudioFormat::LittleEndian:
+                decoded_buffer.append((char)(v&0xFF));
+                decoded_buffer.append((char)((v>>8)&0xFF));
+                break;
+            case QAudioFormat::BigEndian:
+                decoded_buffer.append((char)((v>>8)&0xFF));
+                decoded_buffer.append((char)(v&0xFF));
+                break;
+            }
+        }
+    }
 
 }
 
@@ -251,75 +294,45 @@ void Audio::aLawDecode(char* buffer,int length) {
     int i;
     short v;
 
-    //qDebug() << "aLawDecode " << decoded_buffer.length();
-    decoded_buffer.clear();
-
     for (i=0; i < length; i++) {
         v=decodetable[buffer[i]&0xFF];
-
-        switch(audio_byte_order) {
-        case QAudioFormat::LittleEndian:
-            decoded_buffer.append((char)(v&0xFF));
-            decoded_buffer.append((char)((v>>8)&0xFF));
-            break;
-        case QAudioFormat::BigEndian:
-            decoded_buffer.append((char)((v>>8)&0xFF));
-            decoded_buffer.append((char)(v&0xFF));
-            break;
-        }
+        buffer_in[i] = (float)v / 32767.0;
     }
+
+    resample(length);
 
 }
 
 void Audio::pcmDecode(char* buffer,int length) {
     int i;
+    short v;
 
-    decoded_buffer.clear();
-
-    for (i=0; i < length; i+=2) {           // try reducing the audio output
-
-        switch(audio_byte_order) {
-        case QAudioFormat::LittleEndian:
-            decoded_buffer.append(buffer[i]);
-            decoded_buffer.append(buffer[i+1]);
-            break;
-        case QAudioFormat::BigEndian:
-            decoded_buffer.append(buffer[i+1]);
-            decoded_buffer.append(buffer[i]);
-            break;
+    for (i=0; i < length; i+=2) {
+        v = (buffer[i] & 0xff) | ((buffer[i+1] & 0xff) << 8);
+        buffer_in[i/2] = v / 32767.0;
         }
-    }
+    resample(length/2);
 
 }
 
 void Audio::codec2Decode(char* buffer,int length) {
-    int i,j;
+    int i,j,k;
     short v[CODEC2_SAMPLES_PER_FRAME];
     unsigned char bits[BITS_SIZE];
 
-    //qDebug() << "codec2wDecode " << decoded_buffer.length();
-
-    decoded_buffer.clear();
-
     j = 0;
+    k = 0;
     while (j < length) {
         memcpy(bits,&buffer[j],BITS_SIZE);
         codec2_decode(codec2, v, bits);
 
-        for (i=0; i < CODEC2_SAMPLES_PER_FRAME; i++)
-        switch(audio_byte_order) {
-        case QAudioFormat::LittleEndian:
-            decoded_buffer.append((char)(v[i]&0xFF));
-            decoded_buffer.append((char)((v[i]>>8)&0xFF));
-            break;
-        case QAudioFormat::BigEndian:
-            decoded_buffer.append((char)((v[i]>>8)&0xFF));
-            decoded_buffer.append((char)(v[i]&0xFF));
-            break;
+        for (i=0; i < CODEC2_SAMPLES_PER_FRAME; i++){
+            buffer_in[i+k*CODEC2_SAMPLES_PER_FRAME]= v[i]/ 32767.0;
         }
         j += BITS_SIZE;
+        k++;
     }
-
+    resample(k*CODEC2_SAMPLES_PER_FRAME);
 }
 
 void Audio::init_decodetable() {
