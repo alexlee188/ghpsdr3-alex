@@ -96,14 +96,16 @@ default_cfg = {
            'environment': "QT_RADIO_NO_LOCAL_AUDIO=1",
            'status':  { "connect failed": 'abnormally ended',     
                         "rigctl: Listening": 'starting....',
-                        "Spectrum::setBandLimits": 'running'
+                        "Spectrum::setBandLimits": 'running',
+                        "Remote disconnected": 'disconnected'
                       }
         },
         'QtRadio': {
            'startCommand': "QtRadio",
            'status':  { "connect failed": 'abnormally ended',     
                         "rigctl: Listening": 'starting....',
-                        "Spectrum::setBandLimits": 'running'
+                        "Spectrum::setBandLimits": 'running',
+                        "Remote disconnected": 'disconnected'
                       }
         },
    },
@@ -479,15 +481,20 @@ class TaskStarter(QWidget):
 
             li = command.split(" ")
             #self.process.closeStdin()
-            print li[0]
-            par = " ".join(map(str,li[1:] ))
-            print par
-            if self.hw_sel.has_key('environment'): 
-                 env = QProcess.systemEnvironment();
-                 env.append(QString(self.hw_sel['environment']))
-                 self.process.setEnvironment(env)
+            #print li[0]
+            #par = " ".join(map(str,li[1:] ))
+            #print par
 
+            # setup the environment if so specified
+            self.process.setEnvironment([])
+            env = QProcess.systemEnvironment();
+            if self.hw_sel.has_key('environment'): 
+                 env.append(QString(self.hw_sel['environment']))
+   
+            # start child
+            self.process.setEnvironment(env)
             self.process.start(command)
+
             self.setStatusRun()
 
 
