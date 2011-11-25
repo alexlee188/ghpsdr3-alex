@@ -139,6 +139,7 @@ public slots:
     void setKeypadFrequency(long long);
 
     void getBandBtn(int btn);
+    void quickMemStore();
     void action160();
     void action80();
     void action60();

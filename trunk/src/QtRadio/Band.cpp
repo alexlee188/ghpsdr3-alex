@@ -754,3 +754,8 @@ void Band::setWaterfallHigh(int h) {
 void Band::setWaterfallLow(int l) {
     bandstack[currentBand][currentStack].setWaterfallLow(l);
 }
+
+void Band::quickMemStore()
+{
+    qDebug()<<Q_FUNC_INFO<<"Got to QuickMemStore";
+}

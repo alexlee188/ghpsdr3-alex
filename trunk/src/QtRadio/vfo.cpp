@@ -98,20 +98,6 @@ void vfo::btnGrpClicked(int btn)
     emit bandBtnClicked(btn);
 }
 
-// We arrive here from a mousePressEvent detecting a right button click on the bandButtons area.
-void vfo::storeVFO()
-{
-    int retrievedFreq;
-
-    if (selectedVFO != 'B') {
-        retrievedFreq = readA(); //Using vfoA
-    } else {
-        retrievedFreq = readB();
-    }
-    timer.start(500,this);
-    ui->btnGrpBand->checkedButton()->setStyleSheet("background-color: yellow");
-}
-
 void vfo::timerEvent(QTimerEvent *event)
  {
     if (event->timerId() == timer.timerId()) {
@@ -136,10 +122,10 @@ void vfo::mousePressEvent(QMouseEvent *event)
         //Check to see if we have right clicked on the band button group
         if ((event->x() > 414) && (event->x() < 573) &&
             (event->y() > 6) && (event->y() < 111)) {
-            emit rightBandClick();  //Not implemented properly yet
-//A tempory call to storeVfo() to make the selected button flash yellow. Eventually this will
-//be coded to store in the correct band location and the correct vfo's band button flash.
-            storeVFO();
+//            storeVFO(); //make the selected button flash yellow & call store routine
+            timer.start(500,this);
+            ui->btnGrpBand->checkedButton()->setStyleSheet("background-color: yellow");
+            emit rightBandClick();  //connected to Band:quickMemStore via UI:quickMemStore
 
         }   // Check to see if we have right clicked the RIT slider
         else if ((event->x() > 189) && (event->x() < 403) &&

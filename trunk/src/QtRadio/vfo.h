@@ -75,7 +75,6 @@ private:
     void writeA(long long);
     void writeB(long long);
     void vfoEnabled(bool setA, bool setB);
-    void storeVFO();
     void setVfoBtnColour();
     void timerEvent(QTimerEvent *event);
     long long readA();

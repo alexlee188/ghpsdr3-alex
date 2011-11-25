@@ -253,6 +253,7 @@ UI::UI() {
     connect(this,SIGNAL(process_audio(char*,char*,int)),audio,SLOT(process_audio(char*,char*,int)));
     connect(widget.ctlFrame,SIGNAL(pttChange(int,bool)),this,SLOT(pttChange(int,bool)));
     connect(widget.ctlFrame,SIGNAL(pwrSlider_valueChanged(double)),this,SLOT(pwrSlider_valueChanged(double)));
+    connect(widget.vfoFrame,SIGNAL(rightBandClick()),this,SLOT(quickMemStore()));
 
     bandscope=NULL;
 
@@ -763,6 +764,12 @@ void UI::setKeypadFrequency(long long f) {
 void UI::getBandBtn(int btn) {
     band.selectBand(btn);
 }
+
+void UI::quickMemStore()
+{
+    band.quickMemStore();
+}
+
 
 void UI::action160() {
     band.selectBand(BAND_160);
