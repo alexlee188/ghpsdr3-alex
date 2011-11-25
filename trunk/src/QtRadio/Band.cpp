@@ -516,71 +516,6 @@ void Band::initBand(int b) {
     emit bandChanged(currentBand, currentBand);
 }
 
-void Band::selectBand(int b) {
-    int previousBand=currentBand;
-    currentBand=b;
-
-    qDebug() << "Band::selectBand: previousBand:" << previousBand << " currentBand:" << currentBand << " currentStack:" << currentStack;
-    if(previousBand==currentBand) {
-        // step through band stack
-        currentStack++;
-        if(currentStack == BANDSTACK_ENTRIES) {
-            currentStack = 0;
-        } else if (bandstack[currentBand][currentStack].getFrequency() == 0LL) {
-            currentStack = 0;
-        }
-        stack[currentBand]=currentStack;
-    } else {
-        // new band
-        qDebug() << "Band::selectBand: new band: stack: " << stack[previousBand];
-        currentStack=stack[currentBand];
-    }
-
-    qDebug() << "selectBand " << currentBand << ":" << currentStack << " f=" << bandstack[currentBand][currentStack].getFrequency();
-    
-    emit bandChanged(previousBand,currentBand);
-
-}
-
-void Band::bandSelected(int b,long long currentFrequency) {
-    long long f=0;
-    int previousBand=currentBand;
-    currentBand=b;
-
-    // save the current frequency in the current bandstack entry
-    bandstack[currentBand][currentStack].setFrequency(currentFrequency);
-
-    if(previousBand==currentBand) {
-        // step through band stack
-        currentStack++;
-        if(currentStack==BANDSTACK_ENTRIES) {
-            currentStack=0;
-        } else if(bandstack[currentBand][currentStack].getFrequency()==0LL) {
-            currentStack=0;
-        }
-
-
-        qDebug() << "same band currentStack " << currentStack;
-
-    } else {
-        // save the current stack
-        //stack[currentBand]=currentStack;
-
-        // change the band
-        //currentBand=b;
-        // get the last stack entry used
-        currentStack=stack[currentBand];
-        bandstack[currentBand][currentStack].setFrequency(currentFrequency);
-        bandstack[currentBand][currentStack].setMode(getMode());
-        bandstack[currentBand][currentStack].setFilter(getFilter());
-        qDebug() << "currentBand currentStack " << currentBand << ", " << currentStack;
-        emit bandChanged(previousBand,currentBand);
-    }
-
-//    f = bandstack[currentBand][currentStack].getFrequency();
-//    return f;
-}
-
 int Band::getBand() {
     return currentBand;
 }
@@ -753,6 +688,75 @@ void Band::setWaterfallHigh(int h) {
 
 void Band::setWaterfallLow(int l) {
     bandstack[currentBand][currentStack].setWaterfallLow(l);
+}
+
+/*
+void Band::bandSelected(int b,long long currentFrequency) {
+    long long f=0;
+    int previousBand=currentBand;
+    currentBand=b;
+
+    // save the current frequency in the current bandstack entry
+    bandstack[currentBand][currentStack].setFrequency(currentFrequency);
+
+    if(previousBand==currentBand) {
+        // step through band stack
+        currentStack++;
+        if(currentStack==BANDSTACK_ENTRIES) {
+            currentStack=0;
+        } else if(bandstack[currentBand][currentStack].getFrequency()==0LL) {
+            currentStack=0;
+        }
+
+
+        qDebug() << "same band currentStack " << currentStack;
+
+    } else {
+        // save the current stack
+        //stack[currentBand]=currentStack;
+
+        // change the band
+        //currentBand=b;
+        // get the last stack entry used
+        currentStack=stack[currentBand];
+        bandstack[currentBand][currentStack].setFrequency(currentFrequency);
+        bandstack[currentBand][currentStack].setMode(getMode());
+        bandstack[currentBand][currentStack].setFilter(getFilter());
+        qDebug() << "currentBand currentStack " << currentBand << ", " << currentStack;
+        emit bandChanged(previousBand,currentBand);
+    }
+
+//    f = bandstack[currentBand][currentStack].getFrequency();
+//    return f;
+}
+*/
+
+//** Checks a band change signal for either a switch to a new band or traverse the quick memory. **/
+//Called by VFO band button click or main menu band selection which will pass band or band button ID.
+//Also called by a frequency change which takes us out of currend band. e.g Keypad or VFO frequency change.
+void Band::selectBand(int b) {
+    int previousBand=currentBand;
+    currentBand=b;
+
+    qDebug() << "Band::selectBand: previousBand:" << previousBand << " currentBand:" << currentBand << " currentStack:" << currentStack;
+    if(previousBand==currentBand) { //We are going to traverse the quick memory for the current band
+        // step through band stack
+        currentStack++;
+        if(currentStack == BANDSTACK_ENTRIES) {
+            currentStack = 0;
+        } else if (bandstack[currentBand][currentStack].getFrequency() == 0LL) {
+            currentStack = 0;
+        }
+        stack[currentBand]=currentStack;
+    } else {
+        // Stepping to a new band
+        qDebug() << "Band::selectBand: new band: stack: " << stack[previousBand];
+        currentStack=stack[currentBand];
+    }
+
+    qDebug() << "selectBand " << currentBand << ":" << currentStack << " f=" << bandstack[currentBand][currentStack].getFrequency();
+
+    emit bandChanged(previousBand,currentBand);
 }
 
 void Band::quickMemStore()

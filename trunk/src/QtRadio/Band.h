@@ -61,7 +61,7 @@ public:
     void initBand(int b);
     void selectBand(int b);
     void quickMemStore();
-    void bandSelected(int b,long long currentFrequency);
+//    void bandSelected(int b,long long currentFrequency);
     int getBandStackEntry();
     void setFrequency(long long f);
     long long getFrequency();
