@@ -35,23 +35,27 @@
 #include "BandLimit.h"
 
 
-#define BAND_160 0
-#define BAND_80  1
-#define BAND_60  2
-#define BAND_40  3
-#define BAND_30  4
-#define BAND_20  5
-#define BAND_17  6
-#define BAND_15  7
-#define BAND_12  8
-#define BAND_10  9
-#define BAND_6   10
-#define BAND_GEN 11
-#define BAND_WWV 12
-#define BAND_LAST 13
+#define BAND_160    0
+#define BAND_80     1
+#define BAND_60     2
+#define BAND_40     3
+#define BAND_30     4
+#define BAND_20     5
+#define BAND_17     6
+#define BAND_15     7
+#define BAND_12     8
+#define BAND_10     9
+#define BAND_6      10
+#define BAND_GEN    11
+#define BAND_WWV    12
+#define BAND_LAST   13
 #define BAND_XVTR BAND_LAST
 
 #define BANDSTACK_ENTRIES 5
+
+#define MEM_COUNT   0
+#define READ_PTR    1
+#define WRITE_PTR   2
 
 class Band : public QObject {
     Q_OBJECT
@@ -70,7 +74,7 @@ public:
     QString getStringBand(int band);
     int getMode();
     int getFilter();
-    int getStep();
+    int getInfo();
     int getSpectrumHigh();
     int getSpectrumLow();
     int getWaterfallHigh();
@@ -83,6 +87,8 @@ public:
     void setWaterfallLow(int l);
     void loadSettings(QSettings* settings);
     void saveSettings(QSettings* settings);
+    void readSettings(QSettings* settings);
+    void writeSettings(QSettings* settings);
     BandLimit getBandLimits(long long min, long long max);
 
 signals:

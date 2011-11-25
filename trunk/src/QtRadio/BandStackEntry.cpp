@@ -43,8 +43,8 @@ void BandStackEntry::setFilter(int f) {
     filter=f;
 }
 
-void BandStackEntry::setStep(int s) {
-    step=s;
+void BandStackEntry::setInfo(int i) {
+    info=i;
 }
 
 void BandStackEntry::setSpectrumHigh(int high) {
@@ -76,8 +76,8 @@ int BandStackEntry::getFilter() {
     return filter;
 }
 
-int BandStackEntry::getStep() {
-    return step;
+int BandStackEntry::getInfo() {
+    return info;
 }
 
 int BandStackEntry::getSpectrumHigh() {

@@ -37,7 +37,7 @@ public:
     void setFrequency(long long f);
     void setMode(int m);
     void setFilter(int f);
-    void setStep(int s);
+    void setInfo(int info);
     void setSpectrumHigh(int high);
     void setSpectrumLow(int low);
     void setWaterfallHigh(int high);
@@ -46,7 +46,7 @@ public:
     long long getFrequency();
     int getMode();
     int getFilter();
-    int getStep();
+    int getInfo();
     int getSpectrumHigh();
     int getSpectrumLow();
     int getWaterfallHigh();
@@ -56,7 +56,7 @@ private:
     long long frequency;
     int mode;
     int filter;
-    int step;
+    int info;
     int spectrumHigh;
     int spectrumLow;
     int spectrumStep;
