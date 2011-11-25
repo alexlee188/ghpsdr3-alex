@@ -61,4 +61,12 @@ rm -f		trunk/src/perseus/depcomp
 rm -f		trunk/src/perseus/install-sh
 rm -f		trunk/src/perseus/missing
 rm -f		trunk/src/perseus/stamp-h1
+rm -f		trunk/src/pylauncher/Makefile.in
+rm -f		trunk/src/server/Makefile.in
+rm -f		trunk/src/widget-server/Makefile.in
+rm -f		config.guess
+rm -f		config.sub
+rm -f		ghpsdr*tar.gz
+
+
 
