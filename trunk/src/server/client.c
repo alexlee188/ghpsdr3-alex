@@ -225,17 +225,18 @@ char* parse_command(CLIENT* client,char* command) {
                 return INVALID_COMMAND;
             }
         } else if(strcmp(token,"mox")==0) {
-            if(client->transmitter_state==TRANSMITTER_ATTACHED) {
+            //if(client->transmitter_state==TRANSMITTER_ATTACHED) {
                 token=strtok(NULL," \r\n");
                 if(token!=NULL) {
                     client->mox=atoi(token);
+                    return OK;
                 } else {
                     // invalid command string
                     return INVALID_COMMAND;
                 }
-            } else {
-                return TRANSMITTER_NOT_ATTACHED;
-            }
+            //} else {
+            //    return TRANSMITTER_NOT_ATTACHED;
+            //}
         } else if(strcmp(token,"ocoutput")==0) {
             token=strtok(NULL," \r\n");
             if(token!=NULL) {

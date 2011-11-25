@@ -241,9 +241,13 @@ void Connection::processBuffer() {
     char* nextHeader;
     char* nextBuffer;
 
+// We only want to mute the audio (actually not for full duplex)
+// the spectrum display should show the microphone waveform
+/*
     if(muted) { // If Rx muted, clear queue and don't process buffer - gvj
         queue.clear();
     }
+*/
     while (!queue.isEmpty()){
         buffer=queue.dequeue();
         nextHeader=buffer->getHeader();
@@ -254,7 +258,8 @@ void Connection::processBuffer() {
             emit spectrumBuffer(nextHeader,nextBuffer);
         }
         else if(nextHeader[0]==AUDIO_BUFFER) {
-            emit audioBuffer(nextHeader,nextBuffer);
+            // need to add a duplex state
+            if(!muted) emit audioBuffer(nextHeader,nextBuffer);
         } else if(nextHeader[0]==BANDSCOPE_BUFFER) {
             //qDebug() << "socketData: bandscope";
             emit bandscopeBuffer(nextHeader,nextBuffer);

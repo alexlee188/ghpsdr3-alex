@@ -478,6 +478,7 @@ int ozySetMox(int state) {
     int result;
 
     result=0;
+    mox=state;
     sprintf(command,"mox %d",state);
     send_command(command);
     token=strtok_r(response," ",&saveptr);

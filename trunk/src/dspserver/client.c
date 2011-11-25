@@ -542,9 +542,15 @@ void readcb(struct bufferevent *bev, void *ctx){
 				        token=strtok_r(NULL," ",&saveptr);
 				        if(token!=NULL) {
 		                    	    samples=atoi(token);
-					    Process_Panadapter(0,spectrumBuffer);
-					    meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-					    subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+                                            if(mox) {
+					        Process_Panadapter(1,spectrumBuffer);
+					        meter=CalculateTXMeter(1,5); // MIC
+					        subrx_meter=-121;
+                                            } else {
+					        Process_Panadapter(0,spectrumBuffer);
+					        meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+					        subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+                                            }
 					    client_samples=malloc(BUFFER_HEADER_SIZE+samples);
 					    client_set_samples(spectrumBuffer,samples);
 					    bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
@@ -580,9 +586,15 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                token=strtok_r(NULL," ",&saveptr);
 		                if(token!=NULL) {
                             	    samples=atoi(token);
-				    Process_Panadapter(0,spectrumBuffer);
-				    meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-				    subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+                                    if(mox) {
+				        Process_Panadapter(1,spectrumBuffer);
+					meter=CalculateTXMeter(1,5); // MIC
+				        subrx_meter=-121;
+                                    } else {
+				        Process_Panadapter(0,spectrumBuffer);
+				        meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+				        subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+                                    }
 				    client_samples=malloc(BUFFER_HEADER_SIZE+samples);
 				    client_set_samples(spectrumBuffer,samples);
 				    bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
@@ -1051,6 +1063,7 @@ void client_set_samples(float* samples,int size) {
     float slope;
     float max;
     int lindex,rindex;
+    float extras;
 
 // g0orx binary header
 
@@ -1094,6 +1107,11 @@ void client_set_samples(float* samples,int size) {
     client_samples[14]=(int)LO_offset&0xFF;
 
     slope=(float)SAMPLE_BUFFER_SIZE/(float)size;
+    if(mox) {
+        extras=-82.62103F;
+    } else {
+        extras=displayCalibrationOffset+preampOffset;
+    }
     for(i=0;i<size;i++) {
         max=-10000.0F;
         lindex=(int)floor((float)i*slope);
@@ -1102,7 +1120,7 @@ void client_set_samples(float* samples,int size) {
         for(j=lindex;j<rindex;j++) {
             if(samples[j]>max) max=samples[j];
         }
-        client_samples[i+BUFFER_HEADER_SIZE]=(unsigned char)-(max+displayCalibrationOffset+preampOffset);
+        client_samples[i+BUFFER_HEADER_SIZE]=(unsigned char)-(max+extras);
     }
 
 }
