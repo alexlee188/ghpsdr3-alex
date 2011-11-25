@@ -32,6 +32,7 @@
 #include <QAudioDeviceInfo>
 #include <QtGui/QComboBox>
 #include <QMutex>
+#include <samplerate.h>
 
 #define AUDIO_BUFFER_SIZE 1600
 #define AUDIO_OUTPUT_BUFFER_SIZE 4096
@@ -64,14 +65,19 @@ private:
     void aLawDecode(char* buffer,int length);
     void pcmDecode(char * buffer,int length);
     void codec2Decode(char* buffer, int length);
+    void resample(void);
     void init_decodetable();
     QAudioFormat     audio_format;
     QAudioOutput*    audio_output;
     QAudioDeviceInfo audio_device;
     QIODevice*       audio_out;
     QByteArray       decoded_buffer;
+    float buffer_in[1600*6*2];
+    float buffer_out[1600*6*2];
     short decodetable[256];
-
+    SRC_STATE *sr_state;
+    SRC_DATA  sr_data;
+    double src_ratio;
     int sampleRate;
     int audio_channels;
     QAudioFormat::Endian audio_byte_order;

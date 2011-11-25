@@ -161,7 +161,6 @@ static int port_audio=0;
 // samplerate library data structures
 //
 SRC_STATE *sr_state;
-SRC_DATA  *sr_data;
 double src_ratio;
 
 

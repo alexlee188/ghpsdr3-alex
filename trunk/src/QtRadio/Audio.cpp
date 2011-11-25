@@ -42,6 +42,8 @@ Audio::Audio(void * codec) {
     audio_format.setCodec("audio/pcm");
     audio_format.setByteOrder(audio_byte_order);
     codec2 = codec;
+
+    src_ratio = 7950.0 / 8000.0;
 }
 
 Audio::~Audio() {
@@ -223,6 +225,8 @@ void Audio::process_audio(char* header,char* buffer,int length) {
         qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
     }
 
+    resample();
+
     if(audio_out!=NULL) {
         //qDebug() << "writing audio data length=: " <<  decoded_buffer.length();
         total_to_write = decoded_buffer.length();
@@ -237,6 +241,10 @@ void Audio::process_audio(char* header,char* buffer,int length) {
 
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);
+}
+
+void Audio::resample(){
+
 }
 
 void Audio::aLawDecode(char* buffer,int length) {
