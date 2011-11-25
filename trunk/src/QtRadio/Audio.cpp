@@ -51,17 +51,19 @@ Audio::Audio(void * codec) {
                          //SRC_SINC_FASTEST,
                          //SRC_ZERO_ORDER_HOLD,
                          //SRC_LINEAR,
-                         1, &sr_error
+                         audio_channels, &sr_error
                        ) ;
 
     if (sr_state == 0) {
         qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
     } else {
-        qDebug() <<  "ozy_init: sample rate init successfully at ratio:" << src_ratio;
+        qDebug() <<  "Audio::audio sample rate init successfully at ratio:" << src_ratio;
     }
 }
 
 Audio::~Audio() {
+    src_delete(sr_state);
+    codec2_destroy(codec2);
 }
 
 
@@ -76,7 +78,7 @@ void Audio::initialize_audio(int buffer_size) {
 }
 
 void Audio::get_audio_devices(QComboBox* comboBox) {
-
+    int sr_error;
     QList<QAudioDeviceInfo> devices=QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
     QAudioDeviceInfo device_info;
 
@@ -159,9 +161,25 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
         audio_out = NULL;
         delete audio_output;
     }
+    sr_state = src_new (
+                         //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
+                         SRC_SINC_MEDIUM_QUALITY,
+                         //SRC_SINC_FASTEST,
+                         //SRC_ZERO_ORDER_HOLD,
+                         //SRC_LINEAR,
+                         audio_channels, &sr_error
+                       ) ;
+
+    if (sr_state == 0) {
+        qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
+    } else {
+        qDebug() <<  "Audio::get_audio_devices: sample rate init successfully at ratio:" << src_ratio;
+    }
 }
 
 void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder) {
+    int sr_error;
+
     qDebug() << "selected audio " << info.deviceName() <<  " sampleRate:" << rate << " Channels: " << channels << " Endian:" << (byteOrder==QAudioFormat::BigEndian?"BigEndian":"LittleEndian");
 
     sampleRate=rate;
@@ -173,6 +191,8 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
         audio_output->disconnect(this);
         delete audio_output;
     }
+
+    if(sr_state != NULL) src_delete(sr_state);
 
     audio_device=info;
     audio_format.setFrequency(sampleRate+(sampleRate==8000?SAMPLE_RATE_FUDGE:0));
@@ -201,6 +221,21 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
         qDebug() << "    sample type: " << audio_format.sampleType();
         qDebug() << "    channels: " << audio_format.channels();
         audio_out = NULL;
+    }
+
+    sr_state = src_new (
+                         //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
+                         SRC_SINC_MEDIUM_QUALITY,
+                         //SRC_SINC_FASTEST,
+                         //SRC_ZERO_ORDER_HOLD,
+                         //SRC_LINEAR,
+                         audio_channels, &sr_error
+                       ) ;
+
+    if (sr_state == 0) {
+        qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
+    } else {
+        qDebug() <<  "Audio:select_audio: sample rate init successfully at ratio:" << src_ratio;
     }
 }
 
