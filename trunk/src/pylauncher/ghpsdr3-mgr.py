@@ -92,7 +92,7 @@ default_cfg = {
    #
    'GUI': {
         'QtRadioPerseus': {
-           'startCommand': "QtRadio",
+           'startCommand': "QtRadio 127.0.0.1",
            'environment': "QT_RADIO_NO_LOCAL_AUDIO=1",
            'status':  { "connect failed": 'abnormally ended',     
                         "rigctl: Listening": 'starting....',
@@ -101,7 +101,7 @@ default_cfg = {
                       }
         },
         'QtRadio': {
-           'startCommand': "QtRadio",
+           'startCommand': "QtRadio 127.0.0.1",
            'status':  { "connect failed": 'abnormally ended',     
                         "rigctl: Listening": 'starting....',
                         "Spectrum::setBandLimits": 'running',

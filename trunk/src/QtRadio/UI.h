@@ -77,7 +77,7 @@
 class UI : public QMainWindow {
     Q_OBJECT
 public:
-    UI();
+    UI(const QString server = QString(""));
     virtual ~UI();
     void loadSettings();
     void saveSettings();
