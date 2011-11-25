@@ -43,6 +43,7 @@ Band::Band() {
     bandstack[BAND_160][0].setSpectrumLow(-160);
     bandstack[BAND_160][0].setWaterfallHigh(-60);
     bandstack[BAND_160][0].setWaterfallLow(-125);
+    bandstack[BAND_160][0].setStep(0);
     bandstack[BAND_160][1].setFrequency(1835000LL);
     bandstack[BAND_160][1].setMode(MODE_LSB);
     bandstack[BAND_160][1].setFilter(4);
@@ -50,6 +51,7 @@ Band::Band() {
     bandstack[BAND_160][1].setSpectrumLow(-160);
     bandstack[BAND_160][1].setWaterfallHigh(-60);
     bandstack[BAND_160][1].setWaterfallLow(-125);
+    bandstack[BAND_160][1].setStep(0);
     bandstack[BAND_160][2].setFrequency(1845000LL);
     bandstack[BAND_160][2].setMode(MODE_LSB);
     bandstack[BAND_160][2].setFilter(3);
@@ -57,6 +59,7 @@ Band::Band() {
     bandstack[BAND_160][2].setSpectrumLow(-160);
     bandstack[BAND_160][2].setWaterfallHigh(-60);
     bandstack[BAND_160][2].setWaterfallLow(-125);
+    bandstack[BAND_160][2].setStep(1);
     bandstack[BAND_160][3].setFrequency(0LL);
 
     bandstack[BAND_80][0].setFrequency(3501000LL);
