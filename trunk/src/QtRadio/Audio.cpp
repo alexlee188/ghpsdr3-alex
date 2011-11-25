@@ -126,6 +126,7 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
 
     qDebug() << "QAudioOutput: error=" << audio_output->error() << " state=" << audio_output->state();
 
+    audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
     audio_out = audio_output->start();
 
     if(audio_output->error()!=0) {
@@ -167,6 +168,8 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
 
     audio_output = new QAudioOutput(audio_device, audio_format, this);
     connect(audio_output,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
+
+    audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
 
     audio_out = audio_output->start();
 
@@ -217,7 +220,7 @@ void Audio::process_audio(char* header,char* buffer,int length) {
     else if (audio_encoding == 1) pcmDecode(buffer,length);
     else if (audio_encoding == 2) codec2Decode(buffer,length);
     else {
-        qDebug() << "Error:  audio_encoding = " << audio_encoding;
+        qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
     }
 
     if(audio_out!=NULL) {
@@ -225,6 +228,7 @@ void Audio::process_audio(char* header,char* buffer,int length) {
         total_to_write = decoded_buffer.length();
         while( written< total_to_write) {
             if (audio_output->bytesFree() < 4) usleep(1000);
+            // writing in periodsize is recommended
             length_to_write = (audio_output->periodSize() > (decoded_buffer.length()-written)) ?
                         (decoded_buffer.length()-written) : audio_output->periodSize();
             written+=audio_out->write(&decoded_buffer.data()[written],length_to_write);
