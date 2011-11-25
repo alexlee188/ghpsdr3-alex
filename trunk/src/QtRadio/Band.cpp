@@ -80,7 +80,7 @@ Band::Band() {
     bandstack[BAND_15][2].setWaterfallHigh(-60);
     bandstack[BAND_15][2].setWaterfallLow(-125);
     bandstack[BAND_15][3].setFrequency(0LL);
-*/
+
     bandstack[BAND_12][0].setFrequency(24895000LL);
     bandstack[BAND_12][0].setMode(MODE_CWU);
     bandstack[BAND_12][0].setFilter(4);
@@ -103,7 +103,7 @@ Band::Band() {
     bandstack[BAND_12][2].setWaterfallHigh(-60);
     bandstack[BAND_12][2].setWaterfallLow(-125);
     bandstack[BAND_12][3].setFrequency(0LL);
-
+*/
     bandstack[BAND_10][0].setFrequency(28010000LL);
     bandstack[BAND_10][0].setMode(MODE_CWU);
     bandstack[BAND_10][0].setFilter(4);
@@ -494,6 +494,7 @@ void Band::loadSettings(QSettings* settings) {
     // Current working frequency
     bandstack[BAND_17][3].setFrequency(settings->value("frequency.6.3",0).toLongLong());  //Terminator
 
+    // Quick memory number 1
     bandstack[BAND_15][0].setFrequency(settings->value("frequency.7.0",21001000).toLongLong());
     bandstack[BAND_15][0].setMode(settings->value("mode.7.0",MODE_CWU).toInt());
     bandstack[BAND_15][0].setFilter(settings->value("filter.7.0",4).toInt());
@@ -523,11 +524,43 @@ void Band::loadSettings(QSettings* settings) {
     // Current working frequency
     bandstack[BAND_15][3].setFrequency(settings->value("frequency.7.3",0).toLongLong());  //Terminator
 
+    // Quick memory number 1
+    bandstack[BAND_12][0].setFrequency(settings->value("frequency.8.0",24895000).toLongLong());
+    bandstack[BAND_12][0].setMode(settings->value("mode.8.0",MODE_CWU).toInt());
+    bandstack[BAND_12][0].setFilter(settings->value("filter.8.0",4).toInt());
+    bandstack[BAND_12][0].setSpectrumHigh(settings->value("spectrumHigh.8.0",-40).toInt());
+    bandstack[BAND_12][0].setSpectrumLow(settings->value("spectrumLow.8.0",-160).toInt());
+    bandstack[BAND_12][0].setWaterfallHigh(settings->value("waterfallHigh.8.0",-60).toInt());
+    bandstack[BAND_12][0].setWaterfallLow(settings->value("waterfallLow.8.0",-125).toInt());
+    bandstack[BAND_12][0].setInfo(settings->value("info.8.0",2).toInt());  //Count of Quick Memories 0 .. n
+    // Quick memory number 2
+    bandstack[BAND_12][1].setFrequency(settings->value("frequency.8.1",24900000).toLongLong());
+    bandstack[BAND_12][1].setMode(settings->value("mode.8.1",MODE_CWU).toInt());
+    bandstack[BAND_12][1].setFilter(settings->value("filter.8.1",3).toInt());
+    bandstack[BAND_12][1].setSpectrumHigh(settings->value("spectrumHigh.8.1",-40).toInt());
+    bandstack[BAND_12][1].setSpectrumLow(settings->value("spectrumLow.8.1",-160).toInt());
+    bandstack[BAND_12][1].setWaterfallHigh(settings->value("waterfallHigh.8.1",-60).toInt());
+    bandstack[BAND_12][1].setWaterfallLow(settings->value("waterfallLow.8.1",-125).toInt());
+    bandstack[BAND_12][1].setInfo(settings->value("info.8.1",0).toInt());  //Pointer to stack for reading
+    // Quick memory number 3
+    bandstack[BAND_12][2].setFrequency(settings->value("frequency.8.2",24910000).toLongLong());
+    bandstack[BAND_12][2].setMode(settings->value("mode.8.2",MODE_CWU).toInt());
+    bandstack[BAND_12][2].setFilter(settings->value("filter.8.2",3).toInt());
+    bandstack[BAND_12][2].setSpectrumHigh(settings->value("spectrumHigh.8.2",-40).toInt());
+    bandstack[BAND_12][2].setSpectrumLow(settings->value("spectrumLow.8.2",-160).toInt());
+    bandstack[BAND_12][2].setWaterfallHigh(settings->value("waterfallHigh.8.2",-60).toInt());
+    bandstack[BAND_12][2].setWaterfallLow(settings->value("waterfallLow.8.2",-125).toInt());
+    bandstack[BAND_12][2].setInfo(settings->value("info.8.2",0).toInt());  //Pointer to stack for storing
+    // Current working frequency
+    bandstack[BAND_12][3].setFrequency(settings->value("frequency.8.3",0).toLongLong());  //Terminator
+
+
+
 
     if(settings->contains("currentBand")) {
         currentBand=settings->value("currentBand").toInt();
         currentStack=settings->value("currentStack").toInt();
-        for(i=8;i<BAND_LAST;i++) {
+        for(i=9;i<BAND_LAST;i++) {
             s.sprintf("stack.%d",i);
             stack[i]=settings->value(s).toInt();
             qDebug() << "Band::loadSettings: " << i << " stack=" << stack[i];
