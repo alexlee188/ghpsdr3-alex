@@ -29,198 +29,9 @@
 Band::Band() {
     int i;
 
-    currentBand=BAND_40;
-    currentStack=0;
     for(i=0;i<BAND_LAST;i++) {
         stack[i]=0;
     }
-/*
-    bandstack[BAND_17][0].setFrequency(18068600LL);
-    bandstack[BAND_17][0].setMode(MODE_CWU);
-    bandstack[BAND_17][0].setFilter(4);
-    bandstack[BAND_17][0].setSpectrumHigh(-40);
-    bandstack[BAND_17][0].setSpectrumLow(-160);
-    bandstack[BAND_17][0].setWaterfallHigh(-60);
-    bandstack[BAND_17][0].setWaterfallLow(-125);
-    bandstack[BAND_17][1].setFrequency(18125000LL);
-    bandstack[BAND_17][1].setMode(MODE_USB);
-    bandstack[BAND_17][1].setFilter(3);
-    bandstack[BAND_17][1].setSpectrumHigh(-40);
-    bandstack[BAND_17][1].setSpectrumLow(-160);
-    bandstack[BAND_17][1].setWaterfallHigh(-60);
-    bandstack[BAND_17][1].setWaterfallLow(-125);
-    bandstack[BAND_17][2].setFrequency(18140000LL);
-    bandstack[BAND_17][2].setMode(MODE_USB);
-    bandstack[BAND_17][2].setFilter(3);
-    bandstack[BAND_17][2].setSpectrumHigh(-40);
-    bandstack[BAND_17][2].setSpectrumLow(-160);
-    bandstack[BAND_17][2].setWaterfallHigh(-60);
-    bandstack[BAND_17][2].setWaterfallLow(-125);
-    bandstack[BAND_17][3].setFrequency(0LL);
-
-    bandstack[BAND_15][0].setFrequency(21001000LL);
-    bandstack[BAND_15][0].setMode(MODE_CWU);
-    bandstack[BAND_15][0].setFilter(4);
-    bandstack[BAND_15][0].setSpectrumHigh(-40);
-    bandstack[BAND_15][0].setSpectrumLow(-160);
-    bandstack[BAND_15][0].setWaterfallHigh(-60);
-    bandstack[BAND_15][0].setWaterfallLow(-125);
-    bandstack[BAND_15][1].setFrequency(21255000LL);
-    bandstack[BAND_15][1].setMode(MODE_USB);
-    bandstack[BAND_15][1].setFilter(3);
-    bandstack[BAND_15][1].setSpectrumHigh(-40);
-    bandstack[BAND_15][1].setSpectrumLow(-160);
-    bandstack[BAND_15][1].setWaterfallHigh(-60);
-    bandstack[BAND_15][1].setWaterfallLow(-125);
-    bandstack[BAND_15][2].setFrequency(21300000LL);
-    bandstack[BAND_15][2].setMode(MODE_USB);
-    bandstack[BAND_15][2].setFilter(3);
-    bandstack[BAND_15][2].setSpectrumHigh(-40);
-    bandstack[BAND_15][2].setSpectrumLow(-160);
-    bandstack[BAND_15][2].setWaterfallHigh(-60);
-    bandstack[BAND_15][2].setWaterfallLow(-125);
-    bandstack[BAND_15][3].setFrequency(0LL);
-
-    bandstack[BAND_12][0].setFrequency(24895000LL);
-    bandstack[BAND_12][0].setMode(MODE_CWU);
-    bandstack[BAND_12][0].setFilter(4);
-    bandstack[BAND_12][0].setSpectrumHigh(-40);
-    bandstack[BAND_12][0].setSpectrumLow(-160);
-    bandstack[BAND_12][0].setWaterfallHigh(-60);
-    bandstack[BAND_12][0].setWaterfallLow(-125);
-    bandstack[BAND_12][1].setFrequency(24900000LL);
-    bandstack[BAND_12][1].setMode(MODE_CWU);
-    bandstack[BAND_12][1].setFilter(4);
-    bandstack[BAND_12][1].setSpectrumHigh(-40);
-    bandstack[BAND_12][1].setSpectrumLow(-160);
-    bandstack[BAND_12][1].setWaterfallHigh(-60);
-    bandstack[BAND_12][1].setWaterfallLow(-125);
-    bandstack[BAND_12][2].setFrequency(24910000LL);
-    bandstack[BAND_12][2].setMode(MODE_CWU);
-    bandstack[BAND_12][2].setFilter(4);
-    bandstack[BAND_12][2].setSpectrumHigh(-40);
-    bandstack[BAND_12][2].setSpectrumLow(-160);
-    bandstack[BAND_12][2].setWaterfallHigh(-60);
-    bandstack[BAND_12][2].setWaterfallLow(-125);
-    bandstack[BAND_12][3].setFrequency(0LL);
-*/
-    bandstack[BAND_10][0].setFrequency(28010000LL);
-    bandstack[BAND_10][0].setMode(MODE_CWU);
-    bandstack[BAND_10][0].setFilter(4);
-    bandstack[BAND_10][0].setSpectrumHigh(-40);
-    bandstack[BAND_10][0].setSpectrumLow(-160);
-    bandstack[BAND_10][0].setWaterfallHigh(-60);
-    bandstack[BAND_10][0].setWaterfallLow(-125);
-    bandstack[BAND_10][1].setFrequency(28300000LL);
-    bandstack[BAND_10][1].setMode(MODE_USB);
-    bandstack[BAND_10][1].setFilter(3);
-    bandstack[BAND_10][1].setSpectrumHigh(-40);
-    bandstack[BAND_10][1].setSpectrumLow(-160);
-    bandstack[BAND_10][1].setWaterfallHigh(-60);
-    bandstack[BAND_10][1].setWaterfallLow(-125);
-    bandstack[BAND_10][2].setFrequency(28400000LL);
-    bandstack[BAND_10][2].setMode(MODE_USB);
-    bandstack[BAND_10][2].setFilter(3);
-    bandstack[BAND_10][2].setSpectrumHigh(-40);
-    bandstack[BAND_10][2].setSpectrumLow(-160);
-    bandstack[BAND_10][2].setWaterfallHigh(-60);
-    bandstack[BAND_10][2].setWaterfallLow(-125);
-    bandstack[BAND_10][3].setFrequency(0LL);
-
-    bandstack[BAND_6][0].setFrequency(50010000LL);
-    bandstack[BAND_6][0].setMode(MODE_CWU);
-    bandstack[BAND_6][0].setFilter(4);
-    bandstack[BAND_6][0].setSpectrumHigh(-40);
-    bandstack[BAND_6][0].setSpectrumLow(-160);
-    bandstack[BAND_6][0].setWaterfallHigh(-60);
-    bandstack[BAND_6][0].setWaterfallLow(-125);
-    bandstack[BAND_6][1].setFrequency(50125000LL);
-    bandstack[BAND_6][1].setMode(MODE_USB);
-    bandstack[BAND_6][1].setFilter(3);
-    bandstack[BAND_6][1].setSpectrumHigh(-40);
-    bandstack[BAND_6][1].setSpectrumLow(-160);
-    bandstack[BAND_6][1].setWaterfallHigh(-60);
-    bandstack[BAND_6][1].setWaterfallLow(-125);
-    bandstack[BAND_6][2].setFrequency(50200000LL);
-    bandstack[BAND_6][2].setMode(MODE_USB);
-    bandstack[BAND_6][2].setFilter(3);
-    bandstack[BAND_6][2].setSpectrumHigh(-40);
-    bandstack[BAND_6][2].setSpectrumLow(-160);
-    bandstack[BAND_6][2].setWaterfallHigh(-60);
-    bandstack[BAND_6][2].setWaterfallLow(-125);
-    bandstack[BAND_6][3].setFrequency(0LL);
-
-    bandstack[BAND_GEN][0].setFrequency(909000LL);
-    bandstack[BAND_GEN][0].setMode(MODE_AM);
-    bandstack[BAND_GEN][0].setFilter(3);
-    bandstack[BAND_GEN][0].setSpectrumHigh(-40);
-    bandstack[BAND_GEN][0].setSpectrumLow(-160);
-    bandstack[BAND_GEN][0].setWaterfallHigh(-60);
-    bandstack[BAND_GEN][0].setWaterfallLow(-125);
-    bandstack[BAND_GEN][1].setFrequency(6145000LL);
-    bandstack[BAND_GEN][1].setMode(MODE_AM);
-    bandstack[BAND_GEN][1].setFilter(3);
-    bandstack[BAND_GEN][1].setSpectrumHigh(-40);
-    bandstack[BAND_GEN][1].setSpectrumLow(-160);
-    bandstack[BAND_GEN][1].setWaterfallHigh(-60);
-    bandstack[BAND_GEN][1].setWaterfallLow(-125);
-    bandstack[BAND_GEN][2].setFrequency(11765000LL);
-    bandstack[BAND_GEN][2].setMode(MODE_AM);
-    bandstack[BAND_GEN][2].setFilter(3);
-    bandstack[BAND_GEN][2].setSpectrumHigh(-40);
-    bandstack[BAND_GEN][2].setSpectrumLow(-160);
-    bandstack[BAND_GEN][2].setWaterfallHigh(-60);
-    bandstack[BAND_GEN][2].setWaterfallLow(-125);
-    bandstack[BAND_GEN][3].setFrequency(15400000LL);
-    bandstack[BAND_GEN][3].setMode(MODE_AM);
-    bandstack[BAND_GEN][3].setFilter(3);
-    bandstack[BAND_GEN][3].setSpectrumHigh(-40);
-    bandstack[BAND_GEN][3].setSpectrumLow(-160);
-    bandstack[BAND_GEN][3].setWaterfallHigh(-60);
-    bandstack[BAND_GEN][3].setWaterfallLow(-125);
-    bandstack[BAND_GEN][4].setFrequency(17795000LL);
-    bandstack[BAND_GEN][4].setMode(MODE_AM);
-    bandstack[BAND_GEN][4].setFilter(3);
-    bandstack[BAND_GEN][4].setSpectrumHigh(-40);
-    bandstack[BAND_GEN][4].setSpectrumLow(-160);
-    bandstack[BAND_GEN][4].setWaterfallHigh(-60);
-    bandstack[BAND_GEN][4].setWaterfallLow(-125);
-
-    bandstack[BAND_WWV][0].setFrequency(2500000LL);
-    bandstack[BAND_WWV][0].setMode(MODE_AM);
-    bandstack[BAND_WWV][0].setFilter(3);
-    bandstack[BAND_WWV][0].setSpectrumHigh(-40);
-    bandstack[BAND_WWV][0].setSpectrumLow(-160);
-    bandstack[BAND_WWV][0].setWaterfallHigh(-60);
-    bandstack[BAND_WWV][0].setWaterfallLow(-125);
-    bandstack[BAND_WWV][1].setFrequency(5000000LL);
-    bandstack[BAND_WWV][1].setMode(MODE_AM);
-    bandstack[BAND_WWV][1].setFilter(3);
-    bandstack[BAND_WWV][1].setSpectrumHigh(-40);
-    bandstack[BAND_WWV][1].setSpectrumLow(-160);
-    bandstack[BAND_WWV][1].setWaterfallHigh(-60);
-    bandstack[BAND_WWV][1].setWaterfallLow(-125);
-    bandstack[BAND_WWV][2].setFrequency(10000000LL);
-    bandstack[BAND_WWV][2].setMode(MODE_AM);
-    bandstack[BAND_WWV][2].setFilter(3);
-    bandstack[BAND_WWV][2].setSpectrumHigh(-40);
-    bandstack[BAND_WWV][2].setSpectrumLow(-160);
-    bandstack[BAND_WWV][2].setWaterfallHigh(-60);
-    bandstack[BAND_WWV][2].setWaterfallLow(-125);
-    bandstack[BAND_WWV][3].setFrequency(15000000LL);
-    bandstack[BAND_WWV][3].setMode(MODE_AM);
-    bandstack[BAND_WWV][3].setFilter(3);
-    bandstack[BAND_WWV][3].setSpectrumHigh(-40);
-    bandstack[BAND_WWV][3].setSpectrumLow(-160);
-    bandstack[BAND_WWV][3].setWaterfallHigh(-60);
-    bandstack[BAND_WWV][3].setWaterfallLow(-125);
-    bandstack[BAND_WWV][4].setFrequency(20000000LL);
-    bandstack[BAND_WWV][4].setMode(MODE_AM);
-    bandstack[BAND_WWV][4].setFilter(3);
-    bandstack[BAND_WWV][4].setSpectrumHigh(-40);
-    bandstack[BAND_WWV][4].setSpectrumLow(-160);
-    bandstack[BAND_WWV][4].setWaterfallHigh(-60);
-    bandstack[BAND_WWV][4].setWaterfallLow(-125);
 
     limits.clear();
     limits << BandLimit(1800000LL,2000000LL);
@@ -267,7 +78,9 @@ void Band::loadSettings(QSettings* settings) {
     BandLimit limitItem;
     long long limitMin,limitMax;
 
-     settings->beginGroup("Band");
+    settings->beginGroup("Band");
+    currentBand=settings->value("currentBand",BAND_40).toInt();
+    currentStack=settings->value("currentStack",0).toInt();
     // Quick memory number 1
     bandstack[BAND_160][0].setFrequency(settings->value("frequency.0.0",1810000).toLongLong());
     bandstack[BAND_160][0].setMode(settings->value("mode.0.0",MODE_CWL).toInt());
@@ -384,7 +197,7 @@ void Band::loadSettings(QSettings* settings) {
     bandstack[BAND_40][0].setWaterfallLow(settings->value("waterfallLow.3.0",-125).toInt());
     bandstack[BAND_40][0].setInfo(settings->value("info.3.0",2).toInt());  //Count of Quick Memories 0 .. n
     // Quick memory number 2
-    bandstack[BAND_40][1].setFrequency(settings->value("frequency.3.1",3751000).toLongLong());
+    bandstack[BAND_40][1].setFrequency(settings->value("frequency.3.1",7060000).toLongLong());
     bandstack[BAND_40][1].setMode(settings->value("mode.3.1",MODE_LSB).toInt());
     bandstack[BAND_40][1].setFilter(settings->value("filter.3.1",3).toInt());
     bandstack[BAND_40][1].setSpectrumHigh(settings->value("spectrumHigh.3.1",-40).toInt());
@@ -393,7 +206,7 @@ void Band::loadSettings(QSettings* settings) {
     bandstack[BAND_40][1].setWaterfallLow(settings->value("waterfallLow.3.1",-125).toInt());
     bandstack[BAND_40][1].setInfo(settings->value("info.3.1",0).toInt());  //Pointer to stack for reading
     // Quick memory number 3
-    bandstack[BAND_40][2].setFrequency(settings->value("frequency.3.2",3850000).toLongLong());
+    bandstack[BAND_40][2].setFrequency(settings->value("frequency.3.2",7100000).toLongLong());
     bandstack[BAND_40][2].setMode(settings->value("mode.3.2",MODE_LSB).toInt());
     bandstack[BAND_40][2].setFilter(settings->value("filter.3.2",3).toInt());
     bandstack[BAND_40][2].setSpectrumHigh(settings->value("spectrumHigh.3.2",-40).toInt());
@@ -554,38 +367,159 @@ void Band::loadSettings(QSettings* settings) {
     // Current working frequency
     bandstack[BAND_12][3].setFrequency(settings->value("frequency.8.3",0).toLongLong());  //Terminator
 
+    // Quick memory number 1
+    bandstack[BAND_10][0].setFrequency(settings->value("frequency.9.0",28010000).toLongLong());
+    bandstack[BAND_10][0].setMode(settings->value("mode.9.0",MODE_CWU).toInt());
+    bandstack[BAND_10][0].setFilter(settings->value("filter.9.0",4).toInt());
+    bandstack[BAND_10][0].setSpectrumHigh(settings->value("spectrumHigh.9.0",-40).toInt());
+    bandstack[BAND_10][0].setSpectrumLow(settings->value("spectrumLow.9.0",-160).toInt());
+    bandstack[BAND_10][0].setWaterfallHigh(settings->value("waterfallHigh.9.0",-60).toInt());
+    bandstack[BAND_10][0].setWaterfallLow(settings->value("waterfallLow.9.0",-125).toInt());
+    bandstack[BAND_10][0].setInfo(settings->value("info.9.0",2).toInt());  //Count of Quick Memories 0 .. n
+    // Quick memory number 2
+    bandstack[BAND_10][1].setFrequency(settings->value("frequency.9.1",28300000).toLongLong());
+    bandstack[BAND_10][1].setMode(settings->value("mode.9.1",MODE_USB).toInt());
+    bandstack[BAND_10][1].setFilter(settings->value("filter.9.1",3).toInt());
+    bandstack[BAND_10][1].setSpectrumHigh(settings->value("spectrumHigh.9.1",-40).toInt());
+    bandstack[BAND_10][1].setSpectrumLow(settings->value("spectrumLow.9.1",-160).toInt());
+    bandstack[BAND_10][1].setWaterfallHigh(settings->value("waterfallHigh.9.1",-60).toInt());
+    bandstack[BAND_10][1].setWaterfallLow(settings->value("waterfallLow.9.1",-125).toInt());
+    bandstack[BAND_10][1].setInfo(settings->value("info.9.1",0).toInt());  //Pointer to stack for reading
+    // Quick memory number 3
+    bandstack[BAND_10][2].setFrequency(settings->value("frequency.9.2",28400000).toLongLong());
+    bandstack[BAND_10][2].setMode(settings->value("mode.9.2",MODE_USB).toInt());
+    bandstack[BAND_10][2].setFilter(settings->value("filter.9.2",3).toInt());
+    bandstack[BAND_10][2].setSpectrumHigh(settings->value("spectrumHigh.9.2",-40).toInt());
+    bandstack[BAND_10][2].setSpectrumLow(settings->value("spectrumLow.9.2",-160).toInt());
+    bandstack[BAND_10][2].setWaterfallHigh(settings->value("waterfallHigh.9.2",-60).toInt());
+    bandstack[BAND_10][2].setWaterfallLow(settings->value("waterfallLow.9.2",-125).toInt());
+    bandstack[BAND_10][2].setInfo(settings->value("info.9.2",0).toInt());  //Pointer to stack for storing
+    // Current working frequency
+    bandstack[BAND_10][3].setFrequency(settings->value("frequency.9.3",0).toLongLong());  //Terminator
 
+    // Quick memory number 1
+    bandstack[BAND_6][0].setFrequency(settings->value("frequency.10.0",50010000).toLongLong());
+    bandstack[BAND_6][0].setMode(settings->value("mode.10.0",MODE_CWU).toInt());
+    bandstack[BAND_6][0].setFilter(settings->value("filter.10.0",4).toInt());
+    bandstack[BAND_6][0].setSpectrumHigh(settings->value("spectrumHigh.10.0",-40).toInt());
+    bandstack[BAND_6][0].setSpectrumLow(settings->value("spectrumLow.10.0",-160).toInt());
+    bandstack[BAND_6][0].setWaterfallHigh(settings->value("waterfallHigh.10.0",-60).toInt());
+    bandstack[BAND_6][0].setWaterfallLow(settings->value("waterfallLow.10.0",-125).toInt());
+    bandstack[BAND_6][0].setInfo(settings->value("info.10.0",2).toInt());  //Count of Quick Memories 0 .. n
+    // Quick memory number 2
+    bandstack[BAND_6][1].setFrequency(settings->value("frequency.10.1",50125000).toLongLong());
+    bandstack[BAND_6][1].setMode(settings->value("mode.10.1",MODE_USB).toInt());
+    bandstack[BAND_6][1].setFilter(settings->value("filter.10.1",3).toInt());
+    bandstack[BAND_6][1].setSpectrumHigh(settings->value("spectrumHigh.10.1",-40).toInt());
+    bandstack[BAND_6][1].setSpectrumLow(settings->value("spectrumLow.10.1",-160).toInt());
+    bandstack[BAND_6][1].setWaterfallHigh(settings->value("waterfallHigh.10.1",-60).toInt());
+    bandstack[BAND_6][1].setWaterfallLow(settings->value("waterfallLow.10.1",-125).toInt());
+    bandstack[BAND_6][1].setInfo(settings->value("info.10.1",0).toInt());  //Pointer to stack for reading
+    // Quick memory number 3
+    bandstack[BAND_6][2].setFrequency(settings->value("frequency.10.2",50200000).toLongLong());
+    bandstack[BAND_6][2].setMode(settings->value("mode.10.2",MODE_USB).toInt());
+    bandstack[BAND_6][2].setFilter(settings->value("filter.10.2",3).toInt());
+    bandstack[BAND_6][2].setSpectrumHigh(settings->value("spectrumHigh.10.2",-40).toInt());
+    bandstack[BAND_6][2].setSpectrumLow(settings->value("spectrumLow.10.2",-160).toInt());
+    bandstack[BAND_6][2].setWaterfallHigh(settings->value("waterfallHigh.10.2",-60).toInt());
+    bandstack[BAND_6][2].setWaterfallLow(settings->value("waterfallLow.10.2",-125).toInt());
+    bandstack[BAND_6][2].setInfo(settings->value("info.10.2",0).toInt());  //Pointer to stack for storing
+    // Current working frequency
+    bandstack[BAND_6][3].setFrequency(settings->value("frequency.10.3",0).toLongLong());  //Terminator
 
+    // Quick memory number 1
+    bandstack[BAND_GEN][0].setFrequency(settings->value("frequency.11.0",909000).toLongLong());
+    bandstack[BAND_GEN][0].setMode(settings->value("mode.11.0",MODE_AM).toInt());
+    bandstack[BAND_GEN][0].setFilter(settings->value("filter.11.0",3).toInt());
+    bandstack[BAND_GEN][0].setSpectrumHigh(settings->value("spectrumHigh.11.0",-40).toInt());
+    bandstack[BAND_GEN][0].setSpectrumLow(settings->value("spectrumLow.11.0",-160).toInt());
+    bandstack[BAND_GEN][0].setWaterfallHigh(settings->value("waterfallHigh.11.0",-60).toInt());
+    bandstack[BAND_GEN][0].setWaterfallLow(settings->value("waterfallLow.11.0",-125).toInt());
+    bandstack[BAND_GEN][0].setInfo(settings->value("info.11.0",4).toInt());  //Count of Quick Memories 0 .. n
+    // Quick memory number 2
+    bandstack[BAND_GEN][1].setFrequency(settings->value("frequency.11.1",6145000).toLongLong());
+    bandstack[BAND_GEN][1].setMode(settings->value("mode.11.1",MODE_AM).toInt());
+    bandstack[BAND_GEN][1].setFilter(settings->value("filter.11.1",3).toInt());
+    bandstack[BAND_GEN][1].setSpectrumHigh(settings->value("spectrumHigh.11.1",-40).toInt());
+    bandstack[BAND_GEN][1].setSpectrumLow(settings->value("spectrumLow.11.1",-160).toInt());
+    bandstack[BAND_GEN][1].setWaterfallHigh(settings->value("waterfallHigh.11.1",-60).toInt());
+    bandstack[BAND_GEN][1].setWaterfallLow(settings->value("waterfallLow.11.1",-125).toInt());
+    bandstack[BAND_GEN][1].setInfo(settings->value("info.11.1",0).toInt());  //Pointer to stack for reading
+    // Quick memory number 3
+    bandstack[BAND_GEN][2].setFrequency(settings->value("frequency.11.2",11765000).toLongLong());
+    bandstack[BAND_GEN][2].setMode(settings->value("mode.11.2",MODE_AM).toInt());
+    bandstack[BAND_GEN][2].setFilter(settings->value("filter.11.2",3).toInt());
+    bandstack[BAND_GEN][2].setSpectrumHigh(settings->value("spectrumHigh.11.2",-40).toInt());
+    bandstack[BAND_GEN][2].setSpectrumLow(settings->value("spectrumLow.11.2",-160).toInt());
+    bandstack[BAND_GEN][2].setWaterfallHigh(settings->value("waterfallHigh.11.2",-60).toInt());
+    bandstack[BAND_GEN][2].setWaterfallLow(settings->value("waterfallLow.11.2",-125).toInt());
+    bandstack[BAND_GEN][2].setInfo(settings->value("info.11.2",0).toInt());  //Pointer to stack for storing
+    // Quick memory number 4
+    bandstack[BAND_GEN][3].setFrequency(settings->value("frequency.11.3",15400000).toLongLong());
+    bandstack[BAND_GEN][3].setMode(settings->value("mode.11.3",MODE_AM).toInt());
+    bandstack[BAND_GEN][3].setFilter(settings->value("filter.11.3",3).toInt());
+    bandstack[BAND_GEN][3].setSpectrumHigh(settings->value("spectrumHigh.11.3",-40).toInt());
+    bandstack[BAND_GEN][3].setSpectrumLow(settings->value("spectrumLow.11.3",-160).toInt());
+    bandstack[BAND_GEN][3].setWaterfallHigh(settings->value("waterfallHigh.11.3",-60).toInt());
+    bandstack[BAND_GEN][3].setWaterfallLow(settings->value("waterfallLow.11.3",-125).toInt());
+    bandstack[BAND_GEN][3].setInfo(settings->value("info.11.3",0).toInt());  //Reserved for total entries
+    // Quick memory number 5
+    bandstack[BAND_GEN][4].setFrequency(settings->value("frequency.11.4",17795000).toLongLong());
+    bandstack[BAND_GEN][4].setMode(settings->value("mode.11.4",MODE_AM).toInt());
+    bandstack[BAND_GEN][4].setFilter(settings->value("filter.11.4",3).toInt());
+    bandstack[BAND_GEN][4].setSpectrumHigh(settings->value("spectrumHigh.11.4",-40).toInt());
+    bandstack[BAND_GEN][4].setSpectrumLow(settings->value("spectrumLow.11.4",-160).toInt());
+    bandstack[BAND_GEN][4].setWaterfallHigh(settings->value("waterfallHigh.11.4",-60).toInt());
+    bandstack[BAND_GEN][4].setWaterfallLow(settings->value("waterfallLow.11.4",-125).toInt());
+    bandstack[BAND_GEN][4].setInfo(settings->value("info.11.4",0).toInt());  //Not used. Band terminated by being 5 entries
 
-    if(settings->contains("currentBand")) {
-        currentBand=settings->value("currentBand").toInt();
-        currentStack=settings->value("currentStack").toInt();
-        for(i=9;i<BAND_LAST;i++) {
-            s.sprintf("stack.%d",i);
-            stack[i]=settings->value(s).toInt();
-            qDebug() << "Band::loadSettings: " << i << " stack=" << stack[i];
-            for(j=0;j<BANDSTACK_ENTRIES;j++) {
-                s.sprintf("frequency.%d.%d",i,j);
-                bandstack[i][j].setFrequency(settings->value(s).toLongLong());
-                qDebug() << "Band::loadSettings: " << i << ":" << j << "=" << bandstack[i][j].getFrequency();
-                if(bandstack[i][j].getFrequency()==0LL) break;
-                s.sprintf("filter.%d.%d",i,j);
-                bandstack[i][j].setFilter(settings->value(s).toInt());
-                s.sprintf("mode.%d.%d",i,j);
-                bandstack[i][j].setMode(settings->value(s).toInt());
-                //            bandstack[i][j].setStep(settings->value("step").toInt());
-                s.sprintf("spectrumHigh.%d.%d",i,j);
-                bandstack[i][j].setSpectrumHigh(settings->value(s).toInt());
-                s.sprintf("spectrumLow.%d.%d",i,j);
-                bandstack[i][j].setSpectrumLow(settings->value(s).toInt());
-                s.sprintf("waterfallHigh.%d.%d",i,j);
-                bandstack[i][j].setWaterfallHigh(settings->value(s).toInt());
-                s.sprintf("waterfallLow.%d.%d",i,j);
-                bandstack[i][j].setWaterfallLow(settings->value(s).toInt());
-            }
-        }
-        settings->endGroup();
-    }
+    // Quick memory number 1
+    bandstack[BAND_WWV][0].setFrequency(settings->value("frequency.12.0",2500000).toLongLong());
+    bandstack[BAND_WWV][0].setMode(settings->value("mode.12.0",MODE_AM).toInt());
+    bandstack[BAND_WWV][0].setFilter(settings->value("filter.12.0",3).toInt());
+    bandstack[BAND_WWV][0].setSpectrumHigh(settings->value("spectrumHigh.12.0",-40).toInt());
+    bandstack[BAND_WWV][0].setSpectrumLow(settings->value("spectrumLow.12.0",-160).toInt());
+    bandstack[BAND_WWV][0].setWaterfallHigh(settings->value("waterfallHigh.12.0",-60).toInt());
+    bandstack[BAND_WWV][0].setWaterfallLow(settings->value("waterfallLow.12.0",-125).toInt());
+    bandstack[BAND_WWV][0].setInfo(settings->value("info.12.0",4).toInt());  //Count of Quick Memories 0 .. n
+    // Quick memory number 2
+    bandstack[BAND_WWV][1].setFrequency(settings->value("frequency.12.1",5000000).toLongLong());
+    bandstack[BAND_WWV][1].setMode(settings->value("mode.12.1",MODE_AM).toInt());
+    bandstack[BAND_WWV][1].setFilter(settings->value("filter.12.1",3).toInt());
+    bandstack[BAND_WWV][1].setSpectrumHigh(settings->value("spectrumHigh.12.1",-40).toInt());
+    bandstack[BAND_WWV][1].setSpectrumLow(settings->value("spectrumLow.12.1",-160).toInt());
+    bandstack[BAND_WWV][1].setWaterfallHigh(settings->value("waterfallHigh.12.1",-60).toInt());
+    bandstack[BAND_WWV][1].setWaterfallLow(settings->value("waterfallLow.12.1",-125).toInt());
+    bandstack[BAND_WWV][1].setInfo(settings->value("info.12.1",0).toInt());  //Pointer to stack for reading
+    // Quick memory number 3
+    bandstack[BAND_WWV][2].setFrequency(settings->value("frequency.12.2",10000000).toLongLong());
+    bandstack[BAND_WWV][2].setMode(settings->value("mode.12.2",MODE_AM).toInt());
+    bandstack[BAND_WWV][2].setFilter(settings->value("filter.12.2",3).toInt());
+    bandstack[BAND_WWV][2].setSpectrumHigh(settings->value("spectrumHigh.12.2",-40).toInt());
+    bandstack[BAND_WWV][2].setSpectrumLow(settings->value("spectrumLow.12.2",-160).toInt());
+    bandstack[BAND_WWV][2].setWaterfallHigh(settings->value("waterfallHigh.12.2",-60).toInt());
+    bandstack[BAND_WWV][2].setWaterfallLow(settings->value("waterfallLow.12.2",-125).toInt());
+    bandstack[BAND_WWV][2].setInfo(settings->value("info.12.2",0).toInt());  //Pointer to stack for storing
+    // Quick memory number 4
+    bandstack[BAND_WWV][3].setFrequency(settings->value("frequency.11.3",15000000).toLongLong());
+    bandstack[BAND_WWV][3].setMode(settings->value("mode.11.3",MODE_AM).toInt());
+    bandstack[BAND_WWV][3].setFilter(settings->value("filter.11.3",3).toInt());
+    bandstack[BAND_WWV][3].setSpectrumHigh(settings->value("spectrumHigh.11.3",-40).toInt());
+    bandstack[BAND_WWV][3].setSpectrumLow(settings->value("spectrumLow.11.3",-160).toInt());
+    bandstack[BAND_WWV][3].setWaterfallHigh(settings->value("waterfallHigh.11.3",-60).toInt());
+    bandstack[BAND_WWV][3].setWaterfallLow(settings->value("waterfallLow.11.3",-125).toInt());
+    bandstack[BAND_WWV][3].setInfo(settings->value("info.12.3",0).toInt());  //Reserved for total entries
+    // Quick memory number 5
+    bandstack[BAND_WWV][4].setFrequency(settings->value("frequency.12.4",20000000).toLongLong());
+    bandstack[BAND_WWV][4].setMode(settings->value("mode.12.4",MODE_AM).toInt());
+    bandstack[BAND_WWV][4].setFilter(settings->value("filter.12.4",3).toInt());
+    bandstack[BAND_WWV][4].setSpectrumHigh(settings->value("spectrumHigh.12.4",-40).toInt());
+    bandstack[BAND_WWV][4].setSpectrumLow(settings->value("spectrumLow.12.4",-160).toInt());
+    bandstack[BAND_WWV][4].setWaterfallHigh(settings->value("waterfallHigh.12.4",-60).toInt());
+    bandstack[BAND_WWV][4].setWaterfallLow(settings->value("waterfallLow.12.4",-125).toInt());
+    bandstack[BAND_WWV][4].setInfo(settings->value("info.12.4",0).toInt());  //Not used. Band terminated by being 5 entries
+    settings->endGroup();
+
     settings->beginGroup("bandLimits");
     if(settings->contains("limits.22.min")) { //We have a table of valid limits stored
         limits.clear();
