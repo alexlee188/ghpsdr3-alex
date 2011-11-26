@@ -1,4 +1,16 @@
-ghpsdr3 (2.0~0ubuntu4ppa4~oneiric) oneiric; urgency=high
+ghpsdr3 (2.1~0ubuntu1ppa1~natty) natty; urgency=high
+
+  * Andrea Montefusco IW0HDV
+    PPA 2.1
+    QtRadio auto connect feature added.
+    First release of python launcher.
+    Merge branch 'perseus-server'
+
+  * VE9GJ Glenn Taylor
+    Fixed pro file, added wrap around to step up key and added branch to title bar.
+    Updated top level README with instructions for Windows Users
+
+  * Alex Lee <alexlee188@gmail.com>    
 
   * Andrea Montefusco IW0HDV
     PPA 2.0
