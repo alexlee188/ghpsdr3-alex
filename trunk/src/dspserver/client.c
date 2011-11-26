@@ -782,12 +782,13 @@ void readcb(struct bufferevent *bev, void *ctx){
                         	} else {
                             	fprintf(stderr,"Invalid command: '%s'\n",message);
                         	}
-                        } else if(strncmp(token,"setsubrx",8)==0) {
+                        } else if(strncmp(token,"setsubrx",17)==0) {
                         	int state;
                         	token=strtok_r(NULL," ",&saveptr);
                         	if(token!=NULL) {
                             	state=atoi(token);
                             	SetSubRXSt(0,1,state);
+				// fprintf(stderr, "setsubrx %d\n", state);
                         	} else {
                             	fprintf(stderr,"Invalid command: '%s'\n",message);
                         	}
@@ -979,7 +980,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                } else {
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
-                       } else if(strcmp(token,"setsubrxquelchval")==0) {
+                       } else if(strncmp(token,"setsubrxquelchval",17)==0) {
 		                token=strtok_r(NULL," ",&saveptr);
 		                if(token!=NULL) {
 		                    float value=atof(token);
