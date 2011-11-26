@@ -92,9 +92,6 @@ AC_SEARCH_LIBS([config_init], [config],[have_config=yes])
 have_usb10=no
 AC_SEARCH_LIBS([libusb_init], [usb-1.0],[have_usb10=yes])
 
-have_event20=no
-AC_SEARCH_LIBS([event_init], [event],[have_event20=yes])
-
 have_samplerate=no
 AC_SEARCH_LIBS([src_new], [samplerate],[have_samplerate=yes])
 
@@ -224,18 +221,6 @@ if test "x${have_usb10}" = xno; then
     AC_MSG_ERROR([
 -----------------------------------
   The libusb-1.0 library and header file required to build ghpsdr3.
------------------------------------])
-
-fi
-
-if test "x${have_event20}" = xyes; then
-    AC_CHECK_HEADERS([event2/event.h], [], [have_event20=no])
-fi
-
-if test "x${have_event20}" = xno; then
-    AC_MSG_ERROR([
------------------------------------
-  The libevent-2.0 library and header file required to build ghpsdr3. See README for installation instructions.
 -----------------------------------])
 
 fi
