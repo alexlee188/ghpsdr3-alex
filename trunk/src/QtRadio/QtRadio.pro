@@ -61,11 +61,9 @@ SOURCES += main.cpp\
     rigctl.cpp \
     vfo.cpp \
     ctl.cpp \
-#<<<<<<< HEAD
     Audioinput.cpp\
-#=======
     servers.cpp
-#>>>>>>> master
+
 
 HEADERS  += \ 
     Waterfall.h \
@@ -130,5 +128,5 @@ OTHER_FILES +=
 
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/release/ 
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/debug/ 
-else:symbian: LIBS += -lcodec2
-else:unix: LIBS += -lcodec2
+else:symbian: LIBS += -lcodec2 -lsamplerate
+else:unix: LIBS += -lcodec2 -lsamplerate
