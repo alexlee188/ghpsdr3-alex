@@ -13,7 +13,7 @@ desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 
 
 
-EXTRA_DIST = GITSTR  icons $(desktop_in_files) $(desktop_DATA)
+EXTRA_DIST = icons $(desktop_in_files) $(desktop_DATA)
 
 pixmapdir = $(datadir)/icons
 pixmap_DATA = $(srcdir)/icons/ghpsdr3launcher.png
