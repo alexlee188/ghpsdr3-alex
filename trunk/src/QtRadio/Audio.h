@@ -35,7 +35,7 @@
 #include <samplerate.h>
 
 #define AUDIO_BUFFER_SIZE 1600
-#define AUDIO_OUTPUT_BUFFER_SIZE 4096
+#define AUDIO_OUTPUT_BUFFER_SIZE 2048
 
 #define BIGENDIAN
 // There are problems running at 8000 samples per second on Mac OS X
