@@ -115,7 +115,7 @@ private:
     short meter;
     int maxMeter;
     int meterCount;
-    int subrx_meter;
+    short subrx_meter;
     int subrx_maxMeter;
     int subrx_meterCount;
 
