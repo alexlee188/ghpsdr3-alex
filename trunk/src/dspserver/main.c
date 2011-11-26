@@ -229,7 +229,8 @@ int main(int argc,char* argv[]) {
     SetThreadProcessingMode(1,RUN_PLAY);
     SetSubRXSt(0,0,1);
     SetRXOutputGain(0,0,0.20);
-
+    SetRXOsc(0,0, -LO_offset);
+    SetRXOsc(0,1, -LO_offset);
     reset_for_buflen(0,1024);
     reset_for_buflen(1,1024);
 

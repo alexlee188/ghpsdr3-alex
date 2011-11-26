@@ -551,20 +551,14 @@ fprintf(stderr,"LO_offset %f\n",LO_offset);
         sampleRate=48000;
         output_sample_increment=1;
         SetSampleRate((double)sampleRate);
- //       SetRXOsc(0,0,0.0);
-        SetRXOsc(0,0, -LO_offset);
     } else if(s==SPEED_96KHZ) {
         sampleRate=96000;
         output_sample_increment=2;
         SetSampleRate((double)sampleRate);
-//        SetRXOsc(0,0,0.0);
-        SetRXOsc(0,0, -LO_offset);
     } else if(s==SPEED_192KHZ) {
         sampleRate=192000;
         output_sample_increment=4;
         SetSampleRate((double)sampleRate);
-//        SetRXOsc(0,0,0.0);
-        SetRXOsc(0,0, -LO_offset);
     }
     else {
         if(s==SPEED_95KHZ) {
@@ -578,9 +572,9 @@ fprintf(stderr,"LO_offset %f\n",LO_offset);
         }
         output_sample_increment=-1;
         SetSampleRate((double)sampleRate);
-        //SetRXOsc(0,0,0.0);
-        SetRXOsc(0,0, -LO_offset);
     }
+	SetRXOsc(0,0, -LO_offset);
+	SetRXOsc(0,1, -LO_offset);
 	SetTXOsc(1, -LO_offset);
 
         src_ratio = 48000.0 / ((double) sampleRate);
