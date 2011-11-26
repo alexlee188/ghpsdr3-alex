@@ -227,7 +227,7 @@ int main(int argc,char* argv[]) {
     SetRingBufferOffset(0,offset);
     SetThreadProcessingMode(0,RUN_PLAY);
     SetThreadProcessingMode(1,RUN_PLAY);
-    SetSubRXSt(0,0,1);
+    SetSubRXSt(0,1,1);
     SetRXOutputGain(0,0,0.20);
     SetRXOsc(0,0, -LO_offset);
     SetRXOsc(0,1, -LO_offset);
