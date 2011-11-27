@@ -187,6 +187,7 @@ void Connection::socketData() {
                 //length = atoi(&hdr[AUDIO_LENGTH_POSITION]);
                 length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);
                 if ((length < 0) || (length > 4800 * 8)){
+                    fprintf(stderr,"Connection: length of audio_header out of bounds = %d\n", length);
                     state = READ_HEADER_TYPE;
                 } else {
                     buffer = (char*)malloc(length);

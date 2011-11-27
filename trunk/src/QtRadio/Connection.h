@@ -94,7 +94,7 @@ private:
     int state;
     char* hdr;
     char* buffer;
-    int length;
+    short length;   // int causes errors in converting 2 char bytes to integer
     int bytes;
     bool muted;
 
