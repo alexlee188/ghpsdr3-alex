@@ -1934,12 +1934,10 @@ void UI::pttChange(int caller, bool ptt)
        if(ptt) {    // Going from Rx to Tx ................
             if(caller==1) { //We have clicked the tune button so switch to AM and set carrier level
                workingMode = mode.getMode(); //Save the current mode for restoration when we finish tuning
-               qDebug()<<"The raw value of TxPwr = "<< widget.ctlFrame->getTxPwr()<<" and TxPwr = "<<(double)widget.ctlFrame->getTxPwr()/100;
                // Set the AM carrier level to match the tune power slider value in a scale 0 to 1.0
                command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100;
                connection.sendCommand(command);
-               command.clear(); QTextStream(&command) << "setMode " << MODE_AM;
-               connection.sendCommand(command);
+               actionAM();
             }
             //Mute the receiver audio and freeze the spectrum and waterfall display
             connection.setMuted(true);
@@ -1953,10 +1951,20 @@ void UI::pttChange(int caller, bool ptt)
                 command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << 0.5;
                 connection.sendCommand(command);
                 //Restore the mode back to original before tuning
-                command.clear(); QTextStream(&command) << "setMode " << workingMode;
-                connection.sendCommand(command);
+                switch(workingMode) {
+                    case MODE_CWL: actionCWL(); break;
+                    case MODE_CWU: actionCWU(); break;
+                    case MODE_LSB: actionLSB(); break;
+                    case MODE_USB: actionUSB(); break;
+                    case MODE_DSB: actionDSB(); break;
+                    case MODE_AM:  actionAM();  break;
+                    case MODE_SAM: actionSAM(); break;
+                    case MODE_FMN: actionFMN(); break;
+                    case MODE_DIGL:actionDIGL();break;
+                    case MODE_DIGU:actionDIGU();break;
+                }
             }
-            //Un-mute the receiver audio and un-freeze the display
+            //Un-mute the receiver audio
             connection.setMuted(false);
             //Send signal to sdr to go to Rx
             command.clear(); QTextStream(&command) << "Mox " << "off";
