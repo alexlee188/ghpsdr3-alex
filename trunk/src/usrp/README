@@ -1,6 +1,5 @@
 An attempt at a server for USRP hardware using UHD - Universal Hardware Driver API.
 
-
 The server program in the ghpsdr3 suite of programs is the the program 
 that forms the interface to the hardware.  One instance of this program 
 must be running to communicate with the USRP hardware.
@@ -19,6 +18,7 @@ support one receiver.  Bruce Walkers FPGA code supports 4 receivers.
   samplerate is the rate at which you want the HPSDR hardware to sample the 
 incoming signals.  
 
+*** PLEASE READ AT THE END OF THE FILE FOR the TODO LIST ***
 
 1. BUILD
 
@@ -56,10 +56,12 @@ incoming signals.
   to test your USRP and UHD installation.
   Use rx_samples_to_file to verify the end to end working of the platform.
 
-1.2 gpsdr3 package from John Melton
+1.2 ghpsdr3-alex, Alex Lee package forked from John Melton's ghpsdr3 project.
 
   To install the package do the following steps:
   
+  //FIXME: CHANGE THIS (albtrentadue)
+
   sudo apt-get install subversion
   sudo apt-get install libqt4-dev
   sudo apt-get install libfftw3-3
@@ -74,6 +76,7 @@ incoming signals.
   qmake-qt4 QtRadio.pro
   make
 
+  //FIXME: CHANGE ABOVE (albtrentadue)
 
 1.3 Extract and build this package
 
@@ -81,16 +84,18 @@ incoming signals.
 
   sudo apt-get install libportaudio2 portaudio19-dev libsamplerate0-dev libpulse-dev
 
-  Just for convenience, it is better untar this package into the ghpsdr3 
-directory hierarchy.
+  Just for convenience, it is better untar this package into the ghpsdr3 directory hierarchy.
+
+  //FIXME: CHANGE THIS (albtrentadue)
 
   cd ~/ghpsdr3/trunk/src/
   tar -zxvf ~/Download/ghpsdr3-usrp-1.0.tar.gz
   cd ghpsdr3-usrp-1.0
   ./configure
   make
-  sudo mak install
+  sudo make install
 
+  //FIXME: CHANGE ABOVE (albtrentadue)
 
 1.4 How to run
 
@@ -124,6 +129,15 @@ tar -xvf ghpsdr3-usrp-1.0.tar.gz
 cd ghpsdr3-usrp-1.0/
 ./configure && make
 sudo make install
+
+*** TODO LIST ***
+1. Validare le opzioni a riga di comando - OK
+2. verificare il corretto cambio di frequenza - OK
+3. Implementare la scelta della daughter board da opzione a riga di comando - OK
+4. prova di recezione con un trasmettitore HF
+5. Verificare la stabilità con un tempo di esecuzione lungo
+6. Aggiornare il README
+N. Fix this README file to comply to ghpsdr3-alex build standards
 
 
 

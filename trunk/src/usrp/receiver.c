@@ -142,7 +142,8 @@ const char* set_frequency(CLIENT* client,long frequency) {
     }
 
     receiver[client->receiver].frequency=frequency;
-    //TODO: Change frequency in reality!
+    //fprintf(stderr, "Frequency to be set in USRP=%ld", receiver[client->receiver].frequency);
+    usrp_set_frequency(frequency);
     receiver[client->receiver].frequency_changed=1;
 
     return OK;

@@ -182,9 +182,9 @@ int usrp_get_client_rx_rate(void)
 void usrp_set_frequency (double freq)
 {
     //set the rx center frequency
-    std::cout << boost::format("Setting RX Freq: %f Mhz...") % (freq/1e6) << std::endl;
+    std::cout << boost::format("Setting USRP RX Freq: %f Mhz...") % (freq/1e6) << std::endl;
     usrp.sdev->set_rx_freq(freq);
-    std::cout << boost::format("Actual RX Freq: %f Mhz...") % (usrp.sdev->get_rx_freq()/1e6) << std::endl << std::endl;
+    std::cout << boost::format("Actual USRP RX Freq: %f Mhz...") % (usrp.sdev->get_rx_freq()/1e6) << std::endl << std::endl;
 }
 
 //

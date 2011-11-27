@@ -1,7 +1,7 @@
 /**
 * @file server.c
 * @brief USRP server application
-* @author John Melton, G0ORX/N6LYT, code for USRP: Andrea Montefusco IW0HDV
+* @author John Melton, G0ORX/N6LYT, code for USRP: Andrea Montefusco IW0HDV, Alberto Trentadue IZ0CEZ
 * @version 0.1
 * @date 2009-10-13
 */
@@ -40,7 +40,6 @@
 #else // Windows
 #include "pthread.h"
 #include <winsock.h>
-#include "getopt.h"
 #endif
 
 #include "client.h"
@@ -52,9 +51,9 @@
 //Server Default I/Q rate on RX
 #define DEFAULT_CLIENT_RX_SAMPLE_RATE 48000
 
-static struct option long_options[] = {
-    {"subdev",required_argument, 0, 0},
-    {"samplerate",required_argument, 0, 1},
+static struct option long_options[] = {    
+    {"samplerate",required_argument, 0, 0},
+    {"subdev",required_argument, 0, 1},
     {"receivers",required_argument, 0, 2},    
 /*
     {"dither",required_argument, 0, 3},
@@ -74,11 +73,11 @@ static struct option long_options[] = {
 */
     {0,0,0,0},
 };
-static const char* short_options="";
+static const char* short_options="s:d:";
 static int option_index;
 
 //Parameters holders
-static char subdev_par[10] = "B:A"; //TODO: CURRENT CONFIGURATION UNDER TEST.... CHANGE THIS!    
+static char subdev_par[10] = "B:A";    
 static int rx_client_rate_par = DEFAULT_CLIENT_RX_SAMPLE_RATE;
 static int receivers_par = 1;
 
@@ -97,7 +96,7 @@ int main(int argc,char* argv[]) {
         err = WSAStartup(wVersionRequested, &wsaData);          // initialize Windows sockets
 #endif
     
-    process_args(argc,argv);
+    process_args(argc,argv);    
 
     if (!usrp_init (subdev_par)) {
 		fprintf(stderr,"Failed USRP init or not found. Exiting.\n");
@@ -126,21 +125,22 @@ void process_args(int argc,char* argv[]) {
     int i;
 
     while((i=getopt_long(argc,argv,short_options,long_options,&option_index))!=EOF) {
-
+        
         switch(i) {
             
-            case 0: // subdev
-                //usrp_set_subdev_args(optarg);
+            case 0: ;
+            case 115:// RX sample rate
+                //Note: if the argumenr is a string, is evaluated to 0
+                rx_client_rate_par = atoi(optarg);  	     
+                break;
+                                
+            case 1: ;
+            case 100: // subdev                
                 strcpy(subdev_par, optarg);                
                 break;    
-            
-            case 1: // RX sample rate
-                //usrp_set_rx_sample_rate(atoi(optarg));
-                rx_client_rate_par = atoi(optarg);
-                break;
 
             case 2: // receivers
-                //usrp_set_receivers(atoi(optarg));
+                //Note: if the argumenr is a string, is evaluated to 0
                 receivers_par = atoi(optarg);
                 break;
 /*
@@ -242,8 +242,8 @@ void process_args(int argc,char* argv[]) {
 */
             default:
                 fprintf(stderr,"Usage: \n");
-                fprintf(stderr,"  usrp_server --subdev spec (default \"\")\n");
-                fprintf(stderr,"              --samplerate 48000 | 96000 | 192000 (default 48000)\n");
+                fprintf(stderr,"  usrp_server -s, --samplerate 48000 | 96000 | 192000 (default 48000)\n");
+                fprintf(stderr,"              -d, --subdev spec (default \"\")\n");                
                 fprintf(stderr,"              --receivers N (default 1)\n");
                 fprintf(stderr,"\n");
                 fprintf(stderr,"NOTE: samplerate is towards the client (e.g. dspserver)");
