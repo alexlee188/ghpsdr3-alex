@@ -61,7 +61,6 @@ class Connection : public QObject {
     Q_OBJECT
 public:
     Connection();
-    Connection(const Connection& orig);
     virtual ~Connection();
     void connect(QString host,int receiver);
     void sendCommand(QString command);
@@ -87,6 +86,10 @@ signals:
     void bandscopeBuffer(char* header,char* buffer);
 
 private:
+    // really not used (and not even implemented)
+    // defined as private in order to prevent unduly usage 
+    Connection(const Connection& orig);
+
     QString host;
     int port;
     QTcpSocket* tcpSocket;
