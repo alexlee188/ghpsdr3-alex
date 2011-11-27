@@ -523,42 +523,42 @@ void vfo::vfohotkey(QString cmd)
 {
     if (cmd.compare("FreqDown") == 0){
         emit frequencyMoved(vfohotstep, -1);
-        qDebug() <<"cmd=" <<cmd;
+        //qDebug() <<"cmd=" <<cmd;
         return;
     }
     if (cmd.compare("FreqUp") == 0){
         emit frequencyMoved(vfohotstep, 1);
-        qDebug() <<"cmd=" <<cmd;
+        //qDebug() <<"cmd=" <<cmd <<"vfohotstep" <<vfohotstep;
         return;
     }
     // Not a freq move so check for step change
-    static const int mult[9] = {100000000,10000000,1000000,100000,10000,1000,100,10,1};
-    int curstep = 6;
-    for(int i=1;i<=9;i++)
+    static const int mult[7] = {1000000,100000,10000,1000,100,10,1};
+    int curstep = 5;
+    for(int i=0;i<=7;i++)
     {
       if(mult[i] == vfohotstep){
           curstep = i;
       }
     }
-    if (cmd.compare("StepUp") == 0  && curstep >1){
-        qDebug() <<"old =" <<vfohotstep;
+    if (cmd.compare("StepUp") == 0  && curstep >0){
+        //qDebug() <<"Step Up old =" <<vfohotstep << " curstep" << curstep;
         curstep--;
         vfohotstep = mult[curstep];
-        qDebug() <<"new =" <<vfohotstep;
+        //qDebug() <<"new =" <<vfohotstep;
         return;
     }
-    if (cmd.compare("StepUp") == 0  && curstep == 1){
-        qDebug() <<"old =" <<vfohotstep;
-        curstep = 9;
+    if (cmd.compare("StepUp") == 0  && curstep == 0){
+        //qDebug() <<"Step Up Wrap old =" <<vfohotstep << " curstep" << curstep;
+        curstep = 6;
         vfohotstep = mult[curstep];
-        qDebug() <<"new =" <<vfohotstep;
+        //qDebug() <<"new =" <<vfohotstep;
         return;
     }
-    if (cmd.compare("StepDown") == 0  && curstep <9){
-        qDebug() <<"old =" <<vfohotstep;
+    if (cmd.compare("StepDown") == 0  && curstep <7){
+        //qDebug() <<"Step Down old =" <<vfohotstep << " curstep=" << curstep;
         curstep++;
         vfohotstep = mult[curstep];
-        qDebug() <<"new =" <<vfohotstep;
+        //qDebug() <<"new =" <<vfohotstep;
         return;
     }
     return;
