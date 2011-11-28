@@ -163,6 +163,12 @@ void Configure::connected(bool state) {
     widget.audioDeviceComboBox->setDisabled(state);
     widget.sampleRateComboBox->setDisabled(state);
     widget.audioChannelsSpinBox->setDisabled(state);
+    if (widget.encodingComboBox->currentIndex() == 2){
+        widget.sampleRateComboBox->setDisabled(TRUE);
+        widget.audioChannelsSpinBox->setDisabled(TRUE);
+        widget.sampleRateComboBox->setCurrentIndex(0);
+        widget.audioChannelsSpinBox->setValue(1);
+    }
     widget.encodingComboBox->setDisabled(state);
     widget.byteOrderComboBox->setDisabled(state);
 
@@ -643,6 +649,14 @@ void Configure::on_pBtnRemHost_clicked()
 void Configure::on_encodingComboBox_currentIndexChanged(int index)
 {
     qDebug() << "audio_encoding changed to :  " << index;
+    if (index == 2){
+        widget.audioChannelsSpinBox->setDisabled(TRUE);
+        widget.sampleRateComboBox->setDisabled(TRUE);
+    }
+    else {
+        widget.audioChannelsSpinBox->setDisabled(FALSE);
+        widget.sampleRateComboBox->setDisabled(FALSE);
+    }
     emit encodingChanged(index);
 }
 

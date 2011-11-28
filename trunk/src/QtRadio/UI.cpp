@@ -450,7 +450,7 @@ void UI::audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFo
 
 void UI::encodingChanged(int choice){
     audio->set_audio_encoding(choice);
-    qDebug() << "UI: encodingChanged: " << choice;
+//    qDebug() << "UI: encodingChanged: " << choice;
     if (choice == 2){               // Codec 2
         configure.setChannels(1);
         configure.setSampleRate(8000);
