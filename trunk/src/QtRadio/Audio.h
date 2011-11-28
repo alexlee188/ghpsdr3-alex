@@ -34,9 +34,9 @@
 #include <QMutex>
 #include <samplerate.h>
 
-#define AUDIO_BUFFER_SIZE 1600
+#define AUDIO_BUFFER_SIZE 800
 #define AUDIO_OUTPUT_BUFFER_SIZE 2048
-#define RESAMPLING_BUFFER_SIZE (10600*4)    // 2 channels of 9600 + 10%
+#define RESAMPLING_BUFFER_SIZE (10600*2)    // 2 channels of 9600 + 10%
 
 #define BIGENDIAN
 // There are problems running at 8000 samples per second on Mac OS X
