@@ -72,8 +72,8 @@ private:
     QAudioDeviceInfo audio_device;
     QIODevice*       audio_out;
     QByteArray       decoded_buffer;
-    float buffer_in[1600*6*2];
-    float buffer_out[1600*6*2];
+    float buffer_in[1600*24*2];
+    float buffer_out[1600*24*2];
     short decodetable[256];
     SRC_STATE *sr_state;
     SRC_DATA  sr_data;

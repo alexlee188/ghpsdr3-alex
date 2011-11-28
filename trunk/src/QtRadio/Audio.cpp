@@ -302,7 +302,7 @@ void Audio::resample(int no_of_samples){
     sr_data.data_out = buffer_out;
     sr_data.input_frames = no_of_samples;
     sr_data.src_ratio = src_ratio;
-    sr_data.output_frames = 1600*6;
+    sr_data.output_frames = 1600*24;
     sr_data.end_of_input = 0;
 
     rc = src_process(sr_state, &sr_data);
