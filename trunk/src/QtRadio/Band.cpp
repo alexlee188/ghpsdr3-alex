@@ -34,6 +34,7 @@ Band::Band() {
     }
 
     limits.clear();
+/*
     limits << BandLimit(1800000LL,2000000LL);
     limits << BandLimit(3500000LL,4000000LL);
     limits << BandLimit(5330500LL,5403500LL);
@@ -57,7 +58,7 @@ Band::Band() {
     limits << BandLimit(24192000000LL,24192400000LL);
     limits << BandLimit(47088000000LL,47088400000LL);
     limits << BandLimit(0l,0L);
-
+*/
 }
 
 Band::~Band() {
@@ -73,9 +74,9 @@ void Band::readSettings(QSettings *settings)
 }
 
 void Band::loadSettings(QSettings* settings) {
-    int i,j;
-    QString s;
-    BandLimit limitItem;
+//    int i,j;
+//    QString s;
+//    BandLimit limitItem;
     long long limitMin,limitMax;
 
     settings->beginGroup("Band");
@@ -91,23 +92,23 @@ void Band::loadSettings(QSettings* settings) {
     bandstack[BAND_160][0].setWaterfallLow(settings->value("waterfallLow.0.0",-125).toInt());
     bandstack[BAND_160][0].setInfo(settings->value("info.0.0",2).toInt());  //Count of Quick Memories 0 .. n
     // Quick memory number 2
-    bandstack[BAND_160][1].setFrequency(settings->value("frequency.1.1",1835000).toLongLong());
-    bandstack[BAND_160][1].setMode(settings->value("mode.1.1",MODE_LSB).toInt());
-    bandstack[BAND_160][1].setFilter(settings->value("filter.1.1",4).toInt());
-    bandstack[BAND_160][1].setSpectrumHigh(settings->value("spectrumHigh.1.1",-40).toInt());
-    bandstack[BAND_160][1].setSpectrumLow(settings->value("spectrumLow.1.1",-160).toInt());
-    bandstack[BAND_160][1].setWaterfallHigh(settings->value("waterfallHigh.1.1",-60).toInt());
-    bandstack[BAND_160][1].setWaterfallLow(settings->value("waterfallLow.1.1",-125).toInt());
-    bandstack[BAND_160][1].setInfo(settings->value("info.1.1",0).toInt());  //Pointer to stack for reading
+    bandstack[BAND_160][1].setFrequency(settings->value("frequency.0.1",1835000).toLongLong());
+    bandstack[BAND_160][1].setMode(settings->value("mode.0.1",MODE_LSB).toInt());
+    bandstack[BAND_160][1].setFilter(settings->value("filter.0.1",4).toInt());
+    bandstack[BAND_160][1].setSpectrumHigh(settings->value("spectrumHigh.0.1",-40).toInt());
+    bandstack[BAND_160][1].setSpectrumLow(settings->value("spectrumLow.0.1",-160).toInt());
+    bandstack[BAND_160][1].setWaterfallHigh(settings->value("waterfallHigh.0.1",-60).toInt());
+    bandstack[BAND_160][1].setWaterfallLow(settings->value("waterfallLow.0.1",-125).toInt());
+    bandstack[BAND_160][1].setInfo(settings->value("info.0.1",0).toInt());  //Pointer to stack for reading
     // Quick memory number 3
-    bandstack[BAND_160][2].setFrequency(settings->value("frequency.1.2",1845000).toLongLong());
-    bandstack[BAND_160][2].setMode(settings->value("mode.1.2",MODE_AM).toInt());
-    bandstack[BAND_160][2].setFilter(settings->value("filter.1.2",4).toInt());
-    bandstack[BAND_160][2].setSpectrumHigh(settings->value("spectrumHigh.1.2",-40).toInt());
-    bandstack[BAND_160][2].setSpectrumLow(settings->value("spectrumLow.1.2",-160).toInt());
-    bandstack[BAND_160][2].setWaterfallHigh(settings->value("waterfallHigh.1.2",-60).toInt());
-    bandstack[BAND_160][2].setWaterfallLow(settings->value("waterfallLow.1.2",-125).toInt());
-    bandstack[BAND_160][2].setInfo(settings->value("info.1.2",0).toInt());  //Pointer to stack for storing
+    bandstack[BAND_160][2].setFrequency(settings->value("frequency.0.2",1845000).toLongLong());
+    bandstack[BAND_160][2].setMode(settings->value("mode.0.2",MODE_AM).toInt());
+    bandstack[BAND_160][2].setFilter(settings->value("filter.0.2",4).toInt());
+    bandstack[BAND_160][2].setSpectrumHigh(settings->value("spectrumHigh.0.2",-40).toInt());
+    bandstack[BAND_160][2].setSpectrumLow(settings->value("spectrumLow.0.2",-160).toInt());
+    bandstack[BAND_160][2].setWaterfallHigh(settings->value("waterfallHigh.0.2",-60).toInt());
+    bandstack[BAND_160][2].setWaterfallLow(settings->value("waterfallLow.0.2",-125).toInt());
+    bandstack[BAND_160][2].setInfo(settings->value("info.0.2",0).toInt());  //Pointer to stack for storing
     // Current working frequency
     bandstack[BAND_160][3].setFrequency(settings->value("frequency.0.3",0).toLongLong());  //Terminator
 
@@ -520,7 +521,46 @@ void Band::loadSettings(QSettings* settings) {
     bandstack[BAND_WWV][4].setInfo(settings->value("info.12.4",0).toInt());  //Not used. Band terminated by being 5 entries
     settings->endGroup();
 
+    //Load the band limits for the eleven band buttons. GEN has no limits. WWV is hard coded.
     settings->beginGroup("bandLimits");
+    limitMin=settings->value("limits.0.min",1800000).toLongLong();
+    limitMax=settings->value("limits.0.max",2000000).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+    limitMin=settings->value("limits.1.min",3500000).toLongLong();
+    limitMax=settings->value("limits.1.max",4000000).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+    limitMin=settings->value("limits.2.min",5330500).toLongLong();
+    limitMax=settings->value("limits.2.max",5403500).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+    limitMin=settings->value("limits.3.min",7000000).toLongLong();
+    limitMax=settings->value("limits.3.max",7300000).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+    limitMin=settings->value("limits.4.min",10100000).toLongLong();
+    limitMax=settings->value("limits.4.max",10150000).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+    limitMin=settings->value("limits.5.min",14000000).toLongLong();
+    limitMax=settings->value("limits.5.max",14350000).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+    limitMin=settings->value("limits.6.min",18068000).toLongLong();
+    limitMax=settings->value("limits.6.max",18168000).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+    limitMin=settings->value("limits.7.min",21000000).toLongLong();
+    limitMax=settings->value("limits.7.max",21450000).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+    limitMin=settings->value("limits.8.min",24890000).toLongLong();
+    limitMax=settings->value("limits.8.max",24990000).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+    limitMin=settings->value("limits.9.min",28000000).toLongLong();
+    limitMax=settings->value("limits.9.max",29700000).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+    limitMin=settings->value("limits.10.min",50000000).toLongLong();
+    limitMax=settings->value("limits.10.max",54000000).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+    limitMin=settings->value("limits.11.min",0).toLongLong();
+    limitMax=settings->value("limits.11.max",0).toLongLong();
+        limits << BandLimit(limitMin,limitMax);
+
+  /*
     if(settings->contains("limits.22.min")) { //We have a table of valid limits stored
         limits.clear();
         for (i=0;i<23;i++) {
@@ -530,9 +570,8 @@ void Band::loadSettings(QSettings* settings) {
             limitMax=settings->value(s).toLongLong();
             limits << BandLimit(limitMin,limitMax);
         }
-    }
+    }*/
     settings->endGroup();
-    qDebug()<<Q_FUNC_INFO<<":  bandstack[BAND_160][0].getFrequency() = "<<bandstack[BAND_160][0].getFrequency();
 }
 
 void Band::saveSettings(QSettings* settings) {
@@ -581,6 +620,7 @@ void Band::saveSettings(QSettings* settings) {
         i++;
         limitItem = limits.at(i);
     }
+    //Terminate group with min = 0
     s.sprintf("limits.%d.min",i);
     settings->setValue(s,0);
     s.sprintf("limits.%d.max",i);
