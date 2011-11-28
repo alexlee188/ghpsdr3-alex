@@ -34,8 +34,9 @@
 #include <QMutex>
 #include <samplerate.h>
 
-#define AUDIO_BUFFER_SIZE 1600
+#define AUDIO_BUFFER_SIZE 800
 #define AUDIO_OUTPUT_BUFFER_SIZE 2048
+#define RESAMPLING_BUFFER_SIZE (10600*2)    // 2 channels of 9600 + 10%
 
 #define BIGENDIAN
 // There are problems running at 8000 samples per second on Mac OS X
@@ -72,8 +73,8 @@ private:
     QAudioDeviceInfo audio_device;
     QIODevice*       audio_out;
     QByteArray       decoded_buffer;
-    float buffer_in[1600*6*2];
-    float buffer_out[1600*6*2];
+    float buffer_in[RESAMPLING_BUFFER_SIZE];
+    float buffer_out[RESAMPLING_BUFFER_SIZE];
     short decodetable[256];
     SRC_STATE *sr_state;
     SRC_DATA  sr_data;

@@ -279,7 +279,7 @@ void Audio::process_audio(char* header,char* buffer,int length) {
         //qDebug() << "writing audio data length=: " <<  decoded_buffer.length();
         total_to_write = decoded_buffer.length();
         while( written< total_to_write) {
-            if (audio_output->bytesFree() < 4) usleep(1000);
+            if (audio_output->bytesFree() < 4) usleep(2000);
             // writing in periodsize is recommended
             length_to_write = (audio_output->periodSize() > (decoded_buffer.length()-written)) ?
                         (decoded_buffer.length()-written) : audio_output->periodSize();
@@ -302,7 +302,7 @@ void Audio::resample(int no_of_samples){
     sr_data.data_out = buffer_out;
     sr_data.input_frames = no_of_samples;
     sr_data.src_ratio = src_ratio;
-    sr_data.output_frames = 1600*6;
+    sr_data.output_frames = RESAMPLING_BUFFER_SIZE/2;
     sr_data.end_of_input = 0;
 
     rc = src_process(sr_state, &sr_data);
