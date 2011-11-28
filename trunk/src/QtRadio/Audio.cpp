@@ -44,7 +44,7 @@ Audio::Audio(void * codec) {
     audio_format.setByteOrder(audio_byte_order);
     codec2 = codec;
 
-    src_ratio = 7800.0 / 8000.0;
+    src_ratio = 1.0;
     sr_state = src_new (
                          //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
                          SRC_SINC_MEDIUM_QUALITY,
