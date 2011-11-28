@@ -34,6 +34,7 @@ vfo::vfo(QWidget *parent) :
 {
     ui->setupUi(this);
     vfohotstep = 100;
+    curstep = 2;
     selectedVFO = 'A';
     ptt = false;
 
@@ -239,9 +240,15 @@ void vfo::wheelEvent(QWheelEvent *event)
     }  //We fall through to here without processing the wheel if getDigit returns 9.
 }
 
+
+
 void vfo::writeA(long long freq)
 {
+
+
     QString myStr;
+    QString uOn;
+    QString uOff;
     int cnt = 0;
     int stgChrs;
 
@@ -251,9 +258,16 @@ void vfo::writeA(long long freq)
     ui->lbl_Akhz->setText("");
     ui->lbl_Amhz->setText("");
     for (cnt = stgChrs; cnt > -1; cnt--) {
-        if (stgChrs - cnt < 3) ui->lbl_Ahz->setText(myStr.at(cnt)+ui->lbl_Ahz->text());
-        else if (stgChrs - cnt < 6) ui->lbl_Akhz->setText(myStr.at(cnt)+ui->lbl_Akhz->text());
-        else ui->lbl_Amhz->setText(myStr.at(cnt)+ui->lbl_Amhz->text());
+        if (stgChrs - cnt == curstep) {
+            //uOn="<font color=\"green\">"; uOff="</font>";
+            uOn=""; uOff="";
+            qDebug()<<"vfowrite cnt=" <<cnt<<" digit="<<myStr.at(cnt)<<" curstep="<<curstep;
+        }else{
+            uOn=""; uOff="";
+        }
+        if (stgChrs - cnt < 3) ui->lbl_Ahz->setText(uOn+myStr.at(cnt)+uOff+ui->lbl_Ahz->text());
+        else if (stgChrs - cnt < 6) ui->lbl_Akhz->setText(uOn+myStr.at(cnt)+uOff+ui->lbl_Akhz->text());
+        else ui->lbl_Amhz->setText(uOn+myStr.at(cnt)+uOff+ui->lbl_Amhz->text());
     }
 }
 
@@ -517,32 +531,24 @@ void vfo::vfohotkey(QString cmd)
         //qDebug() <<"cmd=" <<cmd <<"vfohotstep" <<vfohotstep;
         return;
     }
-    // Not a freq move so check for step change
-    static const int mult[7] = {1000000,100000,10000,1000,100,10,1};
-    int curstep = 5;
-    for(int i=0;i<=7;i++)
-    {
-      if(mult[i] == vfohotstep){
-          curstep = i;
-      }
-    }
-    if (cmd.compare("StepUp") == 0  && curstep >0){
+    static const int mult[7] = {1,10,100,1000,10000,100000,1000000};
+    if (cmd.compare("StepUp") == 0  && curstep <6){
         //qDebug() <<"Step Up old =" <<vfohotstep << " curstep" << curstep;
-        curstep--;
-        vfohotstep = mult[curstep];
-        //qDebug() <<"new =" <<vfohotstep;
-        return;
-    }
-    if (cmd.compare("StepUp") == 0  && curstep == 0){
-        //qDebug() <<"Step Up Wrap old =" <<vfohotstep << " curstep" << curstep;
-        curstep = 6;
-        vfohotstep = mult[curstep];
-        //qDebug() <<"new =" <<vfohotstep;
-        return;
-    }
-    if (cmd.compare("StepDown") == 0  && curstep <7){
-        //qDebug() <<"Step Down old =" <<vfohotstep << " curstep=" << curstep;
         curstep++;
+        vfohotstep = mult[curstep];
+        //qDebug() <<"new =" <<vfohotstep;
+        return;
+    }
+    if (cmd.compare("StepUp") == 0  && curstep == 6){
+        //qDebug() <<"Step Up Wrap old =" <<vfohotstep << " curstep" << curstep;
+        curstep = 0;
+        vfohotstep = mult[curstep];
+        //qDebug() <<"new =" <<vfohotstep;
+        return;
+    }
+    if (cmd.compare("StepDown") == 0  && curstep >0){
+        //qDebug() <<"Step Down old =" <<vfohotstep << " curstep=" << curstep;
+        curstep--;
         vfohotstep = mult[curstep];
         //qDebug() <<"new =" <<vfohotstep;
         return;

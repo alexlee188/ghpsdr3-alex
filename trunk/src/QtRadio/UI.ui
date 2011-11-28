@@ -828,9 +828,6 @@
    <property name="text">
     <string>Bookmark This Frequency</string>
    </property>
-   <property name="shortcut">
-    <string>B</string>
-   </property>
   </action>
   <action name="actionXVTRConfigure">
    <property name="text">

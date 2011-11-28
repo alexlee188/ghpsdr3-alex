@@ -70,6 +70,7 @@ private:
     void keyPressEvent( QKeyEvent * event);
     void vfohotkey(QString cmd);
     int vfohotstep;
+    int curstep;
     QSettings *settings;
     QBasicTimer timer;
     void writeA(long long);
