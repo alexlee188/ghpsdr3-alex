@@ -26,7 +26,7 @@
 #include "Connection.h"
 
 Connection::Connection() {
-    //qDebug() << "Connection::Connection";
+    qDebug() << "Connection::Connection";
     tcpSocket=NULL;
     state=READ_HEADER_TYPE;
     bytes=0;
@@ -35,15 +35,23 @@ Connection::Connection() {
     SemSpectrum.release();
 }
 
-Connection::Connection(const Connection& orig) {
-}
+//Connection::Connection(const Connection& orig) {
+//    qDebug() << "Connection::Connection: copy constructor";
+//}
 
 Connection::~Connection() {
+    qDebug() << "Connection::~Connection";
 }
 
 void Connection::connect(QString h,int p) {
     host=h;
     port=p;
+
+    // cleanup previous object, if any
+    if (tcpSocket) {
+        delete tcpSocket;
+    }
+
     tcpSocket=new QTcpSocket(this);
 
     QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
@@ -58,22 +66,41 @@ void Connection::connect(QString h,int p) {
     QObject::connect(tcpSocket, SIGNAL(readyRead()),
             this, SLOT(socketData()));
 
+    // set the initial state
+    state=READ_HEADER_TYPE;
+    // cleanup dirty value eventually left from previous usage
+    bytes=0;
     qDebug() << "Connection::connect: connectToHost: " << host << ":" << port;
     tcpSocket->connectToHost(host,port);
-
 
 }
 
 void Connection::disconnected() {
+    qDebug() << "Connection::disconnected: emits: " << "Remote disconnected";
     emit disconnected("Remote disconnected");
+    if(tcpSocket!=NULL) {
+        QObject::disconnect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
+                this, SLOT(socketError(QAbstractSocket::SocketError)));
+
+        QObject::disconnect(tcpSocket, SIGNAL(connected()),
+                this, SLOT(connected()));
+
+        QObject::disconnect(tcpSocket, SIGNAL(disconnected()),
+                this, SLOT(disconnected()));
+
+        QObject::disconnect(tcpSocket, SIGNAL(readyRead()),
+                this, SLOT(socketData()));
+
+    }
 }
 
 void Connection::disconnect() {
 
-    //qDebug() << "Connection::disconnect";
+    qDebug() << "Connection::disconnect";
     if(tcpSocket!=NULL) {
         tcpSocket->close();
-        tcpSocket=NULL;
+        // object deletion moved in connect method 
+        // tcpSocket=NULL;
     }
 }
 
@@ -93,12 +120,14 @@ void Connection::socketError(QAbstractSocket::SocketError socketError) {
     }
 
     emit disconnected(tcpSocket->errorString());
-    tcpSocket=NULL;
+    // memory leakeage !! 
+    // tcpSocket=NULL;
 }
 
 void Connection::connected() {
-    //qDebug() << "Connected" << tcpSocket->isValid();
+    qDebug() << "Connection::Connected" << tcpSocket->isValid();
     emit isConnected();
+    state=READ_HEADER_TYPE;
 }
 
 void Connection::sendCommand(QString command) {
@@ -144,6 +173,7 @@ void Connection::socketData() {
 
     toRead=tcpSocket->bytesAvailable();
     while(bytesRead<toRead) {
+        //fprintf (stderr, "%d of %d [%d]\n", bytesRead, toRead, state);
         switch(state) {
         case READ_HEADER_TYPE:
             thisRead=tcpSocket->read(&hdr[0],1);
@@ -153,6 +183,7 @@ void Connection::socketData() {
             break;
 
         case READ_AUDIO_HEADER:
+            //fprintf (stderr, "READ_AUDIO_HEADER: hdr size: %d bytes: %d\n", AUDIO_HEADER_SIZE, bytes);
             thisRead=tcpSocket->read(&hdr[bytes],AUDIO_HEADER_SIZE - bytes);
             bytes+=thisRead;
             if ((bytes == AUDIO_HEADER_SIZE)){
@@ -160,6 +191,7 @@ void Connection::socketData() {
                 //length = atoi(&hdr[AUDIO_LENGTH_POSITION]);
                 length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);
                 if ((length < 0) || (length > 4800 * 8)){
+                    fprintf(stderr,"Connection: length of audio_header out of bounds = %d\n", length);
                     state = READ_HEADER_TYPE;
                 } else {
                     buffer = (char*)malloc(length);
@@ -190,6 +222,7 @@ void Connection::socketData() {
             break;
 
         case READ_BUFFER:
+            //fprintf (stderr, "READ_BUFFER: length: %d bytes: %d\n", length, bytes);
             thisRead=tcpSocket->read(&buffer[bytes],length-bytes);
             bytes+=thisRead;
             //qDebug() << "READ_BUFFER: read " << bytes << " of " << length;
@@ -211,6 +244,8 @@ void Connection::socketData() {
             } else {
             }
             break;
+        default:
+            fprintf (stderr, "FATAL: WRONG STATUS !!!!!\n");         
         }
         bytesRead+=thisRead;
     }
@@ -247,3 +282,4 @@ void Connection::freeBuffers(char* header,char* buffer) {
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);
 }
+
