@@ -97,11 +97,12 @@ void Connection::disconnected() {
 
 void Connection::disconnect() {
 
-    qDebug() << "Connection::disconnect";
+    qDebug() << "Connection::disconnect Line 100";
     if(tcpSocket!=NULL) {
         tcpSocket->close();
         // object deletion moved in connect method 
         // tcpSocket=NULL;
+
     }
 }
 

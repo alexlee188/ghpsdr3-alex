@@ -921,6 +921,14 @@ void UI::bandChanged(int previousBand,int newBand) {
 
     // get the band setting
     mode.setMode(band.getMode());
+
+    qDebug()<<Q_FUNC_INFO<<":   The value of band.getFilter is ... "<<band.getFilter();
+    qDebug()<<Q_FUNC_INFO<<":   I have got to here OK line 920 ";
+
+
+//    if(band.getFilter() != filters.getFilter()) {
+//        emit filterChanged(filters.getFilter(), band.getFilter());
+//    }
     frequency=band.getFrequency();
     int samplerate = widget.spectrumFrame->samplerate();
     if(subRx) {
@@ -1135,7 +1143,7 @@ void UI::filtersChanged(FiltersBase* previousFilters,FiltersBase* newFilters) {
     //gvj added code
 //    widget.statusbar->showMessage(band.getStringBand()+", "+mode.getStringMode()+", "+filters.getText(),0);
 //    widget.statusbar->showMessage(band.getStringBand()+", "+mode.getStringMode()+", "+filters.getText(),0);
-    printStatusBar(" .. at line 1020");
+    printStatusBar(" .. at line 1133");
 
 }
 
