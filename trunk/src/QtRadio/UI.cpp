@@ -53,7 +53,7 @@
 #include "codec2.h"
 #include "servers.h"
 
-UI::UI() {
+UI::UI(const QString server) {
 
     widget.setupUi(this);
     meter=-121;
@@ -312,7 +312,12 @@ UI::UI() {
     // make spectrum timer
     spectrumTimer = new QTimer(this);
     connect ( spectrumTimer, SIGNAL ( timeout() ), this, SLOT ( updateSpectrum()) );
-    
+
+    // automatically select a server and connect to it //IW0HDV
+    if (server.length()) {
+       qDebug() << "Connecting to " << server;
+       emit actionConnectNow(server);
+    }
 }
 
 UI::~UI() {

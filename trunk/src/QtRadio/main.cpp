@@ -61,10 +61,19 @@ int main(int argc, char *argv[]) {
 
     QApplication app(argc, argv);
 
+    //trying to get the arguments into a list    
+    QStringList args = app.arguments();
+
+    for (int i = 0; i < args.size(); ++i)
+         fprintf (stderr, "%d: %s\n", i,  args.at(i).toLocal8Bit().constData() );
+     
+    QString srv("");
+
+    if ( args.size() >1 ) srv = args.at(1) ;
     // create and show your widgets here
-    UI widget;
+    UI widget(srv);
 
     widget.show();
-
     return app.exec();
 }
+
