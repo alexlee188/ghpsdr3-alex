@@ -97,6 +97,8 @@ signals:
 private:
     int currentBand;
     int currentStack;
+    int readPtr;
+    int storePtr;
     int stack[BAND_LAST];
     BandStackEntry bandstack[BAND_LAST][BANDSTACK_ENTRIES];
     QVector <BandLimit> limits;

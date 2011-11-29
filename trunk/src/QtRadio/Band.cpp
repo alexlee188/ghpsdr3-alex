@@ -600,6 +600,8 @@ void Band::loadSettings(QSettings* settings) {
 //    bandstack[BAND_WWV][5].setWaterfallLow(settings->value("waterfallLow.12.5",-125).toInt());
 //    bandstack[BAND_WWV][5].setInfo(settings->value("info.12.5",0).toInt());  //Null info. Available for whatever.
     settings->endGroup();
+    readPtr = bandstack[currentBand][1].getInfo(); //Point to memory read position for this band
+    storePtr = bandstack[currentBand][2].getInfo(); //Point to memory write position for this band
 
     //Load the band limits for the eleven band buttons. GEN has no limits. WWV is hard coded.
     settings->beginGroup("bandLimits");
@@ -955,5 +957,9 @@ void Band::selectBand(int b) {
 void Band::quickMemStore()
 {
     qDebug()<<Q_FUNC_INFO<<"Got to QuickMemStore";
+    storePtr++;
+    if(storePtr > bandstack[currentBand][2].getInfo()) { //Store position for this band, 0 .. n
+        storePtr = 0;
+    }
 }
 
