@@ -35,6 +35,7 @@ vfo::vfo(QWidget *parent) :
     ui->setupUi(this);
     vfohotstep = 100;
     curstep = 2;
+    setStepMark();
     selectedVFO = 'A';
     ptt = false;
 
@@ -258,13 +259,6 @@ void vfo::writeA(long long freq)
     ui->lbl_Akhz->setText("");
     ui->lbl_Amhz->setText("");
     for (cnt = stgChrs; cnt > -1; cnt--) {
-        if (stgChrs - cnt == curstep) {
-            //uOn="<font color=\"green\">"; uOff="</font>";
-            uOn=""; uOff="";
-            qDebug()<<"vfowrite cnt=" <<cnt<<" digit="<<myStr.at(cnt)<<" curstep="<<curstep;
-        }else{
-            uOn=""; uOff="";
-        }
         if (stgChrs - cnt < 3) ui->lbl_Ahz->setText(uOn+myStr.at(cnt)+uOff+ui->lbl_Ahz->text());
         else if (stgChrs - cnt < 6) ui->lbl_Akhz->setText(uOn+myStr.at(cnt)+uOff+ui->lbl_Akhz->text());
         else ui->lbl_Amhz->setText(uOn+myStr.at(cnt)+uOff+ui->lbl_Amhz->text());
@@ -496,7 +490,7 @@ QString vfo::rigctlGetvfo()
 }
 
 void vfo::keyPressEvent( QKeyEvent * event){
-
+    qDebug() << event->key();
     if(event->key() == Qt::Key_Up) {
        vfohotkey("StepUp");
        event->accept();
@@ -537,6 +531,7 @@ void vfo::vfohotkey(QString cmd)
         curstep++;
         vfohotstep = mult[curstep];
         //qDebug() <<"new =" <<vfohotstep;
+        setStepMark();
         return;
     }
     if (cmd.compare("StepUp") == 0  && curstep == 6){
@@ -544,6 +539,7 @@ void vfo::vfohotkey(QString cmd)
         curstep = 0;
         vfohotstep = mult[curstep];
         //qDebug() <<"new =" <<vfohotstep;
+        setStepMark();
         return;
     }
     if (cmd.compare("StepDown") == 0  && curstep >0){
@@ -551,7 +547,44 @@ void vfo::vfohotkey(QString cmd)
         curstep--;
         vfohotstep = mult[curstep];
         //qDebug() <<"new =" <<vfohotstep;
+        setStepMark();
         return;
+    }
+    return;
+
+}
+
+void vfo::setStepMark()
+{
+    ui->m0->hide();
+    ui->m1->hide();
+    ui->m2->hide();
+    ui->m3->hide();
+    ui->m4->hide();
+    ui->m5->hide();
+    ui->m6->hide();
+    switch (curstep){
+      case 0:
+        ui->m0->show();
+        break;
+      case 1:
+        ui->m1->show();
+        break;
+      case 2:
+        ui->m2->show();
+        break;
+      case 3:
+        ui->m3->show();
+        break;
+      case 4:
+        ui->m4->show();
+        break;
+      case 5:
+        ui->m5->show();
+        break;
+      case 6:
+        ui->m6->show();
+        break;
     }
     return;
 }

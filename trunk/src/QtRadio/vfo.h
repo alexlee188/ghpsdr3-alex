@@ -71,6 +71,7 @@ private:
     void vfohotkey(QString cmd);
     int vfohotstep;
     int curstep;
+    void setStepMark();
     QSettings *settings;
     QBasicTimer timer;
     void writeA(long long);
