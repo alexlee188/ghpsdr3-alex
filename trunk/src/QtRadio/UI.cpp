@@ -740,6 +740,7 @@ void UI::actionSubRx() {
     command.clear(); QTextStream(&command) << "SetSubRX " << subRx;
     connection.sendCommand(command);
     frequencyMoved(0,1); //Dummy call to update frequency display
+    widget.vfoFrame->refocus();
 }
 
 void UI::setSubRxGain(int gain) {

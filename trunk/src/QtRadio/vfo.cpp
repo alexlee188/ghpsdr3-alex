@@ -589,6 +589,11 @@ void vfo::setStepMark()
     return;
 }
 
+void vfo::refocus()
+{
+   ui->frame_2->setFocus();
+}
+
 long long vfo::getTxFrequency()
 {
     if(selectedVFO == 'A') {
