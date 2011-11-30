@@ -279,7 +279,7 @@ void Audio::process_audio(char* header,char* buffer,int length) {
         //qDebug() << "writing audio data length=: " <<  decoded_buffer.length();
         total_to_write = decoded_buffer.length();
         while( written< total_to_write) {
-            if (audio_output->bytesFree() < 4) usleep(2000);
+            if (audio_output->bytesFree() < 48) usleep(4000);
             // writing in periodsize is recommended
             length_to_write = (audio_output->periodSize() > (decoded_buffer.length()-written)) ?
                         (decoded_buffer.length()-written) : audio_output->periodSize();
