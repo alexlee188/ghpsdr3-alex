@@ -339,7 +339,6 @@ void UI::loadSettings() {
     configure.updateXvtrList(&xvtr);
     bookmarks.loadSettings(&settings);
     bookmarks.buildMenu(widget.menuView_Bookmarks);
-
     settings.beginGroup("UI");
     if(settings.contains("gain")) gain=subRxGain=settings.value("gain").toInt();
     if(settings.contains("agc")) agc=settings.value("agc").toInt();
@@ -830,7 +829,9 @@ void UI::actionWWV() {
 }
 
 void UI::bandChanged(int previousBand,int newBand) {
-    qDebug() << "UI::bandChanged: " << previousBand << "," << newBand;
+    qDebug()<<Q_FUNC_INFO<<":   previousBand, newBand = " << previousBand << "," << newBand;
+    qDebug()<<Q_FUNC_INFO<<":   band.getFilter = "<<band.getFilter();
+
     // uncheck previous band
     switch(previousBand) {
         case BAND_160:
@@ -923,12 +924,12 @@ void UI::bandChanged(int previousBand,int newBand) {
     mode.setMode(band.getMode());
 
     qDebug()<<Q_FUNC_INFO<<":   The value of band.getFilter is ... "<<band.getFilter();
-    qDebug()<<Q_FUNC_INFO<<":   I have got to here OK line 920 ";
+    qDebug()<<Q_FUNC_INFO<<":   The value of filters.getFilter is  "<<filters.getFilter();
 
 
-//    if(band.getFilter() != filters.getFilter()) {
-//        emit filterChanged(filters.getFilter(), band.getFilter());
-//    }
+    if(band.getFilter() != filters.getFilter()) {
+        emit filterChanged(filters.getFilter(), band.getFilter());
+    }
     frequency=band.getFrequency();
     int samplerate = widget.spectrumFrame->samplerate();
     if(subRx) {
@@ -966,7 +967,9 @@ void UI::modeChanged(int previousMode,int newMode) {
 
     QString command;
 
-    qDebug() << "UI::modeChanged: " << previousMode << "," << newMode;
+    qDebug()<<Q_FUNC_INFO<< ":   previousMode, newMode" << previousMode << "," << newMode;
+    qDebug()<<Q_FUNC_INFO<< ":   band.getFilter = "<<band.getFilter();
+
     // uncheck previous mode
     switch(previousMode) {
         case MODE_CWL:
@@ -1000,7 +1003,7 @@ void UI::modeChanged(int previousMode,int newMode) {
             widget.actionDIGU->setChecked(FALSE);
             break;
     }
-
+    qDebug()<<Q_FUNC_INFO<<":  999: value of band.getFilter before filters.selectFilters has been called = "<<band.getFilter();
     // check the new mode and set the filters
     switch(newMode) {
         case MODE_CWL:
@@ -1044,7 +1047,7 @@ void UI::modeChanged(int previousMode,int newMode) {
             filters.selectFilters(&diguFilters);
             break;
     }
-
+    qDebug()<<Q_FUNC_INFO<<":  1043: value of band.getFilter after filters.selectFilters has been called = "<<band.getFilter();
     widget.spectrumFrame->setMode(mode.getStringMode());
     command.clear(); QTextStream(&command) << "setMode " << mode.getMode();
     connection.sendCommand(command);
@@ -1053,7 +1056,9 @@ void UI::modeChanged(int previousMode,int newMode) {
 
 void UI::filtersChanged(FiltersBase* previousFilters,FiltersBase* newFilters) {
 
-    qDebug() << "UI::filtersChanged to " << newFilters->getText();
+    qDebug()<<Q_FUNC_INFO<<":   newFilters->getText, newFilters->getSelected = " << newFilters->getText()<<", "<<newFilters->getSelected();
+    qDebug()<<Q_FUNC_INFO<<":   band.getFilter = " <<band.getFilter();
+
     // uncheck old filter
     if(previousFilters!=NULL) {
         switch (previousFilters->getSelected()) {
@@ -1088,8 +1093,10 @@ void UI::filtersChanged(FiltersBase* previousFilters,FiltersBase* newFilters) {
                 widget.actionFilter_9->setChecked(FALSE);
                 break;
         }
+    } else {
+        newFilters->selectFilter(band.getFilter()); //TODO Still not there yet
     }
-
+    qDebug()<<Q_FUNC_INFO<<":   1092 band.getFilter = "<<band.getFilter();
     // set the filter menu text
     widget.actionFilter_0->setText(newFilters->getText(0));
     widget.actionFilter_1->setText(newFilters->getText(1));
@@ -1250,7 +1257,7 @@ void UI::actionFilter9() {
 void UI::filterChanged(int previousFilter,int newFilter) {
     QString command;
 
-    qDebug() << "UI::filterChanged: " << previousFilter << ":" << newFilter;
+    qDebug()<<Q_FUNC_INFO<< ":   1252 previousFilter, newFilter" << previousFilter << ":" << newFilter;
 
     int low,high;
     switch(previousFilter) {
@@ -1857,7 +1864,7 @@ void UI::printWindowTitle(QString message)
 
 void UI::printStatusBar(QString message)
 {
-    modeInfo.setText(band.getStringBand()+", "+mode.getStringMode()+", "+filters.getText()+message);
+    modeInfo.setText(band.getStringMem()+", "+mode.getStringMode()+", "+filters.getText()+message);
 }
 
 void UI::initRigCtl ()

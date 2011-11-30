@@ -72,6 +72,7 @@ public:
     int getBand();
     QString getStringBand();
     QString getStringBand(int band);
+    QString getStringMem();
     int getMode();
     int getFilter();
     int getInfo();
@@ -89,6 +90,7 @@ public:
     void saveSettings(QSettings* settings);
     void readSettings(QSettings* settings);
     void writeSettings(QSettings* settings);
+    void memCopy(int target, bool direction);
     BandLimit getBandLimits(long long min, long long max);
 
 signals:
@@ -97,8 +99,8 @@ signals:
 private:
     int currentBand;
     int currentStack;
+    int workingStack;
     int readPtr;
-    int storePtr;
     int stack[BAND_LAST];
     BandStackEntry bandstack[BAND_LAST][BANDSTACK_ENTRIES];
     QVector <BandLimit> limits;
