@@ -79,6 +79,7 @@ UI::UI(const QString server) {
     connection_valid = FALSE;
 
     isConnected = false;
+    modeFlag = false;
 
     // layout the screen
     widget.gridLayout->setContentsMargins(0,0,0,0);
@@ -254,6 +255,7 @@ UI::UI(const QString server) {
     connect(widget.ctlFrame,SIGNAL(pttChange(int,bool)),this,SLOT(pttChange(int,bool)));
     connect(widget.ctlFrame,SIGNAL(pwrSlider_valueChanged(double)),this,SLOT(pwrSlider_valueChanged(double)));
     connect(widget.vfoFrame,SIGNAL(rightBandClick()),this,SLOT(quickMemStore()));
+    connect(&band,SIGNAL(printStatusBar(QString)),this,SLOT(printStatusBar(QString)));
 
     bandscope=NULL;
 
@@ -296,9 +298,7 @@ UI::UI(const QString server) {
 
     widget.spectrumFrame->setHost(configure.getHost());
 
-    //gvj code added
-//    printStatusBar("at line 277");
-    printWindowTitle("Remote disconnected");
+    printWindowTitle("Remote disconnected"); //added by gvj
     //widget.spectrumFrame->setReceiver(configure.getReceiver()); //deleted by gvj
 
     //Configure statusBar
@@ -467,13 +467,9 @@ void UI::micDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioForm
 
 void UI::actionConnect() {
     //qDebug() << "UI::actionConnect";
-//    widget.statusbar->clearMessage();
+//    widget.statusbar->clearMessage(); //deleted by gvj
     connection.connect(configure.getHost(), DSPSERVER_BASE_PORT+configure.getReceiver());
     //widget.spectrumFrame->setHost(configure.getHost()); //deleted by gvj
-    //gvj code added
-    //widget.statusbar->showMessage(configure.getHost(),0);
-//    setWindowTitle("QtRadio - Server: "+configure.getHost()); //gvj may need to change this to printWindowTitle
-//    printStatusBar(" .. at line 438");
     widget.spectrumFrame->setReceiver(configure.getReceiver());
     isConnected = true;
 }
@@ -628,7 +624,6 @@ void UI::disconnected(QString message) {
     spectrumTimer->stop();
 //    widget.statusbar->showMessage(message,0); //gvj deleted code
     printWindowTitle(message);
-//    printStatusBar(" .. at line 558");
     widget.actionConnectToServer->setDisabled(FALSE);
     widget.actionDisconnectFromServer->setDisabled(TRUE);
     widget.actionSubrx->setDisabled(TRUE);
@@ -1051,7 +1046,6 @@ void UI::modeChanged(int previousMode,int newMode) {
     widget.spectrumFrame->setMode(mode.getStringMode());
     command.clear(); QTextStream(&command) << "setMode " << mode.getMode();
     connection.sendCommand(command);
-  
 }
 
 void UI::filtersChanged(FiltersBase* previousFilters,FiltersBase* newFilters) {
@@ -1093,10 +1087,15 @@ void UI::filtersChanged(FiltersBase* previousFilters,FiltersBase* newFilters) {
                 widget.actionFilter_9->setChecked(FALSE);
                 break;
         }
-    } else {
-        newFilters->selectFilter(band.getFilter()); //TODO Still not there yet
     }
-    qDebug()<<Q_FUNC_INFO<<":   1092 band.getFilter = "<<band.getFilter();
+
+qDebug()<<Q_FUNC_INFO<<":   1092 band.getFilter = "<<band.getFilter()<<", modeFlag = "<<modeFlag;
+
+    if(!modeFlag) {
+        newFilters->selectFilter(band.getFilter()); //TODO Still not there yet
+        qDebug()<<Q_FUNC_INFO<<":    Using the value from band.getFilter = "<<band.getFilter();
+    }
+
     // set the filter menu text
     widget.actionFilter_0->setText(newFilters->getText(0));
     widget.actionFilter_1->setText(newFilters->getText(1));
@@ -1147,71 +1146,89 @@ void UI::filtersChanged(FiltersBase* previousFilters,FiltersBase* newFilters) {
 
     filters.selectFilter(filters.getFilter());
     widget.spectrumFrame->setFilter(filters.getText());
-    //gvj added code
-//    widget.statusbar->showMessage(band.getStringBand()+", "+mode.getStringMode()+", "+filters.getText(),0);
-//    widget.statusbar->showMessage(band.getStringBand()+", "+mode.getStringMode()+", "+filters.getText(),0);
-    printStatusBar(" .. at line 1133");
-
+    printStatusBar(" .. Initial frequency");    //added by gvj
 }
 
 void UI::actionCWL() {
+    modeFlag = true;
     mode.setMode(MODE_CWL);
     filters.selectFilters(&cwlFilters);
     band.setMode(MODE_CWL);
+    modeFlag = false;
 }
 
 void UI::actionCWU() {
+    modeFlag = true;
     mode.setMode(MODE_CWU);
     filters.selectFilters(&cwuFilters);
     band.setMode(MODE_CWU);
+    modeFlag = false;
 }
 
 void UI::actionLSB() {
+    modeFlag = true;
     mode.setMode(MODE_LSB);
     filters.selectFilters(&lsbFilters);
     band.setMode(MODE_LSB);
+    modeFlag = false;
 }
 
 void UI::actionUSB() {
+    modeFlag = true;
     mode.setMode(MODE_USB);
     filters.selectFilters(&usbFilters);
     band.setMode(MODE_USB);
+    modeFlag = false;
 }
 
 void UI::actionDSB() {
+    modeFlag = true;
     mode.setMode(MODE_DSB);
     filters.selectFilters(&dsbFilters);
     band.setMode(MODE_DSB);
+    modeFlag = false;
 }
 
 void UI::actionAM() {
+    modeFlag=true; //Signals menu selection of mode so we use the default filter
     mode.setMode(MODE_AM);
+    qDebug()<<Q_FUNC_INFO<<":1195    Calling filters.selectFilter(3)";
     filters.selectFilters(&amFilters);
+    qDebug()<<Q_FUNC_INFO<<":    Calling band.setMode";
     band.setMode(MODE_AM);
+    modeFlag = false;
 }
 
 void UI::actionSAM() {
+    modeFlag = true;
     mode.setMode(MODE_SAM);
     filters.selectFilters(&samFilters);
     band.setMode(MODE_SAM);
+    modeFlag = false;
 }
 
 void UI::actionFMN() {
+    modeFlag = true;
     mode.setMode(MODE_FMN);
     filters.selectFilters(&fmnFilters);
     band.setMode(MODE_FMN);
+    modeFlag = false;
 }
 
 void UI::actionDIGL() {
+    modeFlag = true;
     mode.setMode(MODE_DIGL);
     filters.selectFilters(&diglFilters);
     band.setMode(MODE_DIGL);
+    modeFlag = false;
 }
 
 void UI::actionDIGU() {
+    modeFlag = true;
     mode.setMode(MODE_DIGU);
     filters.selectFilters(&diguFilters);
     band.setMode(MODE_DIGU);
+    modeFlag = false;
 }
 
 void UI::actionFilter0() {
@@ -1343,7 +1360,6 @@ void UI::filterChanged(int previousFilter,int newFilter) {
     widget.spectrumFrame->setFilter(filters.getText());
     widget.waterfallFrame->setFilter(low,high);
     band.setFilter(newFilter);
-    printStatusBar(" .. at line 1216"); //gvj added code
 }
 
 void UI::frequencyChanged(long long f) {
@@ -1359,6 +1375,7 @@ void UI::frequencyChanged(long long f) {
     widget.spectrumFrame->setFrequency(frequency);
     widget.vfoFrame->setFrequency(frequency);
     widget.waterfallFrame->setFrequency(frequency);
+    printStatusBar(" ... Using VFO");
 }
 
 void UI::frequencyMoved(int increment,int step) {

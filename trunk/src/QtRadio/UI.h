@@ -245,6 +245,7 @@ public slots:
 //    void vfoScanBtnClicked(int direction);
     void pttChange(int caller, bool ptt);
     void pwrSlider_valueChanged(double pwr);
+    void printStatusBar(QString message);
 
 signals:
     void subRxStateChanged(bool state);
@@ -255,7 +256,6 @@ protected:
 
 private:
     void printWindowTitle(QString message);
-    void printStatusBar(QString message);
     QLabel modeInfo;
     void setSubRxPan();
     void actionGain(int g);
@@ -339,6 +339,7 @@ private:
 
     bool squelch;
     float squelchValue;
+    bool modeFlag; //Signals mode is changed from main menu
 };
 
 #endif	/* _UI_H */

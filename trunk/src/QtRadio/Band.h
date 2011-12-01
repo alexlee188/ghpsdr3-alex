@@ -95,6 +95,7 @@ public:
 
 signals:
     void bandChanged(int previousBand,int newBand);
+    void printStatusBar(QString message);
 
 private:
     int currentBand;

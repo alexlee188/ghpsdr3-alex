@@ -41,7 +41,7 @@ Filters::~Filters() {
 void Filters::selectFilters(FiltersBase* filters) {
     FiltersBase* oldFilters=currentFilters;
     currentFilters=filters;
-    qDebug()<<Q_FUNC_INFO<<":   Connecting to UI::filtersChanged";
+    qDebug()<<Q_FUNC_INFO<<":   Connecting to UI::filtersChanged. currentFilters = "<<currentFilters->getSelected();
     emit filtersChanged(oldFilters,currentFilters);
 }
 

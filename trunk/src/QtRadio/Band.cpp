@@ -968,43 +968,55 @@ void Band::selectBand(int b) {
     qDebug()<<Q_FUNC_INFO<< "currentBand = " << currentBand << ", currentStack = " << currentStack << ", f=" << bandstack[currentBand][workingStack].getFrequency();
 
     emit bandChanged(previousBand,currentBand);
+    emit printStatusBar(" ... Using memory");
 }
 
 void Band::quickMemStore()
 {
     int storePtr;
 
-    storePtr = bandstack[currentBand][2].getInfo(); //Point to memory write position for this band
-    storePtr--;         // Steps backwards to always point to oldest entry
-    if(storePtr < 0) {  //Store position for this band, 0 .. n
-        storePtr = bandstack[currentBand][0].getInfo();
-    }
-    bandstack[currentBand][2].setInfo(storePtr);
+    if(currentBand!=BAND_WWV) {
+        storePtr = bandstack[currentBand][2].getInfo(); //Point to memory write position for this band
+        storePtr--;         // Steps backwards to always point to oldest entry
+        if(storePtr < 0) {  //Store position for this band, 0 .. n
+            storePtr = bandstack[currentBand][0].getInfo();
+        }
+        //Check to see if the frequency, mode and filter are already stored and use this if so.
+        for(int x=0;x<=bandstack[currentBand][0].getInfo();x++){
+            if(bandstack[currentBand][x].getFrequency()==bandstack[currentBand][workingStack].getFrequency() &&
+                        bandstack[currentBand][x].getMode()==bandstack[currentBand][workingStack].getMode() &&
+                        bandstack[currentBand][x].getFilter()==bandstack[currentBand][workingStack].getFilter()) {
+                storePtr = x;
+                qDebug()<<Q_FUNC_INFO<<":    Identical frequency, mode and filter is already stored";
+            }
+        }
+        bandstack[currentBand][2].setInfo(storePtr);    //Save the position we stored at.
+        bandstack[currentBand][1].setInfo(storePtr);    //Set memory browse pointer to match stored memory position
+        currentStack = bandstack[currentBand][1].getInfo();
 
-    qDebug()<<Q_FUNC_INFO<<"Got to QuickMemStore and storePtr value is ... "<<storePtr;
-    memCopy(storePtr, true);    //copy the working stack data to selected memory.
+//        qDebug()<<Q_FUNC_INFO<<"Got to QuickMemStore and storePtr value is ... "<<storePtr;
+        memCopy(storePtr, true);    //copy the working stack data to selected memory.
+        emit printStatusBar(" ... Stored at "+QString::number(storePtr));
+    }
 }
 
 //direction true: copy working info to memory info and vice versa for false
 //target = the memory store location
 void Band::memCopy(int target, bool direction)
 {
-//    int current;
     int source;
     int dest;
 
 //    current = bandstack[currentBand][0].getInfo() + 1;  //index to working stack
     if(direction) {
-//        source = bandstack[currentBand][0].getInfo() + 1;   //working stack location
         source = workingStack;
         dest = target;  //Memory store location
     } else {
         source = target;
         dest = workingStack;
-//        dest = bandstack[currentBand][0].getInfo() + 1;  //index to working stack
     }
 
-    qDebug()<<Q_FUNC_INFO<<":  target = "<<target<<", source = "<<source<<", dest = "<<dest<<", direction = "<<direction;
+//    qDebug()<<Q_FUNC_INFO<<":  target = "<<target<<", source = "<<source<<", dest = "<<dest<<", direction = "<<direction;
 
     bandstack[currentBand][dest].setFrequency(bandstack[currentBand][source].getFrequency());
     bandstack[currentBand][dest].setMode(bandstack[currentBand][source].getMode());
@@ -1013,8 +1025,6 @@ void Band::memCopy(int target, bool direction)
     bandstack[currentBand][dest].setSpectrumLow(bandstack[currentBand][source].getSpectrumLow());
     bandstack[currentBand][dest].setWaterfallHigh(bandstack[currentBand][source].getWaterfallHigh());
     bandstack[currentBand][dest].setWaterfallLow(bandstack[currentBand][source].getWaterfallLow());
-//    qDebug() << "currentBand currentStack " << currentBand << ", " << currentStack;
-    //    emit bandChanged(previousBand,currentBand);
 }
 
 
