@@ -1150,7 +1150,7 @@ qDebug()<<Q_FUNC_INFO<<":   1092 band.getFilter = "<<band.getFilter()<<", modeFl
 }
 
 void UI::actionCWL() {
-    modeFlag = true;
+    modeFlag = true; //Signals menu selection of mode so we use the default filter
     mode.setMode(MODE_CWL);
     filters.selectFilters(&cwlFilters);
     band.setMode(MODE_CWL);
@@ -1190,11 +1190,9 @@ void UI::actionDSB() {
 }
 
 void UI::actionAM() {
-    modeFlag=true; //Signals menu selection of mode so we use the default filter
+    modeFlag=true;
     mode.setMode(MODE_AM);
-    qDebug()<<Q_FUNC_INFO<<":1195    Calling filters.selectFilter(3)";
     filters.selectFilters(&amFilters);
-    qDebug()<<Q_FUNC_INFO<<":    Calling band.setMode";
     band.setMode(MODE_AM);
     modeFlag = false;
 }

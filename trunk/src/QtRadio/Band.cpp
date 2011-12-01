@@ -590,6 +590,10 @@ void Band::loadSettings(QSettings* settings) {
 
     workingStack=bandstack[currentBand][0].getInfo()+1;
     currentStack=bandstack[currentBand][1].getInfo();
+    if(currentBand==BAND_WWV){
+        workingStack = currentStack;
+        qDebug()<<Q_FUNC_INFO<<":    in the constructor, currentBand, current stack, workingStack = "<<currentBand<<", "<<currentStack<<", "<<workingStack;
+    }
 
     for(int x=0;x<4;x++){
         qDebug()<<"frequency.0."<<x<<" = "<<bandstack[currentBand][x].getFrequency();
@@ -676,8 +680,8 @@ void Band::saveSettings(QSettings* settings) {
             settings->setValue(s,bandstack[i][j].getWaterfallHigh());
             s.sprintf("waterfallLow.%d.%d",i,j);
             settings->setValue(s,bandstack[i][j].getWaterfallLow());
-//            s.sprintf("info.%d.%d",i,j);
-//            settings->setValue(s,bandstack[i][j].getInfo();
+            s.sprintf("info.%d.%d",i,j);
+            settings->setValue(s,bandstack[i][j].getInfo());
         }
     }
     settings->endGroup();
@@ -730,6 +734,8 @@ QString Band::getStringMem()
 
     b.append("(");
     b.append(QString::number(currentStack));
+    b.append(", ");
+    b.append(QString::number(bandstack[currentBand][2].getInfo()));
     b.append(")");
 
     return b;
@@ -797,8 +803,6 @@ int Band::getMode() {
 }
 
 int Band::getFilter() {
-//    qDebug()<<Q_FUNC_INFO<<":  the value of currentBand = "<<currentBand<<", filter = "<<bandstack[currentBand][workingStack].getFilter();
-//    qDebug()<<Q_FUNC_INFO<<":  The value of workingStack = "<<workingStack;
     return bandstack[currentBand][workingStack].getFilter();
 }
 
@@ -947,25 +951,38 @@ void Band::selectBand(int b) {
     currentStack = bandstack[currentBand][1].getInfo();
     workingStack = bandstack[currentBand][0].getInfo()+1;
 
-    qDebug()<<Q_FUNC_INFO<<": previousBand = "<<previousBand<<", currentBand = "<< currentBand<<", currentStack = "<<currentStack<<", stackPtr = " << stackPtr;
+    qDebug()<<Q_FUNC_INFO<<": previousBand = "<<previousBand<<", currentBand = "<< currentBand<<", currentStack = "<<currentStack<<", stackPtr = " << stackPtr<<BAND_WWV;
 
     if(previousBand==currentBand) { //We are going to traverse the quick memory for the current band
         // step through band stack
         currentStack++;
-        if(currentStack > bandstack[currentBand][0].getInfo()) { //Number of memories for this band, 0 .. n
+
+        if(currentBand==BAND_WWV){
+            if(currentStack > bandstack[currentBand][0].getInfo()+1) {
+                currentStack = 0;
+            }
+            workingStack = currentStack;
+            bandstack[currentBand][1].setInfo(currentStack);    //Set memory browse pointer to match stored memory position
+        } else if(currentStack > bandstack[currentBand][0].getInfo()) { //Number of memories for this band, 0 .. n
             currentStack = 0;
         }
+
         bandstack[currentBand][1].setInfo(currentStack);
         stack[currentBand]=currentStack;
-        memCopy(currentStack, false);   //Copy data from memory to working stack
+        if(currentBand!=BAND_WWV) {
+            memCopy(currentStack, false);   //Copy data from memory to working stack
+        }
+        qDebug()<<Q_FUNC_INFO<<":973    currentBand, currentStack, workingStack = "<<currentBand<<", "<<currentStack<<", "<<workingStack;
     } else {
         // Stepping to a new band
-        qDebug() << "Band::selectBand: new band: stack: " << stack[previousBand];
+        if(currentBand==BAND_WWV) {
+            workingStack = currentStack;
+        }
 //        currentStack=stack[currentBand];
 //        currentStack=bandstack[currentBand][0].getInfo()+1;
     }
 
-    qDebug()<<Q_FUNC_INFO<< "currentBand = " << currentBand << ", currentStack = " << currentStack << ", f=" << bandstack[currentBand][workingStack].getFrequency();
+qDebug()<<Q_FUNC_INFO<<"currentBand = "<<currentBand<<", currentStack = "<<currentStack<<", workingStack = "<<workingStack<<", f="<< bandstack[currentBand][workingStack].getFrequency();
 
     emit bandChanged(previousBand,currentBand);
     emit printStatusBar(" ... Using memory");
