@@ -36,6 +36,34 @@ case $build_cpu in
 
 esac
 
+#
+# configure platform
+# On a x86 PC with linux running $host is: i686-pc-linux-gnu
+#
+#
+case $host in
+
+  *darwin*)
+    AC_MSG_NOTICE([Platform: MAC OSX])
+    OSX_LDFLAGS=" -L/opt/local/lib"
+    LDFLAGS="$LDFLAGS $OSX_LDFLAGS"
+    export LDFLAGS
+    ;;
+
+  *linux*)
+    AC_MSG_NOTICE([Platform LINUX])
+    AC_MSG_NOTICE([Searching for CPU capability])
+    MSSE3=`cat /proc/cpuinfo  | perl  -nle 'print "-msse3" if  m/ssse3|pni/'`
+    MSSE3=`echo $MSSE3 | cut -d' ' -f1`  
+    AC_SUBST(MSSE3)
+    ;;
+
+ *-*-*-*)
+    AC_MSG_NOTICE([Platform unknown: $host])
+    ;;
+
+esac
+
 # compiling `client.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.ac'
 AM_PROG_CC_C_O
 
