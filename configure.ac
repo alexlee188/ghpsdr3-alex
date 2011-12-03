@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.65])
-AC_INIT([ghpsdr3], [rxtx-event], [andrew att montefusco dott com])
+AC_INIT([ghpsdr3], [rxtx-event-2-2], [andrew att montefusco dott com])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
