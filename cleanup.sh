@@ -13,6 +13,8 @@ rm -f	ghpsdr3-1.0.tar.gz
 rm -f	install-sh
 rm -f	missing
 rm -f	stamp-h1
+rm -f           config.guess
+rm -f           config.sub
 rm -f -r	trunk/src/DttSP/.deps/
 rm -f		trunk/src/DttSP/Makefile
 rm -f		trunk/src/DttSP/Makefile.in
@@ -44,8 +46,10 @@ rm -f -r	trunk/src/dspserver/Makefile.in
 rm -f -r	trunk/src/softrock/.deps/
 rm -f -r	trunk/src/softrock/Makefile
 rm -f -r	trunk/src/softrock/Makefile.in
-rm -f -r	ghpsdr3-1.*.tar.gz
+rm -f -r	ghpsdr3-*.tar.gz
 rm -f		trunk/src/QtRadio/GITSTR
 rm -f           trunk/src/widget-server/Makefile.in
-
+rm -f           trunk/src/pylauncher/Makefile
+rm -f           trunk/src/pylauncher/Makefile.in
+rm -f           trunk/src/server/Makefile.in
 

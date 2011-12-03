@@ -1,6 +1,30 @@
-ghpsdr3rxtx (2.0~0ubuntu8ppa8~lucid) lucid; urgency=high
+ghpsdr3rxtx (2.2~0ubuntu1ppa1~lucid) lucid; urgency=high
 
-  * VE9GJ Glenn Taylor 
+  * Graeme Jury
+    fixed WWV stepping bug
+    Mem storage now working
+    Memory store rebuilt
+    Working on mem storage
+    Further preparation of band information
+    Bugfix on 160M band settings, rearrange limits
+
+  * Alex Lee 
+    QtRadio: tweaked Audio.cpp params
+    QtRadio: updated title string to 30 Nov 2011
+    QtRadio: tweaked Audio.cpp parameters
+    QtRadio: 2 channel 16bit PCM working under LAN
+    QtRadio: tweaked resampling buffer size
+    QtRadio: increased resampling buffers for 2 channel aLaw 48000 and 1 channel 16bit PCM 48000
+    QtRadio: when codec2 is selected, samplerate is fixed at 8000 and channel 1 and cannot be changed by user
+
+  * Andrea Montefusco IW0HDV 
+    Build helper files removed.
+    QtRadio auto connect feature added.
+    First release of python launcher.
+
+  * VE9GJ Glenn Taylor
+    Fixed focus when clicking SubRX button
+    Added Current HotKey Step Rate Ticks to vfo widget
     Added Quick Connect server dialog
 
   * Alex Lee <alexlee188@gmail.com>
