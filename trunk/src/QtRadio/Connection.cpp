@@ -176,6 +176,11 @@ void Connection::socketData() {
     int subversion;
     int header_size;
 
+    if (bytes < 0) {
+        fprintf(stderr,"QtRadio: FATAL: INVALID byte counter: %d\n", bytes);
+        tcpSocket->close();
+        return;
+    }            
     toRead=tcpSocket->bytesAvailable();
     while(bytesRead<toRead) {
         //fprintf (stderr, "%d of %d [%d]\n", bytesRead, toRead, state);
