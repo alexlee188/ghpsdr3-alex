@@ -946,7 +946,12 @@ void Band::bandSelected(int b,long long currentFrequency) {
 void Band::selectBand(int b) {
     int previousBand=currentBand;
     int stackPtr;
+    bool vfoFlag = false;
 
+    if(b>99){
+        b = b-100;
+        vfoFlag = true;
+    }
     currentBand=b;
     currentStack = bandstack[currentBand][1].getInfo();
     workingStack = bandstack[currentBand][0].getInfo()+1;
@@ -954,6 +959,9 @@ void Band::selectBand(int b) {
     qDebug()<<Q_FUNC_INFO<<": previousBand = "<<previousBand<<", currentBand = "<< currentBand<<", currentStack = "<<currentStack<<", stackPtr = " << stackPtr<<BAND_WWV;
 
     if(previousBand==currentBand) { //We are going to traverse the quick memory for the current band
+        if(!vfoFlag && currentBand!=BAND_WWV) { //Only if this was called from the main menu we are going to store the current vfo display
+            memCopy(currentStack, true); //copy the working memory to the current stack position and retrieve next memory
+        }
         // step through band stack
         currentStack++;
 
@@ -980,6 +988,7 @@ void Band::selectBand(int b) {
         }
 //        currentStack=stack[currentBand];
 //        currentStack=bandstack[currentBand][0].getInfo()+1;
+        vfoFlag = false;
     }
 
 qDebug()<<Q_FUNC_INFO<<"currentBand = "<<currentBand<<", currentStack = "<<currentStack<<", workingStack = "<<workingStack<<", f="<< bandstack[currentBand][workingStack].getFrequency();
