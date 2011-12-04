@@ -247,9 +247,11 @@ public slots:
     void pwrSlider_valueChanged(double pwr);
     void printStatusBar(QString message);
 
+    void audioBufferProcessed();
+
 signals:
     void subRxStateChanged(bool state);
-
+    void set_src_ratio(double ratio);
 protected:
 //    void paintEvent(QPaintEvent*);
 
@@ -279,6 +281,7 @@ private:
     QMutex audio_mutex;
     char* first_audio_buffer;
     char* first_audio_header;
+    int audio_buffer_count;     // how may audio buffers are in Audio's event queue
     int gain;
     int subRxGain;
     bool subRx;

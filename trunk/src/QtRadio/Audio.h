@@ -52,7 +52,7 @@ public:
     int get_audio_encoding();
 
 signals:
-
+    void bufferProcessed(void);
 public slots:
     void stateChanged(QAudio::State);
     void initialize_audio(int buffer_size);
@@ -60,6 +60,7 @@ public slots:
     void process_audio(char* header,char* buffer,int length);
     void get_audio_devices(QComboBox* comboBox);
     void set_audio_encoding(int enc);
+    void set_src_ratio(double ratio);
 
 private:
     void * codec2;
