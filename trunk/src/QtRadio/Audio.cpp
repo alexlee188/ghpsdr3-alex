@@ -66,6 +66,9 @@ Audio::~Audio() {
     codec2_destroy(codec2);
 }
 
+void Audio::set_src_ratio(double ratio){
+    src_ratio = ratio;
+}
 
 void Audio::initialize_audio(int buffer_size) {
     qDebug() << "initialize_audio " << buffer_size;
@@ -289,6 +292,7 @@ void Audio::process_audio(char* header,char* buffer,int length) {
 
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);
+    emit bufferProcessed();
 }
 
 void Audio::resample(int no_of_samples){

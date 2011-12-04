@@ -65,6 +65,8 @@ UI::UI(const QString server) {
 
     configure.initAudioDevices(audio);
 
+    audio_buffer_count = 0;     // keeps track of how many audio buffers are in Audio's event queue
+
     audio_thread = new QThread();
     audio->moveToThread(audio_thread);
     audio_thread->start(QThread::TimeCriticalPriority);
@@ -104,6 +106,9 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(spectrumBuffer(char*,char*)),this,SLOT(spectrumBuffer(char*,char*)));
     connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
+
+    connect(audio,SIGNAL(bufferProcessed()),this,SLOT(audioBufferProcessed()));
+    connect(this,SIGNAL(set_src_ratio(double)),audio,SLOT(set_src_ratio(double)));
 
     connect(widget.actionConfig,SIGNAL(triggered()),this,SLOT(actionConfigure()));
 
@@ -670,10 +675,21 @@ void UI::audioBuffer(char* header,char* buffer) {
         audio_buffers++;
         emit process_audio(first_audio_header,first_audio_buffer,length);
         emit process_audio(header,buffer,length);
+        audio_buffer_count+=2;
     } else {
         emit process_audio(header,buffer,length);
+        audio_buffer_count++;
     }
  }
+
+void UI::audioBufferProcessed(){
+    audio_buffer_count--;
+    // qDebug() << "audio_buffer_count = " << audio_buffer_count;
+    if (audio_buffer_count <= 0) emit(set_src_ratio(1.0));
+    else if (audio_buffer_count > 5) emit(set_src_ratio(0.9));
+    else if (audio_buffer_count > 2) emit(set_src_ratio(0.95));
+    else emit(set_src_ratio(1.0));
+}
 
 void UI::micSendAudio(QQueue<qint16>* queue){
 
