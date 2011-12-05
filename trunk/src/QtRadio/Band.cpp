@@ -931,7 +931,7 @@ void Band::quickMemStore()
             }
         }
         bandstack[currentBand][2].setInfo(storePtr);    //Save the position we stored at.
-        bandstack[currentBand][1].setInfo(storePtr);    //Set memory browse pointer to match stored memory position
+//        bandstack[currentBand][1].setInfo(storePtr);    //Set memory browse pointer to match stored memory position
         currentStack = bandstack[currentBand][1].getInfo();
 
 //        qDebug()<<Q_FUNC_INFO<<"Got to QuickMemStore and storePtr value is ... "<<storePtr;
