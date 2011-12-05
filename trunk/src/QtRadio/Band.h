@@ -101,8 +101,8 @@ private:
     int currentBand;
     int currentStack;
     int workingStack;
-    int readPtr;
-    int stack[BAND_LAST];
+//    int readPtr;
+//    int stack[BAND_LAST];
     BandStackEntry bandstack[BAND_LAST][BANDSTACK_ENTRIES];
     QVector <BandLimit> limits;
 };
