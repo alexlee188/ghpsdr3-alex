@@ -33,7 +33,11 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/timeb.h>
+#include <sys/stat.h> // for stat
 #include <pthread.h>
+#include <unistd.h>   // for readlink
+#include <limits.h>   // for PATH_MAX
+#include <errno.h>
 #else
 #include "pthread.h"
 #endif
@@ -319,6 +323,14 @@ int ozy_get_sample_rate() {
     return sample_rate;
 }
 
+
+static int file_exists (char * fileName)
+{
+   struct stat buf;
+   int i = stat ( fileName, &buf );
+   return ( i == 0 ) ? 1 : 0 ;
+}
+
 int ozy_init() {
     int rc;
     int i;
@@ -326,8 +338,46 @@ int ozy_init() {
     strcpy(ozy_firmware,"ozyfw-sdr1k.hex");
     strcpy(ozy_fpga,"Ozy_Janus.rbf");
 
-        // On Windows, the following is replaced by init_hpsdr() in OzyInit.c
+    // On Windows, the following is replaced by init_hpsdr() in OzyInit.c
 #ifdef __linux__
+
+    // try to detect the directory from which the executable has been loaded
+    {
+      char cwd[PATH_MAX];
+      char firmwareFn [PATH_MAX];
+      char ozyFpgaFn [PATH_MAX];
+      char xPath [PATH_MAX] = {0};
+      char *p;
+
+      int  rc = readlink ("/proc/self/exe", xPath, sizeof(xPath));
+
+      if (rc >= 0) {
+
+          if ( (p = strrchr (xPath, '/')) ) *(p+1) = '\0';
+          fprintf (stderr, "%d, Path of executable: [%s]\n", rc, xPath);
+
+          strcpy (firmwareFn, xPath); strcat (firmwareFn, ozy_firmware);
+          strcpy (ozyFpgaFn, xPath);  strcat (ozyFpgaFn, ozy_fpga);
+
+          if (file_exists (firmwareFn ) && file_exists ( ozyFpgaFn)) {
+             fprintf (stderr, "Firmware: [%s]\nOzy FPGA: [%s]\n", firmwareFn, ozyFpgaFn);
+             strcpy(ozy_firmware, firmwareFn); strcpy(ozy_fpga, ozyFpgaFn);
+          } else { 
+            if (getcwd(cwd, sizeof(cwd)) != NULL) {
+                fprintf(stdout, "Current working dir: %s\n", cwd);
+
+                strcpy (firmwareFn, cwd); strcat (firmwareFn, "/"); strcat (firmwareFn, ozy_firmware);
+                strcpy (ozyFpgaFn, cwd); strcat (ozyFpgaFn, "/"); strcat (ozyFpgaFn, ozy_fpga);
+                if (file_exists (firmwareFn ) && file_exists ( ozyFpgaFn)) {
+                   fprintf (stderr, "Firmware: [%s]\nOzy FPGA: [%s]\n", firmwareFn, ozyFpgaFn);
+                   strcpy(ozy_firmware, firmwareFn); strcpy(ozy_fpga, ozyFpgaFn);
+                }
+            }
+          }
+       } else {
+          fprintf (stderr, "%d: %s\n", errno, strerror(errno));
+       }
+    }
 
     // open ozy
     rc = ozy_open();
