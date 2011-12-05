@@ -288,8 +288,8 @@ AC_CONFIG_FILES([Makefile
                  trunk/src/dspserver/Makefile
                  trunk/src/widget-server/Makefile
                  trunk/src/server/Makefile
-                 trunk/src/pylauncher/Makefile
-                 trunk/bin/Makefile])
+                 trunk/bin/Makefile
+                 trunk/src/pylauncher/Makefile])
 
 
 
