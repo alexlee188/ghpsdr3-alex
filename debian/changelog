@@ -1,4 +1,13 @@
-ghpsdr3 (2.1~0ubuntu7ppa7~lucid) lucid; urgency=high
+ghpsdr3 (2.2~0ubuntu1ppa1~oneiric) oneiric; urgency=high
+
+  * Andrea Montefusco IW0HDV
+    PPA 2.2
+    Bug fixed in distcheck.
+    Bugs fixed: FPGA and firmware for HPSDR Ozy added; udev rule fule for Ozy added.
+    hpsdr-server search for firmware and FPGA in executable directory, not only in the current one.
+    Attempt to fix "invalid version" and "QIODevice::read called with maxSize < 0" bugs.
+    Fixed bug in build system: the build failed if the commit message contained quote ( " )characters.
+    libevent2 removed because not needed in order to build master branch.
 
   * Andrea Montefusco IW0HDV
     PPA 2.1
