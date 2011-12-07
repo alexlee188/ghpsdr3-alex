@@ -176,7 +176,17 @@ void Connection::socketData() {
     int subversion;
     int header_size;
 
+    if (bytes < 0) {
+        fprintf(stderr,"QtRadio: FATAL: INVALID byte counter: %d\n", bytes);
+        tcpSocket->close();
+        return;
+    }            
     toRead=tcpSocket->bytesAvailable();
+    if (toRead < 0) {
+        fprintf(stderr,"QtRadio: FATAL: error in bytesAvailable: %d\n", toRead);
+        tcpSocket->close();
+        return;
+    }
     while(bytesRead<toRead) {
         //fprintf (stderr, "%d of %d [%d]\n", bytesRead, toRead, state);
         switch(state) {
@@ -220,6 +230,11 @@ void Connection::socketData() {
         case READ_AUDIO_HEADER:
             //fprintf (stderr, "READ_AUDIO_HEADER: hdr size: %d bytes: %d\n", AUDIO_HEADER_SIZE, bytes);
             thisRead=tcpSocket->read(&hdr[bytes],AUDIO_HEADER_SIZE - bytes);
+            if (thisRead < 0) {
+               fprintf(stderr,"QtRadio: FATAL: READ_AUDIO_HEADER: error in read: %d\n", thisRead);
+               tcpSocket->close();
+               return;
+            }
             bytes+=thisRead;
             if ((bytes == AUDIO_HEADER_SIZE)){
 // g0orx binary header
@@ -240,6 +255,11 @@ void Connection::socketData() {
          case READ_HEADER:
             //fprintf (stderr, "READ_HEADER: hdr size: %d bytes: %d\n", header_size, bytes);
             thisRead=tcpSocket->read(&hdr[bytes],header_size - bytes);
+            if (thisRead < 0) {
+               fprintf(stderr,"QtRadio: FATAL: READ_HEADER: error in read: %d\n", thisRead);
+               tcpSocket->close();
+               return;
+            }
             bytes+=thisRead;
             if(bytes==header_size) {
 // g0orx binary header
@@ -259,6 +279,11 @@ void Connection::socketData() {
         case READ_BUFFER:
             //fprintf (stderr, "READ_BUFFER: length: %d bytes: %d\n", length, bytes);
             thisRead=tcpSocket->read(&buffer[bytes],length-bytes);
+            if (thisRead < 0) {
+               fprintf(stderr,"QtRadio: FATAL: READ_BUFFER: error in read: %d\n", thisRead);
+               tcpSocket->close();
+               return;
+            }
             bytes+=thisRead;
             //qDebug() << "READ_BUFFER: read " << bytes << " of " << length;
             if(bytes==length) {

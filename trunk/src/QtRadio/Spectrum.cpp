@@ -520,7 +520,8 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
         LO_offset=0;
     }
 
-    if ((header_sampleRate == 48000)||(header_sampleRate == 96000)||(header_sampleRate == 192000)){
+    // sanity check: changed in order to accomodate DDC hardware
+    if ((header_sampleRate >= 48000) && (header_sampleRate <=500000)){
         sampleRate = header_sampleRate;
 
         //qDebug() << "updateSpectrum: samplerate=" << sampleRate;
@@ -548,12 +549,8 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
         //qDebug() << "updateSpectrum: create plot points";
         plot.clear();
         for (i = 0; i < width; i++) {
-
             plot << QPoint(i, (int) floor(((float) spectrumHigh - samples[i])*(float) height() / (float) (spectrumHigh - spectrumLow)));
         }
-
-        //qDebug() << "updateSpectrum: repaint";
-    //    this->repaint();
         this->update();
     }
 }
