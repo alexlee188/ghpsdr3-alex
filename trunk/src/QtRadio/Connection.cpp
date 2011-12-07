@@ -182,6 +182,11 @@ void Connection::socketData() {
         return;
     }            
     toRead=tcpSocket->bytesAvailable();
+    if (toRead < 0) {
+        fprintf(stderr,"QtRadio: FATAL: error in bytesAvailable: %d\n", toRead);
+        tcpSocket->close();
+        return;
+    }
     while(bytesRead<toRead) {
         //fprintf (stderr, "%d of %d [%d]\n", bytesRead, toRead, state);
         switch(state) {
