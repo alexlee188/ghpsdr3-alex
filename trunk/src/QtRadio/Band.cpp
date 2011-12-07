@@ -29,49 +29,16 @@
 Band::Band() {
     int i;
 
-    for(i=0;i<BAND_LAST;i++) {
-        stack[i]=0;
-    }
-
+//    for(i=0;i<BAND_LAST;i++) {
+//        stack[i]=0;
+//    }
     limits.clear();
-/*
-    limits << BandLimit(1800000LL,2000000LL);
-    limits << BandLimit(3500000LL,4000000LL);
-    limits << BandLimit(5330500LL,5403500LL);
-    limits << BandLimit(7000000LL,7300000LL);
-    limits << BandLimit(10100000LL,10150000LL);
-    limits << BandLimit(14000000LL,14350000LL);
-    limits << BandLimit(18068000LL,18168000LL);
-    limits << BandLimit(21000000LL,21450000LL);
-    limits << BandLimit(24890000LL,24990000LL);
-    limits << BandLimit(28000000LL,29700000LL);
-    limits << BandLimit(50000000LL,54000000LL);
-    limits << BandLimit(144000000LL,148000000LL);
-    limits << BandLimit(222000000LL,224980000LL);
-    limits << BandLimit(420000000LL,450000000LL);
-    limits << BandLimit(902000000LL,928000000LL);
-    limits << BandLimit(1240000000LL,1300000000LL);
-    limits << BandLimit(2300000000LL,2450000000LL);
-    limits << BandLimit(3456000000LL,3456400000LL);
-    limits << BandLimit(5760000000LL,5760400000LL);
-    limits << BandLimit(10368000000LL,10368400000LL);
-    limits << BandLimit(24192000000LL,24192400000LL);
-    limits << BandLimit(47088000000LL,47088400000LL);
-    limits << BandLimit(0l,0L);
-*/
 }
 
 Band::~Band() {
     // save state
     
 }
-
-//void Band::readSettings(QSettings *settings)
-//{
-//    settings->beginGroup("TEST");
-//        bandstack[BAND_160][0].setFrequency(settings->value("testFrequency",1810000).toLongLong());
-//    settings->endGroup();
-//}
 
 void Band::loadSettings(QSettings* settings) {
     long long limitMin,limitMax;
@@ -640,17 +607,6 @@ void Band::loadSettings(QSettings* settings) {
     limitMax=settings->value("limits.11.max",0).toLongLong();
         limits << BandLimit(limitMin,limitMax);
 
-  /*
-    if(settings->contains("limits.22.min")) { //We have a table of valid limits stored
-        limits.clear();
-        for (i=0;i<23;i++) {
-            s.sprintf("limits.%d.min",i);
-            limitMin=settings->value(s).toLongLong();
-            s.sprintf("limits.%d.max",i);
-            limitMax=settings->value(s).toLongLong();
-            limits << BandLimit(limitMin,limitMax);
-        }
-    }*/
     settings->endGroup();
 }
 
@@ -663,8 +619,8 @@ void Band::saveSettings(QSettings* settings) {
     settings->setValue("currentBand",currentBand);
 //    settings->setValue("currentStack",currentStack); //TODO this will go as current stack will always be after last memory
     for(i=0;i<BAND_LAST;i++) {
-        s.sprintf("stack.%d",i);    //TODO remove this and replace with bandstack getInfo data
-        settings->setValue(s,stack[i]);
+//        s.sprintf("stack.%d",i);    //TODO remove this and replace with bandstack getInfo data
+//        settings->setValue(s,stack[i]);
         for(j=0;j<bandstack[i][0].getInfo()+2;j++) { //Number of memories +1 = current working stack
             s.sprintf("frequency.%d.%d",i,j);
             settings->setValue(s,bandstack[i][j].getFrequency());
@@ -726,16 +682,22 @@ QString Band::getStringBand() {
     return b;
 }
 
+//Returns a string = Current band, (Current mem, Next mem store location)
 QString Band::getStringMem()
 {
     QString b="Gen";
+    int nextStore;
 
     b=getStringBand(currentBand);
-
+    nextStore = bandstack[currentBand][2].getInfo(); //Point to memory write position for this band
+    nextStore--;         // Steps backwards to point to next store location
+    if(nextStore < 0) {  //Store position for this band, 0 .. n
+        nextStore = bandstack[currentBand][0].getInfo();
+    }
     b.append("(");
     b.append(QString::number(currentStack));
     b.append(", ");
-    b.append(QString::number(bandstack[currentBand][2].getInfo()));
+    b.append(QString::number(nextStore));
     b.append(")");
 
     return b;
@@ -788,11 +750,6 @@ QString Band::getStringBand(int band) {
 
     return b;
 }
-
-//int Band::getBandStackEntry() {
-//    return currentStack;
-//}
-
 
 long long Band::getFrequency() {
     return bandstack[currentBand][workingStack].getFrequency();
@@ -899,54 +856,18 @@ void Band::setWaterfallLow(int l) {
     bandstack[currentBand][workingStack].setWaterfallLow(l);
 }
 
-/*
-void Band::bandSelected(int b,long long currentFrequency) {
-    long long f=0;
-    int previousBand=currentBand;
-    currentBand=b;
-
-    // save the current frequency in the current bandstack entry
-    bandstack[currentBand][currentStack].setFrequency(currentFrequency);
-
-    if(previousBand==currentBand) {
-        // step through band stack
-        currentStack++;
-        if(currentStack==BANDSTACK_ENTRIES) {
-            currentStack=0;
-        } else if(bandstack[currentBand][currentStack].getFrequency()==0LL) {
-            currentStack=0;
-        }
-
-
-        qDebug() << "same band currentStack " << currentStack;
-
-    } else {
-        // save the current stack
-        //stack[currentBand]=currentStack;
-
-        // change the band
-        //currentBand=b;
-        // get the last stack entry used
-        currentStack=stack[currentBand];
-        bandstack[currentBand][currentStack].setFrequency(currentFrequency);
-        bandstack[currentBand][currentStack].setMode(getMode());
-        bandstack[currentBand][currentStack].setFilter(getFilter());
-        qDebug() << "currentBand currentStack " << currentBand << ", " << currentStack;
-        emit bandChanged(previousBand,currentBand);
-    }
-
-//    f = bandstack[currentBand][currentStack].getFrequency();
-//    return f;
-}
-*/
-
 //** Checks a band change signal for either a switch to a new band or traverse the quick memory. **/
 //Called by VFO band button click or main menu band selection which will pass band or band button ID.
 //Also called by a frequency change which takes us out of currend band. e.g Keypad or VFO frequency change.
 void Band::selectBand(int b) {
     int previousBand=currentBand;
     int stackPtr;
+    bool vfoFlag = false;
 
+    if(b>99){ //If band selected from main menu, 100 was added to the band number as a flag.
+        b = b-100;
+        vfoFlag = true;
+    }
     currentBand=b;
     currentStack = bandstack[currentBand][1].getInfo();
     workingStack = bandstack[currentBand][0].getInfo()+1;
@@ -954,6 +875,9 @@ void Band::selectBand(int b) {
     qDebug()<<Q_FUNC_INFO<<": previousBand = "<<previousBand<<", currentBand = "<< currentBand<<", currentStack = "<<currentStack<<", stackPtr = " << stackPtr<<BAND_WWV;
 
     if(previousBand==currentBand) { //We are going to traverse the quick memory for the current band
+        if(!vfoFlag && currentBand!=BAND_WWV) { //Only if this was called from the main menu we are going to store the current vfo display
+            memCopy(currentStack, true); //copy the working memory to the current stack position and retrieve next memory
+        }
         // step through band stack
         currentStack++;
 
@@ -968,7 +892,7 @@ void Band::selectBand(int b) {
         }
 
         bandstack[currentBand][1].setInfo(currentStack);
-        stack[currentBand]=currentStack;
+//        stack[currentBand]=currentStack;
         if(currentBand!=BAND_WWV) {
             memCopy(currentStack, false);   //Copy data from memory to working stack
         }
@@ -978,8 +902,7 @@ void Band::selectBand(int b) {
         if(currentBand==BAND_WWV) {
             workingStack = currentStack;
         }
-//        currentStack=stack[currentBand];
-//        currentStack=bandstack[currentBand][0].getInfo()+1;
+        vfoFlag = false;
     }
 
 qDebug()<<Q_FUNC_INFO<<"currentBand = "<<currentBand<<", currentStack = "<<currentStack<<", workingStack = "<<workingStack<<", f="<< bandstack[currentBand][workingStack].getFrequency();
@@ -1008,7 +931,7 @@ void Band::quickMemStore()
             }
         }
         bandstack[currentBand][2].setInfo(storePtr);    //Save the position we stored at.
-        bandstack[currentBand][1].setInfo(storePtr);    //Set memory browse pointer to match stored memory position
+//        bandstack[currentBand][1].setInfo(storePtr);    //Set memory browse pointer to match stored memory position
         currentStack = bandstack[currentBand][1].getInfo();
 
 //        qDebug()<<Q_FUNC_INFO<<"Got to QuickMemStore and storePtr value is ... "<<storePtr;

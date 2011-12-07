@@ -778,7 +778,7 @@ void UI::setKeypadFrequency(long long f) {
 }
 
 void UI::getBandBtn(int btn) {
-    band.selectBand(btn);
+    band.selectBand(btn+100);// +100 is used as a flag to indicate call came from vfo band buttons
 }
 
 void UI::quickMemStore()
