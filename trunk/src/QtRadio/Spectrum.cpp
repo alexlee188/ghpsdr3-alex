@@ -246,7 +246,7 @@ void Spectrum::wheelEvent(QWheelEvent *event) {
        
         if (event->buttons() == Qt::MidButton) {
            // change the vertical axis range
-           qDebug() << __FUNCTION__ << " change vertical axis scale: " << shift;
+           //qDebug() << __FUNCTION__ << " change vertical axis scale: " << shift;
            emit spectrumHighChanged (spectrumHigh+(int)shift);
            emit spectrumLowChanged  (spectrumLow-(int)shift);
            emit waterfallHighChanged (spectrumHigh+(int)shift);
@@ -254,7 +254,7 @@ void Spectrum::wheelEvent(QWheelEvent *event) {
 
         } else {
           // if middle mouse button pressed shift the spectrum scale
-          qDebug() << __FUNCTION__ << " shift on vertical axis scale: " << shift;
+          //qDebug() << __FUNCTION__ << " shift on vertical axis scale: " << shift;
           emit spectrumHighChanged (spectrumHigh+(int)shift);
           emit spectrumLowChanged  (spectrumLow+(int)shift);
           emit waterfallHighChanged (spectrumHigh+(int)shift);
