@@ -67,6 +67,6 @@ rm -f		trunk/src/widget-server/Makefile.in
 rm -f		config.guess
 rm -f		config.sub
 rm -f		ghpsdr*tar.gz
-
+rm -f           trunk/bin/Makefile.in
 
 
