@@ -153,8 +153,8 @@ static float mic_gain=0.26F;
 static float mic_left_buffer[BUFFER_SIZE];
 static float mic_right_buffer[BUFFER_SIZE];
 
-static char ozy_firmware[64];
-static char ozy_fpga[64];
+static char ozy_firmware[64] = {0};
+static char ozy_fpga[64] = {0};
 
 static unsigned char ozy_output_buffer[OZY_BUFFER_SIZE];
 static int ozy_output_buffer_index=OZY_HEADER_SIZE;
@@ -181,6 +181,14 @@ void process_bandscope_buffer(char* buffer);
 #define bool int
 bool init_hpsdr();
 #endif
+
+void ozy_set_fpga_image(const char *s) {
+    strcpy (ozy_fpga, s);
+}
+
+void ozy_set_hex_image(const char *s) {
+    strcpy (ozy_firmware, s);
+}
 
 void ozy_set_buffers(int buffers) {
     ozy_buffers=buffers;
@@ -324,53 +332,48 @@ int ozy_get_sample_rate() {
 }
 
 
-static int file_exists (char * fileName)
+static int file_exists (const char * fileName)
 {
    struct stat buf;
    int i = stat ( fileName, &buf );
    return ( i == 0 ) ? 1 : 0 ;
 }
 
-int ozy_init() {
-    int rc;
-    int i;
-
-    strcpy(ozy_firmware,"ozyfw-sdr1k.hex");
-    strcpy(ozy_fpga,"Ozy_Janus.rbf");
-
-    // On Windows, the following is replaced by init_hpsdr() in OzyInit.c
 #ifdef __linux__
+int filePath (char *sOut, const char *sIn) {
+    int rc = 0;
 
-    // try to detect the directory from which the executable has been loaded
-    {
+    if ((rc = file_exists (sIn))) {
+       strcpy (sOut, sIn); 
+       rc = 1;
+    } else {
       char cwd[PATH_MAX];
-      char firmwareFn [PATH_MAX];
-      char ozyFpgaFn [PATH_MAX];
+      char s[PATH_MAX];
       char xPath [PATH_MAX] = {0};
       char *p;
 
       int  rc = readlink ("/proc/self/exe", xPath, sizeof(xPath));
 
+      // try to detect the directory from which the executable has been loaded
       if (rc >= 0) {
 
           if ( (p = strrchr (xPath, '/')) ) *(p+1) = '\0';
           fprintf (stderr, "%d, Path of executable: [%s]\n", rc, xPath);
 
-          strcpy (firmwareFn, xPath); strcat (firmwareFn, ozy_firmware);
-          strcpy (ozyFpgaFn, xPath);  strcat (ozyFpgaFn, ozy_fpga);
+          strcpy (s, xPath); strcat (s, sIn);
 
-          if (file_exists (firmwareFn ) && file_exists ( ozyFpgaFn)) {
-             fprintf (stderr, "Firmware: [%s]\nOzy FPGA: [%s]\n", firmwareFn, ozyFpgaFn);
-             strcpy(ozy_firmware, firmwareFn); strcpy(ozy_fpga, ozyFpgaFn);
+          if ((rc = file_exists (s))) {
+             // found in the same dir of executable
+             fprintf (stderr, "File: [%s]\n", s);
+             strcpy(sOut, s);
           } else { 
             if (getcwd(cwd, sizeof(cwd)) != NULL) {
                 fprintf(stdout, "Current working dir: %s\n", cwd);
 
-                strcpy (firmwareFn, cwd); strcat (firmwareFn, "/"); strcat (firmwareFn, ozy_firmware);
-                strcpy (ozyFpgaFn, cwd); strcat (ozyFpgaFn, "/"); strcat (ozyFpgaFn, ozy_fpga);
-                if (file_exists (firmwareFn ) && file_exists ( ozyFpgaFn)) {
-                   fprintf (stderr, "Firmware: [%s]\nOzy FPGA: [%s]\n", firmwareFn, ozyFpgaFn);
-                   strcpy(ozy_firmware, firmwareFn); strcpy(ozy_fpga, ozyFpgaFn);
+                strcpy (s, cwd); strcat (s, "/"); strcat (s, sIn);
+                if ((rc = file_exists (s))) {
+                   fprintf (stderr, "File: [%s]\n", s);
+                   strcpy(sOut, s);
                 }
             }
           }
@@ -378,6 +381,20 @@ int ozy_init() {
           fprintf (stderr, "%d: %s\n", errno, strerror(errno));
        }
     }
+    return rc;
+}
+#endif
+
+
+int ozy_init() {
+    int rc;
+    int i;
+
+    // On Windows, the following is replaced by init_hpsdr() in OzyInit.c
+#ifdef __linux__
+
+    if (strlen(ozy_firmware) == 0) filePath (ozy_firmware,"ozyfw-sdr1k.hex");
+    if (strlen(ozy_fpga) == 0)     filePath (ozy_fpga,"Ozy_Janus.rbf");
 
     // open ozy
     rc = ozy_open();
@@ -401,8 +418,10 @@ ozy_open();
     ozy_open();
     rc=ozy_get_firmware_string(ozy_firmware_version,8);
     fprintf(stderr,"Ozy FX2 version: %s\n",ozy_firmware_version);
+#else
+    strcpy(ozy_firmware,"ozyfw-sdr1k.hex");
+    strcpy(ozy_fpga,"Ozy_Janus.rbf");
 #endif
-
 
     return rc;
 }

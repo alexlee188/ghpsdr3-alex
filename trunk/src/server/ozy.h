@@ -28,6 +28,8 @@
 int ozy_init();
 #endif
 
+void ozy_set_fpga_image(const char *);
+void ozy_set_hex_image(const char *);
 void ozy_prime();
 void ozy_set_buffers(int buffers);
 int create_ozy_thread();
