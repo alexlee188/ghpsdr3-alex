@@ -236,7 +236,7 @@ void Connection::socketData() {
                return;
             }
             bytes+=thisRead;
-            if ((bytes == AUDIO_HEADER_SIZE)){
+            if (bytes == AUDIO_HEADER_SIZE){
 // g0orx binary header
                 //length = atoi(&hdr[AUDIO_LENGTH_POSITION]);
                 length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);

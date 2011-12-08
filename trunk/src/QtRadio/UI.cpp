@@ -361,7 +361,7 @@ void UI::loadSettings() {
 
 void UI::saveSettings() {
     QString s;
-    Bookmark* bookmark;
+    //Bookmark* bookmark;
 
     QSettings settings("G0ORX","QtRadio");
 
@@ -399,6 +399,7 @@ void UI::receiverChanged(int rx) {
 }
 
 void UI::closeEvent(QCloseEvent* event) {
+    Q_UNUSED(event);
     saveSettings();
 }
 
@@ -1890,7 +1891,7 @@ void UI::getMeterValue(int m, int s)
 
 void UI::printWindowTitle(QString message)
 {
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "    rxtx-event 4 Dec 2011");
+    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "    rxtx-event 8 Dec 2011");
 }
 
 void UI::printStatusBar(QString message)
