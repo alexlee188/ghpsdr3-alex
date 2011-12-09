@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# define name used in the RMI registry
+NAME=SDR-SHELL
+export SDR_DEFRATE=96000
+export JACK_BUFFER=1024
+export LD_LIBRARY_PATH=/usr/local/lib
+
+/usr/local/bin/jackd -s -dalsa -Chw:1 -Phw:1 -r$SDR_DEFRATE -p${JACK_BUFFER} -n3&
+sleep 1
+softrock --jack --si570 --iq --samplerate 96000
+
+sleep 2
+jackpid=`ps -ef|grep jackd|head -n1|awk -vORS='' '{print $2}'`
+echo "Killing jackd pid $sdrpid"
+kill $jackpid >/dev/null
+
+
