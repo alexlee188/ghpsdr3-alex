@@ -11,8 +11,17 @@
 
 static int SAMPLE_RATE;
 static int DECIM_FACT;
+static int ENABLE_AUDIO = 0;
 
 static PaStream* stream;
+
+void usrp_set_server_audio (int setting) {
+	ENABLE_AUDIO = setting;
+}
+
+int usrp_get_server_audio (void) {
+	return ENABLE_AUDIO;
+}
 
 int usrp_audio_open (int core_bandwidth) {
     int rc;

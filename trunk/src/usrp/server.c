@@ -47,6 +47,7 @@
 #include "receiver.h"
 #include "bandscope.h"
 #include "usrp.h"
+#include "usrp_audio.h"
 
 //Server Default I/Q rate on RX
 #define DEFAULT_CLIENT_RX_SAMPLE_RATE 48000
@@ -55,6 +56,7 @@ static struct option long_options[] = {
     {"samplerate",required_argument, 0, 0},
     {"subdev",required_argument, 0, 1},
     {"receivers",required_argument, 0, 2},    
+	{"with-audio",no_argument, 0, 3},
 /*
     {"dither",required_argument, 0, 3},
     {"random",required_argument, 0, 4},
@@ -80,6 +82,7 @@ static int option_index;
 static char subdev_par[10] = "B:A";    
 static int rx_client_rate_par = DEFAULT_CLIENT_RX_SAMPLE_RATE;
 static int receivers_par = 1;
+static int with_audio = 0;
 
 void process_args(int argc,char* argv[]);
 void set_defaults(void);
@@ -104,6 +107,7 @@ int main(int argc,char* argv[]) {
 	};
 	usrp_set_receivers(receivers_par);
     usrp_set_client_rx_rate(rx_client_rate_par);
+	usrp_set_server_audio (with_audio);
 
     init_receivers();  //receiver
     init_bandscope();  //bandscope
@@ -142,6 +146,10 @@ void process_args(int argc,char* argv[]) {
             case 2: // receivers
                 //Note: if the argumenr is a string, is evaluated to 0
                 receivers_par = atoi(optarg);
+                break;
+				
+			case 3: // with-audio: enables the server side audio
+                with_audio = 1;
                 break;
 /*
             case 3: // dither
@@ -245,6 +253,7 @@ void process_args(int argc,char* argv[]) {
                 fprintf(stderr,"  usrp_server -s, --samplerate 48000 | 96000 | 192000 (default 48000)\n");
                 fprintf(stderr,"              -d, --subdev spec (default \"\")\n");                
                 fprintf(stderr,"              --receivers N (default 1)\n");
+				fprintf(stderr,"              --with-audio\n");
                 fprintf(stderr,"\n");
                 fprintf(stderr,"NOTE: samplerate is towards the client (e.g. dspserver)");
 /*

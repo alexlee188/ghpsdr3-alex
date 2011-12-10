@@ -7,5 +7,7 @@ int usrp_audio_write   (float* left_samples,float* right_samples) ;
 int usrp_audio_write_2 (float* left_samples,float* right_samples) ;
 int usrp_audio_write_3 (float* left_samples,float* right_samples) ;
 void usrp_process_output_buffer (float *ch1,  float *ch2, int mox);
+void usrp_set_server_audio (int setting);
+int usrp_get_server_audio (void);
 
 #endif

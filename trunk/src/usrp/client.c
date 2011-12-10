@@ -44,11 +44,11 @@
 
 #include "client.h"
 #include "receiver.h"
-#include "transmitter.h"
 #include "messages.h"
 #include "bandscope.h"
 #include "usrp.h"
 #include "usrp_audio.h"
+#include "transmitter.h"
 
 short audio_port=AUDIO_PORT; // = 15000 as constant
 
@@ -276,8 +276,10 @@ void* audio_thread(void* arg) {
             exit(1);
         }
 
-        //process_ozy_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE],client->mox);	
-        usrp_process_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE],client->mox);
+        if (usrp_get_server_audio() == 1) {
+		    //process_ozy_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE],client->mox);	
+		    usrp_process_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE],client->mox);			
+		}
 		
     }
 }

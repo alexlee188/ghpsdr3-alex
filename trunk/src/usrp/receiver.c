@@ -106,8 +106,12 @@ const char* attach_receiver(int rx,CLIENT* client) {
     receiver[rx].client=client;
     
     // attempt to open an audio stream on a local audio card
-    usrp_audio_open (usrp_get_client_rx_rate());
-    fprintf(stderr, "Server side audio open, passed USRP sample rate %d\n", usrp_get_client_rx_rate());    
+	if (usrp_get_server_audio() == 1) {
+		usrp_audio_open (usrp_get_client_rx_rate());
+		fprintf(stderr, "Server side audio open, passed USRP sample rate %d\n", usrp_get_client_rx_rate());    		
+	} else {
+		fprintf(stderr, "Server side audio disabled\n", usrp_get_client_rx_rate());    		
+	}
 
     sprintf(response,"%s %d",OK, usrp_get_client_rx_rate());
     return (response);
