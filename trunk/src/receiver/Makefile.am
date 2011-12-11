@@ -1,18 +1,17 @@
 
-
 bin_PROGRAMS = ghpsdr
 
-ghpsdr_CFLAGS = -g -O3 -msse -msse3 -ffast-math -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function @GTK_CFLAGS@
-ghpsdr_CPPFLAGS = -I/usr/local/include \
-         -I. -I/usr/include/gtk-2.0 -I/usr/lib/gtk-2.0/include\
-         -I/usr/include/atk-1.0 -I/usr/include/cairo\
-         -I/usr/include/pango-1.0 -I/usr/include/glib-2.0\
-         -I/usr/lib/glib-2.0/include -I/usr/include/pixman-1\
-         -I/usr/include/freetype2 -I/usr/include/libpng12 \
-         -I/usr/include/gdk-pixbuf-2.0 \
-         -I/usr/lib/x86_64-linux-gnu/glib-2.0/include \
-         -I/usr/lib/i386-linux-gnu/glib-2.0/include/ \
-         -I/usr/include
+ghpsdr_CFLAGS = -g -O3 -msse -msse3 -ffast-math -Wall -I$(top_srcdir)/../DttSP -Wno-unused-function $(XGTK_CFLAGS)
+#ghpsdr_CPPFLAGS = -I/usr/local/include \
+#         -I. -I/usr/include/gtk-2.0 -I/usr/lib/gtk-2.0/include\
+#         -I/usr/include/atk-1.0 -I/usr/include/cairo\
+#         -I/usr/include/pango-1.0 -I/usr/include/glib-2.0\
+#         -I/usr/lib/glib-2.0/include -I/usr/include/pixman-1\
+#         -I/usr/include/freetype2 -I/usr/include/libpng12 \
+#         -I/usr/include/gdk-pixbuf-2.0 \
+#         -I/usr/lib/x86_64-linux-gnu/glib-2.0/include \
+#         -I/usr/lib/i386-linux-gnu/glib-2.0/include/ \
+#         -I/usr/include
 
 
 #### dspserver_CFLAGS = -g -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function -msse -msse3 -ffast-math -march=core2 
@@ -23,7 +22,7 @@ ghpsdr_CPPFLAGS = -I/usr/local/include \
 #     -lm -lpangocairo-1.0 -lgio-2.0 -lcairo -lpango-1.0 -lfreetype -lz\
 #     -lfontconfig -lgobject-2.0 -lgmodule-2.0 -lglib-2.0
 
-ghpsdr_LDADD = ../DttSP/libDttSP.a @GTK_LIBS@
+ghpsdr_LDADD = -L$(top_srcdir)/../DttSP  ../DttSP/libDttSP.a  $(XGTK_LIBS)
 
 #ghpsdr_LDADD = -L../DttSP -lDttSP
 #-L. -L../DttSP -lDttSP -lpthread\

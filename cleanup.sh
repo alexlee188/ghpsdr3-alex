@@ -68,7 +68,6 @@ rm -f		config.guess
 rm -f		config.sub
 rm -f		ghpsdr*tar.gz
 rm -f           trunk/bin/Makefile.in
-
 rm -f           trunk/src/receiver/Makefile.in
 rm -f           trunk/src/receiver/aclocal.m4
 rm -f -r        trunk/src/receiver/autom4te.cache/
@@ -83,8 +82,14 @@ rm -f           trunk/src/receiver/delme
 rm -f           trunk/src/receiver/delme.txt
 rm -f           trunk/src/receiver/libtool
 rm -f           trunk/src/receiver/stamp-h1
-
-
+rm -f           trunk/src/receiver/compile
+rm -f           trunk/src/receiver/config.guess
+rm -f           trunk/src/receiver/config.sub
+rm -f           trunk/src/receiver/depcomp
+rm -f           trunk/src/receiver/install-sh
+rm -f           trunk/src/receiver/ltmain.sh
+rm -f           trunk/src/receiver/missing
+rm -f -r        trunk/src/receiver/m4/
 
 
 

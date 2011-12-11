@@ -1,18 +1,28 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.60)
+AC_PREREQ([2.63])
 AC_INIT([ghpsdr], [0.1], [andrew att montefusco dott com])
-AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([1.9.6 -Wall -Werror dist-bzip2])
+#AC_CONFIG_AUX_DIR([build-aux])
+
+#AC_CONFIG_MACRO_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([m4])
+AM_INIT_AUTOMAKE([-Wall])
+#AC_CONFIG_SRCDIR([])
 
 AC_PROG_CC
 # Compiling sources with per-target flags requires AM_PROG_CC_C_O
 AM_PROG_CC_C_O
-AC_PROG_INSTALL
+#AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
 AM_PATH_GTK_2_0([2.10.0],,AC_MSG_ERROR([Gtk+ 2.10.0 or higher required.]))
+AM_PATH_GLIB_2_0(,, AC_MSG_ERROR([Glib required.]))
+XGTK_CFLAGS="$GTK_CFLAGS"
+XGTK_LIBS="$GTK_LIBS"
+AC_SUBST(XGTK_CFLAGS)
+AC_SUBST(XGTK_LIBS)
+AC_MSG_NOTICE([$XGTK_CFLAGS])
 
 #
 # Checks for libraries.
@@ -78,3 +88,20 @@ AC_CONFIG_FILES([
         Makefile
 ])
 AC_OUTPUT
+
+echo \
+"-----------------------------------------------------
+
+${PACKAGE_NAME} Version ${PACKAGE_VERSION}
+
+Prefix: '${prefix}'.
+Compiler: '${CC} ${CFLAGS} ${CPPFLAGS}'
+Now type 'make @<:@<target>@:>@'
+
+ where the otpional <target> is:
+
+    all           - build all binaries
+    install       - install everything
+
+
+-----------------------------------------------------"
