@@ -79,7 +79,6 @@ rm -f           trunk/src/receiver/config.h.in~
 rm -f           trunk/src/receiver/config.log
 rm -f           trunk/src/receiver/config.status
 rm -f           trunk/src/receiver/configure
-rm -f           trunk/src/receiver/configure.ac
 rm -f           trunk/src/receiver/delme
 rm -f           trunk/src/receiver/delme.txt
 rm -f           trunk/src/receiver/libtool
