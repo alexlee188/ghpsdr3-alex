@@ -14,6 +14,6 @@ if MAKE_USRP
    ###### USRP_DIR =  trunk/src/usrp
 endif
 
-SUBDIRS = trunk/src/softrock trunk/src/DttSP trunk/src/dspserver trunk/src/widget-server trunk/src/server trunk/bin trunk/src/QtRadio trunk/src/pylauncher $(PERSEUS_DIR) $(USRP_DIR) 
+SUBDIRS = trunk/src/DttSP trunk/src/receiver trunk/src/softrock trunk/src/dspserver trunk/src/widget-server trunk/src/server trunk/bin trunk/src/QtRadio trunk/src/pylauncher $(PERSEUS_DIR) $(USRP_DIR) 
 
 

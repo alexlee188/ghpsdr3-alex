@@ -282,9 +282,11 @@ AM_CONDITIONAL([MAKE_USRP], [test "x${usrp}" = xyes])
 #AC_CONFIG_FILES([trunk/src/usrp/Makefile])
 
 AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
+AC_CONFIG_SUBDIRS([trunk/src/receiver])
 AC_CONFIG_FILES([Makefile
-                 trunk/src/softrock/Makefile
                  trunk/src/DttSP/Makefile
+                 trunk/src/receiver/Makefile
+                 trunk/src/softrock/Makefile
                  trunk/src/dspserver/Makefile
                  trunk/src/widget-server/Makefile
                  trunk/src/server/Makefile

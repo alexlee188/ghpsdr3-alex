@@ -69,4 +69,26 @@ rm -f		config.sub
 rm -f		ghpsdr*tar.gz
 rm -f           trunk/bin/Makefile.in
 
+rm -f           trunk/src/receiver/Makefile.in
+rm -f           trunk/src/receiver/aclocal.m4
+rm -f -r        trunk/src/receiver/autom4te.cache/
+rm -f -r        trunk/src/receiver/build-aux/
+rm -f           trunk/src/receiver/config.h
+rm -f           trunk/src/receiver/config.h.in
+rm -f           trunk/src/receiver/config.h.in~
+rm -f           trunk/src/receiver/config.log
+rm -f           trunk/src/receiver/config.status
+rm -f           trunk/src/receiver/configure
+rm -f           trunk/src/receiver/configure.ac
+rm -f           trunk/src/receiver/delme
+rm -f           trunk/src/receiver/delme.txt
+rm -f           trunk/src/receiver/libtool
+rm -f           trunk/src/receiver/stamp-h1
+
+
+
+
+
+
+
 
