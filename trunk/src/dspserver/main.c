@@ -118,14 +118,29 @@ struct option longOptions[] = {
     {"share",no_argument, 0, 6},
     {"shareconfig",required_argument, 0, 7},
     {"lo",required_argument, 0, 8},
+    {"help", no_argument, 0, 9},
     {0,0,0,0}
 };
 
-char* shortOptions="";
+char* shortOptions="h";
 
 int optionIndex;
 
 int toShareOrNotToShare = 0;
+
+void print_help (void) {
+    fprintf(stderr,"Usage: \n");
+    fprintf(stderr,"  dspserver --receivers N (default 1)\n");
+    fprintf(stderr,"            --server 0.0.0.0 (default 127.0.0.1)\n");
+    fprintf(stderr,"            --soundcard (machine dependent)\n");
+    fprintf(stderr,"            --offset 0 \n");
+    fprintf(stderr,"            --share (will register this server for other users \n");
+    fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
+    fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
+
+    exit(1);
+}
+ 
 
 /* --------------------------------------------------------------------------*/
 /** 
@@ -135,10 +150,22 @@ int toShareOrNotToShare = 0;
 * @param argv
 */
 /* ----------------------------------------------------------------------------*/
-void processCommands(int argc,char** argv) {
-    int c;
-    while((c=getopt_long(argc,argv,shortOptions,longOptions,&optionIndex)!=EOF)) {
-        switch(optionIndex) {
+void processCommands(int argc,char* argv[]) {
+    int c = 0;
+    int optionIndex = 0;
+    static char* shortOptions="h";
+
+    while(c != EOF) {
+        c = getopt_long(argc,argv, shortOptions,longOptions,&optionIndex);
+        fprintf (stderr, "Index: %d ret: %d\n", optionIndex, c);
+
+        if (c == '?' || c == 'h'){
+           print_help();
+        }
+        
+        if (c == EOF) break;
+
+        switch(c) {
             case 0:
                 strcpy(soundCardName,optarg);
                 break;
@@ -169,21 +196,14 @@ void processCommands(int argc,char** argv) {
             case 8:
                 LO_offset=atoi(optarg);
                 break;
-       default:
-                fprintf(stderr,"Usage: \n");
-                fprintf(stderr,"  dspserver --receivers N (default 1)\n");
-                fprintf(stderr,"            --server 0.0.0.0 (default 127.0.0.1)\n");
-                fprintf(stderr,"            --soundcard (machine dependent)\n");
-                fprintf(stderr,"            --offset 0 \n");
-                fprintf(stderr,"            --share (will register this server for other users \n");
-                fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
-		fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
-                exit(1);
-
+            case 9:
+                print_help();
+                break;
         }
+        optionIndex=0;
+        
     }
 }
-
 
 /* --------------------------------------------------------------------------*/
 /** 

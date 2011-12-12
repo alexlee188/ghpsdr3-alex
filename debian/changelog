@@ -1,6 +1,19 @@
-ghpsdr3rxtx (2.2~0ubuntu1ppa1~lucid) lucid; urgency=high
+ghpsdr3rxtx (2.3~0ubuntu1ppa1~maverick) maverick; urgency=high
+
+  * Alex Lee 
+    minor updates to do_server script
+    Modified do_server for jackd from /usr/bin
+    Added do_server script to start jack and then softrock with --jack option
+    QtRadio: fixed some warning messages by the Clang compiler
+
+  * Andrea Montefusco IW0HDV 
+    Spectrum class changed in order to allow for several sample rates
+    in a wide range (especially suited for DDC hardware).
 
   * Graeme Jury
+    read quick memory index now no change when storing
+    Code tidy ready to push
+    Partial setup of band menu stepping
     fixed WWV stepping bug
     Mem storage now working
     Memory store rebuilt
