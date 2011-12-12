@@ -1,4 +1,4 @@
-ghpsdr3rxtx (2.3~0ubuntu1ppa1~maverick) maverick; urgency=high
+ghpsdr3rxtx (2.3~0ubuntu1ppa1~oneiric) oneiric; urgency=high
 
   * Alex Lee 
     minor updates to do_server script

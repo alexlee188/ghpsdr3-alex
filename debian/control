@@ -2,7 +2,7 @@ Source: ghpsdr3rxtx
 Section: hamradio
 Priority: extra
 Maintainer: Andrea Montefusco IW0HDV <andrew@montefusco.com>
-Build-Depends: debhelper (>= 7.0.50~),autotools-dev, libqt4-opengl-dev, qtmobility-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libconfig8-dev, libusb-1.0-0-dev, libevent-dev
+Build-Depends: debhelper (>= 7.0.50~),autotools-dev, libqt4-opengl-dev, qtmobility-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libconfig8-dev, libusb-1.0-0-dev, libsamplerate0-dev, libevent-dev
 Standards-Version: 3.9.1
 Homepage: https://github.com/alexlee188/ghpsdr3-alex/tree/master
 
