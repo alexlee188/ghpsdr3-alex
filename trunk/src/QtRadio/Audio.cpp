@@ -295,6 +295,53 @@ void Audio::process_audio(char* header,char* buffer,int length) {
     emit bufferProcessed();
 }
 
+void Audio::process_rtp_audio(char* buffer,int length) {
+    int written=0;
+    int length_to_write, total_to_write;
+    char* decodedBuffer;
+    int i;
+    short v;
+
+if(length>0 && length<=1024) {
+
+    if (audio_encoding == 0) {
+        //aLawDecode(buffer,length);
+        total_to_write=sizeof(short)*length;
+        decodedBuffer=(char*)malloc(total_to_write);
+        for(i=0;i<length;i++) {
+            v=g711a.decode(buffer[i]);
+            switch(audio_byte_order) {
+            case QAudioFormat::LittleEndian:
+                decodedBuffer[(i*2)]=(char)(v&0xFF);
+                decodedBuffer[(i*2)+1]=(char)((v>>8)&0xFF);
+                break;
+            case QAudioFormat::BigEndian:
+                decodedBuffer[(i*2)]=(char)((v>>8)&0xFF);
+                decodedBuffer[(i*2)+1]=(char)(v&0xFF);
+                break;
+            }
+        }
+        if(audio_out!=NULL) {
+            //qDebug() << "writing audio data length=: " <<  decoded_buffer.length();
+            //total_to_write = decoded_buffer.length();
+            while( written< total_to_write) {
+                if (audio_output->bytesFree() < 4) usleep(1000);
+                // writing in periodsize is recommended
+                length_to_write = (audio_output->periodSize() > (total_to_write-written)) ?
+                            (total_to_write-written) : audio_output->periodSize();
+                written+=audio_out->write((char*)&decodedBuffer[written],length_to_write);
+//qDebug() << "Audio::process_rtp_audio written="<<written;
+            }
+        }
+    } else {
+        qDebug() << "Audio::process_rtp_audio only support aLaw";
+    }
+} else {
+qDebug() << "process_rtp_audio: length=" << length;
+}
+    free(buffer);
+}
+
 void Audio::resample(int no_of_samples){
     int i;
     short v;

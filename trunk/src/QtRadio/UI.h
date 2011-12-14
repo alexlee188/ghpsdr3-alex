@@ -69,6 +69,8 @@
 #include "vfo.h"
 #include "rigctl.h"
 #include "ctl.h"
+#include "G711A.h"
+#include "RTP.h"
 
 
 #define DSPSERVER_BASE_PORT 8000
@@ -97,6 +99,7 @@ public:
     void rigctlSetMode(int newmode);
     void * codec2;
     void * mic_codec2;
+    static const int MIC_BUFFER_SIZE = 400;
 
 signals:
     void initialize_audio(int length);
@@ -209,6 +212,8 @@ public slots:
     void micDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void micSendAudio(QQueue<qint16>*);
 
+    void setRTP(bool state);
+
     void setSubRxGain(int gain);
 
     void frequencyMoved(int increment,int step);
@@ -248,6 +253,8 @@ public slots:
     void printStatusBar(QString message);
 
     void audioBufferProcessed();
+
+    void setRemote(char* host,int port);
 
 signals:
     void subRxStateChanged(bool state);
@@ -290,6 +297,9 @@ private:
     QThread* audioinput_thread;
     int mic_buffer_count;       // counter of mic_buffer, to encode if reaches CODEC2_SAMPLE_PER_FRAME
     int mic_frame_count;        // counter of mic_buffer, to encode enough frames before sending
+
+    qint16 mic_buffer[MIC_BUFFER_SIZE];
+    unsigned char mic_encoded_buffer[MIC_BUFFER_SIZE];
 
     long long subRxFrequency;
     Connection connection;
@@ -343,6 +353,12 @@ private:
     bool squelch;
     float squelchValue;
     bool modeFlag; //Signals mode is changed from main menu
+
+    G711A g711a;
+    RTP rtp;
+    bool useRTP;
+
+    int tuning;
 };
 
 #endif	/* _UI_H */

@@ -28,6 +28,9 @@
 #include <QPainter>
 #include <QThread>
 #include <QMessageBox>
+#include <QTimer>
+
+#include <ortp/ortp.h>
 
 #include "UI.h"
 #include "About.h"
@@ -64,6 +67,7 @@ UI::UI(const QString server) {
     audio = new Audio(codec2);
 
     configure.initAudioDevices(audio);
+    useRTP=configure.getRTP();
 
     audio_buffer_count = 0;     // keeps track of how many audio buffers are in Audio's event queue
 
@@ -104,6 +108,7 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(disconnected(QString)),this,SLOT(disconnected(QString)));
     connect(&connection,SIGNAL(audioBuffer(char*,char*)),this,SLOT(audioBuffer(char*,char*)));
     connect(&connection,SIGNAL(spectrumBuffer(char*,char*)),this,SLOT(spectrumBuffer(char*,char*)));
+    connect(&connection,SIGNAL(remoteRTP(char*,int)),this,SLOT(setRemote(char*,int)));
     connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
 
@@ -234,6 +239,10 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),this,SLOT(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
 //    connect(&configure,SIGNAL(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),audio,SLOT(select_audio(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
     connect(&configure,SIGNAL(micDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),this,SLOT(micDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
+
+
+    connect(&configure,SIGNAL(useRTP(bool)),this,SLOT(setRTP(bool)));
+
     connect(&configure,SIGNAL(hostChanged(QString)),this,SLOT(hostChanged(QString)));
     connect(&configure,SIGNAL(receiverChanged(int)),this,SLOT(receiverChanged(int)));
 
@@ -512,7 +521,13 @@ void UI::actionDisconnect() {
 
     configure.connected(FALSE);
     isConnected = false;
+
+    if(useRTP) {
+        disconnect(&rtp,SIGNAL(rtp_packet_received(char*,int)),audio,SLOT(process_rtp_audio(char*,int)));
+        rtp.shutdown();
+    }
 }
+
 void UI::actionQuick_Server_List() {
    Servers *servers = new Servers();
    QObject::connect(servers, SIGNAL(disconnectNow()), this, SLOT(actionDisconnectNow()));
@@ -523,10 +538,15 @@ void UI::actionQuick_Server_List() {
 
 void UI::connected() {
     QString command;
+    int port;
 
     qDebug() << "UI::connected";
     isConnected = true;
     configure.connected(TRUE);
+
+    // let them know who we are
+    command.clear(); QTextStream(&command) << "setClient QtRadio";
+    connection.sendCommand(command);
 
     // send initial settings
     frequency=band.getFrequency();
@@ -575,11 +595,24 @@ void UI::connected() {
     actionGain(gain);
 
     if (!getenv("QT_RADIO_NO_LOCAL_AUDIO")) {
-       command.clear(); QTextStream(&command) << "startAudioStream "
-            << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " " << audio_sample_rate << " "
-            << audio_channels;
+       if(useRTP) {
+           // g0orx RTP
+           port=5004;
+           connect(&rtp,SIGNAL(rtp_packet_received(char*,int)),audio,SLOT(process_rtp_audio(char*,int)));
+
+           command.clear(); QTextStream(&command) << "startRTPStream "
+                 << port
+                 << " " << audio->get_audio_encoding()
+                 << " " << audio_sample_rate << " "
+                 << " " << audio_channels;
+       } else {
+           command.clear(); QTextStream(&command) << "startAudioStream "
+                << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " "
+                << audio_sample_rate << " "
+                << audio_channels;
+       }
        connection.sendCommand(command);
-    //   qDebug() << "command: " << command;
+       qDebug() << "command: " << command;
     }
 
     command.clear(); QTextStream(&command) << "SetPan 0.5"; // center
@@ -693,25 +726,43 @@ void UI::audioBufferProcessed(){
 }
 
 void UI::micSendAudio(QQueue<qint16>* queue){
-
+    if(useRTP) {
+        qint16 sample;
+        unsigned char e;
+        while(!queue->isEmpty()) {
+            // aLaw encode
+            sample=queue->dequeue();
+            if(tuning) {
+                sample=0;
+            }
+            e=g711a.encode(sample);
+            mic_encoded_buffer[mic_buffer_count++]=e;
+            if(mic_buffer_count >= MIC_BUFFER_SIZE) {
+                rtp.send(mic_encoded_buffer,MIC_BUFFER_SIZE);
+                mic_buffer_count=0;
+            }
+        }
+    } else {
 #define MIC_NO_OF_FRAMES 1      // need to ensure this is the same value in dspserver
 #define MIC_ENCODED_BUFFER_SIZE (BITS_SIZE*MIC_NO_OF_FRAMES)
-    qint16 buffer[CODEC2_SAMPLES_PER_FRAME];
-    unsigned char mic_encoded_buffer[MIC_ENCODED_BUFFER_SIZE];
+        qint16 buffer[CODEC2_SAMPLES_PER_FRAME];
+        unsigned char mic_encoded_buffer[MIC_ENCODED_BUFFER_SIZE];
 
-    while(! queue->isEmpty()){
-        buffer[mic_buffer_count++] = queue->dequeue();
-        if (mic_buffer_count >= CODEC2_SAMPLES_PER_FRAME) {
-            mic_buffer_count = 0;
-            codec2_encode(mic_codec2, &mic_encoded_buffer[mic_frame_count*BITS_SIZE], buffer);
-            mic_frame_count++;
-            if (mic_frame_count >= MIC_NO_OF_FRAMES){
-                mic_frame_count = 0;
-                if (connection_valid && configure.getTxAllowed())
+        while(! queue->isEmpty()){
+            buffer[mic_buffer_count++] = queue->dequeue();
+            if (mic_buffer_count >= CODEC2_SAMPLES_PER_FRAME) {
+                mic_buffer_count = 0;
+                codec2_encode(mic_codec2, &mic_encoded_buffer[mic_frame_count*BITS_SIZE], buffer);
+                mic_frame_count++;
+                if (mic_frame_count >= MIC_NO_OF_FRAMES){
+                    mic_frame_count = 0;
+                    if (connection_valid && configure.getTxAllowed())
                         connection.sendAudio(MIC_ENCODED_BUFFER_SIZE,mic_encoded_buffer);
+                }
             }
         }
     }
+
 }
 
 void UI::actionSubRx() {
@@ -1891,7 +1942,7 @@ void UI::getMeterValue(int m, int s)
 
 void UI::printWindowTitle(QString message)
 {
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "    rxtx-event 8 Dec 2011");
+    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "    rxtx-event RTP 12 Dec 2011");
 }
 
 void UI::printStatusBar(QString message)
@@ -1983,6 +2034,7 @@ void UI::pttChange(int caller, bool ptt)
     QString command;
     static int workingMode = 1;
 
+    tuning=caller;
     if(configure.getTxAllowed()) {
        if(ptt) {    // Going from Rx to Tx ................
             if(caller==1) { //We have clicked the tune button so switch to AM and set carrier level
@@ -2091,5 +2143,19 @@ void UI::squelchValueChanged(int val) {
         connection.sendCommand(command);
         widget.spectrumFrame->setSquelchVal(squelchValue);
     }
+}
+
+void UI::setRemote(char* host,int port) {
+    int p;
+    // should only come back if we requested RTP audio
+    if(useRTP) {
+        //fprintf(stderr,"calling rtp.init\n");
+        p=rtp.init(host,port);
+        rtp.start();
+    }
+}
+
+void UI::setRTP(bool state) {
+    useRTP=state;
 }
 

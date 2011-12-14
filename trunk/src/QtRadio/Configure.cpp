@@ -88,6 +88,8 @@ Configure::Configure() {
     connect(widget.MicOrderComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotMicOrderChanged(int)));
     connect(widget.MicSampleRateComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotMicSampleRateChanged(int)));
 
+    connect(widget.rtpCheckBox,SIGNAL(toggled(bool)),this,SLOT(slotUseRTP(bool)));
+
     connect(widget.hostComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotHostChanged(int)));
     connect(widget.rxSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotReceiverChanged(int)));
 
@@ -221,7 +223,9 @@ void Configure::loadSettings(QSettings* settings) {
     if(settings->contains("encoding")) widget.encodingComboBox->setCurrentIndex(settings->value("encoding").toInt());
     if(settings->contains("byteorder")) widget.byteOrderComboBox->setCurrentIndex(settings->value("byteorder").toInt());
 //    if(settings->contains("mic")) widget.MicComboBox->setCurrentIndex(settings->value("mic").toInt());
+    if(settings->contains("rtp")) widget.rtpCheckBox->setChecked(settings->value("rtp").toBool());
     settings->endGroup();
+
 
     settings->beginGroup("NR");
     if(settings->contains("taps")) widget.nrGainSpinBox->setValue(settings->value("taps").toInt());
@@ -279,6 +283,7 @@ void Configure::saveSettings(QSettings* settings) {
     settings->setValue("encoding",widget.encodingComboBox->currentIndex());
     settings->setValue("byteorder",widget.byteOrderComboBox->currentIndex());
     settings->setValue("mic",widget.MicComboBox->currentIndex());
+    settings->setValue("rtp",widget.rtpCheckBox->checkState());
     settings->endGroup();
     settings->beginGroup("NR");
     settings->setValue("taps",widget.nrTapsSpinBox->value());
@@ -400,6 +405,10 @@ void Configure::slotMicOrderChanged(int selection) {
                           );
 }
 
+void Configure::slotUseRTP(bool state) {
+    emit useRTP(state);
+}
+
 void Configure::slotNrTapsChanged(int taps) {
     emit nrValuesChanged(widget.nrTapsSpinBox->value(),widget.nrDelaySpinBox->value(),(double)widget.nrGainSpinBox->value()*0.00001,(double)widget.nrLeakSpinBox->value()*0.0000001);
 }
@@ -505,6 +514,11 @@ int Configure::getSampleRate() {
 
 int Configure::getEncoding(){
     return widget.encodingComboBox->currentIndex();
+}
+
+
+bool Configure::getRTP() {
+    widget.rtpCheckBox->checkState();
 }
 
 void Configure::setSpectrumLow(int low) {
