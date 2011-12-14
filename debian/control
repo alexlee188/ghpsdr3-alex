@@ -2,13 +2,16 @@ Source: ghpsdr3rxtx
 Section: hamradio
 Priority: extra
 Maintainer: Andrea Montefusco IW0HDV <andrew@montefusco.com>
-Build-Depends: debhelper (>= 7.0.50~),autotools-dev, libqt4-opengl-dev, glutg3-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libjack-dev, libjack0, libconfig8-dev, libusb-1.0-0-dev, libsamplerate0-dev, libevent-dev
+Build-Depends: debhelper (>= 7.0.50~),autotools-dev, libqt4-opengl-dev, qtmobility-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libconfig8-dev, libusb-1.0-0-dev, libsamplerate0-dev, libevent-dev
 Standards-Version: 3.9.1
 Homepage: https://github.com/alexlee188/ghpsdr3-alex/tree/master
 
-#
 # please add glutg3-dev on lucid
 # lucid: autotools-dev, libqt4-opengl-dev, glutg3-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libjack-dev, libjack0, libconfig8-dev, libusb-1.0-0-dev, libsamplerate0-dev, libevent-dev
+#
+#
+# please add glutg3-dev on maverick
+# maverick:autotools-dev, libqt4-opengl-dev, qtmobility-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libconfig8-dev, libusb-1.0-0-dev, libevent-dev
 #
 # please add qtmobility-dev on natty
 # natty: autotools-dev, libqt4-opengl-dev, qtmobility-dev, libusb-dev, libfftw3-dev, portaudio19-dev, libpulse-dev, libcodec2-0, xdg-utils, libconfig8-dev, libusb-1.0-0-dev, libevent-dev
@@ -27,4 +30,15 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: This is a modification of the excellent SDR software by John Melton.
  The original sources are in an svn repo revision 1999. See: http://openhpsdr.org/wiki/index.php?title=Ghpsdr3
+
+
+#
+# /usr/include/QtMultimediaKit/QAudioFormat	qtmobility-dev
+# /usr/include/QtMultimediaKit/QAudioOutput 	qtmobility-dev
+# /usr/include/QtMultimediaKit/QAudioDeviceInfo qtmobility-dev
+# /usr/include/QtMultimediaKit/QAudioInput 	qtmobility-dev
+# 
+#
+#
+
 
