@@ -118,6 +118,8 @@ struct option longOptions[] = {
     {"share",no_argument, 0, 6},
     {"shareconfig",required_argument, 0, 7},
     {"lo",required_argument, 0, 8},
+    {"hpsdr",no_argument, 0, 9},
+    {"debug",no_argument, 0, 10},
     {0,0,0,0}
 };
 
@@ -169,6 +171,13 @@ void processCommands(int argc,char** argv) {
             case 8:
                 LO_offset=atoi(optarg);
                 break;
+            case 9:
+                ozy_set_hpsdr();
+                break;
+            case 10:
+                ozy_set_debug(1);
+                break;
+
        default:
                 fprintf(stderr,"Usage: \n");
                 fprintf(stderr,"  dspserver --receivers N (default 1)\n");
@@ -178,6 +187,7 @@ void processCommands(int argc,char** argv) {
                 fprintf(stderr,"            --share (will register this server for other users \n");
                 fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
 		fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
+		fprintf(stderr,"            --hpsdr (if using hpsdr hardware)\n");
                 exit(1);
 
         }
@@ -246,7 +256,9 @@ int main(int argc,char* argv[]) {
     SetTXFilter(1, 150, 2850);
     SetTXOsc(1, LO_offset);
     SetTXAMCarrierLevel(1, 0.5);
-    tx_init();
+
+    // g0orx - wait for a client to connect
+    //tx_init();
 
     while(1) {
         sleep(10000);

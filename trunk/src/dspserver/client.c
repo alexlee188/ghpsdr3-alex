@@ -75,8 +75,8 @@
 #include "buffer.h"
 #include "codec2loc.h"
 #include "register.h"
-
-
+#include "rtp.h"
+#include "G711A.h"
 
 static int timing=0;
 
@@ -132,6 +132,10 @@ static sem_t bufferevent_semaphore, mic_semaphore;
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
 
+#define RTP_BUFFER_SIZE 400
+static unsigned char rtp_buffer[RTP_BUFFER_SIZE];
+void *rtp_tx_thread(void *arg);
+
 void client_send_samples(int size);
 void client_set_samples(float* samples,int size);
 
@@ -154,17 +158,24 @@ void audio_stream_init(int receiver) {
 
 void audio_stream_queue_add(int length) {
     struct audio_entry *item;
+    client_entry *client_item;
 
 
         if(send_audio) {
-		item = malloc(sizeof(*item));
-		item->buf = audio_buffer;
-		item->length = length;
-		sem_wait(&bufferevent_semaphore);
-		TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
-		sem_post(&bufferevent_semaphore);
+            TAILQ_FOREACH(client_item, &Client_list, entries){
+                if(client_item->rtp) {
+                    rtp_send(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE],length-AUDIO_BUFFER_HEADER_SIZE);
+                } else {
+	 	    item = malloc(sizeof(*item));
+		    item->buf = audio_buffer;
+		    item->length = length;
+		    sem_wait(&bufferevent_semaphore);
+		    TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
+		    sem_post(&bufferevent_semaphore);
+	            allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
                 }
-	allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
+            }
+        }
 
 }
 
@@ -228,6 +239,8 @@ audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels*2)+AUDIO_B
     fprintf(stderr,"client_init audio_buffer_size=%d\n",audio_buffer_size);
 */
 
+    // ALAW
+    audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
     port=BASE_PORT+receiver;
     clientSocket=-1;
     rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
@@ -235,9 +248,10 @@ audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels*2)+AUDIO_B
         fprintf(stderr,"pthread_create failed on client_thread: rc=%d\n", rc);
     }
 
+    rtp_init();
 }
 
-void tx_init(){
+void tx_init(client_entry *client){
     int rc;
 
 	mic_src_ratio = (double) sampleRate / 8000.0;
@@ -258,8 +272,13 @@ void tx_init(){
             fprintf (stderr, "tx_init: sample rate init successful with ratio of : %f\n", mic_src_ratio);
 	}
 
-    rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
-    if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
+    if(client->rtp) {
+        rc=pthread_create(&tx_thread_id,NULL,rtp_tx_thread,NULL);
+        if(rc != 0) fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
+    } else {
+        rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
+        if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
+    }
 }
 
 // this is run from the client thread
@@ -277,6 +296,86 @@ void Mic_stream_queue_add(){
 	sem_post(&mic_semaphore);
 }
 
+void *rtp_tx_thread(void *arg) {
+    int length;
+    int i,j,k;
+    short v;
+    float fv;
+    float data_in [TX_BUFFER_SIZE*2]; // stereo
+    float data_out[TX_BUFFER_SIZE*2*(int)mic_src_ratio];
+    int data_in_counter=0;
+    int data_out_counter=0;
+    int iq_buffer_counter = 0;
+    SRC_DATA data;
+    int rc;
+
+    float left;
+    float right;
+    float min_mic=65536.0F;
+    float max_mic=0.0F;
+
+    unsigned short offset;
+    BUFFER small_buffer;
+
+fprintf(stderr,"rtp_tx_thread ...\n");
+
+    while(1) {
+        length=rtp_receive(rtp_buffer,400);
+        if(length<=0) {
+            usleep(10);
+        } else {
+if(length!=400) {
+fprintf("rtp_receive expected 400 got %d\n",length);
+}
+            for(i=0;i<length;i++) {
+                v=G711A_decode(rtp_buffer[i]);
+                fv=(float)v/32767.0F;   // get into the range -1..+1
+
+                data_in[data_in_counter*2]=fv;
+                data_in[(data_in_counter*2)+1]=fv;
+                data_in_counter++;
+
+                if (data_in_counter >= TX_BUFFER_SIZE) {
+
+                    // resample to the sample rate
+                    data.data_in = data_in;
+                    data.input_frames = TX_BUFFER_SIZE;
+                    data.data_out = data_out;
+                    data.output_frames = TX_BUFFER_SIZE*(int)mic_src_ratio ;
+                    data.src_ratio = mic_src_ratio;
+                    data.end_of_input = 0;
+
+                    rc = src_process (mic_sr_state, &data);
+                    if (rc) {
+                        fprintf (stderr,"rtp_tx_thread: SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
+                    } else {
+                        for (j=0;j<TX_BUFFER_SIZE*(int)mic_src_ratio;j++) {
+                            // tx_buffer is non-interleaved, LEFT followed by RIGHT data
+
+
+                            tx_buffer[iq_buffer_counter] = data_out[2*j];
+                            tx_buffer[iq_buffer_counter + TX_BUFFER_SIZE] = data_out[(2*j)+1];
+
+                            iq_buffer_counter++;
+                            if(iq_buffer_counter>=TX_BUFFER_SIZE) {
+                                // use DttSP to process Mic data into tx IQ
+                                if(!hpsdr || mox) {
+                                    Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
+                                    // send Tx IQ to server, buffer is non-interleaved.
+                                    ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+                                }
+                                iq_buffer_counter=0;
+                            }
+                        }
+                    }
+                    data_in_counter = 0;
+                }
+            }
+        }
+    }
+}
+
+
 void *tx_thread(void *arg){
    unsigned char *bits;
    struct audio_entry *item;
@@ -285,7 +384,7 @@ void *tx_thread(void *arg){
    int rc;
    int j, i, k;
    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
-   float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz / 8khz = 24
+   float data_out[CODEC2_SAMPLES_PER_FRAME*2*(int)mic_src_ratio];	// 8khz
    SRC_DATA data;
    void *mic_codec2 = codec2_create();
 
@@ -327,14 +426,7 @@ void *tx_thread(void *arg){
 				// use DttSP to process Mic data into tx IQ
 				Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
 				// send Tx IQ to server, buffer is non-interleaved.
-				int bytes_written;
-				bytes_written=sendto(audio_socket,tx_IQ_buffer,sizeof(tx_IQ_buffer),0,
-					(struct sockaddr *)&server_audio_addr,server_audio_length);
-				if(bytes_written<0) {
-				   fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
-				   exit(1);
-				}
-				// fprintf(stderr,"bytes written = %d\n",bytes_written);
+                                ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
 				tx_buffer_counter = 0;
 			}
 		} // end for i
@@ -363,7 +455,7 @@ void writecb(struct bufferevent *bev, void *ctx);
 void
 errorcb(struct bufferevent *bev, short error, void *ctx)
 {
-    struct client_entry *item, *tmp_item;
+    client_entry *item, *tmp_item;
     int client_count = 0;
 
     if (error & BEV_EVENT_EOF) {
@@ -390,6 +482,11 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 			receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
 
 		TAILQ_REMOVE(&Client_list, item, entries);
+                if(item->rtp) {
+                    rtp_disconnect();
+                    item->rtp=0;
+                }
+
 		free(item);
 		break;
 	}
@@ -461,7 +558,7 @@ void* client_thread(void* arg) {
 
 void do_accept(evutil_socket_t listener, short event, void *arg){
 
-    struct client_entry *item;
+    client_entry *item;
     struct event_base *base = arg;
     struct sockaddr_in ss;
     socklen_t slen = sizeof(ss);
@@ -506,7 +603,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 
 void writecb(struct bufferevent *bev, void *ctx){
 	struct audio_entry *item;
-	struct client_entry *client_item;
+	client_entry *client_item;
 
 	sem_wait(&bufferevent_semaphore);
 	item = audio_stream_queue_remove();
@@ -525,7 +622,9 @@ void readcb(struct bufferevent *bev, void *ctx){
     int i;
     int bytesRead = 0;
     char message[MSG_SIZE];
-    struct client_entry *item;
+    client_entry *item;
+    time_t tt;
+    struct tm *tod;
 
 	if ((item = TAILQ_FIRST(&Client_list)) == NULL) return;		// should not happen.  No clients !!!
 	if (item->bev != bev){						// only allow the first client on Client_list to command dspserver as master
@@ -558,7 +657,14 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                	    } else {
 			 		    fprintf(stderr,"Invalid command: '%s'\n",message);
 					    }
-				}  // end getspectrum
+				} else if(strncmp(token,"setclient",9)==0) {
+                                    token=strtok_r(NULL," ",&saveptr);
+                                    if(token!=NULL) {
+                                        time(&tt);
+                                        tod=localtime(&tt);
+                                        fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
+                                    }
+                                }
 			} // end if !=NULL
 		}; // end while
 		return;
@@ -769,8 +875,52 @@ void readcb(struct bufferevent *bev, void *ctx){
                         
 				fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
 				fprintf(stderr,"and with encoding method %d\n", encoding);
+                                item->rtp=0;
                         	audio_stream_reset();
                         	send_audio=1;
+                        } else if(strncmp(token,"startrtpstream",14)==0) {
+                                // startrtpstream port encoding samplerate channels
+                                int error=1;
+                                token=strtok_r(NULL," ",&saveptr);
+                                if(token!=NULL) {
+                                    int rtpport=atoi(token);
+                                    token=strtok_r(NULL," ",&saveptr);
+                                    if(token!=NULL) {
+                                        encoding=atoi(token);
+                                        token=strtok_r(NULL," ",&saveptr);
+                                        if(token!=NULL) {
+                                            audio_sample_rate=atoi(token);
+                                            token=strtok_r(NULL," ",&saveptr);
+                                            if(token!=NULL) {
+                                                audio_channels=atoi(token);
+
+fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
+                inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
+
+                                                int port=rtp_connect(inet_ntoa(item->client.sin_addr),rtpport);
+                                                item->rtp=1;
+                                                error=0;
+                                                send_audio=1;
+
+                                                tx_init(item);
+
+                                                // need to let the caller know our port number
+                                                char rtp_reply[7];
+                                                rtp_reply[0]=RTP_REPLY_BUFFER;
+                                                rtp_reply[1]=HEADER_VERSION;
+                                                rtp_reply[2]=HEADER_SUBVERSION;
+                                                rtp_reply[3]=0;
+                                                rtp_reply[4]=0;
+                                                rtp_reply[5]=(port>>8)&0xFF;
+                                                rtp_reply[6]=port&0xFF;
+                                                bufferevent_write(bev, rtp_reply, 7);
+                                            }
+                                        }
+                                    }
+                                }
+                                if(error) {
+                                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                                }
                         } else if(strncmp(token,"stopaudiostream",15)==0) {
                         	send_audio=0;
                         } else if(strncmp(token,"setencoding",11)==0) {
@@ -1034,20 +1184,14 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                } else {
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
-                       } else {
-                        	fprintf(stderr,"Invalid command: token: '%s'\n",token);
-                    		}
-
-                       } else if(strcmp(token,"setclient")==0) {
-                        	token=strtok(NULL," ");
+                       } else if(strncmp(token,"setclient",9)==0) {
+                        	token=strtok_r(NULL," ",&saveptr);
                         	if(token!=NULL) {
-/*
                             		time(&tt);
                             		tod=localtime(&tt);
-                            		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connected from %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
+                            		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
 
                         	}
-*/
                        } else {
 		                fprintf(stderr,"Invalid command: token: '%s'\n",token);
 		            	}

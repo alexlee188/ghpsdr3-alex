@@ -27,7 +27,7 @@
 #include "Mode.h"
 
 Band::Band() {
-    int i;
+//    int i;
 
 //    for(i=0;i<BAND_LAST;i++) {
 //        stack[i]=0;
@@ -861,7 +861,7 @@ void Band::setWaterfallLow(int l) {
 //Also called by a frequency change which takes us out of currend band. e.g Keypad or VFO frequency change.
 void Band::selectBand(int b) {
     int previousBand=currentBand;
-    int stackPtr;
+    int stackPtr = 0;
     bool vfoFlag = false;
 
     if(b>99){ //If band selected from main menu, 100 was added to the band number as a flag.

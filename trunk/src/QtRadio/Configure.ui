@@ -532,6 +532,19 @@
       </rect>
      </property>
     </widget>
+    <widget class="QCheckBox" name="rtpCheckBox">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>240</y>
+       <width>97</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Use RTP</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="Display">
     <attribute name="title">

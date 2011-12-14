@@ -1,4 +1,4 @@
-AC_INIT([QtRadio Build], [rxtx-event-2-2], [andrew att montefusco dott com], [QtRadio])
+AC_INIT([QtRadio Build], [rxtx-event-2-3], [andrew att montefusco dott com], [QtRadio])
 
 #AC_CONFIG_AUX_DIR([build-aux])
 #AC_CONFIG_MACRO_DIR([m4])
@@ -50,6 +50,57 @@ AC_MSG_RESULT([QT_INSTALL_HEADERS_UP: $QT_INSTALL_HEADERS_UP])
 
 AC_MSG_RESULT([QT_ADDITIONAL_INCLUDE_PATH: $QT_ADDITIONAL_INCLUDE_PATH])
 AC_MSG_RESULT([QT_ADDITIONAL_LDFLAG: $QT_ADDITIONAL_LDFLAG])
+
+#
+# Checks for libraries.
+# Check both libraries binary and header files
+#
+
+have_codec2=no
+AC_SEARCH_LIBS([codec2_create], [codec2],[have_codec2=yes])
+
+have_samplerate=no
+AC_SEARCH_LIBS([src_new], [samplerate],[have_samplerate=yes])
+
+have_ortp=no
+AC_SEARCH_LIBS([ortp_init], [ortp],[have_ortp=yes])
+
+if test "x${have_codec2}" = xyes; then
+    AC_CHECK_HEADERS([codec2.h], [], [have_codec2=no])
+fi
+
+if test "x${have_codec2}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The codec2 library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
+if test "x${have_samplerate}" = xyes; then
+    AC_CHECK_HEADERS([samplerate.h], [], [have_samplerate=no])
+fi
+
+if test "x${have_samplerate}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The samplerate library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
+if test "x${have_ortp}" = xyes; then
+    AC_CHECK_HEADERS([ortp/ortp.h], [], [have_ortp=no])
+fi
+
+if test "x${have_ortp}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The ortp library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
 
 
 AC_CONFIG_FILES([

@@ -34,6 +34,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <errno.h>
  
 #include "ozy.h"
 #include "dttsp.h"
@@ -45,6 +46,8 @@
  */
 
 #define SMALL_PACKETS
+
+static sem_t ozy_send_semaphore;
 
 #define USB_TIMEOUT -7
 //static struct OzyHandle* ozy;
@@ -74,8 +77,8 @@ int output_sample_increment=1; // 1=48000 2=96000 4=192000
 #define BUFFER_SIZE 1024
 int buffer_size=BUFFER_SIZE;
 
-float input_buffer[BUFFER_SIZE*2];
-float output_buffer[BUFFER_SIZE*2];
+float input_buffer[BUFFER_SIZE*3]; // I,Q,Mic
+float output_buffer[BUFFER_SIZE*4];
 
 float mic_left_buffer[BUFFER_SIZE];
 float mic_right_buffer[BUFFER_SIZE];
@@ -152,9 +155,14 @@ char response[64];
 
 int session;
 
+int hpsdr=0;
+
 
 static int local_audio=0;
 static int port_audio=0;
+
+unsigned long tx_sequence=0L;
+unsigned long rx_sequence=0L;
 
 #include <samplerate.h>
 //
@@ -174,9 +182,9 @@ void* iq_thread(void* arg) {
     int iq_length = sizeof(iq_addr);
     int c,j;
     BUFFER buffer;
-    unsigned long sequence=0L;
-    unsigned short offset=0;;
     int on=1;
+
+fprintf(stderr,"iq_thread\n");
 
     // create a socket to receive iq from the server
     iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
@@ -198,7 +206,7 @@ void* iq_thread(void* arg) {
         exit(1);
     }
 
-    fprintf(stderr,"ozy_init: iq bound to port %d socket=%d\n",htons(iq_addr.sin_port),iq_socket);
+    fprintf(stderr,"iq_thread: iq bound to port %d socket=%d\n",htons(iq_addr.sin_port),iq_socket);
     fprintf(stderr,"output_sample_increment=%d\n",output_sample_increment);
     
     while(1) {
@@ -218,12 +226,12 @@ void* iq_thread(void* arg) {
 
            if(buffer.offset==0) {
                 offset=0;
-                sequence=buffer.sequence;
+                rx_sequence=buffer.sequence;
                 // start of a frame
                 memcpy((char *)&input_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
                 offset+=buffer.length;
             } else {
-                if((sequence==buffer.sequence) && (offset==buffer.offset)) {
+                if((rx_sequence==buffer.sequence) && (offset==buffer.offset)) {
                     memcpy((char *)&input_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
                     offset+=buffer.length;
                     if(offset==sizeof(input_buffer)) {
@@ -236,7 +244,7 @@ void* iq_thread(void* arg) {
             }
         }
 #else
-        bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*2*4,0,(struct sockaddr*)&iq_addr,&iq_length);
+        bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*3*4,0,(struct sockaddr*)&iq_addr,&iq_length);
         if(bytes_read<0) {
             perror("recvfrom socket failed for iq buffer");
             exit(1);
@@ -245,6 +253,7 @@ void* iq_thread(void* arg) {
 
         Audio_Callback (input_buffer,&input_buffer[BUFFER_SIZE],
                                 output_buffer,&output_buffer[BUFFER_SIZE], buffer_size, 0);
+
 
         // process the output with resampler if odd samplerate
         if (output_sample_increment == -1) {
@@ -278,8 +287,7 @@ void* iq_thread(void* arg) {
                   audio_stream_put_samples(left_rx_sample,right_rx_sample);
                    }
 	     }
-        }
-       	else {
+        } else {
 
 
         // process the output
@@ -289,18 +297,67 @@ void* iq_thread(void* arg) {
             audio_stream_put_samples(left_rx_sample,right_rx_sample);
         }
 
-/*
         // send the audio back to the server.  This is for HPSDR hardware.  Right now
 	// the audio channel is used to send the Tx IQ to the softrock hardware
+        if(hpsdr) {
+                if(mox) {
+                    Audio_Callback (&input_buffer[BUFFER_SIZE*2],&input_buffer[BUFFER_SIZE*2],
+                                    &output_buffer[BUFFER_SIZE*2],&output_buffer[BUFFER_SIZE*3], buffer_size, 1);
+                } else {
+                    for(j=0;j<buffer_size;j++) {
+                        output_buffer[(BUFFER_SIZE*2)+j]=output_buffer[(BUFFER_SIZE*3)+j]=0.0F;
+                    }
+                }
+                ozy_send((unsigned char *)&output_buffer[0],sizeof(output_buffer),"ozy");
+            }
 
-        bytes_written=sendto(audio_socket,output_buffer,sizeof(output_buffer),0,(struct sockaddr *)&audio_addr,audio_length);
-        if(bytes_written<0) {
-           fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
-           exit(1);
-           }
-*/
    	} // end sample_increment == -1
     } // end while
+}
+
+void ozy_send(unsigned char* data,int length,char* who) {
+    BUFFER buffer;
+    unsigned short offset=0;
+    int rc;
+
+//fprintf(stderr,"ozy_send: %s\n",who);
+sem_wait(&ozy_send_semaphore);
+#ifdef SMALL_PACKETS
+            // keep UDP packets to 512 bytes or less
+            //     8 bytes sequency number
+            //     2 byte offset
+            //     2 byte length
+            offset=0;
+            while(offset<length) {
+                buffer.sequence=tx_sequence;
+#ifndef __linux__
+                buffer.sequenceHi = 0L;
+#endif
+                buffer.offset=offset;
+                buffer.length=length-offset;
+                if(buffer.length>500) buffer.length=500;
+//fprintf(stderr,"ozy_send: %lld:%d:%d\n",buffer.sequence,buffer.offset,buffer.length);
+                memcpy((char*)&buffer.data[0],(char*)&data[offset],buffer.length);
+                rc=sendto(audio_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&server_audio_addr,server_audio_length);
+                if(rc<=0) {
+                    fprintf(stderr,"sendto audio (SMALL_PACKETS) failed: %d audio_socket=%d errno=%d\n",rc,audio_socket,errno);
+                    fprintf(stderr,"audio port is %d\n",ntohs(server_audio_addr.sin_port));
+                    perror("sendto failed for audio data");
+                    exit(1);
+                }
+                offset+=buffer.length;
+            }
+            tx_sequence++;
+
+#else
+                bytes_written=sendto(audio_socket,data,length,0,(struct sockaddr *)&server_audio_addr,server_audio_length);
+                if(bytes_written<0) {
+                   fprintf(stderr,"sendto audio failed: %d audio_socket=%d\n",bytes_written,audio_socket);
+                   exit(1);
+                }
+#endif
+sem_post(&ozy_send_semaphore);
+
 }
 
 
@@ -317,7 +374,7 @@ void send_command(char* command) {
 
     rc=send(command_socket,command,strlen(command),0);
     if(rc<0) {
-        fprintf(stderr,"send command failed: %d\n",rc);
+        fprintf(stderr,"send command failed: %d: %s\n",rc,command);
         exit(1);
     }
 
@@ -593,6 +650,15 @@ int ozy_init() {
     int on=1;
     int audio_on=1;
 
+    rc=sem_init(&ozy_send_semaphore,0,1);
+    if(rc<0) {
+        perror("sem_init failed");
+    }
+    rc=sem_post(&ozy_send_semaphore);
+    if(rc<0) {
+        perror("sem_post failed");
+    }
+
     h=gethostbyname(server_address);
     if(h==NULL) {
         fprintf(stderr,"ozy_init: unknown host %s\n",server_address);
@@ -771,5 +837,9 @@ void dump_udp_buffer(unsigned char* buffer) {
                 );
     }
     fprintf(stderr,"\n");
+}
+
+void ozy_set_hpsdr() {
+    hpsdr=1;
 }
 

@@ -89,6 +89,7 @@ static int ozy_buffers=DEFAULT_OZY_BUFFERS;
 #define LT2208_RANDOM_OFF         0x00
 #define LT2208_RANDOM_ON          0x10
 
+#define SIMPLEX                   0x00
 #define DUPLEX                    0x04
 
 
@@ -107,17 +108,20 @@ static int sample_rate=96000;
 static int output_sample_increment=2;
 
 static int timing=0;
-static struct timeb start_time;
-static struct timeb end_time;
-static int sample_count=0;
+static struct timeb rx_start_time;
+static struct timeb rx_end_time;
+static struct timeb tx_start_time;
+static struct timeb tx_end_time;
+static int rx_sample_count=0;
+static int tx_sample_count=0;
 
 static unsigned char control_in[5]={0x00,0x00,0x00,0x00,0x00};
 static unsigned char control_out[5]={
   MOX_DISABLED,
-  CONFIG_MERCURY | MERCURY_122_88MHZ_SOURCE | MERCURY_10MHZ_SOURCE | MIC_SOURCE_PENELOPE | SPEED_96KHZ,
+  CONFIG_BOTH | MERCURY_122_88MHZ_SOURCE | MERCURY_10MHZ_SOURCE | MIC_SOURCE_PENELOPE | SPEED_96KHZ,
   MODE_OTHERS,
   ALEX_ATTENUATION_0DB | LT2208_GAIN_OFF | LT2208_DITHER_ON | LT2208_RANDOM_ON,
-  DUPLEX
+  SIMPLEX
 };
 
 static int mox=0;
@@ -205,7 +209,8 @@ int create_ozy_thread() {
     }
 
     if(timing) {
-        ftime(&start_time);
+        ftime(&rx_start_time);
+        ftime(&tx_start_time);
     }
 
     if(playback) {
@@ -460,8 +465,11 @@ void write_ozy_output_buffer() {
         ozy_output_buffer[6]=control_out[3];
         ozy_output_buffer[7]=control_out[4];
     } else if(receiver[current_receiver].frequency_changed) {
-//fprintf(stderr,"sending frequency to %d:  %ld\n",current_receiver,receiver[current_receiver].frequency);
-        ozy_output_buffer[3]=control_out[0]|((current_receiver+2)<<1);
+        if(receivers==1) {
+            ozy_output_buffer[3]=control_out[0]|0x02;
+        } else {
+            ozy_output_buffer[3]=control_out[0]|((current_receiver+2)<<1);
+        }
         ozy_output_buffer[4]=receiver[current_receiver].frequency>>24;
         ozy_output_buffer[5]=receiver[current_receiver].frequency>>16;
         ozy_output_buffer[6]=receiver[current_receiver].frequency>>8;
@@ -596,7 +604,13 @@ if(rx_frame<10) {
                 receiver[r].input_buffer[samples]=left_sample_float;
                 receiver[r].input_buffer[samples+BUFFER_SIZE]=right_sample_float;
 
+                // send to dspserver
+                mic_sample    = (int)((signed char) buffer[b++]) << 8;
+                mic_sample   += (int)((unsigned char)buffer[b++]);
+                mic_sample_float=(float)mic_sample/32767.0*mic_gain; // 16 bit sample
+                receiver[r].input_buffer[samples+BUFFER_SIZE+BUFFER_SIZE]=mic_sample_float;
             }
+/*
             mic_sample    = (int)((signed char) buffer[b++]) << 8;
             mic_sample   += (int)((unsigned char)buffer[b++]);
             mic_sample_float=(float)mic_sample/32767.0*mic_gain; // 16 bit sample
@@ -604,15 +618,16 @@ if(rx_frame<10) {
             // add to buffer
             mic_left_buffer[samples]=mic_sample_float;
             mic_right_buffer[samples]=0.0f;
+*/
             samples++;
 
             if(timing) {
-                sample_count++;
-                if(sample_count==sample_rate) {
-                    ftime(&end_time);
-                    fprintf(stderr,"%d samples in %ld ms\n",sample_count,((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
-                    sample_count=0;
-                    ftime(&start_time);
+                rx_sample_count++;
+                if(rx_sample_count==sample_rate) {
+                    ftime(&rx_end_time);
+                    fprintf(stderr,"%d rx samples in %ld ms\n",rx_sample_count,((rx_end_time.time*1000)+rx_end_time.millitm)-((rx_start_time.time*1000)+rx_start_time.millitm));
+                    rx_sample_count=0;
+                    ftime(&rx_start_time);
                 }
             }
 
@@ -678,7 +693,8 @@ void process_bandscope_buffer(char* buffer) {
     send_bandscope_buffer();
 }
 
-void process_ozy_output_buffer(float *left_output_buffer,float *right_output_buffer,int mox) {
+void process_ozy_output_buffer(float *left_output_buffer,float *right_output_buffer,
+                               float *left_tx_buffer,float *right_tx_buffer,int mox_state) {
     unsigned char ozy_samples[1024*8];
     int j,c;
     short left_rx_sample;
@@ -686,22 +702,45 @@ void process_ozy_output_buffer(float *left_output_buffer,float *right_output_buf
     short left_tx_sample;
     short right_tx_sample;
 
+    mox=mox_state;
+    if(mox) {
+        control_out[0]|=0x01;
+    } else {
+        control_out[0]&=0xFE;
+    }
+
     if(!playback) {
         // process the output
         for(j=0,c=0;j<BUFFER_SIZE;j+=output_sample_increment) {
 
             if(mox) {
+                left_rx_sample=0.0;
+                right_rx_sample=0.0;
+                left_tx_sample=(short)(left_tx_buffer[j]*32767.0);
+                right_tx_sample=(short)(right_tx_buffer[j]*32767.0);
+            } else {
+                left_rx_sample=(short)(left_output_buffer[j]*32767.0);
+                right_rx_sample=(short)(right_output_buffer[j]*32767.0);
+                left_tx_sample=0.0;
+                right_tx_sample=0.0;
+            }
+
+/*
+            if(mox) {
                 left_tx_sample=(short)(left_output_buffer[j]*32767.0);
                 right_tx_sample=(short)(right_output_buffer[j]*32767.0);
+//fprintf(stderr,"TX left=%d right=%d\n",left_tx_sample,right_tx_sample);
+fprintf(stderr,"TX left=%8d right=%8d\r",left_tx_sample,right_tx_sample);
                 left_rx_sample=0;
                 right_rx_sample=0;
             } else {
                 left_rx_sample=(short)(left_output_buffer[j]*32767.0);
                 right_rx_sample=(short)(right_output_buffer[j]*32767.0);
+//fprintf(stderr,"RX left=%d right=%d\n",left_rx_sample,right_rx_sample);
                 left_tx_sample=0;
                 right_tx_sample=0;
             }
-
+*/
             ozy_output_buffer[ozy_output_buffer_index++]=left_rx_sample>>8;
             ozy_output_buffer[ozy_output_buffer_index++]=left_rx_sample;
             ozy_output_buffer[ozy_output_buffer_index++]=right_rx_sample>>8;
@@ -710,6 +749,16 @@ void process_ozy_output_buffer(float *left_output_buffer,float *right_output_buf
             ozy_output_buffer[ozy_output_buffer_index++]=left_tx_sample;
             ozy_output_buffer[ozy_output_buffer_index++]=right_tx_sample>>8;
             ozy_output_buffer[ozy_output_buffer_index++]=right_tx_sample;
+
+            if(timing) {
+                tx_sample_count++;
+                if(tx_sample_count==sample_rate/output_sample_increment) {
+                    ftime(&tx_end_time);
+                    fprintf(stderr,"%d tx samples in %ld ms\n",tx_sample_count,((tx_end_time.time*1000)+tx_end_time.millitm)-((tx_start_time.time*1000)+tx_start_time.millitm));
+                    tx_sample_count=0;
+                    ftime(&tx_start_time);
+                }
+            }
 
             if(ozy_output_buffer_index==OZY_BUFFER_SIZE) {
                 write_ozy_output_buffer();

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.65])
-AC_INIT([ghpsdr3], [rxtx-event-2-2], [andrew att montefusco dott com])
+AC_INIT([ghpsdr3], [rxtx-event-2-3], [andrew att montefusco dott com])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -82,6 +82,9 @@ AC_SEARCH_LIBS([event_init], [event],[have_event20=yes])
 
 have_samplerate=no
 AC_SEARCH_LIBS([src_new], [samplerate],[have_samplerate=yes])
+
+have_ortp=no
+AC_SEARCH_LIBS([ortp_init], [ortp],[have_ortp=yes])
 
 # Checks for header files.
 AC_FUNC_ALLOCA
@@ -236,6 +239,19 @@ if test "x${have_samplerate}" = xno; then
 -----------------------------------])
 
 fi
+
+if test "x${have_ortp}" = xyes; then
+    AC_CHECK_HEADERS([ortp/ortp.h], [], [have_ortp=no])
+fi
+
+if test "x${have_ortp}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The ortp library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL

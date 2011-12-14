@@ -76,6 +76,8 @@ public:
 
     void setSampleRate(int samplerate);
     void setChannels(int channels);
+
+    bool getRTP();
     
     int getNrTaps();
     int getNrDelay();
@@ -106,6 +108,9 @@ signals:
     void encodingChanged(int index);
     void get_audio_devices(QComboBox* comboBox);
     void micDeviceChanged(QAudioDeviceInfo info);
+
+    void useRTP(bool state);
+
     void nrValuesChanged(int taps,int delay,double gain,double leak);
     void anfValuesChanged(int taps,int delay,double gain,double leak);
 
@@ -133,6 +138,8 @@ public slots:
     void slotMicSampleRateChanged(int rate);
     void slotMicChannelsChanged(int channels);
     void slotMicOrderChanged(int selection);
+
+    void slotUseRTP(bool state);
 
     void slotNrTapsChanged(int taps);
     void slotNrDelayChanged(int delay);

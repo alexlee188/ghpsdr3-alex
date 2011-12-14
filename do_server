@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# define name used in the RMI registry
+export SDR_DEFRATE=192000
+export JACK_BUFFER=1024
+export LD_LIBRARY_PATH=/usr/local/lib
+
+#/usr/local/bin/jackd -s -T -dalsa -Chw:1 -Phw:1 -r$SDR_DEFRATE -p${JACK_BUFFER} -n3&
+jackd --s -T -dalsa -Chw:1 -Phw:1 -r$SDR_DEFRATE -p${JACK_BUFFER} -n3&
+
+sleep 1
+softrock --jack --si570 --iq --samplerate $SDR_DEFRATE
+
+
+

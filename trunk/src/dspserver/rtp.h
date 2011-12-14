@@ -1,11 +1,11 @@
 /** 
-* @file client.h
-* @brief iPhone network interface
+* @file rtp.h
+* @brief rtp network interface
 * @author John Melton, G0ORX/N6LYT, Doxygen Comments Dave Larsen, KV0S
 * @version 0.1
 * @date 2009-04-12
 */
-// client.h
+// rtp.h
 
 /* Copyright (C) 
 * 2009 - John Melton, G0ORX/N6LYT, Doxygen Comments Dave Larsen, KV0S
@@ -25,29 +25,8 @@
 * 
 */
 
-#if ! defined __CLIENT_H__
-#define __CLIENT_H__
-
-#include <sys/queue.h>
-
-typedef struct _client_entry {
-        int rtp;
-	struct sockaddr_in client;
-	struct bufferevent * bev;
-	TAILQ_ENTRY(_client_entry) entries;
-} client_entry;
-
-extern int encoding;
-extern int tx_length;
-void client_init(int receiver);
-void tx_init(client_entry *client);
-void spectrum_init();
-void *spectrum_thread(void *);
-void client_set_timing();
-void printcountry();
-void setprintcountry();
-void printcountrythread();
-
-extern double mic_src_ratio;
-
-#endif
+void rtp_init();
+int rtp_connect(char* host,int port);
+void rtp_disconnect();
+void rtp_send(char* buffer,int length);
+int rtp_receive(unsigned char* buffer,int length);

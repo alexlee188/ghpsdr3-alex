@@ -104,6 +104,8 @@ extern double LO_offset;
 
 char server_address[64];
 
+int hpsdr;
+
 /* --------------------------------------------------------------------------*/
 /** 
 * @brief Initialize the Ozy interface 
@@ -254,6 +256,8 @@ void setSpeed(int s);
 
 
 int ozySetRecord(char* state);
+
+void ozy_set_hpsdr();
 
 #ifdef	__cplusplus
 }
