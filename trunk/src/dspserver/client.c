@@ -227,22 +227,6 @@ void client_init(int receiver) {
     sem_post(&bufferevent_semaphore);
     sem_post(&mic_semaphore);
 
-/*
-fprintf(stderr,"client_init encoding=%d audio_buffer_size=%d audio_channels=%d\n", encoding,audio_buffer_size,audio_channels);
-    if (encoding == ENCODING_ALAW) {
-audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
-}
-    else if (encoding == ENCODING_PCM) {
-audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels*2)+AUDIO_BUFFER_HEADER_SIZE); // 2 byte PCM
-	}
-    else {	// encoding = Codec 2
-	audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
-	audio_buffer=(unsigned char*)malloc(audio_buffer_size*audio_channels + AUDIO_BUFFER_HEADER_SIZE);
-	};
-
-    fprintf(stderr,"client_init audio_buffer_size=%d\n",audio_buffer_size);
-*/
-
     // ALAW
     audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
     port=BASE_PORT+receiver;
@@ -484,13 +468,11 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 	    	fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
 			tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
 			receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
-
-		TAILQ_REMOVE(&Client_list, item, entries);
                 if(item->rtp) {
                     rtp_disconnect();
                     item->rtp=0;
                 }
-
+		TAILQ_REMOVE(&Client_list, item, entries);
 		free(item);
 		break;
 	}
