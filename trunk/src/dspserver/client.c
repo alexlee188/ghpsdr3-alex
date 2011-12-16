@@ -165,11 +165,12 @@ void audio_stream_queue_add(int length) {
 
         if(send_audio) {
                 TAILQ_FOREACH(client_item, &Client_list, entries){
-                if(client_item->rtp) {
-                    rtp_send(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE],length-AUDIO_BUFFER_HEADER_SIZE);
-                } else {
-                    non_rtp++;
-                }
+		        if(client_item->rtp) {
+		            rtp_send(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE],length-AUDIO_BUFFER_HEADER_SIZE);
+		        } else {
+		            non_rtp++;
+		        }
+		}
                 if(non_rtp) {
 	 	    item = malloc(sizeof(*item));
 		    item->buf = audio_buffer;
@@ -179,7 +180,6 @@ void audio_stream_queue_add(int length) {
 		    sem_post(&bufferevent_semaphore);
 	            allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
                 }
-            }
         }
 }
 
