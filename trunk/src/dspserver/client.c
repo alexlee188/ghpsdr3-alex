@@ -613,8 +613,10 @@ void writecb(struct bufferevent *bev, void *ctx){
 	item = audio_stream_queue_remove();
 	if (item != NULL){
 		TAILQ_FOREACH(client_item, &Client_list, entries){
-			bufferevent_write(client_item->bev, item->buf, item->length);
-			}
+                        if(!client_item->rtp) {
+			    bufferevent_write(client_item->bev, item->buf, item->length);
+                        }
+		}
 		free(item->buf);
 		free(item);
 	}
