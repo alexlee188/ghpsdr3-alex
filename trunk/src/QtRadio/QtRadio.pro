@@ -62,7 +62,9 @@ SOURCES += main.cpp\
     vfo.cpp \
     ctl.cpp \
     Audioinput.cpp\
-    servers.cpp
+    servers.cpp \
+    G711A.cpp \
+    RTP.cpp
 
 
 HEADERS  += \ 
@@ -109,7 +111,9 @@ HEADERS  += \
     vfo.h \
     ctl.h \
     Audioinput.h \
-    servers.h
+    servers.h \
+    G711A.h \
+    RTP.h
 
 FORMS    += \   
     UI.ui \
@@ -129,4 +133,4 @@ OTHER_FILES +=
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/release/ 
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/debug/ 
 else:symbian: LIBS += -lcodec2 -lsamplerate
-else:unix: LIBS += -lcodec2 -lsamplerate
+else:unix: LIBS += -lcodec2 -lsamplerate -lortp
