@@ -310,7 +310,8 @@ fprintf(stderr,"rtp_tx_thread ...\n");
     while(1) {
         length=rtp_receive(rtp_buffer,400);
         if(length<=0) {
-            usleep(10);
+  //          usleep(10);
+	usleep(1000);		// try not using so much cpu first
         } else {
 if(length!=400) {
 fprintf("rtp_receive expected 400 got %d\n",length);
