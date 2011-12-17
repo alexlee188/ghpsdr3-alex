@@ -234,7 +234,7 @@ fprintf(stderr,"iq_thread\n");
                 if((rx_sequence==buffer.sequence) && (offset==buffer.offset)) {
                     memcpy((char *)&input_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
                     offset+=buffer.length;
-                    if(offset==sizeof(input_buffer)) {
+                    if((hpsdr && (offset==(BUFFER_SIZE*3*4))) || (!hpsdr && (offset==(BUFFER_SIZE*2*4)))) {
                         offset=0;
                         break;
                     }
@@ -244,7 +244,9 @@ fprintf(stderr,"iq_thread\n");
             }
         }
 #else
-        bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*3*4,0,(struct sockaddr*)&iq_addr,&iq_length);
+	if (hpsdr)
+        	bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*3*4,0,(struct sockaddr*)&iq_addr,&iq_length);
+	else 	bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*2*4,0,(struct sockaddr*)&iq_addr,&iq_length);
         if(bytes_read<0) {
             perror("recvfrom socket failed for iq buffer");
             exit(1);

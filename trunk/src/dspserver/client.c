@@ -160,12 +160,18 @@ void audio_stream_queue_add(int length) {
     struct audio_entry *item;
     client_entry *client_item;
 
+    int non_rtp=0;
+
 
         if(send_audio) {
-            TAILQ_FOREACH(client_item, &Client_list, entries){
-                if(client_item->rtp) {
-                    rtp_send(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE],length-AUDIO_BUFFER_HEADER_SIZE);
-                } else {
+                TAILQ_FOREACH(client_item, &Client_list, entries){
+		        if(client_item->rtp) {
+		            rtp_send(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE],length-AUDIO_BUFFER_HEADER_SIZE);
+		        } else {
+		            non_rtp++;
+		        }
+		}
+                if(non_rtp) {
 	 	    item = malloc(sizeof(*item));
 		    item->buf = audio_buffer;
 		    item->length = length;
@@ -174,9 +180,7 @@ void audio_stream_queue_add(int length) {
 		    sem_post(&bufferevent_semaphore);
 	            allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
                 }
-            }
         }
-
 }
 
 struct audio_entry *audio_stream_queue_remove(){
@@ -222,22 +226,6 @@ void client_init(int receiver) {
     signal(SIGPIPE, SIG_IGN);
     sem_post(&bufferevent_semaphore);
     sem_post(&mic_semaphore);
-
-/*
-fprintf(stderr,"client_init encoding=%d audio_buffer_size=%d audio_channels=%d\n", encoding,audio_buffer_size,audio_channels);
-    if (encoding == ENCODING_ALAW) {
-audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
-}
-    else if (encoding == ENCODING_PCM) {
-audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels*2)+AUDIO_BUFFER_HEADER_SIZE); // 2 byte PCM
-	}
-    else {	// encoding = Codec 2
-	audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
-	audio_buffer=(unsigned char*)malloc(audio_buffer_size*audio_channels + AUDIO_BUFFER_HEADER_SIZE);
-	};
-
-    fprintf(stderr,"client_init audio_buffer_size=%d\n",audio_buffer_size);
-*/
 
     // ALAW
     audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
@@ -322,7 +310,8 @@ fprintf(stderr,"rtp_tx_thread ...\n");
     while(1) {
         length=rtp_receive(rtp_buffer,400);
         if(length<=0) {
-            usleep(10);
+  //          usleep(10);
+	usleep(100);		// try not using so much cpu first
         } else {
 if(length!=400) {
 fprintf("rtp_receive expected 400 got %d\n",length);
@@ -480,13 +469,11 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 	    	fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
 			tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
 			receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
-
-		TAILQ_REMOVE(&Client_list, item, entries);
                 if(item->rtp) {
                     rtp_disconnect();
                     item->rtp=0;
                 }
-
+		TAILQ_REMOVE(&Client_list, item, entries);
 		free(item);
 		break;
 	}
@@ -609,8 +596,10 @@ void writecb(struct bufferevent *bev, void *ctx){
 	item = audio_stream_queue_remove();
 	if (item != NULL){
 		TAILQ_FOREACH(client_item, &Client_list, entries){
-			bufferevent_write(client_item->bev, item->buf, item->length);
-			}
+                        if(!client_item->rtp) {
+			    bufferevent_write(client_item->bev, item->buf, item->length);
+                        }
+		}
 		free(item->buf);
 		free(item);
 	}
