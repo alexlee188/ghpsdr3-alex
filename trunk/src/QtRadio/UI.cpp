@@ -597,11 +597,12 @@ void UI::connected() {
     if (!getenv("QT_RADIO_NO_LOCAL_AUDIO")) {
        if(useRTP) {
            // g0orx RTP
-           port=5004;
+           //port=5004;
+           int local_port = rtp.init (connection.getHost(), 5004);
            connect(&rtp,SIGNAL(rtp_packet_received(char*,int)),audio,SLOT(process_rtp_audio(char*,int)));
 
            command.clear(); QTextStream(&command) << "startRTPStream "
-                 << port
+                 << local_port
                  << " " << audio->get_audio_encoding()
                  << " " << audio_sample_rate << " "
                  << " " << audio_channels;

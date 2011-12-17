@@ -44,6 +44,11 @@ Connection::~Connection() {
     qDebug() << "Connection::~Connection";
 }
 
+const char *Connection::getHost() {
+    qDebug() << "Connection::getHost";
+    return host.toUtf8().constData();
+}
+
 void Connection::connect(QString h,int p) {
     host=h;
     port=p;
@@ -314,8 +319,8 @@ qDebug() << "Connection READ_RTP_REPLY";
                 int port;
                 port=((hdr[5]&0xFF)<<8) + (hdr[6]&0xFF);
                 // configure this ends rtp so we can send to remote
-qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
-                emit remoteRTP((char*)host.toUtf8().constData(),port);
+//qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
+//                emit remoteRTP((char*)host.toUtf8().constData(),port);
             } else {
 qDebug() << "Connection READ_RTP_REPLY bytes="<<bytes;
             }
