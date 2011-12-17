@@ -45,7 +45,7 @@ Connection::~Connection() {
 }
 
 const char *Connection::getHost() {
-    qDebug() << "Connection::getHost";
+    qDebug() << "Connection::getHost: " << host;
     return host.toUtf8().constData();
 }
 
@@ -235,9 +235,6 @@ void Connection::socketData() {
                     break;
                 case BANDSCOPE_BUFFER:
                     break;
-                case RTP_REPLY_BUFFER:
-                    state=READ_RTP_REPLY;
-                    break;
             }
             break;
 
@@ -310,22 +307,6 @@ void Connection::socketData() {
                 state=READ_HEADER_TYPE;
             } else {
             }
-            break;
-        case READ_RTP_REPLY:
-qDebug() << "Connection READ_RTP_REPLY";
-            thisRead=tcpSocket->read(&hdr[bytes],7-bytes); // length and port
-            bytes+=thisRead;
-            if(bytes==7) {
-                int port;
-                port=((hdr[5]&0xFF)<<8) + (hdr[6]&0xFF);
-                // configure this ends rtp so we can send to remote
-//qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
-//                emit remoteRTP((char*)host.toUtf8().constData(),port);
-            } else {
-qDebug() << "Connection READ_RTP_REPLY bytes="<<bytes;
-            }
-            bytes=0;
-            state=READ_HEADER_TYPE;
             break;
         default:
             fprintf (stderr, "FATAL: WRONG STATUS !!!!!\n");         

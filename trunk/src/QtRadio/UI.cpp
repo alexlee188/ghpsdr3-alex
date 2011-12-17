@@ -108,7 +108,6 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(disconnected(QString)),this,SLOT(disconnected(QString)));
     connect(&connection,SIGNAL(audioBuffer(char*,char*)),this,SLOT(audioBuffer(char*,char*)));
     connect(&connection,SIGNAL(spectrumBuffer(char*,char*)),this,SLOT(spectrumBuffer(char*,char*)));
-    connect(&connection,SIGNAL(remoteRTP(char*,int)),this,SLOT(setRemote(char*,int)));
     connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
 
@@ -600,12 +599,8 @@ void UI::connected() {
            //port=5004;
            int local_port = rtp.init (connection.getHost(), 5004);
            connect(&rtp,SIGNAL(rtp_packet_received(char*,int)),audio,SLOT(process_rtp_audio(char*,int)));
-
-           command.clear(); QTextStream(&command) << "startRTPStream "
-                 << local_port
-                 << " " << audio->get_audio_encoding()
-                 << " " << audio_sample_rate << " "
-                 << " " << audio_channels;
+           // start immediately
+           rtp.start();
        } else {
            command.clear(); QTextStream(&command) << "startAudioStream "
                 << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " "

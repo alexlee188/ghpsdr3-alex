@@ -30,7 +30,7 @@ int RTP::init(const char* host,int port) {
     rtp_session_set_connected_mode(rtpSession,TRUE);
     rtp_session_set_remote_addr(rtpSession,host,port);
 
-qDebug() << "RTP remote: " << host << " - " << port;
+qDebug() << "RTP connect to remote: " << host << " - " << port;
 
     rtp_session_set_symmetric_rtp(rtpSession,TRUE);
     rtp_session_enable_adaptive_jitter_compensation(rtpSession,adapt);
@@ -42,8 +42,12 @@ qDebug() << "RTP remote: " << host << " - " << port;
     qDebug() << "RTP initialized socket=" <<  rtp_session_get_rtp_socket(rtpSession) << " port=" << rtp_session_get_local_port(rtpSession);
     initialized=1;
 
-    unsigned char fake [1] ;
-    send(fake,sizeof(fake));
+    /*
+     *  send first packet in order to help to establish session
+     */
+    unsigned char fake [] = "AAAAAAAAAAAAAAAA";
+    rtp_session_send_with_ts(rtpSession,(uint8_t*)fake,sizeof(fake),send_ts);
+
     return rtp_session_get_local_port(rtpSession);
 }
 
