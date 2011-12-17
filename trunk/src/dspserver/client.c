@@ -700,7 +700,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 	fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		        inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
 
-		                                        int port=rtp_connect(inet_ntoa(current_item->client.sin_addr),rtpport);
+		                                        int port=rtp_listen();
 		                                        //current_item->rtp=connection_rtp;
 							audio_stream_reset();
 		                                        error=0;
@@ -959,7 +959,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                 inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
 
-                                                int port=rtp_connect(inet_ntoa(item->client.sin_addr),rtpport);
+                                                int port=rtp_listen();
                                                 item->rtp=connection_rtp;
 						audio_stream_reset();
                                                 error=0;
@@ -1253,6 +1253,12 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                             		time(&tt);
                             		tod=localtime(&tt);
                             		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
+                                    // put the rtp session on listen just now            
+                                    rtp_listen();
+                                    item->rtp=1;
+                                    send_audio=1;
+
+                                    rtp_tx_init();
 
                         	}
                        } else {
