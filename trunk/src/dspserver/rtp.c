@@ -51,15 +51,14 @@ void rtp_init() {
     connected=0;
 }
 
-int rtp_connect(char* host,int port) {
+int rtp_listen() {
     recv_ts=0;
     send_ts=0;
     rtpSession=rtp_session_new(RTP_SESSION_SENDRECV);
     rtp_session_set_scheduling_mode(rtpSession,1);
     rtp_session_set_blocking_mode(rtpSession,1);
-    //rtp_session_set_local_addr(rtpSession,"127.0.0.1",0);
+    rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
     rtp_session_set_connected_mode(rtpSession,TRUE);
-    rtp_session_set_remote_addr(rtpSession,host,port);
     rtp_session_set_symmetric_rtp(rtpSession,TRUE);
     rtp_session_enable_adaptive_jitter_compensation(rtpSession,adapt);
     rtp_session_set_jitter_compensation(rtpSession,jittcomp);
@@ -69,7 +68,8 @@ int rtp_connect(char* host,int port) {
 
     fprintf(stderr,"RTP initialized socket=%d port=%d\n",rtp_session_get_rtp_socket(rtpSession),rtp_session_get_local_port(rtpSession));
 
-    connected=1;
+    // that connected state is set in rtp_receive, i.e. on the first received packet from remote
+    //connected=1;
 
     return rtp_session_get_local_port(rtpSession);
 }
@@ -95,6 +95,8 @@ void rtp_send(char* buffer,int length) {
 
 int rtp_receive(unsigned char* buffer,int length) {
     int rc;
+    connected = 1;
+
     rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&has_more);
 //{
 //int i;

@@ -867,49 +867,6 @@ void readcb(struct bufferevent *bev, void *ctx){
                                 item->rtp=0;
                         	audio_stream_reset();
                         	send_audio=1;
-                        } else if(strncmp(token,"startrtpstream",14)==0) {
-                                // startrtpstream port encoding samplerate channels
-                                int error=1;
-                                token=strtok_r(NULL," ",&saveptr);
-                                if(token!=NULL) {
-                                    int rtpport=atoi(token);
-                                    token=strtok_r(NULL," ",&saveptr);
-                                    if(token!=NULL) {
-                                        encoding=atoi(token);
-                                        token=strtok_r(NULL," ",&saveptr);
-                                        if(token!=NULL) {
-                                            audio_sample_rate=atoi(token);
-                                            token=strtok_r(NULL," ",&saveptr);
-                                            if(token!=NULL) {
-                                                audio_channels=atoi(token);
-
-fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
-                inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
-
-                                                int port=rtp_connect(inet_ntoa(item->client.sin_addr),rtpport);
-                                                item->rtp=1;
-                                                error=0;
-                                                send_audio=1;
-
-                                                tx_init(item);
-
-                                                // need to let the caller know our port number
-                                                char rtp_reply[7];
-                                                rtp_reply[0]=RTP_REPLY_BUFFER;
-                                                rtp_reply[1]=HEADER_VERSION;
-                                                rtp_reply[2]=HEADER_SUBVERSION;
-                                                rtp_reply[3]=0;
-                                                rtp_reply[4]=0;
-                                                rtp_reply[5]=(port>>8)&0xFF;
-                                                rtp_reply[6]=port&0xFF;
-                                                bufferevent_write(bev, rtp_reply, 7);
-                                            }
-                                        }
-                                    }
-                                }
-                                if(error) {
-                                    fprintf(stderr,"Invalid command: '%s'\n",message);
-                                }
                         } else if(strncmp(token,"stopaudiostream",15)==0) {
                         	send_audio=0;
                         } else if(strncmp(token,"setencoding",11)==0) {
@@ -1179,6 +1136,12 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                             		time(&tt);
                             		tod=localtime(&tt);
                             		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
+                                    // put the rtp session on listen just now            
+                                    rtp_listen();
+                                    item->rtp=1;
+                                    send_audio=1;
+
+                                    tx_init(item);
 
                         	}
                        } else {
