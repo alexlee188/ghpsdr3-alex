@@ -11,7 +11,7 @@ class RTP : public QThread {
     public:
         RTP();
         virtual ~RTP();
-        int init(char* host,int port);
+        int init(const char* host,int port);
         void run();
         void send(unsigned char* buffer,int length);
         void shutdown();
@@ -20,8 +20,8 @@ class RTP : public QThread {
     signals:
         void rtp_packet_received(char* buffer,int length);
 
-    public slots:
-        void setRemote(char* host,int port);
+//    public slots:
+//        void setRemote(char* host,int port);
 
     private:
         int initialized;
