@@ -257,8 +257,7 @@ int main(int argc,char* argv[]) {
     SetTXOsc(1, LO_offset);
     SetTXAMCarrierLevel(1, 0.5);
 
-    // g0orx - wait for a client to connect
-    //tx_init();
+    tx_init();	// starts the tx_thread
 
     while(1) {
         sleep(10000);

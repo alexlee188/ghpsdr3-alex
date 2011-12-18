@@ -239,7 +239,7 @@ void client_init(int receiver) {
     rtp_init();
 }
 
-void tx_init(client_entry *client){
+void tx_init(void){
     int rc;
 
 	mic_src_ratio = (double) sampleRate / 8000.0;
@@ -260,13 +260,16 @@ void tx_init(client_entry *client){
             fprintf (stderr, "tx_init: sample rate init successful with ratio of : %f\n", mic_src_ratio);
 	}
 
+        rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
+        if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
+}
+
+void rtp_tx_init(client_entry *client){
+    int rc;
     if(client->rtp) {
         rc=pthread_create(&tx_thread_id,NULL,rtp_tx_thread,NULL);
         if(rc != 0) fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
-    } else {
-        rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
-        if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
-    }
+	}
 }
 
 // this is run from the client thread
@@ -891,7 +894,7 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                                                 error=0;
                                                 send_audio=1;
 
-                                                tx_init(item);
+                                                rtp_tx_init(item);
 
                                                 // need to let the caller know our port number
                                                 char rtp_reply[7];
