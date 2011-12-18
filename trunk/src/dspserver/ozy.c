@@ -299,8 +299,7 @@ fprintf(stderr,"iq_thread\n");
             audio_stream_put_samples(left_rx_sample,right_rx_sample);
         }
 
-        // send the audio back to the server.  This is for HPSDR hardware.  Right now
-	// the audio channel is used to send the Tx IQ to the softrock hardware
+        // send the audio back to the server.  This is for HPSDR hardware.
         if(hpsdr) {
                 if(mox) {
                     Audio_Callback (&input_buffer[BUFFER_SIZE*2],&input_buffer[BUFFER_SIZE*2],
