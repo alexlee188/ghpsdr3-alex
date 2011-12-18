@@ -31,6 +31,7 @@
 #include "receiver.h"
 #include "messages.h"
 #include "softrock.h"
+#include "buffer.h"
 
 short audio_port=AUDIO_PORT;
 
@@ -187,6 +188,10 @@ void* audio_thread(void* arg) {
     int old_state, old_type;
     int bytes_read;
     int on=1;
+    BUFFER buffer;
+    unsigned long sequence=0L;
+    unsigned short offset=0;;
+
 
     if (softrock_get_verbose()) fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 
@@ -215,11 +220,42 @@ void* audio_thread(void* arg) {
 
     while(1) {
         // get audio from a client
+#ifdef SMALL_PACKETS
+        while(1) {
+            bytes_read=recvfrom(rx->audio_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&audio,(socklen_t *)&audio_length);
+            if(bytes_read<0) {
+                perror("recvfrom socket failed for tx iq buffer");
+                exit(1);
+            }
+
+           //fprintf(stderr,"rcvd UDP packet: sequence=%lld offset=%d length=%d\n", buffer.sequence, buffer.offset, buffer.length);
+
+           if(buffer.offset==0) {
+                offset=0;
+                sequence=buffer.sequence;
+                // start of a frame
+                memcpy((char *)&rx->output_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
+                offset+=buffer.length;
+            } else {
+                if((sequence==buffer.sequence) && (offset==buffer.offset)) {
+                    memcpy((char *)&rx->output_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
+                    offset+=buffer.length;
+                    if(offset==sizeof(rx->output_buffer)) {
+                        offset=0;
+                        break;
+                    }
+                } else {
+                        fprintf(stderr,"missing TX IQ frames expected %d.%ld got %d.%ld\n",sequence,offset,buffer.sequence,buffer.offset);
+                }
+            }
+        }
+#else
         bytes_read=recvfrom(rx->audio_socket,rx->output_buffer,sizeof(rx->output_buffer),0,(struct sockaddr*)&audio,(socklen_t *)&audio_length);
         if(bytes_read<0) {
             perror("recvfrom socket failed for audio buffer");
             exit(1);
         }
+#endif
 
 /*
 #ifdef JACKAUDIO
