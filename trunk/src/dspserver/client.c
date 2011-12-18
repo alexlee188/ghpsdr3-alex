@@ -376,7 +376,7 @@ void *tx_thread(void *arg){
    int rc;
    int j, i, k;
    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
-   float data_out[CODEC2_SAMPLES_PER_FRAME*2*(int)mic_src_ratio];	// 8khz
+   float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
    SRC_DATA data;
    void *mic_codec2 = codec2_create();
 
