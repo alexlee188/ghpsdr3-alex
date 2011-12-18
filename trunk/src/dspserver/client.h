@@ -40,7 +40,7 @@ typedef struct _client_entry {
 extern int encoding;
 extern int tx_length;
 void client_init(int receiver);
-void rtp_tx_init(client_entry *client);
+void rtp_tx_init(void);
 void tx_init(void);
 void spectrum_init();
 void *spectrum_thread(void *);

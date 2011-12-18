@@ -80,6 +80,8 @@
 
 static int timing=0;
 
+static int rtp_tx_init_done = 0;
+
 static pthread_t client_thread_id, tx_thread_id;
 
 #define BASE_PORT 8000
@@ -263,9 +265,16 @@ void tx_init(void){
 
         rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
         if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
+}
 
-        rc=pthread_create(&tx_thread_id,NULL,rtp_tx_thread,NULL);
-        if(rc != 0) fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
+void rtp_tx_init(void){
+	int rc;
+
+	if (rtp_tx_init_done == 0){
+		rc=pthread_create(&tx_thread_id,NULL,rtp_tx_thread,NULL);
+		if(rc != 0) fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
+		else rtp_tx_init_done++;
+	}
 }
 
 void *rtp_tx_thread(void *arg) {
@@ -890,7 +899,7 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                                                 error=0;
                                                 send_audio=1;
 
-                                                // rtp_tx_init(item);
+                                                rtp_tx_init();
 
                                                 // need to let the caller know our port number
                                                 char rtp_reply[7];
