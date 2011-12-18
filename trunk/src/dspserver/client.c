@@ -160,26 +160,14 @@ void audio_stream_queue_add(int length) {
     struct audio_entry *item;
     client_entry *client_item;
 
-    int non_rtp=0;
-
-
         if(send_audio) {
-                TAILQ_FOREACH(client_item, &Client_list, entries){
-		        if(client_item->rtp) {
-		            rtp_send(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE],length-AUDIO_BUFFER_HEADER_SIZE);
-		        } else {
-		            non_rtp++;
-		        }
-		}
-                if(non_rtp) {
-	 	    item = malloc(sizeof(*item));
-		    item->buf = audio_buffer;
-		    item->length = length;
-		    sem_wait(&bufferevent_semaphore);
-		    TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
-		    sem_post(&bufferevent_semaphore);
-	            allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
-                }
+ 	    item = malloc(sizeof(*item));
+	    item->buf = audio_buffer;
+	    item->length = length;
+	    sem_wait(&bufferevent_semaphore);
+	    TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
+	    sem_post(&bufferevent_semaphore);
+            allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
         }
 }
 
@@ -202,6 +190,21 @@ void audio_stream_queue_free(){
 		free(item);
 		}
 	sem_post(&bufferevent_semaphore);
+}
+
+// this is run from the client thread
+void Mic_stream_queue_add(){
+   unsigned char *bits;
+   struct audio_entry *item;
+
+	bits = malloc(MIC_BUFFER_SIZE);
+	memcpy(bits, mic_buffer, MIC_BUFFER_SIZE);
+	item = malloc(sizeof(*item));
+	item->buf = bits;
+	item->length = MIC_BUFFER_SIZE;
+	sem_wait(&mic_semaphore);
+	TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
+	sem_post(&mic_semaphore);
 }
 
 void Mic_stream_queue_free(){
@@ -227,8 +230,6 @@ void client_init(int receiver) {
     sem_post(&bufferevent_semaphore);
     sem_post(&mic_semaphore);
 
-    // ALAW
-    audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
     port=BASE_PORT+receiver;
     clientSocket=-1;
     rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
@@ -272,20 +273,7 @@ void rtp_tx_init(client_entry *client){
 	}
 }
 
-// this is run from the client thread
-void Mic_stream_queue_add(){
-   unsigned char *bits;
-   struct audio_entry *item;
 
-	bits = malloc(MIC_BUFFER_SIZE);
-	memcpy(bits, mic_buffer, MIC_BUFFER_SIZE);
-	item = malloc(sizeof(*item));
-	item->buf = bits;
-	item->length = MIC_BUFFER_SIZE;
-	sem_wait(&mic_semaphore);
-	TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
-	sem_post(&mic_semaphore);
-}
 
 void *rtp_tx_thread(void *arg) {
     int length;
@@ -603,6 +591,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 void writecb(struct bufferevent *bev, void *ctx){
 	struct audio_entry *item;
 	client_entry *client_item;
+	int rtp_clients = 0;
 
 	sem_wait(&bufferevent_semaphore);
 	item = audio_stream_queue_remove();
@@ -610,8 +599,12 @@ void writecb(struct bufferevent *bev, void *ctx){
 		TAILQ_FOREACH(client_item, &Client_list, entries){
                         if(!client_item->rtp) {
 			    bufferevent_write(client_item->bev, item->buf, item->length);
-                        }
-		}
+                            }
+			else if (client_item->rtp) rtp_clients++;
+			}
+
+		if (rtp_clients) rtp_send(item->buf, item->length);
+
 		free(item->buf);
 		free(item);
 	}
@@ -900,10 +893,11 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 
                                                 int port=rtp_connect(inet_ntoa(item->client.sin_addr),rtpport);
                                                 item->rtp=1;
+						audio_stream_reset();
                                                 error=0;
                                                 send_audio=1;
 
-                                                rtp_tx_init(item);
+                                                // rtp_tx_init(item);
 
                                                 // need to let the caller know our port number
                                                 char rtp_reply[7];
