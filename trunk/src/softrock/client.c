@@ -25,7 +25,7 @@
 *
 */
 
-
+#define SMALL_PACKETS
 
 #include "client.h"
 #include "receiver.h"
