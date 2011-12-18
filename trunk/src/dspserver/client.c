@@ -263,17 +263,10 @@ void tx_init(void){
 
         rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
         if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
-}
 
-void rtp_tx_init(client_entry *client){
-    int rc;
-    if(client->rtp) {
         rc=pthread_create(&tx_thread_id,NULL,rtp_tx_thread,NULL);
         if(rc != 0) fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
-	}
 }
-
-
 
 void *rtp_tx_thread(void *arg) {
     int length;

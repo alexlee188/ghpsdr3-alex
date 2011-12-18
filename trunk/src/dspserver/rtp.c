@@ -56,8 +56,8 @@ int rtp_connect(char* host,int port) {
     send_ts=0;
     rtpSession=rtp_session_new(RTP_SESSION_SENDRECV);
     rtp_session_set_scheduling_mode(rtpSession,1);
-    //rtp_session_set_blocking_mode(rtpSession,1);
-    rtp_session_set_blocking_mode(rtpSession,0);
+    rtp_session_set_blocking_mode(rtpSession,1);
+    //rtp_session_set_blocking_mode(rtpSession,0);
     //rtp_session_set_local_addr(rtpSession,"127.0.0.1",0);
     rtp_session_set_connected_mode(rtpSession,TRUE);
     rtp_session_set_remote_addr(rtpSession,host,port);
