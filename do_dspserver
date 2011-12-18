@@ -1,5 +1,6 @@
 #!/bin/bash
 while true; do
 	dspserver --share --lookupcountry
+	sleep 1
 done
 
