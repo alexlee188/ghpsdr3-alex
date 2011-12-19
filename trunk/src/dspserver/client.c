@@ -1259,7 +1259,6 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                                     send_audio=1;
 
                                     rtp_tx_init();
-
                         	}
                        } else {
 		                fprintf(stderr,"Invalid command: token: '%s'\n",token);
