@@ -35,7 +35,7 @@
 #include "rtp.h"
 
 RtpSession* rtpSession;
-int connected=0;
+int rtp_connected=0;
 int recv_ts=0;
 int send_ts=0;
 int has_more;
@@ -48,7 +48,7 @@ void rtp_init() {
     ortp_set_log_level_mask(ORTP_DEBUG|ORTP_MESSAGE|ORTP_WARNING|ORTP_ERROR);
     jittcomp=40;
     adapt=1;
-    connected=0;
+    rtp_connected=0;
 }
 
 int rtp_connect(char* host,int port) {
@@ -70,20 +70,20 @@ int rtp_connect(char* host,int port) {
 
     fprintf(stderr,"RTP initialized socket=%d port=%d\n",rtp_session_get_rtp_socket(rtpSession),rtp_session_get_local_port(rtpSession));
 
-    connected=1;
+    rtp_connected=1;
 
     return rtp_session_get_local_port(rtpSession);
 }
 
 void rtp_disconnect() {
     rtp_session_destroy(rtpSession);
-    connected=0;
+    rtp_connected=0;
     ortp_global_stats_display();
 }
 
 void rtp_send(char* buffer,int length) {
     int rc;
-    if(connected)  {
+    if(rtp_connected)  {
         rc=rtp_session_send_with_ts(rtpSession,(uint8_t*)buffer,length,send_ts);
         if(rc<=0) {
             fprintf(stderr,"RTP:send rc=%d\n",rc);
@@ -95,16 +95,12 @@ void rtp_send(char* buffer,int length) {
 }
 
 int rtp_receive(unsigned char* buffer,int length) {
-    int rc;
-    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&has_more);
-//{
-//int i;
-//for(i=0;i<length;i++) {
-//    fprintf(stderr,"%d:%d %02X\n",recv_ts,i,buffer[i]);
-//}
-//}
-    recv_ts+=length;
+    int rc = -1;
 
+    if (rtp_connected) {
+    	rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&has_more);
+    	recv_ts+=length;
+	}
 //fprintf(stderr,"rcp_receive: %d has_more=%d recv_ts=%d\n",rc,has_more,recv_ts);
     return rc;
 }

@@ -678,11 +678,55 @@ void readcb(struct bufferevent *bev, void *ctx){
                                         fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
                                     }
 		            	} else if(strncmp(token,"startaudiostream",16)==0) {
-					current_item->rtp = connection_tcp;
+				    current_item->rtp = connection_tcp;
 		                } else if(strncmp(token,"startrtpstream",14)==0) {
-					current_item->rtp = connection_rtp;
-				}
+				    current_item->rtp = connection_rtp;
+				    if (!rtp_connected){		// master connected through tcp.  So rtp is not connected yet.
+		                        // startrtpstream port encoding samplerate channels				
+		                        int error=1;
+		                        token=strtok_r(NULL," ",&saveptr);
+		                        if(token!=NULL) {
+		                            int rtpport=atoi(token);
+		                            token=strtok_r(NULL," ",&saveptr);
+		                            if(token!=NULL) {
+		                                encoding=atoi(token);
+		                                token=strtok_r(NULL," ",&saveptr);
+		                                if(token!=NULL) {
+		                                    audio_sample_rate=atoi(token);
+		                                    token=strtok_r(NULL," ",&saveptr);
+		                                    if(token!=NULL) {
+		                                        audio_channels=atoi(token);
 
+	fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
+		        inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
+
+		                                        int port=rtp_connect(inet_ntoa(item->client.sin_addr),rtpport);
+		                                        item->rtp=connection_rtp;
+							audio_stream_reset();
+		                                        error=0;
+		                                        send_audio=1;
+
+		                                        rtp_tx_init();
+
+		                                        // need to let the caller know our port number
+		                                        char rtp_reply[7];
+		                                        rtp_reply[0]=RTP_REPLY_BUFFER;
+		                                        rtp_reply[1]=HEADER_VERSION;
+		                                        rtp_reply[2]=HEADER_SUBVERSION;
+		                                        rtp_reply[3]=0;
+		                                        rtp_reply[4]=0;
+		                                        rtp_reply[5]=(port>>8)&0xFF;
+		                                        rtp_reply[6]=port&0xFF;
+		                                        bufferevent_write(bev, rtp_reply, 7);
+		                                    }
+		                                }
+		                            }
+		                        }
+		                        if(error) {
+		                            fprintf(stderr,"Invalid command: '%s'\n",message);
+		                  	}
+				    } // if (!rtp_connected)
+				} // end startrtpstream
 			} // end if !=NULL
 		}; // end while
 		return;

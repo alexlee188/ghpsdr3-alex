@@ -30,3 +30,5 @@ int rtp_connect(char* host,int port);
 void rtp_disconnect();
 void rtp_send(char* buffer,int length);
 int rtp_receive(unsigned char* buffer,int length);
+
+extern int rtp_connected;
