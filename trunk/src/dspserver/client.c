@@ -313,7 +313,7 @@ fprintf(stderr,"rtp_tx_thread ...\n");
 	usleep(100);		// try not using so much cpu first
         } else {
 if(length!=400) {
-fprintf("rtp_receive expected 400 got %d\n",length);
+fprintf(stderr,"rtp_receive expected 400 got %d\n",length);
 }
             for(i=0;i<length;i++) {
                 v=G711A_decode(rtp_buffer[i]);
@@ -624,12 +624,21 @@ void readcb(struct bufferevent *bev, void *ctx){
     int i;
     int bytesRead = 0;
     char message[MSG_SIZE];
-    client_entry *item;
+    client_entry *item, *current_item, *tmp_item;
     time_t tt;
     struct tm *tod;
 
 	if ((item = TAILQ_FIRST(&Client_list)) == NULL) return;		// should not happen.  No clients !!!
 	if (item->bev != bev){						// only allow the first client on Client_list to command dspserver as master
+	// locate the current_item for this slave client
+	    for (current_item = TAILQ_FIRST(&Client_list); current_item != NULL; current_item = tmp_item){
+		tmp_item = TAILQ_NEXT(current_item, entries);
+		if (current_item->bev == bev){
+			break;
+		}
+	    }
+	    if (current_item == NULL) return; // should not happen.
+
 		while (bufferevent_read(bev, message, MSG_SIZE) > 3){
 		        message[bytesRead-1]=0;					// for Linux strings terminating in NULL
 		        token=strtok_r(message," ",&saveptr);
@@ -666,7 +675,12 @@ void readcb(struct bufferevent *bev, void *ctx){
                                         tod=localtime(&tt);
                                         fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
                                     }
-                                }
+		            	} else if(strncmp(token,"startaudiostream",16)==0) {
+					current_item->rtp = connection_tcp;
+		                } else if(strncmp(token,"startrtpstream",14)==0) {
+					current_item->rtp = connection_rtp;
+				}
+
 			} // end if !=NULL
 		}; // end while
 		return;
