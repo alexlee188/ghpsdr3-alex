@@ -160,7 +160,6 @@ void audio_stream_init(int receiver) {
 
 void audio_stream_queue_add(int length) {
     struct audio_entry *item;
-    client_entry *client_item;
 
         if(send_audio) {
  	    item = malloc(sizeof(*item));
@@ -235,10 +234,11 @@ void client_init(int receiver) {
     port=BASE_PORT+receiver;
     clientSocket=-1;
     rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
+
     if(rc != 0) {
         fprintf(stderr,"pthread_create failed on client_thread: rc=%d\n", rc);
     }
-
+    else rc=pthread_detach(client_thread_id);
     rtp_init();
 }
 
@@ -265,6 +265,7 @@ void tx_init(void){
 
         rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
         if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
+	else rc=pthread_detach(tx_thread_id);
 }
 
 void rtp_tx_init(void){
@@ -272,8 +273,13 @@ void rtp_tx_init(void){
 
 	if (rtp_tx_init_done == 0){
 		rc=pthread_create(&tx_thread_id,NULL,rtp_tx_thread,NULL);
-		if(rc != 0) fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
-		else rtp_tx_init_done++;
+		if(rc != 0) {
+			fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
+		}
+		else {
+			rtp_tx_init_done++;
+			rc=pthread_detach(tx_thread_id);
+		}
 	}
 }
 
@@ -448,6 +454,7 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 {
     client_entry *item, *tmp_item;
     int client_count = 0;
+    int rtp_client_count = 0;
 
     if (error & BEV_EVENT_EOF) {
         /* connection has been closed, do any clean up here */
@@ -471,10 +478,6 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 	    	fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
 			tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
 			receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
-                if(item->rtp) {
-                    rtp_disconnect();
-                    item->rtp=0;
-                }
 		TAILQ_REMOVE(&Client_list, item, entries);
 		free(item);
 		break;
@@ -483,10 +486,12 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 
     TAILQ_FOREACH(item, &Client_list, entries){
 	client_count++;
+	if (item->rtp == connection_rtp) rtp_client_count++;
     }
     sprintf(status_buf,"%d client(s)", client_count);
     if (toShareOrNotToShare) updateStatus(status_buf);
 
+    if (rtp_client_count <= 0) rtp_disconnect();
     if (client_count <= 0) send_audio = 0;
     bufferevent_free(bev);
 }
@@ -581,6 +586,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 	bufferevent_setwatermark(bev, EV_WRITE, 4096, 0);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
 	item->bev = bev;
+	item->rtp = connection_unknown;
 	TAILQ_INSERT_TAIL(&Client_list, item, entries);
 	TAILQ_FOREACH(item, &Client_list, entries){
 		client_count++;
@@ -593,19 +599,19 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 void writecb(struct bufferevent *bev, void *ctx){
 	struct audio_entry *item;
 	client_entry *client_item;
-	int rtp_clients = 0;
+	int rtp_client_count = 0;
 
 	sem_wait(&bufferevent_semaphore);
 	item = audio_stream_queue_remove();
 	if (item != NULL){
 		TAILQ_FOREACH(client_item, &Client_list, entries){
-                        if(!client_item->rtp) {
+                        if(client_item->rtp == connection_tcp) {
 			    bufferevent_write(client_item->bev, item->buf, item->length);
                             }
-			else if (client_item->rtp) rtp_clients++;
+			else if (client_item->rtp == connection_rtp) rtp_client_count++;
 			}
 
-		if (rtp_clients) rtp_send(item->buf, item->length);
+		if (rtp_client_count) rtp_send(item->buf, item->length);
 
 		free(item->buf);
 		free(item);
@@ -871,7 +877,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                         
 				fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
 				fprintf(stderr,"and with encoding method %d\n", encoding);
-                                item->rtp=0;
+                                item->rtp=connection_tcp;
                         	audio_stream_reset();
                         	send_audio=1;
                         } else if(strncmp(token,"startrtpstream",14)==0) {
@@ -894,7 +900,7 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                 inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
 
                                                 int port=rtp_connect(inet_ntoa(item->client.sin_addr),rtpport);
-                                                item->rtp=1;
+                                                item->rtp=connection_rtp;
 						audio_stream_reset();
                                                 error=0;
                                                 send_audio=1;
@@ -1276,8 +1282,9 @@ void setprintcountry()
 
 void printcountry(){
 	pthread_t lookup_thread;
-    int t_ret1;
-    t_ret1 = pthread_create( &lookup_thread, NULL, printcountrythread, (void*) NULL);
+    int ret;
+    ret = pthread_create( &lookup_thread, NULL, printcountrythread, (void*) NULL);
+    ret = pthread_detach(lookup_thread);
 		
 }
 

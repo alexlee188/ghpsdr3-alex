@@ -30,8 +30,14 @@
 
 #include <sys/queue.h>
 
+enum CLIENT_CONNECTION {
+	connection_unknown,
+	connection_tcp = 0,
+	connection_rtp
+} client_connection;
+
 typedef struct _client_entry {
-        int rtp;
+        enum CLIENT_CONNECTION rtp;
 	struct sockaddr_in client;
 	struct bufferevent * bev;
 	TAILQ_ENTRY(_client_entry) entries;
