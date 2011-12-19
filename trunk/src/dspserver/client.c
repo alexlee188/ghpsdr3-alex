@@ -700,8 +700,8 @@ void readcb(struct bufferevent *bev, void *ctx){
 	fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		        inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
 
-		                                        int port=rtp_connect(inet_ntoa(item->client.sin_addr),rtpport);
-		                                        item->rtp=connection_rtp;
+		                                        int port=rtp_connect(inet_ntoa(current_item->client.sin_addr),rtpport);
+		                                        //current_item->rtp=connection_rtp;
 							audio_stream_reset();
 		                                        error=0;
 		                                        send_audio=1;
