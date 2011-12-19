@@ -455,6 +455,7 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
     client_entry *item, *tmp_item;
     int client_count = 0;
     int rtp_client_count = 0;
+    int is_rtp_client = 0;
 
     if (error & BEV_EVENT_EOF) {
         /* connection has been closed, do any clean up here */
@@ -478,6 +479,7 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 	    	fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
 			tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
 			receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
+		if (item->rtp == connection_rtp) is_rtp_client = 1;
 		TAILQ_REMOVE(&Client_list, item, entries);
 		free(item);
 		break;
@@ -491,7 +493,7 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
     sprintf(status_buf,"%d client(s)", client_count);
     if (toShareOrNotToShare) updateStatus(status_buf);
 
-    if (rtp_client_count <= 0) rtp_disconnect();
+    if ((rtp_client_count <= 0) && is_rtp_client) rtp_disconnect();
     if (client_count <= 0) send_audio = 0;
     bufferevent_free(bev);
 }
