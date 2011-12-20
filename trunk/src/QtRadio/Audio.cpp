@@ -332,6 +332,7 @@ if(length>0 && length<=1024) {
                 written+=audio_out->write((char*)&decodedBuffer[written],length_to_write);
 //qDebug() << "Audio::process_rtp_audio written="<<written;
             }
+        if (decodedBuffer != NULL) free(decodedBuffer);
         }
     } else {
         qDebug() << "Audio::process_rtp_audio only support aLaw";
@@ -339,7 +340,7 @@ if(length>0 && length<=1024) {
 } else {
 qDebug() << "process_rtp_audio: length=" << length;
 }
-    free(buffer);
+    if (buffer != NULL) free(buffer);
 }
 
 void Audio::resample(int no_of_samples){

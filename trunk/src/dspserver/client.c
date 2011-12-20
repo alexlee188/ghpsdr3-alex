@@ -613,7 +613,7 @@ void writecb(struct bufferevent *bev, void *ctx){
 			else if (client_item->rtp == connection_rtp) rtp_client_count++;
 			}
 
-		if (rtp_client_count) rtp_send(item->buf, item->length);
+		if (rtp_client_count) rtp_send(&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
 
 		free(item->buf);
 		free(item);
