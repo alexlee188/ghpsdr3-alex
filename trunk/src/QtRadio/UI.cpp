@@ -738,7 +738,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
             e=g711a.encode(sample);
             mic_encoded_buffer[mic_buffer_count++]=e;
             if(mic_buffer_count >= MIC_BUFFER_SIZE) {
-                rtp.send(mic_encoded_buffer,MIC_BUFFER_SIZE);
+                if (configure.getTxAllowed()) rtp.send(mic_encoded_buffer,MIC_BUFFER_SIZE);
                 mic_buffer_count=0;
             }
         }

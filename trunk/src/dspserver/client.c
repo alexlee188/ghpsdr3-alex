@@ -289,7 +289,7 @@ void *rtp_tx_thread(void *arg) {
     short v;
     float fv;
     float data_in [TX_BUFFER_SIZE*2]; // stereo
-    float data_out[TX_BUFFER_SIZE*2*(int)mic_src_ratio];
+    float data_out[TX_BUFFER_SIZE*2*24];
     int data_in_counter=0;
     int data_out_counter=0;
     int iq_buffer_counter = 0;
@@ -306,11 +306,10 @@ void *rtp_tx_thread(void *arg) {
 
 fprintf(stderr,"rtp_tx_thread ...\n");
 
-    while(rtp_connected) {
+    while(1) {
         length=rtp_receive(rtp_buffer,400);
         if(length<=0) {
-  //          usleep(10);
-	usleep(100);		// try not using so much cpu first
+	usleep(1000);
         } else {
 if(length!=400) {
 fprintf(stderr,"rtp_receive expected 400 got %d\n",length);
