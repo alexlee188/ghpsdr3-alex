@@ -102,7 +102,7 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static float tx_buffer[TX_BUFFER_SIZE*2];
 static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
-#define MIC_NO_OF_FRAMES 1
+#define MIC_NO_OF_FRAMES 2
 #define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
@@ -197,15 +197,19 @@ void audio_stream_queue_free(){
 void Mic_stream_queue_add(){
    unsigned char *bits;
    struct audio_entry *item;
+   int i;
 
-	bits = malloc(MIC_BUFFER_SIZE);
-	memcpy(bits, mic_buffer, MIC_BUFFER_SIZE);
-	item = malloc(sizeof(*item));
-	item->buf = bits;
-	item->length = MIC_BUFFER_SIZE;
-	sem_wait(&mic_semaphore);
-	TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
-	sem_post(&mic_semaphore);
+	for (i=0; i < MIC_NO_OF_FRAMES; i++){
+
+		bits = malloc(BITS_SIZE);
+		memcpy(bits, &mic_buffer[i*BITS_SIZE], BITS_SIZE);
+		item = malloc(sizeof(*item));
+		item->buf = bits;
+		item->length = BITS_SIZE;
+		sem_wait(&mic_semaphore);
+		TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
+		sem_post(&mic_semaphore);
+	}
 }
 
 void Mic_stream_queue_free(){

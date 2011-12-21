@@ -92,22 +92,9 @@ qDebug() << "RTP::run exiting";
 
 void RTP::send(unsigned char* buffer,int length) {
     int rc;
-    if(!initialized)  {
-//        qDebug() << "RTP:send call before init";
-//    } else if(!remote_set) {
-//        qDebug() << "RTP:send call before remote_set";
-    } else if(cont) {
+    if(initialized && cont)  {
         rtp_session_send_with_ts(rtpSession,(uint8_t*)buffer,length,send_ts);
-
-//dump_buffer(buffer,length);
-//{
-//    int i;
-//    for(i=0;i<length;i++) {
-//        fprintf(stderr,"%d:%d %02X\n",send_ts,i,buffer[i]);
-//    }
-//}
         send_ts+=length;
-//qDebug() << "RTP::send " << length;
     }
 }
 
