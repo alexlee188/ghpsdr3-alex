@@ -373,7 +373,7 @@ void *tx_thread(void *arg){
    short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
    int tx_buffer_counter = 0;
    int rc;
-   int j, i, k;
+   int j, i;
    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
    SRC_DATA data;
@@ -388,8 +388,7 @@ void *tx_thread(void *arg){
 		continue;
 		}
 	else {
-	for (k = 0; k < MIC_NO_OF_FRAMES; k++){		// Do it for the MIC_NO_OF_FRAMES
-	   bits = &item->buf[BITS_SIZE*k];		// each frame is BITS_SIZE long
+	   bits = item->buf;		// each frame is BITS_SIZE long
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
@@ -422,7 +421,6 @@ void *tx_thread(void *arg){
 			}
 		} // end for i
 	    } // end else rc
-	  } // end for k
 	    sem_wait(&mic_semaphore);
 	    TAILQ_REMOVE(&Mic_audio_stream, item, entries);
 	    sem_post(&mic_semaphore);
