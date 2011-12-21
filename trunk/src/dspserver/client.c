@@ -306,7 +306,7 @@ void *rtp_tx_thread(void *arg) {
 
 fprintf(stderr,"rtp_tx_thread ...\n");
 
-    while(1) {
+    while(rtp_connected) {
         length=rtp_receive(rtp_buffer,400);
         if(length<=0) {
   //          usleep(10);
@@ -415,15 +415,6 @@ void *tx_thread(void *arg){
 				Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
 				// send Tx IQ to server, buffer is non-interleaved.
                                 ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
-
-/*
-				int bytes_written;
-				bytes_written=sendto(audio_socket,tx_IQ_buffer,sizeof(tx_IQ_buffer),0,(struct sockaddr *)&server_audio_addr,server_audio_length);
-				if(bytes_written<0) {
-				   fprintf(stderr,"sendto audio failed: %d audio_socket=%d\n",bytes_written,audio_socket);
-				   exit(1);
-				}
-*/
 				tx_buffer_counter = 0;
 			}
 		} // end for i
