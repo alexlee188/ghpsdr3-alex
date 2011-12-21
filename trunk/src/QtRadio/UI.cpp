@@ -456,7 +456,7 @@ void UI::waterfallAutomaticChanged(bool state) {
     widget.waterfallFrame->setAutomatic(state);
 }
 
-void UI::audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder) { 
+void UI::audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder) {
     audio_sample_rate = rate;
     audio_channels = channels;
     audio_byte_order = byteOrder;
@@ -1938,7 +1938,7 @@ void UI::getMeterValue(int m, int s)
 
 void UI::printWindowTitle(QString message)
 {
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "    rxtx-event RTP 12 Dec 2011");
+    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + " rxtx-event RTP 21 Dec 2011");
 }
 
 void UI::printStatusBar(QString message)

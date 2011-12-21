@@ -604,8 +604,7 @@ void writecb(struct bufferevent *bev, void *ctx){
 	int rtp_client_count = 0;
 
 	sem_wait(&bufferevent_semaphore);
-	item = audio_stream_queue_remove();
-	if (item != NULL){
+	while ((item = audio_stream_queue_remove()) != NULL){
 		TAILQ_FOREACH(client_item, &Client_list, entries){
                         if(client_item->rtp == connection_tcp) {
 			    bufferevent_write(client_item->bev, item->buf, item->length);
@@ -613,7 +612,7 @@ void writecb(struct bufferevent *bev, void *ctx){
 			else if (client_item->rtp == connection_rtp) rtp_client_count++;
 			}
 
-		if (rtp_client_count) rtp_send(item->buf, item->length);
+		if (rtp_client_count) rtp_send(&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
 
 		free(item->buf);
 		free(item);

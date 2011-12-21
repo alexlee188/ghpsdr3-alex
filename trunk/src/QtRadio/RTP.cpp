@@ -69,21 +69,21 @@ void RTP::run() {
     char* buffer;
     int has_more;
 
+#define BUFFER_LENGTH 1600
+
     qDebug() << "RTP::run"; 
     if(!initialized) {
         qDebug() << "RTP:run call before init";
     } else {
         cont=1;
-        buffer=(char*)malloc(1024);
         while(cont) {
             has_more=1;
             while(has_more) {
-                err=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,1024,recv_ts,&has_more);
+                buffer=(char*)malloc(BUFFER_LENGTH);
+                err=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,BUFFER_LENGTH,recv_ts,&has_more);
                 if (err>0) {
 // process the buffer
                     emit rtp_packet_received(buffer,err);
-                    buffer=(char*)malloc(1024);
-                    //qDebug() << "rtp received buffer:" << err;
                     recv_ts+=err;
                 }  else if(err==0) {
                     recv_ts+=1024;
@@ -96,7 +96,6 @@ void RTP::run() {
         }
 qDebug() << "RTP::run ending";
 
-        free(buffer);
         rtp_session_destroy(rtpSession);
         ortp_global_stats_display();
         remote_set=0;
