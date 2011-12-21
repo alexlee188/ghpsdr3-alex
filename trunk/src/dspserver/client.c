@@ -704,19 +704,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 							audio_stream_reset();
 		                                        error=0;
 		                                        send_audio=1;
-
 		                                        rtp_tx_init();
-
-		                                        // need to let the caller know our port number
-		                                        char rtp_reply[7];
-		                                        rtp_reply[0]=RTP_REPLY_BUFFER;
-		                                        rtp_reply[1]=HEADER_VERSION;
-		                                        rtp_reply[2]=HEADER_SUBVERSION;
-		                                        rtp_reply[3]=0;
-		                                        rtp_reply[4]=0;
-		                                        rtp_reply[5]=(port>>8)&0xFF;
-		                                        rtp_reply[6]=port&0xFF;
-		                                        bufferevent_write(bev, rtp_reply, 7);
 		                                    }
 		                                }
 		                            }
@@ -963,19 +951,7 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 						audio_stream_reset();
                                                 error=0;
                                                 send_audio=1;
-
                                                 rtp_tx_init();
-
-                                                // need to let the caller know our port number
-                                                char rtp_reply[7];
-                                                rtp_reply[0]=RTP_REPLY_BUFFER;
-                                                rtp_reply[1]=HEADER_VERSION;
-                                                rtp_reply[2]=HEADER_SUBVERSION;
-                                                rtp_reply[3]=0;
-                                                rtp_reply[4]=0;
-                                                rtp_reply[5]=(port>>8)&0xFF;
-                                                rtp_reply[6]=port&0xFF;
-                                                bufferevent_write(bev, rtp_reply, 7);
                                             }
                                         }
                                     }
