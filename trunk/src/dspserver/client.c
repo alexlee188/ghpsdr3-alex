@@ -281,7 +281,7 @@ void rtp_tx_init(void){
 			fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
 		}
 		else {
-			rtp_tx_init_done++;
+			rtp_tx_init_done = 1;
 			rc=pthread_detach(tx_thread_id);
 		}
 	}
