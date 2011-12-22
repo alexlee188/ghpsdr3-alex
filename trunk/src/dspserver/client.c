@@ -308,9 +308,9 @@ void *rtp_tx_thread(void *arg) {
     unsigned short offset;
     BUFFER small_buffer;
 
-fprintf(stderr,"rtp_tx_thread ...\n");
+fprintf(stderr,"rtp_tx_thread started ...\n");
 
-    while(1) {
+    while(rtp_connected) {
         length=rtp_receive(rtp_buffer,400);
         if(length<=0) {
 	usleep(1000);
@@ -364,6 +364,9 @@ fprintf(stderr,"rtp_receive expected 400 got %d\n",length);
             }
         }
     }
+    // going to terminate this thread so reset rtp_tx_init_done so that the next rtp client can start another instance of this thread again
+    rtp_tx_init_done = 0;
+    fprintf(stderr,"rtp_tx_thread terminating ...\n");
 }
 
 
@@ -696,7 +699,6 @@ void readcb(struct bufferevent *bev, void *ctx){
 							audio_stream_reset();
 		                                        error=0;
 		                                        send_audio=1;
-
 		                                        rtp_tx_init();
 
 		                                        // need to let the caller know our port number
@@ -955,7 +957,6 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 						audio_stream_reset();
                                                 error=0;
                                                 send_audio=1;
-
                                                 rtp_tx_init();
 
                                                 // need to let the caller know our port number
