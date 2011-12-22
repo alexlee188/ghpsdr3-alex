@@ -522,10 +522,6 @@ void UI::actionDisconnect() {
     configure.connected(FALSE);
     isConnected = false;
 
-    if(useRTP) {
-        disconnect(&rtp,SIGNAL(rtp_packet_received(char*,int)),audio,SLOT(process_rtp_audio(char*,int)));
-        rtp.shutdown();
-    }
 }
 
 void UI::actionQuick_Server_List() {
@@ -659,8 +655,12 @@ void UI::disconnected(QString message) {
     qDebug() << "UI::disconnected: " << message;
     connection_valid = FALSE;
     isConnected = false;
-
     spectrumTimer->stop();
+
+    if(useRTP) {
+        disconnect(&rtp,SIGNAL(rtp_packet_received(char*,int)),audio,SLOT(process_rtp_audio(char*,int)));
+        rtp.shutdown();
+    }
 //    widget.statusbar->showMessage(message,0); //gvj deleted code
     printWindowTitle(message);
     widget.actionConnectToServer->setDisabled(FALSE);

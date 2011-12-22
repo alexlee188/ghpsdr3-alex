@@ -289,35 +289,24 @@ void rtp_tx_init(void){
 
 void *rtp_tx_thread(void *arg) {
     int length;
-    int i,j,k;
+    int i,j;
     short v;
     float fv;
     float data_in [TX_BUFFER_SIZE*2]; // stereo
     float data_out[TX_BUFFER_SIZE*2*24];
     int data_in_counter=0;
-    int data_out_counter=0;
     int iq_buffer_counter = 0;
     SRC_DATA data;
     int rc;
 
-    float left;
-    float right;
-    float min_mic=65536.0F;
-    float max_mic=0.0F;
-
-    unsigned short offset;
-    BUFFER small_buffer;
 
 fprintf(stderr,"rtp_tx_thread started ...\n");
 
-    while(rtp_connected) {
+    while(1) {
         length=rtp_receive(rtp_buffer,400);
         if(length<=0) {
 	usleep(1000);
         } else {
-if(length!=400) {
-fprintf(stderr,"rtp_receive expected 400 got %d\n",length);
-}
             for(i=0;i<length;i++) {
                 v=G711A_decode(rtp_buffer[i]);
                 fv=(float)v/32767.0F;   // get into the range -1..+1
@@ -332,7 +321,7 @@ fprintf(stderr,"rtp_receive expected 400 got %d\n",length);
                     data.data_in = data_in;
                     data.input_frames = TX_BUFFER_SIZE;
                     data.data_out = data_out;
-                    data.output_frames = TX_BUFFER_SIZE*(int)mic_src_ratio ;
+                    data.output_frames = TX_BUFFER_SIZE*24 ;
                     data.src_ratio = mic_src_ratio;
                     data.end_of_input = 0;
 
@@ -340,7 +329,7 @@ fprintf(stderr,"rtp_receive expected 400 got %d\n",length);
                     if (rc) {
                         fprintf (stderr,"rtp_tx_thread: SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
                     } else {
-                        for (j=0;j<TX_BUFFER_SIZE*(int)mic_src_ratio;j++) {
+                        for (j=0;j< data.output_frames_gen;j++) {
                             // tx_buffer is non-interleaved, LEFT followed by RIGHT data
 
 
@@ -364,9 +353,6 @@ fprintf(stderr,"rtp_receive expected 400 got %d\n",length);
             }
         }
     }
-    // going to terminate this thread so reset rtp_tx_init_done so that the next rtp client can start another instance of this thread again
-    rtp_tx_init_done = 0;
-    fprintf(stderr,"rtp_tx_thread terminating ...\n");
 }
 
 
