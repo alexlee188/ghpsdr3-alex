@@ -80,6 +80,10 @@
 #define AGC_MEDIUM 3
 #define AGC_FAST 4
 
+#define MIC_BUFFER_SIZE 400
+#define MIC_NO_OF_FRAMES 2      // need to ensure this is the same value in dspserver
+#define MIC_ENCODED_BUFFER_SIZE (BITS_SIZE*MIC_NO_OF_FRAMES)
+
 class UI : public QMainWindow {
     Q_OBJECT
 public:
@@ -99,7 +103,6 @@ public:
     void rigctlSetMode(int newmode);
     void * codec2;
     void * mic_codec2;
-    static const int MIC_BUFFER_SIZE = 400;
 
 signals:
     void initialize_audio(int length);
@@ -298,8 +301,16 @@ private:
     int mic_buffer_count;       // counter of mic_buffer, to encode if reaches CODEC2_SAMPLE_PER_FRAME
     int mic_frame_count;        // counter of mic_buffer, to encode enough frames before sending
 
+#if CODEC2_SAMPLES_PER_FRAME > MIC_BUFFER_SIZE
+    qint16 mic_buffer[CODEC2_SAMPLES_PER_FRAME];
+#else
     qint16 mic_buffer[MIC_BUFFER_SIZE];
+#endif
+#if MIC_ENCODED_BUFFER_SIZE > MIC_BUFFER_SIZE
+    unsigned char mic_encoded_buffer[MIC_ENCODED_BUFFER_SIZE];
+#else
     unsigned char mic_encoded_buffer[MIC_BUFFER_SIZE];
+#endif
 
     long long subRxFrequency;
     Connection connection;

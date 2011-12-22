@@ -727,6 +727,8 @@ void UI::audioBufferProcessed(){
 
 void UI::micSendAudio(QQueue<qint16>* queue){
     if(useRTP) {
+
+
         qint16 sample;
         unsigned char e;
         while(!queue->isEmpty()) {
@@ -736,23 +738,20 @@ void UI::micSendAudio(QQueue<qint16>* queue){
                 sample=0;
             }
             e=g711a.encode(sample);
+
             mic_encoded_buffer[mic_buffer_count++]=e;
             if(mic_buffer_count >= MIC_BUFFER_SIZE) {
                 if (configure.getTxAllowed()) rtp.send(mic_encoded_buffer,MIC_BUFFER_SIZE);
                 mic_buffer_count=0;
             }
         }
-    } else {
-#define MIC_NO_OF_FRAMES 1      // need to ensure this is the same value in dspserver
-#define MIC_ENCODED_BUFFER_SIZE (BITS_SIZE*MIC_NO_OF_FRAMES)
-        qint16 buffer[CODEC2_SAMPLES_PER_FRAME];
-        unsigned char mic_encoded_buffer[MIC_ENCODED_BUFFER_SIZE];
 
+    } else {
         while(! queue->isEmpty()){
-            buffer[mic_buffer_count++] = queue->dequeue();
+            mic_buffer[mic_buffer_count++] = queue->dequeue();
             if (mic_buffer_count >= CODEC2_SAMPLES_PER_FRAME) {
                 mic_buffer_count = 0;
-                codec2_encode(mic_codec2, &mic_encoded_buffer[mic_frame_count*BITS_SIZE], buffer);
+                codec2_encode(mic_codec2, &mic_encoded_buffer[mic_frame_count*BITS_SIZE], mic_buffer);
                 mic_frame_count++;
                 if (mic_frame_count >= MIC_NO_OF_FRAMES){
                     mic_frame_count = 0;
