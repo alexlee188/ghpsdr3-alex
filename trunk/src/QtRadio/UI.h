@@ -81,7 +81,7 @@
 #define AGC_FAST 4
 
 #define MIC_BUFFER_SIZE 400
-#define MIC_NO_OF_FRAMES 2      // need to ensure this is the same value in dspserver
+#define MIC_NO_OF_FRAMES 4      // need to ensure this is the same value in dspserver
 #define MIC_ENCODED_BUFFER_SIZE (BITS_SIZE*MIC_NO_OF_FRAMES)
 
 class UI : public QMainWindow {
