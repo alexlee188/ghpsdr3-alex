@@ -595,7 +595,7 @@ void UI::connected() {
            // g0orx RTP
            port=5004;
            connect(&rtp,SIGNAL(rtp_packet_received(char*,int)),audio,SLOT(process_rtp_audio(char*,int)));
-
+           connect(this,SIGNAL(rtp_sendBuffer(unsigned char*,int)),&rtp,SLOT(send(unsigned char*,int)));
            command.clear(); QTextStream(&command) << "startRTPStream "
                  << port
                  << " " << audio->get_audio_encoding()
@@ -659,6 +659,7 @@ void UI::disconnected(QString message) {
 
     if(useRTP) {
         disconnect(&rtp,SIGNAL(rtp_packet_received(char*,int)),audio,SLOT(process_rtp_audio(char*,int)));
+        disconnect(this,SIGNAL(rtp_sendBuffer(unsigned char*,int)),&rtp,SLOT(send(unsigned char*,int)));
         rtp.shutdown();
     }
 //    widget.statusbar->showMessage(message,0); //gvj deleted code
@@ -727,10 +728,9 @@ void UI::audioBufferProcessed(){
 
 void UI::micSendAudio(QQueue<qint16>* queue){
     if(useRTP) {
-
-
         qint16 sample;
         unsigned char e;
+
         while(!queue->isEmpty()) {
             // aLaw encode
             sample=queue->dequeue();
@@ -741,7 +741,11 @@ void UI::micSendAudio(QQueue<qint16>* queue){
 
             mic_encoded_buffer[mic_buffer_count++]=e;
             if(mic_buffer_count >= MIC_BUFFER_SIZE) {
-                if (configure.getTxAllowed()) rtp.send(mic_encoded_buffer,MIC_BUFFER_SIZE);
+                if (configure.getTxAllowed()){
+                    rtp_send_buffer = (unsigned char*) malloc(MIC_BUFFER_SIZE);
+                    memcpy(rtp_send_buffer, mic_encoded_buffer, MIC_BUFFER_SIZE);
+                    emit rtp_sendBuffer(rtp_send_buffer,MIC_BUFFER_SIZE);
+                }
                 mic_buffer_count=0;
             }
         }

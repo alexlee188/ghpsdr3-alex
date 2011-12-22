@@ -96,6 +96,7 @@ void RTP::send(unsigned char* buffer,int length) {
         rtp_session_send_with_ts(rtpSession,(uint8_t*)buffer,length,send_ts);
         send_ts+=length;
     }
+    if (buffer != NULL) free(buffer);
 }
 
 void RTP::dump_buffer(unsigned char* buffer,int length) {
