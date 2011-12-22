@@ -305,7 +305,7 @@ fprintf(stderr,"rtp_tx_thread started ...\n");
     while(1) {
         length=rtp_receive(rtp_buffer,400);
         if(length<=0) {
-	usleep(1000);
+	usleep(10);
         } else {
             for(i=0;i<length;i++) {
                 v=G711A_decode(rtp_buffer[i]);
@@ -339,7 +339,7 @@ fprintf(stderr,"rtp_tx_thread started ...\n");
                             iq_buffer_counter++;
                             if(iq_buffer_counter>=TX_BUFFER_SIZE) {
                                 // use DttSP to process Mic data into tx IQ
-                                if(!hpsdr || mox) {
+                            	if(!hpsdr || mox) {
                                     Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
                                     // send Tx IQ to server, buffer is non-interleaved.
                                     ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
