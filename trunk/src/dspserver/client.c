@@ -117,7 +117,7 @@ TAILQ_HEAD(, audio_entry) IQ_audio_stream;
 TAILQ_HEAD(, audio_entry) Mic_audio_stream;
 
 // Client_list is the HEAD of a queue of connected clients
-TAILQ_HEAD(, client_entry) Client_list;
+TAILQ_HEAD(, _client_entry) Client_list;
 
 //
 // samplerate library data structures
