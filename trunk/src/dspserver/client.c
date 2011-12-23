@@ -340,7 +340,6 @@ fprintf(stderr,"rtp_tx_thread started ...\n");
                             if(iq_buffer_counter>=TX_BUFFER_SIZE) {
                                 // use DttSP to process Mic data into tx IQ
                             	if(!hpsdr || mox) {
-				    fprintf(stderr,"rtp_tx: DttSP called...\n");
                                     Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
                                     // send Tx IQ to server, buffer is non-interleaved.
                                     ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
