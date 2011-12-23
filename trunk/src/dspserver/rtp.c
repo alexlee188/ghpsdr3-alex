@@ -38,7 +38,7 @@ RtpSession* rtpSession;
 int rtp_connected=0;
 int recv_ts=0;
 int send_ts=0;
-int has_more;
+int rtp_receive_has_more;
 int jittcomp=40;
 int adapt=1;
 
@@ -98,9 +98,8 @@ int rtp_receive(unsigned char* buffer,int length) {
     int rc = -1;
 
     if (rtp_connected) {
-    	rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&has_more);
+    	rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
     	recv_ts+=length;
 	}
-//fprintf(stderr,"rcp_receive: %d has_more=%d recv_ts=%d\n",rc,has_more,recv_ts);
     return rc;
 }

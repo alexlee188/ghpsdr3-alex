@@ -32,3 +32,4 @@ void rtp_send(char* buffer,int length);
 int rtp_receive(unsigned char* buffer,int length);
 
 extern int rtp_connected;
+extern int rtp_receive_has_more;
