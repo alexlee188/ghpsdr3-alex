@@ -307,7 +307,6 @@ fprintf(stderr,"rtp_tx_thread started ...\n");
         if(length<=0) {
 	usleep(10);
         } else {
-	    fprintf(stderr, "rtp_tx: %d %d\n", rtp_buffer[0], rtp_buffer[1]);
             for(i=0;i<length;i++) {
                 v=G711A_decode(rtp_buffer[i]);
                 fv=(float)v/32767.0F;   // get into the range -1..+1

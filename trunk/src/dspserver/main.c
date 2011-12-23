@@ -249,7 +249,7 @@ int main(int argc,char* argv[]) {
     audio_stream_reset();
 
     codec2 = codec2_create();
-
+    G711A_init();
     ozy_init();
 
     SetMode(1, 0, USB);
