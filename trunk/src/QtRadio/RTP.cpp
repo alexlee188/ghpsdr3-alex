@@ -91,7 +91,6 @@ qDebug() << "RTP::run exiting";
 }
 
 void RTP::send(unsigned char* buffer,int length) {
-    int rc;
     if(initialized && cont)  {
         rtp_session_send_with_ts(rtpSession,(uint8_t*)buffer,length,send_ts);
         send_ts+=length;

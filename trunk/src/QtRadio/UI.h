@@ -108,7 +108,6 @@ signals:
     void initialize_audio(int length);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void process_audio(char* header,char* buffer,int length);
-    void rtp_sendBuffer(unsigned char *buffer, int length);
 
 public slots:
     void getMeterValue(int m, int s);

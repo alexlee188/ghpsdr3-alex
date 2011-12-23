@@ -303,10 +303,11 @@ void *rtp_tx_thread(void *arg) {
 fprintf(stderr,"rtp_tx_thread started ...\n");
 
     while(1) {
-        length=rtp_receive(rtp_buffer,400);
+        length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);
         if(length<=0) {
 	usleep(10);
         } else {
+	    fprintf(stderr, "rtp_tx: %d %d\n", rtp_buffer[0], rtp_buffer[1]);
             for(i=0;i<length;i++) {
                 v=G711A_decode(rtp_buffer[i]);
                 fv=(float)v/32767.0F;   // get into the range -1..+1
@@ -345,14 +346,14 @@ fprintf(stderr,"rtp_tx_thread started ...\n");
                                     ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
                                 }
                                 iq_buffer_counter=0;
-                            }
-                        }
-                    }
+                            } // end iq_bufer_counter
+                        } // end for j
+                    } // end rc else
                     data_in_counter = 0;
-                }
-            }
-        }
-    }
+                } // end if data_in_counter
+            } // end for i
+        } // end length else
+    } // end while
 }
 
 
