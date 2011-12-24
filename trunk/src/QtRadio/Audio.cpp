@@ -302,7 +302,7 @@ void Audio::process_rtp_audio(char* buffer,int length) {
     int i;
     short v;
 
-if(length>0 && length<=1024) {
+if(length>0 && length<=2048) {
 
     if (audio_encoding == 0) {
         //aLawDecode(buffer,length);
@@ -325,7 +325,7 @@ if(length>0 && length<=1024) {
             //qDebug() << "writing audio data length=: " <<  decoded_buffer.length();
             //total_to_write = decoded_buffer.length();
             while( written< total_to_write) {
-                if (audio_output->bytesFree() < 4) usleep(1000);
+                if (audio_output->bytesFree() < 4) usleep(2000);
                 // writing in periodsize is recommended
                 length_to_write = (audio_output->periodSize() > (total_to_write-written)) ?
                             (total_to_write-written) : audio_output->periodSize();
