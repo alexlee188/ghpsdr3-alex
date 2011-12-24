@@ -4,7 +4,7 @@ http://openhpsdr.org/wiki/index.php?title=Ghpsdr3
 
 The changes are in trunk/src/: 
 
-softrock     - Rx and Tx.  Pulse and Jack audio.  Works with all softrocks.
+softrock     - Rx and Tx.  Pulse and Jack audio.  Connects up to 4 radios using Jack.  Works with all softrocks.
 dspserver    - The LO offset (usually set to 9000 Hz in Si570 controlled softrocks, a la PSDR-IQ) can be set via command line argument --lo
 	       Can be changed to 0 for fixed Xtal Softrocks and DDC radios.  
 	       More robust audio and spectrum transfers.  Rx and Tx.  Hamlib net backend.  rxtx-event
@@ -121,10 +121,15 @@ to set up network access by checking the various option boxes.  In order to use
 96000 or 192000, you will need to configure pulse audio by editing the /etc/pulse/daemon.conf,
 or better still, copy the file to ~/.pulse/daemon.conf and then edit the file there.
 
-You can also use jack instead of pulse.  For detailed instructions on setting up soundcards with pulse or jack,
-Google and do research.
+You can also use jack instead of pulse.  For detailed instructions on setting up soundcards with pulse or jack,  See below for using --jack option when starting the softrock server "softrock".  Also Google and do research.
 
 $ softrock --si570 --iq --samplerate 48000|96000|192000
+
+or
+
+$ softrock --si570 --iq --samplerate 48000|9600|192000 --jack
+
+
 
 (If you find your I/Q is reversed, use --qi instead of -iq
 
@@ -253,7 +258,7 @@ however you like in qjackctrl.  To use more than one receiver, you need a dspser
 for each.  Use the --receiver=[0,1,2,3] option for each dspserver instance.
 
 Using QtRadio with Hamlib applications ie fldigi
-======================================
+================================================
 
 QtRadio will listen on port 19090 all interfaces for rigctl connections.
 
@@ -264,6 +269,13 @@ grig -m2 -r 127.0.0.1:19090
 
 For fldigi set Transceiver Control to hamlib, Rig to 'Hamlib NET rigctl  (Beta)' and Device to "127.0.0.1:19090"
 Set Soundcard to PulseAudio and then in PulseAudio Volume Control (pavucontrol) Recording tab set fldigi to "Monitor of xxxx"
+
+Controlling more than one DG8SAQ devices (eg 2 softrocks)
+=========================================================
+The DG8SAQ devices can be set to different USB serial ID's.  Each usb-i2c interface, eg Tony's original, the UBW, the Mobo or the sdr-widget, have different USB serial ID's defined in the firmware.  If you are using 2 identical devices, then you will need to flash a new firmware with a different USB serial number to one of them so that they can be distinguished.
+
+When you start the softrock server, you can use the --serialid argument to match the USB serial ID of the particular device.
+
 
 
 
