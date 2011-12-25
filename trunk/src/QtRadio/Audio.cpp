@@ -29,6 +29,8 @@
 Audio_playback::Audio_playback(QObject *parent)
     :   QIODevice(parent)
 {
+    p = (Audio*) parent;
+    has_more = 0;
 }
 
 Audio_playback::~Audio_playback()
@@ -47,10 +49,24 @@ void Audio_playback::stop()
 
 qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
-     Q_UNUSED(data)
-     Q_UNUSED(maxlen)
+    int bytes_read = 0;
 
-     return 0;
+    if (p->decoded_buffer.length() == 0) return 0;
+
+    if (!has_more) p->ready_mutex.lock();
+    if (p->decoded_buffer.length() > maxlen){
+        memcpy(data,p->decoded_buffer.data(),maxlen);
+        p->decoded_buffer.remove(0,maxlen);
+        bytes_read = maxlen;
+        has_more = 1;
+    } else {
+        bytes_read = p->decoded_buffer.length();
+        memcpy(data,p->decoded_buffer.data(), bytes_read);
+        has_more = 0;
+    }
+
+    if (!has_more) p->read_done_mutex.unlock();
+    return bytes_read;
  }
 
  qint64 Audio_playback::writeData(const char *data, qint64 len){
@@ -91,6 +107,8 @@ Audio::Audio(void * codec) {
     } else {
         qDebug() <<  "Audio::audio sample rate init successfully at ratio:" << src_ratio;
     }
+    ready_mutex.unlock();
+    read_done_mutex.unlock();
 }
 
 Audio::~Audio() {
@@ -252,7 +270,6 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
 
     if(audio_output->error()!=0) {
         qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << audio_output->state();
-
         qDebug() << "Format:";
         qDebug() << "    sample rate: " << audio_format.frequency();
         qDebug() << "    codec: " << audio_format.codec();
@@ -307,18 +324,15 @@ int Audio::get_audio_encoding() {
 }
 
 void Audio::process_audio(char* header,char* buffer,int length) {
-    //qDebug() << "process audio";
-    int written=0;
-    int length_to_write, total_to_write;
 
+    read_done_mutex.lock();
     if (audio_encoding == 0) aLawDecode(buffer,length);
     else if (audio_encoding == 1) pcmDecode(buffer,length);
     else if (audio_encoding == 2) codec2Decode(buffer,length);
     else {
         qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
     }
-
-
+    ready_mutex.unlock();
 
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);

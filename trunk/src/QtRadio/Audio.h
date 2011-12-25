@@ -44,6 +44,8 @@
 // The resolution is to run at 8011 samples persecond.
 #define SAMPLE_RATE_FUDGE 11
 
+class Audio;
+
 class Audio_playback : public QIODevice
 {
     Q_OBJECT
@@ -58,6 +60,8 @@ public:
     qint64 writeData(const char *data, qint64 len);
 
 private:
+    Audio* p;
+    int has_more;
 signals:
 };
 
@@ -69,7 +73,8 @@ public:
 //    Audio(const Audio& orig);
     virtual ~Audio();
     int get_audio_encoding();
-
+    QMutex ready_mutex, read_done_mutex;
+    QByteArray       decoded_buffer;
 signals:
     void bufferProcessed(void);
 public slots:
@@ -93,7 +98,6 @@ private:
     QAudioOutput*    audio_output;
     QAudioDeviceInfo audio_device;
     Audio_playback*  audio_out;
-    QByteArray       decoded_buffer;
     float buffer_in[RESAMPLING_BUFFER_SIZE];
     float buffer_out[RESAMPLING_BUFFER_SIZE];
     short decodetable[256];
