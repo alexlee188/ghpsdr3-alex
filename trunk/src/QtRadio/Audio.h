@@ -73,7 +73,7 @@ public:
 //    Audio(const Audio& orig);
     virtual ~Audio();
     int get_audio_encoding();
-    QMutex ready_mutex, read_done_mutex;
+    bool decoded_buffer_played;
     QByteArray       decoded_buffer;
 signals:
     void bufferProcessed(void);
