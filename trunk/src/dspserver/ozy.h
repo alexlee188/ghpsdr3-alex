@@ -104,6 +104,8 @@ extern double LO_offset;
 
 char server_address[64];
 
+int hpsdr;
+
 /* --------------------------------------------------------------------------*/
 /** 
 * @brief Initialize the Ozy interface 
@@ -255,6 +257,8 @@ void setSpeed(int s);
 
 int ozySetRecord(char* state);
 
+void ozy_set_hpsdr();
+
 #ifdef	__cplusplus
 }
 #endif
@@ -267,6 +271,7 @@ void ozy_set_port_audio(int state);
 void ozy_set_debug(int state);
 int ozySetMox(int state);
 int ozySetOpenCollectorOutputs(char* state);
+void ozy_send(unsigned char* data,int length,char* who);
 
 extern int audio_socket;
 extern struct sockaddr_in audio_addr, server_audio_addr;

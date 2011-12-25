@@ -118,29 +118,16 @@ struct option longOptions[] = {
     {"share",no_argument, 0, 6},
     {"shareconfig",required_argument, 0, 7},
     {"lo",required_argument, 0, 8},
-    {"help", no_argument, 0, 9},
+    {"hpsdr",no_argument, 0, 9},
+    {"debug",no_argument, 0, 10},
     {0,0,0,0}
 };
 
-char* shortOptions="h";
+char* shortOptions="";
 
 int optionIndex;
 
 int toShareOrNotToShare = 0;
-
-void print_help (void) {
-    fprintf(stderr,"Usage: \n");
-    fprintf(stderr,"  dspserver --receivers N (default 1)\n");
-    fprintf(stderr,"            --server 0.0.0.0 (default 127.0.0.1)\n");
-    fprintf(stderr,"            --soundcard (machine dependent)\n");
-    fprintf(stderr,"            --offset 0 \n");
-    fprintf(stderr,"            --share (will register this server for other users \n");
-    fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
-    fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
-
-    exit(1);
-}
- 
 
 /* --------------------------------------------------------------------------*/
 /** 
@@ -150,22 +137,10 @@ void print_help (void) {
 * @param argv
 */
 /* ----------------------------------------------------------------------------*/
-void processCommands(int argc,char* argv[]) {
-    int c = 0;
-    int optionIndex = 0;
-    static char* shortOptions="h";
-
-    while(c != EOF) {
-        c = getopt_long(argc,argv, shortOptions,longOptions,&optionIndex);
-        fprintf (stderr, "Index: %d ret: %d\n", optionIndex, c);
-
-        if (c == '?' || c == 'h'){
-           print_help();
-        }
-        
-        if (c == EOF) break;
-
-        switch(c) {
+void processCommands(int argc,char** argv) {
+    int c;
+    while((c=getopt_long(argc,argv,shortOptions,longOptions,&optionIndex)!=EOF)) {
+        switch(optionIndex) {
             case 0:
                 strcpy(soundCardName,optarg);
                 break;
@@ -197,13 +172,28 @@ void processCommands(int argc,char* argv[]) {
                 LO_offset=atoi(optarg);
                 break;
             case 9:
-                print_help();
+                ozy_set_hpsdr();
                 break;
+            case 10:
+                ozy_set_debug(1);
+                break;
+
+       default:
+                fprintf(stderr,"Usage: \n");
+                fprintf(stderr,"  dspserver --receivers N (default 1)\n");
+                fprintf(stderr,"            --server 0.0.0.0 (default 127.0.0.1)\n");
+                fprintf(stderr,"            --soundcard (machine dependent)\n");
+                fprintf(stderr,"            --offset 0 \n");
+                fprintf(stderr,"            --share (will register this server for other users \n");
+                fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
+		fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
+		fprintf(stderr,"            --hpsdr (if using hpsdr hardware)\n");
+                exit(1);
+
         }
-        optionIndex=0;
-        
     }
 }
+
 
 /* --------------------------------------------------------------------------*/
 /** 
@@ -259,14 +249,15 @@ int main(int argc,char* argv[]) {
     audio_stream_reset();
 
     codec2 = codec2_create();
-
+    G711A_init();
     ozy_init();
 
     SetMode(1, 0, USB);
     SetTXFilter(1, 150, 2850);
     SetTXOsc(1, LO_offset);
     SetTXAMCarrierLevel(1, 0.5);
-    tx_init();
+
+    tx_init();	// starts the tx_thread
 
     while(1) {
         sleep(10000);

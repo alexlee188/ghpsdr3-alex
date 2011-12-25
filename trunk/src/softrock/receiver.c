@@ -39,6 +39,7 @@
 #include "messages.h"
 #include "softrock.h"
 #include "operations.h"
+#include "buffer.h"
 
 #define SMALL_PACKETS
 

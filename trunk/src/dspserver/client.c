@@ -75,10 +75,12 @@
 #include "buffer.h"
 #include "codec2loc.h"
 #include "register.h"
-
-
+#include "rtp.h"
+#include "G711A.h"
 
 static int timing=0;
+
+static int rtp_tx_init_done = 0;
 
 static pthread_t client_thread_id, tx_thread_id;
 
@@ -100,7 +102,7 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static float tx_buffer[TX_BUFFER_SIZE*2];
 static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
-#define MIC_NO_OF_FRAMES 1
+#define MIC_NO_OF_FRAMES 4
 #define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
@@ -115,7 +117,7 @@ TAILQ_HEAD(, audio_entry) IQ_audio_stream;
 TAILQ_HEAD(, audio_entry) Mic_audio_stream;
 
 // Client_list is the HEAD of a queue of connected clients
-TAILQ_HEAD(, client_entry) Client_list;
+TAILQ_HEAD(, _client_entry) Client_list;
 
 //
 // samplerate library data structures
@@ -131,6 +133,10 @@ static sem_t bufferevent_semaphore, mic_semaphore;
 
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
+
+#define RTP_BUFFER_SIZE 400
+static unsigned char rtp_buffer[RTP_BUFFER_SIZE];
+void *rtp_tx_thread(void *arg);
 
 void client_send_samples(int size);
 void client_set_samples(float* samples,int size);
@@ -155,17 +161,15 @@ void audio_stream_init(int receiver) {
 void audio_stream_queue_add(int length) {
     struct audio_entry *item;
 
-
         if(send_audio) {
-		item = malloc(sizeof(*item));
-		item->buf = audio_buffer;
-		item->length = length;
-		sem_wait(&bufferevent_semaphore);
-		TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
-		sem_post(&bufferevent_semaphore);
-                }
-	allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
-
+ 	    item = malloc(sizeof(*item));
+	    item->buf = audio_buffer;
+	    item->length = length;
+	    sem_wait(&bufferevent_semaphore);
+	    TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
+	    sem_post(&bufferevent_semaphore);
+            allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
+        }
 }
 
 struct audio_entry *audio_stream_queue_remove(){
@@ -187,6 +191,25 @@ void audio_stream_queue_free(){
 		free(item);
 		}
 	sem_post(&bufferevent_semaphore);
+}
+
+// this is run from the client thread
+void Mic_stream_queue_add(){
+   unsigned char *bits;
+   struct audio_entry *item;
+   int i;
+
+	for (i=0; i < MIC_NO_OF_FRAMES; i++){
+
+		bits = malloc(BITS_SIZE);
+		memcpy(bits, &mic_buffer[i*BITS_SIZE], BITS_SIZE);
+		item = malloc(sizeof(*item));
+		item->buf = bits;
+		item->length = BITS_SIZE;
+		sem_wait(&mic_semaphore);
+		TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
+		sem_post(&mic_semaphore);
+	}
 }
 
 void Mic_stream_queue_free(){
@@ -212,32 +235,18 @@ void client_init(int receiver) {
     sem_post(&bufferevent_semaphore);
     sem_post(&mic_semaphore);
 
-/*
-fprintf(stderr,"client_init encoding=%d audio_buffer_size=%d audio_channels=%d\n", encoding,audio_buffer_size,audio_channels);
-    if (encoding == ENCODING_ALAW) {
-audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
-}
-    else if (encoding == ENCODING_PCM) {
-audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels*2)+AUDIO_BUFFER_HEADER_SIZE); // 2 byte PCM
-	}
-    else {	// encoding = Codec 2
-	audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
-	audio_buffer=(unsigned char*)malloc(audio_buffer_size*audio_channels + AUDIO_BUFFER_HEADER_SIZE);
-	};
-
-    fprintf(stderr,"client_init audio_buffer_size=%d\n",audio_buffer_size);
-*/
-
     port=BASE_PORT+receiver;
     clientSocket=-1;
     rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
+
     if(rc != 0) {
         fprintf(stderr,"pthread_create failed on client_thread: rc=%d\n", rc);
     }
-
+    else rc=pthread_detach(client_thread_id);
+    rtp_init();
 }
 
-void tx_init(){
+void tx_init(void){
     int rc;
 
 	mic_src_ratio = (double) sampleRate / 8000.0;
@@ -258,24 +267,94 @@ void tx_init(){
             fprintf (stderr, "tx_init: sample rate init successful with ratio of : %f\n", mic_src_ratio);
 	}
 
-    rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
-    if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
+        rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
+        if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
+	else rc=pthread_detach(tx_thread_id);
 }
 
-// this is run from the client thread
-void Mic_stream_queue_add(){
-   unsigned char *bits;
-   struct audio_entry *item;
+void rtp_tx_init(void){
+	int rc;
 
-	bits = malloc(MIC_BUFFER_SIZE);
-	memcpy(bits, mic_buffer, MIC_BUFFER_SIZE);
-	item = malloc(sizeof(*item));
-	item->buf = bits;
-	item->length = MIC_BUFFER_SIZE;
-	sem_wait(&mic_semaphore);
-	TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
-	sem_post(&mic_semaphore);
+	if (rtp_tx_init_done == 0){
+		rc=pthread_create(&tx_thread_id,NULL,rtp_tx_thread,NULL);
+		if(rc != 0) {
+			fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
+		}
+		else {
+			rtp_tx_init_done = 1;
+			rc=pthread_detach(tx_thread_id);
+		}
+	}
 }
+
+void *rtp_tx_thread(void *arg) {
+    int length;
+    int i,j;
+    short v;
+    float fv;
+    float data_in [TX_BUFFER_SIZE*2]; // stereo
+    float data_out[TX_BUFFER_SIZE*2*24];
+    int data_in_counter=0;
+    int iq_buffer_counter = 0;
+    SRC_DATA data;
+    int rc;
+
+
+fprintf(stderr,"rtp_tx_thread started ...\n");
+
+    while(1) {
+        length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);
+        if(length<=0) {
+	usleep(10);
+        } else {
+            for(i=0;i<length;i++) {
+                v=G711A_decode(rtp_buffer[i]);
+                fv=(float)v/32767.0F;   // get into the range -1..+1
+
+                data_in[data_in_counter*2]=fv;
+                data_in[(data_in_counter*2)+1]=fv;
+                data_in_counter++;
+
+                if (data_in_counter >= TX_BUFFER_SIZE) {
+
+                    // resample to the sample rate
+                    data.data_in = data_in;
+                    data.input_frames = TX_BUFFER_SIZE;
+                    data.data_out = data_out;
+                    data.output_frames = TX_BUFFER_SIZE*24 ;
+                    data.src_ratio = mic_src_ratio;
+                    data.end_of_input = 0;
+
+                    rc = src_process (mic_sr_state, &data);
+                    if (rc) {
+                        fprintf (stderr,"rtp_tx_thread: SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
+                    } else {
+                        for (j=0;j< data.output_frames_gen;j++) {
+                            // tx_buffer is non-interleaved, LEFT followed by RIGHT data
+
+
+                            tx_buffer[iq_buffer_counter] = data_out[2*j];
+                            tx_buffer[iq_buffer_counter + TX_BUFFER_SIZE] = data_out[(2*j)+1];
+
+                            iq_buffer_counter++;
+                            if(iq_buffer_counter>=TX_BUFFER_SIZE) {
+                                // use DttSP to process Mic data into tx IQ
+                            	if(!hpsdr || mox) {
+                                    Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
+                                    // send Tx IQ to server, buffer is non-interleaved.
+                                    ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+                                }
+                                iq_buffer_counter=0;
+                            } // end iq_bufer_counter
+                        } // end for j
+                    } // end rc else
+                    data_in_counter = 0;
+                } // end if data_in_counter
+            } // end for i
+        } // end length else
+    } // end while
+}
+
 
 void *tx_thread(void *arg){
    unsigned char *bits;
@@ -283,9 +362,9 @@ void *tx_thread(void *arg){
    short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
    int tx_buffer_counter = 0;
    int rc;
-   int j, i, k;
+   int j, i;
    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
-   float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz / 8khz = 24
+   float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
    SRC_DATA data;
    void *mic_codec2 = codec2_create();
 
@@ -298,8 +377,7 @@ void *tx_thread(void *arg){
 		continue;
 		}
 	else {
-	for (k = 0; k < MIC_NO_OF_FRAMES; k++){		// Do it for the MIC_NO_OF_FRAMES
-	   bits = &item->buf[BITS_SIZE*k];		// each frame is BITS_SIZE long
+	   bits = item->buf;		// each frame is BITS_SIZE long
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
@@ -327,19 +405,11 @@ void *tx_thread(void *arg){
 				// use DttSP to process Mic data into tx IQ
 				Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
 				// send Tx IQ to server, buffer is non-interleaved.
-				int bytes_written;
-				bytes_written=sendto(audio_socket,tx_IQ_buffer,sizeof(tx_IQ_buffer),0,
-					(struct sockaddr *)&server_audio_addr,server_audio_length);
-				if(bytes_written<0) {
-				   fprintf(stderr,"sendto audio failed: %d\n",bytes_written);
-				   exit(1);
-				}
-				// fprintf(stderr,"bytes written = %d\n",bytes_written);
+                                ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
 				tx_buffer_counter = 0;
 			}
 		} // end for i
 	    } // end else rc
-	  } // end for k
 	    sem_wait(&mic_semaphore);
 	    TAILQ_REMOVE(&Mic_audio_stream, item, entries);
 	    sem_post(&mic_semaphore);
@@ -363,8 +433,10 @@ void writecb(struct bufferevent *bev, void *ctx);
 void
 errorcb(struct bufferevent *bev, short error, void *ctx)
 {
-    struct client_entry *item, *tmp_item;
+    client_entry *item, *tmp_item;
     int client_count = 0;
+    int rtp_client_count = 0;
+    int is_rtp_client = 0;
 
     if (error & BEV_EVENT_EOF) {
         /* connection has been closed, do any clean up here */
@@ -388,7 +460,7 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 	    	fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
 			tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
 			receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
-
+		if (item->rtp == connection_rtp) is_rtp_client = 1;
 		TAILQ_REMOVE(&Client_list, item, entries);
 		free(item);
 		break;
@@ -397,10 +469,12 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 
     TAILQ_FOREACH(item, &Client_list, entries){
 	client_count++;
+	if (item->rtp == connection_rtp) rtp_client_count++;
     }
     sprintf(status_buf,"%d client(s)", client_count);
     if (toShareOrNotToShare) updateStatus(status_buf);
 
+    if ((rtp_client_count <= 0) && is_rtp_client) rtp_disconnect();
     if (client_count <= 0) send_audio = 0;
     bufferevent_free(bev);
 }
@@ -461,7 +535,7 @@ void* client_thread(void* arg) {
 
 void do_accept(evutil_socket_t listener, short event, void *arg){
 
-    struct client_entry *item;
+    client_entry *item;
     struct event_base *base = arg;
     struct sockaddr_in ss;
     socklen_t slen = sizeof(ss);
@@ -495,6 +569,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 	bufferevent_setwatermark(bev, EV_WRITE, 4096, 0);
         bufferevent_enable(bev, EV_READ|EV_WRITE);
 	item->bev = bev;
+	item->rtp = connection_unknown;
 	TAILQ_INSERT_TAIL(&Client_list, item, entries);
 	TAILQ_FOREACH(item, &Client_list, entries){
 		client_count++;
@@ -506,14 +581,20 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 
 void writecb(struct bufferevent *bev, void *ctx){
 	struct audio_entry *item;
-	struct client_entry *client_item;
+	client_entry *client_item;
+	int rtp_client_count = 0;
 
 	sem_wait(&bufferevent_semaphore);
-	item = audio_stream_queue_remove();
-	if (item != NULL){
+	while ((item = audio_stream_queue_remove()) != NULL){
 		TAILQ_FOREACH(client_item, &Client_list, entries){
-			bufferevent_write(client_item->bev, item->buf, item->length);
+                        if(client_item->rtp == connection_tcp) {
+			    bufferevent_write(client_item->bev, item->buf, item->length);
+                            }
+			else if (client_item->rtp == connection_rtp) rtp_client_count++;
 			}
+
+		if (rtp_client_count) rtp_send(&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
+
 		free(item->buf);
 		free(item);
 	}
@@ -525,10 +606,21 @@ void readcb(struct bufferevent *bev, void *ctx){
     int i;
     int bytesRead = 0;
     char message[MSG_SIZE];
-    struct client_entry *item;
+    client_entry *item, *current_item, *tmp_item;
+    time_t tt;
+    struct tm *tod;
 
 	if ((item = TAILQ_FIRST(&Client_list)) == NULL) return;		// should not happen.  No clients !!!
 	if (item->bev != bev){						// only allow the first client on Client_list to command dspserver as master
+	// locate the current_item for this slave client
+	    for (current_item = TAILQ_FIRST(&Client_list); current_item != NULL; current_item = tmp_item){
+		tmp_item = TAILQ_NEXT(current_item, entries);
+		if (current_item->bev == bev){
+			break;
+		}
+	    }
+	    if (current_item == NULL) return; // should not happen.
+
 		while (bufferevent_read(bev, message, MSG_SIZE) > 3){
 		        message[bytesRead-1]=0;					// for Linux strings terminating in NULL
 		        token=strtok_r(message," ",&saveptr);
@@ -558,7 +650,62 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                	    } else {
 			 		    fprintf(stderr,"Invalid command: '%s'\n",message);
 					    }
-				}  // end getspectrum
+				} else if(strncmp(token,"setclient",9)==0) {
+                                    token=strtok_r(NULL," ",&saveptr);
+                                    if(token!=NULL) {
+                                        time(&tt);
+                                        tod=localtime(&tt);
+                                        fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
+                                    }
+		            	} else if(strncmp(token,"startaudiostream",16)==0) {
+				    current_item->rtp = connection_tcp;
+		                } else if(strncmp(token,"startrtpstream",14)==0) {
+				    current_item->rtp = connection_rtp;
+				    if (!rtp_connected){		// master connected through tcp.  So rtp is not connected yet.
+		                        // startrtpstream port encoding samplerate channels				
+		                        int error=1;
+		                        token=strtok_r(NULL," ",&saveptr);
+		                        if(token!=NULL) {
+		                            int rtpport=atoi(token);
+		                            token=strtok_r(NULL," ",&saveptr);
+		                            if(token!=NULL) {
+		                                encoding=atoi(token);
+		                                token=strtok_r(NULL," ",&saveptr);
+		                                if(token!=NULL) {
+		                                    audio_sample_rate=atoi(token);
+		                                    token=strtok_r(NULL," ",&saveptr);
+		                                    if(token!=NULL) {
+		                                        audio_channels=atoi(token);
+
+	fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
+		        inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
+
+		                                        int port=rtp_connect(inet_ntoa(current_item->client.sin_addr),rtpport);
+		                                        //current_item->rtp=connection_rtp;
+							audio_stream_reset();
+		                                        error=0;
+		                                        send_audio=1;
+		                                        rtp_tx_init();
+
+		                                        // need to let the caller know our port number
+		                                        char rtp_reply[7];
+		                                        rtp_reply[0]=RTP_REPLY_BUFFER;
+		                                        rtp_reply[1]=HEADER_VERSION;
+		                                        rtp_reply[2]=HEADER_SUBVERSION;
+		                                        rtp_reply[3]=0;
+		                                        rtp_reply[4]=0;
+		                                        rtp_reply[5]=(port>>8)&0xFF;
+		                                        rtp_reply[6]=port&0xFF;
+		                                        bufferevent_write(bev, rtp_reply, 7);
+		                                    }
+		                                }
+		                            }
+		                        }
+		                        if(error) {
+		                            fprintf(stderr,"Invalid command: '%s'\n",message);
+		                  	}
+				    } // if (!rtp_connected)
+				} // end startrtpstream
 			} // end if !=NULL
 		}; // end while
 		return;
@@ -769,8 +916,52 @@ void readcb(struct bufferevent *bev, void *ctx){
                         
 				fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
 				fprintf(stderr,"and with encoding method %d\n", encoding);
+                                item->rtp=connection_tcp;
                         	audio_stream_reset();
                         	send_audio=1;
+                        } else if(strncmp(token,"startrtpstream",14)==0) {
+                                // startrtpstream port encoding samplerate channels
+                                int error=1;
+                                token=strtok_r(NULL," ",&saveptr);
+                                if(token!=NULL) {
+                                    int rtpport=atoi(token);
+                                    token=strtok_r(NULL," ",&saveptr);
+                                    if(token!=NULL) {
+                                        encoding=atoi(token);
+                                        token=strtok_r(NULL," ",&saveptr);
+                                        if(token!=NULL) {
+                                            audio_sample_rate=atoi(token);
+                                            token=strtok_r(NULL," ",&saveptr);
+                                            if(token!=NULL) {
+                                                audio_channels=atoi(token);
+
+fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
+                inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
+
+                                                int port=rtp_connect(inet_ntoa(item->client.sin_addr),rtpport);
+                                                item->rtp=connection_rtp;
+						audio_stream_reset();
+                                                error=0;
+                                                send_audio=1;
+                                                rtp_tx_init();
+
+                                                // need to let the caller know our port number
+                                                char rtp_reply[7];
+                                                rtp_reply[0]=RTP_REPLY_BUFFER;
+                                                rtp_reply[1]=HEADER_VERSION;
+                                                rtp_reply[2]=HEADER_SUBVERSION;
+                                                rtp_reply[3]=0;
+                                                rtp_reply[4]=0;
+                                                rtp_reply[5]=(port>>8)&0xFF;
+                                                rtp_reply[6]=port&0xFF;
+                                                bufferevent_write(bev, rtp_reply, 7);
+                                            }
+                                        }
+                                    }
+                                }
+                                if(error) {
+                                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                                }
                         } else if(strncmp(token,"stopaudiostream",15)==0) {
                         	send_audio=0;
                         } else if(strncmp(token,"setencoding",11)==0) {
@@ -1034,20 +1225,14 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                } else {
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
-                       } else {
-                        	fprintf(stderr,"Invalid command: token: '%s'\n",token);
-                    		}
-
-                       } else if(strcmp(token,"setclient")==0) {
-                        	token=strtok(NULL," ");
+                       } else if(strncmp(token,"setclient",9)==0) {
+                        	token=strtok_r(NULL," ",&saveptr);
                         	if(token!=NULL) {
-/*
                             		time(&tt);
                             		tod=localtime(&tt);
-                            		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connected from %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
+                            		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
 
                         	}
-*/
                        } else {
 		                fprintf(stderr,"Invalid command: token: '%s'\n",token);
 		            	}
@@ -1135,8 +1320,9 @@ void setprintcountry()
 
 void printcountry(){
 	pthread_t lookup_thread;
-    int t_ret1;
-    t_ret1 = pthread_create( &lookup_thread, NULL, printcountrythread, (void*) NULL);
+    int ret;
+    ret = pthread_create( &lookup_thread, NULL, printcountrythread, (void*) NULL);
+    ret = pthread_detach(lookup_thread);
 		
 }
 

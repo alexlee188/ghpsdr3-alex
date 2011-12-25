@@ -137,6 +137,7 @@ void Connection::sendCommand(QString command) {
     char buffer[SEND_BUFFER_SIZE];
     int bytesWritten;
 
+    //qDebug() << "Connection::sendCommand: "<<command;
     for (i=0; i < SEND_BUFFER_SIZE; i++) buffer[i] = 0;
     if(tcpSocket!=NULL && tcpSocket->isValid() && tcpSocket->isWritable()) {
         mutex.lock();
@@ -200,30 +201,38 @@ void Connection::socketData() {
                  tcpSocket->close();
                  break;
             } 
-            if (hdr[0] == AUDIO_BUFFER)
-                state=READ_AUDIO_HEADER;
-            else {
-                version=hdr[1];
-                subversion=hdr[2];
-                switch(version) {
-                    case 2:
-                        switch(subversion) {
-                            case 0:
-                                header_size=HEADER_SIZE_2_0;
-                                break;
-                            case 1:
-                                header_size=HEADER_SIZE_2_1;
-                                break;
-                            default:
-                                fprintf(stderr,"QtRadio: Invalid subversion. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
-                                break;
-                        }
-                        break;
-                    default:
-                        fprintf(stderr,"QtRadio: Invalid version. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
-                        break;
-                }
-                state=READ_HEADER;
+            switch(hdr[0]) {
+                case AUDIO_BUFFER:
+                    state=READ_AUDIO_HEADER;
+                    break;
+                case SPECTRUM_BUFFER:
+                    version=hdr[1];
+                    subversion=hdr[2];
+                    switch(version) {
+                        case 2:
+                            switch(subversion) {
+                                case 0:
+                                    header_size=HEADER_SIZE_2_0;
+                                    break;
+                                case 1:
+                                    header_size=HEADER_SIZE_2_1;
+                                    break;
+                                default:
+                                    fprintf(stderr,"QtRadio: Invalid subversion. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
+                                    break;
+                            }
+                            break;
+                        default:
+                            fprintf(stderr,"QtRadio: Invalid version. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
+                            break;
+                    }
+                    state=READ_HEADER;
+                    break;
+                case BANDSCOPE_BUFFER:
+                    break;
+                case RTP_REPLY_BUFFER:
+                    state=READ_RTP_REPLY;
+                    break;
             }
             break;
 
@@ -297,13 +306,28 @@ void Connection::socketData() {
             } else {
             }
             break;
+        case READ_RTP_REPLY:
+qDebug() << "Connection READ_RTP_REPLY";
+            thisRead=tcpSocket->read(&hdr[bytes],7-bytes); // length and port
+            bytes+=thisRead;
+            if(bytes==7) {
+                int port;
+                port=((hdr[5]&0xFF)<<8) + (hdr[6]&0xFF);
+                // configure this ends rtp so we can send to remote
+qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
+                emit remoteRTP((char*)host.toUtf8().constData(),port);
+            } else {
+qDebug() << "Connection READ_RTP_REPLY bytes="<<bytes;
+            }
+            bytes=0;
+            state=READ_HEADER_TYPE;
+            break;
         default:
             fprintf (stderr, "FATAL: WRONG STATUS !!!!!\n");         
         }
         bytesRead+=thisRead;
     }
 }
-
 
 void Connection::processBuffer() {
     Buffer* buffer;

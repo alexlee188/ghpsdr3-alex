@@ -83,6 +83,9 @@ AC_SEARCH_LIBS([event_init], [event],[have_event20=yes])
 have_samplerate=no
 AC_SEARCH_LIBS([src_new], [samplerate],[have_samplerate=yes])
 
+have_ortp=no
+AC_SEARCH_LIBS([ortp_init], [ortp],[have_ortp=yes])
+
 # Checks for header files.
 AC_FUNC_ALLOCA
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h malloc.h netdb.h netinet/in.h stddef.h stdlib.h string.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h sys/timeb.h unistd.h])
@@ -236,6 +239,19 @@ if test "x${have_samplerate}" = xno; then
 -----------------------------------])
 
 fi
+
+if test "x${have_ortp}" = xyes; then
+    AC_CHECK_HEADERS([ortp/ortp.h], [], [have_ortp=no])
+fi
+
+if test "x${have_ortp}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The ortp library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
