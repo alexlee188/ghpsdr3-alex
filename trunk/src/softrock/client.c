@@ -193,19 +193,18 @@ void* audio_thread(void* arg) {
     int old_state, old_type;
     int bytes_read;
     int on=1;
-<<<<<<< HEAD
+
 	int error_no;
 	int  pipe_left = *softrock_get_jack_write_pipe_left(rx->client->receiver);
 	int  pipe_right = *softrock_get_jack_write_pipe_right(rx->client->receiver);
 	int num_bytes = sizeof(float)*BUFFER_SIZE;
 	int blocked_num = 0;
 static int second_time = 0;
-=======
+
     BUFFER buffer;
     unsigned long sequence=0L;
     unsigned short offset=0;;
 
->>>>>>> bdf88e7484fe1ec82cbf943217c4bf2ab2dbfa5e
 
     if (softrock_get_verbose()) fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 	
@@ -299,7 +298,7 @@ static int second_time = 0;
 		} else {
         	process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
 		}
-=======
+
 #endif
 
 /*
@@ -310,7 +309,7 @@ static int second_time = 0;
 	{
         process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
 	}
->>>>>>> bdf88e7484fe1ec82cbf943217c4bf2ab2dbfa5e
+
     }
 	softrock_set_client_active_rx (rx->client->receiver, DEC_RX); 
 }
