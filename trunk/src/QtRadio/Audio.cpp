@@ -26,6 +26,38 @@
 #include "Audio.h"
 #include "codec2.h"
 
+RTP_playback::RTP_playback(QObject *parent)
+    :   QIODevice(parent)
+{
+}
+
+RTP_playback::~RTP_playback()
+{
+}
+
+void RTP_playback::start()
+{
+    open(QIODevice::WriteOnly);
+}
+
+void RTP_playback::stop()
+{
+    close();
+}
+
+qint64 RTP_playback::readData(char *data, qint64 maxlen)
+ {
+     Q_UNUSED(data)
+     Q_UNUSED(maxlen)
+
+     return 0;
+ }
+
+ qint64 RTP_playback::writeData(const char *data, qint64 len){
+     Q_UNUSED(data)
+     Q_UNUSED(len)
+ }
+
 Audio::Audio(void * codec) {
     int sr_error;
     audio_output=NULL;

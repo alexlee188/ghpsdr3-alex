@@ -44,6 +44,24 @@
 // The resolution is to run at 8011 samples persecond.
 #define SAMPLE_RATE_FUDGE 11
 
+class RTP_playback : public QIODevice
+{
+    Q_OBJECT
+public:
+    RTP_playback(QObject *parent);
+    ~RTP_playback();
+
+    void start();
+    void stop();
+
+    qint64 readData(char *data, qint64 maxlen);
+    qint64 writeData(const char *data, qint64 len);
+
+private:
+signals:
+};
+
+
 class Audio : public QObject {
     Q_OBJECT
 public:
@@ -75,6 +93,7 @@ private:
     QAudioOutput*    audio_output;
     QAudioDeviceInfo audio_device;
     QIODevice*       audio_out;
+    RTP_playback*    rtp_audio_out;
     QByteArray       decoded_buffer;
     float buffer_in[RESAMPLING_BUFFER_SIZE];
     float buffer_out[RESAMPLING_BUFFER_SIZE];
@@ -89,5 +108,6 @@ private:
 
     G711A g711a;
 };
+
 
 #endif	/* AUDIO_H */

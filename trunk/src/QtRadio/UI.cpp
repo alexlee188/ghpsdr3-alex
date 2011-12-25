@@ -65,10 +65,8 @@ UI::UI(const QString server) {
 
     codec2 = codec2_create();
     audio = new Audio(codec2);
-
-    configure.initAudioDevices(audio);
     useRTP=configure.getRTP();
-
+    configure.initAudioDevices(audio);
     audio_buffer_count = 0;     // keeps track of how many audio buffers are in Audio's event queue
 
     audio_thread = new QThread();
@@ -237,7 +235,6 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(encodingChanged(int)),this,SLOT(encodingChanged(int)));
     connect(&configure,SIGNAL(encodingChanged(int)),audio,SLOT(set_audio_encoding(int)));
     connect(&configure,SIGNAL(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),this,SLOT(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
-//    connect(&configure,SIGNAL(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),audio,SLOT(select_audio(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
     connect(&configure,SIGNAL(micDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),this,SLOT(micDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
 
 
@@ -1940,7 +1937,8 @@ void UI::getMeterValue(int m, int s)
 
 void UI::printWindowTitle(QString message)
 {
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "  - rxtx-event 29 Dec 2011");
+    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "  - rxtx-event 31 Dec 2011");
+
 }
 
 void UI::printStatusBar(QString message)
