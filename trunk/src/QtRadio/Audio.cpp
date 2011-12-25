@@ -26,26 +26,26 @@
 #include "Audio.h"
 #include "codec2.h"
 
-RTP_playback::RTP_playback(QObject *parent)
+Audio_playback::Audio_playback(QObject *parent)
     :   QIODevice(parent)
 {
 }
 
-RTP_playback::~RTP_playback()
+Audio_playback::~Audio_playback()
 {
 }
 
-void RTP_playback::start()
+void Audio_playback::start()
 {
-    open(QIODevice::WriteOnly);
+    open(QIODevice::ReadOnly);
 }
 
-void RTP_playback::stop()
+void Audio_playback::stop()
 {
     close();
 }
 
-qint64 RTP_playback::readData(char *data, qint64 maxlen)
+qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
      Q_UNUSED(data)
      Q_UNUSED(maxlen)
@@ -53,7 +53,7 @@ qint64 RTP_playback::readData(char *data, qint64 maxlen)
      return 0;
  }
 
- qint64 RTP_playback::writeData(const char *data, qint64 len){
+ qint64 Audio_playback::writeData(const char *data, qint64 len){
      Q_UNUSED(data)
      Q_UNUSED(len)
  }
@@ -181,7 +181,9 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
     qDebug() << "QAudioOutput: error=" << audio_output->error() << " state=" << audio_output->state();
 
     audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
-    audio_out = audio_output->start();
+    audio_out= new Audio_playback(this);
+    audio_out->start();
+    audio_output->start(audio_out);
 
     if(audio_output->error()!=0) {
         qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << audio_output->state();
@@ -193,7 +195,8 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
         qDebug() << "    sample size: " << audio_format.sampleSize();
         qDebug() << "    sample type: " << audio_format.sampleType();
         qDebug() << "    channels: " << audio_format.channels();
-        audio_out = NULL;
+        audio_out->stop();
+        delete audio_out;
         delete audio_output;
     }
     sr_state = src_new (
@@ -222,7 +225,8 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
     audio_byte_order=byteOrder;
 
     if(audio_output!=NULL) {
-        audio_output->stop();
+        audio_out->stop();
+        delete audio_out;
         audio_output->disconnect(this);
         delete audio_output;
     }
@@ -242,8 +246,9 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
     connect(audio_output,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
 
     audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
-
-    audio_out = audio_output->start();
+    audio_out= new Audio_playback(this);
+    audio_out->start();
+    audio_output->start(audio_out);
 
     if(audio_output->error()!=0) {
         qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << audio_output->state();
@@ -255,7 +260,10 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
         qDebug() << "    sample size: " << audio_format.sampleSize();
         qDebug() << "    sample type: " << audio_format.sampleType();
         qDebug() << "    channels: " << audio_format.channels();
-        audio_out = NULL;
+        audio_out->stop();
+        delete  audio_out;
+        delete audio_output;
+
     }
 
     sr_state = src_new (
@@ -310,17 +318,7 @@ void Audio::process_audio(char* header,char* buffer,int length) {
         qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
     }
 
-    if(audio_out!=NULL) {
-        //qDebug() << "writing audio data length=: " <<  decoded_buffer.length();
-        total_to_write = decoded_buffer.length();
-        while( written< total_to_write) {
-            if (audio_output->bytesFree() < 4) usleep(2000);
-            // writing in periodsize is recommended
-            length_to_write = (audio_output->periodSize() > (decoded_buffer.length()-written)) ?
-                        (decoded_buffer.length()-written) : audio_output->periodSize();
-            written+=audio_out->write(&decoded_buffer.data()[written],length_to_write);
-        }
-    }
+
 
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);
@@ -353,27 +351,16 @@ if(length>0 && length<=2048) {
                 break;
             }
         }
-        if(audio_out!=NULL) {
-            //qDebug() << "writing audio data length=: " <<  decoded_buffer.length();
-            //total_to_write = decoded_buffer.length();
-            while( written< total_to_write) {
-                if (audio_output->bytesFree() < 4) usleep(2000);
-                // writing in periodsize is recommended
-                length_to_write = (audio_output->periodSize() > (total_to_write-written)) ?
-                            (total_to_write-written) : audio_output->periodSize();
-                written+=audio_out->write((char*)&decodedBuffer[written],length_to_write);
-//qDebug() << "Audio::process_rtp_audio written="<<written;
-            }
         if (decodedBuffer != NULL) free(decodedBuffer);
-        }
     } else {
         qDebug() << "Audio::process_rtp_audio only support aLaw";
     }
-} else {
-qDebug() << "process_rtp_audio: length=" << length;
-}
+    } else {
+        qDebug() << "process_rtp_audio: length=" << length;
+        }
     if (buffer != NULL) free(buffer);
 }
+
 
 void Audio::resample(int no_of_samples){
     int i;
