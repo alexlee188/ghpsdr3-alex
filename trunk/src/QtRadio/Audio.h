@@ -73,8 +73,7 @@ public:
 //    Audio(const Audio& orig);
     virtual ~Audio();
     int get_audio_encoding();
-    bool decoded_buffer_played;
-    QByteArray       decoded_buffer;
+    QQueue <char> decoded_buffer;
 signals:
     void bufferProcessed(void);
 public slots:

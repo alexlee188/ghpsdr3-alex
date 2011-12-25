@@ -51,26 +51,17 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
     qint64 bytes_read = 0;
 
-    if (p->decoded_buffer.length() > maxlen){
-        memcpy(data,p->decoded_buffer.data(),maxlen);
-        p->decoded_buffer.remove(0,maxlen);
-        bytes_read = maxlen;
-        has_more = 1;
-    } else if (p->decoded_buffer.length() == 0){
-        bytes_read = 0;
-        has_more = 0;
-    } else {
-        bytes_read = p->decoded_buffer.length();
-        memcpy(data,p->decoded_buffer.data(), bytes_read);
-        has_more = 0;
+    if (maxlen < 400) qDebug() << "Audio_playback error...";
+    while ((!p->decoded_buffer.isEmpty()) && (bytes_read <= 400)){
+        data[bytes_read++] = p->decoded_buffer.dequeue();
     }
-    if (!has_more) p->decoded_buffer_played = true;
     return bytes_read;
  }
 
  qint64 Audio_playback::writeData(const char *data, qint64 len){
      Q_UNUSED(data)
      Q_UNUSED(len)
+     return 0;
  }
 
 Audio::Audio(void * codec) {
@@ -118,12 +109,6 @@ void Audio::set_src_ratio(double ratio){
 }
 
 void Audio::initialize_audio(int buffer_size) {
-    qDebug() << "initialize_audio " << buffer_size;
-
-    if ( (buffer_size*6*4) < CODEC2_SAMPLES_PER_FRAME*8)
-        decoded_buffer.resize(CODEC2_SAMPLES_PER_FRAME*8); // To cater to 8 frames of codec2
-    else decoded_buffer.resize(buffer_size*6*4);  // To cater to 2 channels and 16 bits and 48khz rate
-
     init_decodetable();
 }
 
@@ -322,15 +307,12 @@ int Audio::get_audio_encoding() {
 
 void Audio::process_audio(char* header,char* buffer,int length) {
 
-    if (decoded_buffer_played){
-        if (audio_encoding == 0) aLawDecode(buffer,length);
-        else if (audio_encoding == 1) pcmDecode(buffer,length);
-        else if (audio_encoding == 2) codec2Decode(buffer,length);
-        else {
-            qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
-        }
+    if (audio_encoding == 0) aLawDecode(buffer,length);
+    else if (audio_encoding == 1) pcmDecode(buffer,length);
+    else if (audio_encoding == 2) codec2Decode(buffer,length);
+    else {
+        qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
     }
-    decoded_buffer_played = false;
 
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);
@@ -379,8 +361,6 @@ void Audio::resample(int no_of_samples){
     short v;
     int rc;
 
-    decoded_buffer.clear();
-
     sr_data.data_in = buffer_in;
     sr_data.data_out = buffer_out;
     sr_data.input_frames = no_of_samples;
@@ -395,12 +375,12 @@ void Audio::resample(int no_of_samples){
             v = buffer_out[i]*32767.0;
             switch(audio_byte_order) {
             case QAudioFormat::LittleEndian:
-                decoded_buffer.append((char)(v&0xFF));
-                decoded_buffer.append((char)((v>>8)&0xFF));
+                decoded_buffer.enqueue((char)(v&0xFF));
+                decoded_buffer.enqueue((char)((v>>8)&0xFF));
                 break;
             case QAudioFormat::BigEndian:
-                decoded_buffer.append((char)((v>>8)&0xFF));
-                decoded_buffer.append((char)(v&0xFF));
+                decoded_buffer.enqueue((char)((v>>8)&0xFF));
+                decoded_buffer.enqueue((char)(v&0xFF));
                 break;
             }
         }
