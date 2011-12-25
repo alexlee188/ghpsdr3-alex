@@ -23,6 +23,13 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
+* These commands return what needs to be sent to the client, while sending 
+* the correct commands to the the usbsoftrock interface in operations.c 
+* or whatever the client requested.
+* 
+* This file contains code to use the code to do various functions that
+* the client has asked to happen in the transceiver.  Sometimes the actual
+* operations occur in the si570 control code in operations.c 
 */
 
 

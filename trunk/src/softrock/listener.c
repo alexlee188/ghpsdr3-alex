@@ -23,7 +23,13 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
-* This is the listener thread that listens for TCP connections from QtRadio, etc.
+* This is the listener thread that listens for TCP connections from dspserver.
+* For a better understanding of the archatecture, see:
+* http://openhpsdr.org/wiki/index.php?title=Ghpsdr3
+* Some tutorial info for those not familiar with posix threads is at:
+* https://computing.llnl.gov/tutorials/pthreads/
+* and a good socket tutorial is at:
+* http://www.linuxhowtos.org/C_C++/socket.htm
 */
 
 
@@ -107,6 +113,8 @@ void* listener_thread(void* arg) {
 	fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
 
         rc=pthread_create(&client->thread_id,NULL,client_thread,(void *)client);
+		// Go to client.c to see the thread that is created here when we get
+		// a connection from a client.
         if(rc<0) {
             perror("pthread_create command_thread failed");
             exit(1);

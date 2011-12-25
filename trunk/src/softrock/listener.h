@@ -22,6 +22,9 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
+* This is the listener thread that listens for TCP connections from dspserver.
+* For a better understanding of the archatecture, see:
+* http://openhpsdr.org/wiki/index.php?title=Ghpsdr3
 */
 
 #define LISTEN_PORT 11000

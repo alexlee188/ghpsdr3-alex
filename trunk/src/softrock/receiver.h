@@ -22,6 +22,9 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
+* * This file contains code to use the code to do various functions that
+* the client has asked to happen in the transceiver.  Sometimes the actual
+* operations occur in the si570 control code in operations.c 
 */
 
 #if !defined __RECEIVER_H__

@@ -23,6 +23,13 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
+* This client stuff is what happens when a client is connected (see listener.c).
+* The client_thread is created in listener.c when a client connects.  The client
+* is a dspserver or perhaps in the future ghpsdr or monitor, but it is not 
+* directly Qtradio (only through dspserver).
+* See for example:
+* http://openhpsdr.org/wiki/index.php?title=Ghpsdr3
+* 
 */
 
 
@@ -44,7 +51,7 @@ void* client_thread(void* arg) {
     char* response;
 
     fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
-
+	
     client->state=RECEIVER_DETACHED;
 
     while(1) {
@@ -55,7 +62,7 @@ void* client_thread(void* arg) {
         command[bytes_read]=0;
         response=parse_command(client,command);
         send(client->socket,response,strlen(response),0);
-	fprintf(stderr,"response: '%s'\n",response);
+		fprintf(stderr,"response: '%s'\n",response);
     }
 
     if(client->state==RECEIVER_ATTACHED) {
@@ -65,117 +72,115 @@ void* client_thread(void* arg) {
 
     close(client->socket);
     fprintf(stderr,"client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
-
+	
     free(client);
     return 0;
 }
 
 char* parse_command(CLIENT* client,char* command) {
-    
-    char* token;
+	// Commands from the client are parsed here to 
+	// produce a response to be sent back to the 
+	// client.
+	char* token;
 
-    fprintf(stderr,"parse_command: '%s'\n",command);
+	fprintf(stderr,"parse_command: '%s'\n",command);
 
-    token=strtok(command," \r\n");
-    if(token!=NULL) {
-        if(strcmp(token,"attach")==0) {
-            // select receiver
-            token=strtok(NULL," \r\n");
-            if(token!=NULL) {
-                int rx=atoi(token);
-                return attach_receiver(rx,client);
-            } else {
-                return INVALID_COMMAND;
-            }
-        } else if(strcmp(token,"detach")==0) {
-            // select receiver
-            token=strtok(NULL," \r\n");
-            if(token!=NULL) {
-                int rx=atoi(token);
-                return detach_receiver(rx,client);
-            } else {
-                return INVALID_COMMAND;
-            }
-        } else if(strcmp(token,"frequency")==0) {
-            // set frequency
-            token=strtok(NULL," \r\n");
-            if(token!=NULL) {
-               long f=atol(token);
-               return set_frequency(client,f);
-            } else {
-                return INVALID_COMMAND;
-            }
-/*****************************************************************************/
-	} else if(strcmp(token,"mox")==0) {
-            // set ptt
-            token=strtok(NULL," \r\n");
-            if(token!=NULL) {
-               int p=atoi(token);
-               return set_ptt(client,p);
-            } else {
-                return INVALID_COMMAND;
-            }
-/*****************************************************************************/
-        } else if(strcmp(token,"start")==0) {
-            token=strtok(NULL," \r\n");
-            if(token!=NULL) {
-                if(strcmp(token,"iq")==0) {
-                    token=strtok(NULL," \r\n");
-                    if(token!=NULL) {
-                        client->iq_port=atoi(token);
-                    	}
-		    }
-#ifdef JACKAUDIO
-		if(softrock_get_jack() == 0) 
-#endif
-		{ //not running jack audio
-                    if(pthread_create(&receiver[client->receiver].audio_thread_id,NULL,audio_thread,&receiver[client->receiver])!=0) {
-                        fprintf(stderr,"failed to create audio thread for tx %d\n",client->receiver);
-                        exit(1);
-                    }
-                    return OK;
-                } else if(strcmp(token,"bandscope")==0) {
-                    token=strtok(NULL," \r\n");
-                    if(token!=NULL) {
-                        client->bs_port=atoi(token);
-                    }
-                    return OK;
-                } else {
-                    // invalid command string
-                    return INVALID_COMMAND;
-                }
-            } else {
-                // invalid command string
-                return INVALID_COMMAND;
-            }
-        } else if(strcmp(token,"stop")==0) {
-            token=strtok(NULL," \r\n");
-            if(token!=NULL) {
-                if(strcmp(token,"iq")==0) {
-                    token=strtok(NULL," \r\n");
-                    if(token!=NULL) {
-                        client->iq_port=-1;
-                    }
-                    return OK;
-                } else if(strcmp(token,"bandscope")==0) {
-                    client->bs_port=-1;
-                } else {
-                    // invalid command string
-                    return INVALID_COMMAND;
-                }
-            } else {
-                // invalid command string
-                return INVALID_COMMAND;
-            }
-        } else {
-            // invalid command string
-            return INVALID_COMMAND;
-        }
-    } else {
-        // empty command string
-        return INVALID_COMMAND;
-    }
-    return 0;
+	token=strtok(command," \r\n");
+	if(token!=NULL) {
+		if(strcmp(token,"attach")==0) {
+			// select receiver
+			token=strtok(NULL," \r\n");
+			if(token!=NULL) {
+				int rx=atoi(token);
+				return attach_receiver(rx,client);
+			} else {
+				return INVALID_COMMAND;
+			}
+		} else if(strcmp(token,"detach")==0) {
+			// select receiver
+			token=strtok(NULL," \r\n");
+			if(token!=NULL) {
+				int rx=atoi(token);
+				return detach_receiver(rx,client);
+			} else {
+				return INVALID_COMMAND;
+			}
+		} else if(strcmp(token,"frequency")==0) {
+			// set frequency
+			token=strtok(NULL," \r\n");
+			if(token!=NULL) {
+				long f=atol(token);
+				return set_frequency(client,f);
+			} else {
+				return INVALID_COMMAND;
+			}
+			/*****************************************************************************/
+		} else if(strcmp(token,"mox")==0) {
+			// set ptt
+			token=strtok(NULL," \r\n");
+			if(token!=NULL) {
+				int p=atoi(token);
+				return set_ptt(client,p);
+			} else {
+				return INVALID_COMMAND;
+			}
+			/*****************************************************************************/
+		} else if(strcmp(token,"start")==0) {
+			token=strtok(NULL," \r\n");
+			if(token!=NULL) {
+				if(strcmp(token,"iq")==0) {
+					token=strtok(NULL," \r\n");
+					if(token!=NULL) {
+						client->iq_port=atoi(token);
+					}
+				}
+				if(pthread_create(&receiver[client->receiver].audio_thread_id,NULL,audio_thread,&receiver[client->receiver])!=0) {
+					if (softrock_get_verbose()) fprintf(stderr,"failed to create audio thread for tx %d\n",client->receiver);
+					exit(1);
+				}
+				return OK;
+			 if(strcmp(token,"bandscope")==0) {
+				token=strtok(NULL," \r\n");
+				if(token!=NULL) {
+					client->bs_port=atoi(token);
+				}
+				return OK;
+				} else {
+					// invalid command string
+					return INVALID_COMMAND;
+				}
+			} else {
+				// invalid command string
+				return INVALID_COMMAND;
+			}
+		} else if(strcmp(token,"stop")==0) {
+			token=strtok(NULL," \r\n");
+			if(token!=NULL) {
+				if(strcmp(token,"iq")==0) {
+					token=strtok(NULL," \r\n");
+					if(token!=NULL) {
+						client->iq_port=-1;
+					}
+					return OK;
+				} else if(strcmp(token,"bandscope")==0) {
+					client->bs_port=-1;
+				} else {
+					// invalid command string
+					return INVALID_COMMAND;
+				}
+			} else {
+				// invalid command string
+				return INVALID_COMMAND;
+			}
+		} else {
+			// invalid command string
+			return INVALID_COMMAND;
+		}
+	} else {
+		// empty command string
+		return INVALID_COMMAND;
+	}
+	return 0;
 }
 
 					
@@ -187,9 +192,15 @@ void* audio_thread(void* arg) {
     int old_state, old_type;
     int bytes_read;
     int on=1;
+	int error_no;
+	int  pipe_left = *softrock_get_jack_write_pipe_left(rx->client->receiver);
+	int  pipe_right = *softrock_get_jack_write_pipe_right(rx->client->receiver);
+	int num_bytes = sizeof(float)*BUFFER_SIZE;
+	int blocked_num = 0;
+static int second_time = 0;
 
     if (softrock_get_verbose()) fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
-
+	
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);
 
@@ -211,6 +222,8 @@ void* audio_thread(void* arg) {
         exit(1);
     }
 
+	
+	
     if (softrock_get_verbose()) fprintf(stderr,"listening for tx %d IQ audio on port %d\n",rx->id,audio_port+(rx->id*2));
 
     while(1) {
@@ -220,15 +233,34 @@ void* audio_thread(void* arg) {
             perror("recvfrom socket failed for audio buffer");
             exit(1);
         }
-
-/*
-#ifdef JACKAUDIO
-	if(softrock_get_jack () == 1) 
-#endif
-*/
-	{
-        process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
-	}
+		if (softrock_get_jack () == 1) { 
+			if (second_time == 32) {// This is for testing only.  It will fail the second connection from QtRadio.
+				softrock_set_client_active_rx(rx->client->receiver, ADD_RX);	
+			}
+			second_time++;
+			if ( second_time == 4000 ) {
+				fprintf(stderr, "reached 4000.\n");
+				exit(0);
+			}
+			//fprintf(stderr,"client.c pipe_left is: %d \n",pipe_left);
+			//fprintf(stderr,"rx->client->receiver is: %d\n",rx->client->receiver);
+			error_no = write(pipe_left, &rx->output_buffer[0], num_bytes);
+			if (error_no == -1) {
+				if ( softrock_get_verbose () == 1) perror("There were problems writing the left pipe for Jack in client.c");
+				//fprintf(stderr, "Note: resource temporarilly unavailable indicates write would have blocked.  , blocked %d times\n",blocked_num);
+				fprintf(stderr, "blocked %d times\nwritten %d times\n",blocked_num,second_time);
+				blocked_num++;
+			}
+			else //fprintf(stderr,"Wrote %d bytes on left channel.\n",num_bytes);
+			error_no = write(pipe_right, &rx->output_buffer[BUFFER_SIZE], num_bytes);
+			if (error_no == -1) {
+				if ( softrock_get_verbose () == 1) perror("There were problems writing the right pipe for Jack in client.c.");
+				fprintf(stderr, "Note: resource temporarilly unavailable indicates write would have blocked.\n");
+			}
+		} else {
+        	process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
+		}
     }
+	softrock_set_client_active_rx (rx->client->receiver, DEC_RX); 
 }
 

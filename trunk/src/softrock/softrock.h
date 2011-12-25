@@ -30,7 +30,21 @@
 //#define PORTAUDIO
 //#define DIRECTAUDIO
 #define JACKAUDIO
- 
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#define _GNU_SOURCE  /* See feature_test_macros(7) */
+#include <unistd.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <jack/ringbuffer.h>
+
+#define ADD_RX 1
+#define DEC_RX -1
+
 int create_softrock_thread(void);
 void softrock_set_device(char* d);
 char* softrock_get_device(void);
@@ -54,6 +68,12 @@ void softrock_playback_buffer(char* buffer,int length);
 
 void softrock_set_jack(int flag);
 int softrock_get_jack(void);
+int * softrock_get_jack_read_pipe_left(int rx);
+int * softrock_get_jack_read_pipe_right(int rx);
+int * softrock_get_jack_write_pipe_left(int rx);
+int * softrock_get_jack_write_pipe_right(int rx);
+void softrock_set_client_active_rx(int receiver, int inc);
+int softrock_get_client_active_rx(int receiver);
 
 void softrock_set_rx_frame(int frame);
 int softrock_get_rx_frame(void);

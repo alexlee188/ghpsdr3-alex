@@ -1,9 +1,11 @@
 /**
-* @file ozyio.c
-* @brief USB I/O with Ozy
+* @file softrockio.c
+* @brief I/O using sound card
 * @author John Melton, G0ORX/N6LYT
+* Alex Lee, 9V1AL
+* et. al.
 * @version 0.1
-* @date 2009-10-13
+* @date 2011-11-17
 */
 
 
@@ -94,10 +96,10 @@ int softrock_open(void) {
     int devices;
     int i;
     PaDeviceInfo* deviceInfo;
-if (softrock_get_verbose())  fprintf(stderr,"softrock_open: portaudio\n");
+	if (softrock_get_verbose())  fprintf(stderr,"softrock_open: portaudio\n");
 #endif
 #ifdef DIRECTAUDIO
-if (softrock_get_verbose())  fprintf(stderr,"softrock_open: %s\n",softrock_get_device());
+	if (softrock_get_verbose())  fprintf(stderr,"softrock_open: %s\n",softrock_get_device());
 #endif
 
     if(softrock_get_playback()) {
@@ -227,7 +229,7 @@ if (softrock_get_verbose())  fprintf(stderr,"softrock_open: %s\n",softrock_get_d
         perror("unable to set number of channels");
 
     arg = softrock_get_sample_rate();      /* sampling rate */
-if (softrock_get_verbose()) fprintf(stderr,"sample_rate: %d\n",arg);
+	if (softrock_get_verbose()) fprintf(stderr,"sample_rate: %d\n",arg);
     status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
     if (status == -1)
         perror("SOUND_PCM_WRITE_WRITE ioctl failed");

@@ -23,7 +23,8 @@
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
 * This file contains the Jack initialization and callback that gets data to
-* and from Jack.
+* and from Jack.  This file is used in place of the code in softrockio.c 
+* when Jack is used instead of direct audio (oss), portaudio, or pulse audio.
 */
 
 #include "jackio.h"
@@ -39,13 +40,17 @@ int init_jack_audio()
 	const char * capture_rx_port_name[2*MAX_RECEIVERS] = {"system:capture_1","system:capture_2",
 		"system:capture_3","system:capture_4","system:capture_5","system:capture_6",
 		"system:capture_7","system:capture_8"};
-	const char * playback_tx_port_name[2] = {"system:playback_1","system:playback_2"};
+	const char * playback_tx_port_name[2*MAX_RECEIVERS] = {"system:playback_1","system:playback_2",
+		"system:playback_3","system:playback_4","system:playback_5","system:playback_6",
+		"system:playback_7","system:playback_8"};
 	const char * softrock_rx_port_name_left[MAX_RECEIVERS] = {"Softrock RX Port_1_left",
 		"Softrock RX Port_2_left","Softrock RX Port_3_left","Softrock RX Port_4_left",};
 	const char * softrock_rx_port_name_right[MAX_RECEIVERS] = {"Softrock RX Port_1_right",
 		"Softrock RX Port_2_right","Softrock RX Port_3_right","Softrock RX Port_4_right"};
-	const char * softrock_tx_port_name_left = "Softrock TX Port_left";
-	const char * softrock_tx_port_name_right = "Softrock TX Port_right";
+	const char * softrock_tx_port_name_left[MAX_RECEIVERS] = {"Softrock TX Port_1_left",
+		"Softrock TX Port_2_left","Softrock TX Port_3_left","Softrock TX Port_4_left",};
+	const char * softrock_tx_port_name_right[MAX_RECEIVERS] = {"Softrock TX Port_1_right",
+		"Softrock TX Port_2_right","Softrock TX Port_3_right","Softrock TX Port_4_right"};
 
 	frame = softrock_get_rx_frame ();
 	buffers = softrock_get_input_buffers();
@@ -86,23 +91,21 @@ int init_jack_audio()
 			jack_cleanup();
 			return 1;
 		}
-	}
-
-	//Create and register new audio output ports.
-	audio_output_port_left = jack_port_register(softrock_client, softrock_tx_port_name_left, 
+		//Create and register new audio output ports.
+		audio_output_port_left[r] = jack_port_register(softrock_client, softrock_tx_port_name_left[r], 
 		                                           JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
-	if (audio_output_port_left == NULL) {
-		fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_tx_port_name_left);
-		jack_cleanup();
-		return 1;
-	}
-	audio_output_port_right = jack_port_register(softrock_client, softrock_tx_port_name_right, 
+		if (audio_output_port_left[r] == NULL) {
+			fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_tx_port_name_left[r]);
+			jack_cleanup();
+			return 1;
+		}
+		audio_output_port_right[r] = jack_port_register(softrock_client, softrock_tx_port_name_right[r], 
 		                                            JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
-	if (audio_output_port_right == NULL) {
-		fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_tx_port_name_right);
-		jack_cleanup();
-		return 1;
-	}
+		if (audio_output_port_right[r] == NULL) {
+			fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_tx_port_name_right[r]);
+			jack_cleanup();
+			return 1;
+		}
 	
 	//Tell the jackd server what function call when it wants more audio data.
 	if((error = jack_set_process_callback(softrock_client, process,0)) != 0) { 
@@ -111,6 +114,9 @@ int init_jack_audio()
 		return 1;
 	}
 
+	}
+
+	
 	//Tell jack it's ok to start asking us for audio data.
 	if((error = jack_activate(softrock_client)) != 0) {
 		fprintf(stderr, "Jack could not activate the client (error %i).\n", error);
@@ -119,8 +125,9 @@ int init_jack_audio()
 	}
 	else if(softrock_get_verbose()) fprintf(stderr,"Activated client.\n");
 
-	//Connect the rx ports.
+	//Connect the ports.
 	for(r=0;r < softrock_get_receivers();r++) {
+		//Connect the rx ports.
 		if (jack_connect (softrock_client,capture_rx_port_name[2*r], jack_port_name (audio_input_port_left[r]))) {
 			fprintf (stderr, "Cannot connect to port: %s\n",capture_rx_port_name[2*r]);
 		}
@@ -129,16 +136,16 @@ int init_jack_audio()
 			fprintf (stderr, "Cannot connect to port:  %s\n",capture_rx_port_name[2*r+1]);
 		}
 		else if(softrock_get_verbose()) fprintf(stderr, "Connected to port:   %s\n",capture_rx_port_name[2*r+1]);
+		//Connect the tx ports.
+		if (jack_connect (softrock_client,jack_port_name (audio_output_port_left[r]), playback_tx_port_name[2*r])) {
+			fprintf (stderr, "Cannot connect to port: %s\n",playback_tx_port_name[2*r]);
+		}
+		else if(softrock_get_verbose()) fprintf(stderr, "Connected to port: %s\n",playback_tx_port_name[2*r]);
+		if (jack_connect (softrock_client,jack_port_name (audio_output_port_right[r]), playback_tx_port_name[2*r+1])) {
+			fprintf (stderr, "Cannot connect to port:  %s\n",playback_tx_port_name[2*r+1]);
+		}
+		else if(softrock_get_verbose()) fprintf(stderr, "Connected to port:   %s\n",playback_tx_port_name[2*r+1]);
 	}
-	//Connect the tx ports.
-	if (jack_connect (softrock_client,jack_port_name (audio_output_port_left), playback_tx_port_name[0])) {
-		fprintf (stderr, "Cannot connect to port: %s\n",playback_tx_port_name[0]);
-	}
-	else if(softrock_get_verbose()) fprintf(stderr, "Connected to port: %s\n",playback_tx_port_name[0]);
-	if (jack_connect (softrock_client,jack_port_name (audio_output_port_right), playback_tx_port_name[1])) {
-		fprintf (stderr, "Cannot connect to port:  %s\n",playback_tx_port_name[1]);
-	}
-	else if(softrock_get_verbose()) fprintf(stderr, "Connected to port:   %s\n",playback_tx_port_name[1]);
 	return 0;
 }
 
@@ -164,22 +171,25 @@ int process(jack_nframes_t number_of_frames, void* arg)
 {
 	// Start out with current_receiver = 0 (one receiver) fix later.
 	jack_nframes_t i;
-	int r;
+	int r, bytes_read;
 	jack_default_audio_sample_t *sample_buffer_left[MAX_RECEIVERS];
 	jack_default_audio_sample_t *sample_buffer_right[MAX_RECEIVERS];
+	jack_default_audio_sample_t *out_buffer_left[MAX_RECEIVERS]; 
+	jack_default_audio_sample_t *out_buffer_right[MAX_RECEIVERS]; 
+	int pipe_left[MAX_RECEIVERS][2];
+	int pipe_right[MAX_RECEIVERS][2];
+	static int stop_print = 0, num_blocked = 0;
 
 	softrock_set_rx_frame (frame + 1);
 	softrock_set_input_buffers(buffers +1);
-	//rx_frame++;
-	//input_buffers++;
 
-	float *left_samples, *right_samples;
+	float *left_samples, *right_samples, *left_tx_samples, *right_tx_samples;
 
 	for ( r = 0; r < softrock_get_receivers(); r++ ) {
 		sample_buffer_left[r] = 
-				(jack_default_audio_sample_t *) jack_port_get_buffer(audio_input_port_left[r], number_of_frames);
+			(jack_default_audio_sample_t *) jack_port_get_buffer(audio_input_port_left[r], number_of_frames);
 		sample_buffer_right[r] = 
-				(jack_default_audio_sample_t *) jack_port_get_buffer(audio_input_port_right[r], number_of_frames);
+			(jack_default_audio_sample_t *) jack_port_get_buffer(audio_input_port_right[r], number_of_frames);
 		left_samples = &receiver[r].input_buffer[0];
 		right_samples = &receiver[r].input_buffer[BUFFER_SIZE];
 		if(softrock_get_iq()) {
@@ -196,6 +206,60 @@ int process(jack_nframes_t number_of_frames, void* arg)
 			}
 		}
 		send_IQ_buffer(r);
+	
+		// Now do the tx part (send output IQ data from the dspserver client to
+		// the audio out jacks.
+		if (softrock_get_client_active_rx (r) > 0) {
+			
+			int size = sizeof(float)*number_of_frames;
+			//fprintf(stderr,"Made it to read tx\n");
+
+			sample_buffer_left[r] = 
+				(jack_default_audio_sample_t *) jack_port_get_buffer(audio_output_port_left[r], number_of_frames);
+			sample_buffer_right[r] = 
+				(jack_default_audio_sample_t *) jack_port_get_buffer(audio_output_port_right[r], number_of_frames);
+			left_tx_samples = &receiver[r].output_buffer[0];
+			right_tx_samples = &receiver[r].output_buffer[BUFFER_SIZE];
+			if (stop_print == 0) {
+				fprintf(stderr,"jackio.c *softrock get jack pipe left(r) is: %d \n",*softrock_get_jack_read_pipe_left(r));
+				fprintf(stderr,"jackio.c r : %d\n",r);
+			}
+			if(softrock_get_iq()) {
+				/*for(i=0;i<number_of_frames;i++) {
+					sample_buffer_left[r][i] = (jack_default_audio_sample_t)left_tx_samples[i];
+					sample_buffer_right[r][i] = (jack_default_audio_sample_t)right_tx_samples[i];
+				}*/
+				bytes_read = read(*softrock_get_jack_read_pipe_left(r),sample_buffer_left[r],size);
+				//fprintf(stderr,"Read %d bytes on left.\n", bytes_read);
+				if (bytes_read != size) {
+					fprintf(stderr,"In process, number read  %d  number blocked  %d \n", stop_print, num_blocked);
+					if ( bytes_read == -1) { perror("Read");  
+						num_blocked++;
+					}
+					else fprintf(stderr,"There was a problem reading from the left pipe.  Read %d bytes.\n", bytes_read);	
+				}
+				bytes_read = read(*softrock_get_jack_read_pipe_right(r),sample_buffer_right[r],size);
+				if (bytes_read != size) {
+					if (bytes_read == -1) perror("Read");
+					else fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes. \n", bytes_read);
+				}
+			} else {
+				/*for(i=0;i<number_of_frames;i++) {
+					sample_buffer_left[r][i] = (jack_default_audio_sample_t)right_tx_samples[i];
+					sample_buffer_right[r][i] = (jack_default_audio_sample_t)left_tx_samples[i];
+			}*/
+				bytes_read = read(*softrock_get_jack_read_pipe_left(r),sample_buffer_right[r],size);
+				if (bytes_read  != size) {
+					//fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
+				}
+				bytes_read = read(*softrock_get_jack_read_pipe_right(r),sample_buffer_left[r],size);
+				if (bytes_read != size) {
+					//fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
+				}
+			}
+			stop_print++;
+		} 
+
 	}
 
 	return 0;

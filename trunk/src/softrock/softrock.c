@@ -27,13 +27,7 @@
 * are for the flags that are set by the command line arguements set in server.c.
 */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <pthread.h>
+
 
 #include "client.h"
 #include "softrock.h"
@@ -50,8 +44,12 @@ static int rx_frame=0;
 //static int tx_frame=0;
 static int receivers=1;
 static int current_receiver=0;
+static int active_rx[MAX_RECEIVERS] = {0,0,0,0}; // This flag tells how many clients are using each rx
+// using this receiver.
 
 static int use_jack=0;
+int pipe_handle_left[MAX_RECEIVERS][2];
+int pipe_handle_right[MAX_RECEIVERS][2];
 
 static int speed=0;
 static int sample_rate=48000;
@@ -106,14 +104,36 @@ int create_softrock_thread() {
 	}
 #ifdef JACKAUDIO //(Using callback)
 	else {
+		for (int i = 0; i < softrock_get_receivers ();i++) {
+			if (pipe2(&(pipe_handle_left[i][0]),O_NONBLOCK) == -1) { // Perhaps make O_NONBLOCK and use perror, see man -s 2,7 pipe
+				if (softrock_get_verbose ()) perror( "Problem opening left pipe for Jack transmit for receiver.\n");
+			}
+			else {
+				if (softrock_get_verbose ()) fprintf(stderr, "Left pipe for receiver %d for Jack transmit open.\n",i);
+				//fcntl(pipe_handle_left[i][1], F_SETFL, O_NONBLOCK);
+			}
+			if (pipe2(&(pipe_handle_right[i][0]),O_NONBLOCK) != 0) {
+				if (softrock_get_verbose ()) perror( "Problem opening right pipe for Jack transmit for receiver.\n");
+			}
+			else {
+				if (softrock_get_verbose ()) fprintf(stderr, "Right pipe for receiver %d for Jack transmit open.\n",i);
+				//fcntl(pipe_handle_right[i][1], F_SETFL, O_NONBLOCK);
+			}	
+		}
+		fprintf(stderr,"Softrock.c &pipe_handle_left[0][0] is: %d \n",&pipe_handle_left[0][0]);
+		//fprintf(stderr,"Softrock.c &pipe_handle_left[3][1] is: %d \n",&pipe_handle_left[3][1]);
+		fprintf(stderr,"Softrock.c &pipe_handle_left[0][1] is: %d \n",&pipe_handle_left[0][1]);
+		fprintf(stderr,"Softrock.c pipe_handle_left[0][0] is: %d \n",pipe_handle_left[0][0]);
+		fprintf(stderr,"Softrock.c pipe_handle_left[0][1] is: %d \n",pipe_handle_left[0][1]);
 		if (init_jack_audio() != 0) {
 			if(verbose) fprintf(stderr, "There was a problem initializing Jack Audio.\n");
+			// Jack uses a callback that reads the output of this pipe.
 			return 1;
 		}
-		else
-			{
-				return 0;
-			}
+		else{
+			return 0;
+		}
+
 	}
 #endif			
 }
@@ -169,6 +189,37 @@ int softrock_get_jack() {
     return use_jack;
 }
 
+int * softrock_get_jack_read_pipe_left(int rx) {
+	return &pipe_handle_left[rx][0];
+}
+
+int * softrock_get_jack_write_pipe_left(int rx) {
+	return &pipe_handle_left[rx][1];
+}
+
+int * softrock_get_jack_read_pipe_right(int rx) {
+	return &pipe_handle_right[rx][0];
+}
+
+ int * softrock_get_jack_write_pipe_right(int rx) {
+	return &pipe_handle_right[rx][1];
+}
+
+void softrock_set_client_active_rx(int receiver, int inc) {
+	active_rx[receiver] = active_rx[receiver] + inc; // keep track of active receivers.
+	fprintf(stderr,"rx %d active %d times.\n",receiver, active_rx[receiver]);
+	if ((active_rx[receiver] < -1) || (active_rx[receiver] > MAX_RECEIVERS)) {
+		if (softrock_get_verbose () == 1) 
+			fprintf(stderr, "Somehow receiver counting is off!\n");
+		exit(1);
+	}
+	else return;
+}
+
+int softrock_get_client_active_rx(int receiver) {
+	return active_rx[receiver];
+}
+	
 void softrock_set_rx_frame(int frame) {
 	rx_frame = frame;
 }
@@ -321,7 +372,7 @@ void softrock_playback_buffer(char* buffer,int length) {
     }
 }
 
-//#ifndef JACKAUDIO
+
 void* softrock_io_thread(void* arg) {
 #if (defined PULSEAUDIO || defined PORTAUDIO)
     int rc;
@@ -377,7 +428,7 @@ void* softrock_io_thread(void* arg) {
         }
     }
 }
-//#endif
+
 
 #ifdef DIRECTAUDIO
 void process_softrock_input_buffer(char* buffer) {
@@ -433,9 +484,12 @@ void process_softrock_output_buffer(float* left_output_buffer,float* right_outpu
     softrock_write(left_output_buffer,right_output_buffer);
 }
 #endif
+
 #ifdef PORTAUDIO
 void process_softrock_output_buffer(float* left_output_buffer,float* right_output_buffer) {
-
+	
+	//left first (even indices), then right channel (odd indices)
+	write(
     softrock_write(left_output_buffer,right_output_buffer);
     
 }
