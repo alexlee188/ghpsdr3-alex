@@ -69,6 +69,8 @@
 #include "vfo.h"
 #include "rigctl.h"
 #include "ctl.h"
+#include "G711A.h"
+#include "RTP.h"
 
 
 #define DSPSERVER_BASE_PORT 8000
@@ -77,6 +79,10 @@
 #define AGC_SLOW 2
 #define AGC_MEDIUM 3
 #define AGC_FAST 4
+
+#define MIC_BUFFER_SIZE 400
+#define MIC_NO_OF_FRAMES 4      // need to ensure this is the same value in dspserver
+#define MIC_ENCODED_BUFFER_SIZE (BITS_SIZE*MIC_NO_OF_FRAMES)
 
 class UI : public QMainWindow {
     Q_OBJECT
@@ -209,6 +215,8 @@ public slots:
     void micDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void micSendAudio(QQueue<qint16>*);
 
+    void setRTP(bool state);
+
     void setSubRxGain(int gain);
 
     void frequencyMoved(int increment,int step);
@@ -248,6 +256,8 @@ public slots:
     void printStatusBar(QString message);
 
     void audioBufferProcessed();
+
+    void setRemote(char* host,int port);
 
 signals:
     void subRxStateChanged(bool state);
@@ -291,6 +301,17 @@ private:
     int mic_buffer_count;       // counter of mic_buffer, to encode if reaches CODEC2_SAMPLE_PER_FRAME
     int mic_frame_count;        // counter of mic_buffer, to encode enough frames before sending
 
+#if CODEC2_SAMPLES_PER_FRAME > MIC_BUFFER_SIZE
+    qint16 mic_buffer[CODEC2_SAMPLES_PER_FRAME];
+#else
+    qint16 mic_buffer[MIC_BUFFER_SIZE];
+#endif
+#if MIC_ENCODED_BUFFER_SIZE > MIC_BUFFER_SIZE
+    unsigned char mic_encoded_buffer[MIC_ENCODED_BUFFER_SIZE];
+#else
+    unsigned char mic_encoded_buffer[MIC_BUFFER_SIZE];
+#endif
+    unsigned char *rtp_send_buffer;
     long long subRxFrequency;
     Connection connection;
     bool connection_valid;
@@ -343,6 +364,12 @@ private:
     bool squelch;
     float squelchValue;
     bool modeFlag; //Signals mode is changed from main menu
+
+    G711A g711a;
+    RTP rtp;
+    bool useRTP;
+
+    int tuning;
 };
 
 #endif	/* _UI_H */

@@ -35,8 +35,8 @@ typedef struct _receiver {
     CLIENT* client;
     int frequency_changed;
     long frequency;
-    float input_buffer[BUFFER_SIZE*2];
-    float output_buffer[BUFFER_SIZE*2];
+    float input_buffer[BUFFER_SIZE*3]; // I, Q, Mic
+    float output_buffer[BUFFER_SIZE*4]; // Left Audio, Right Audio, Tx I, Tx Q
 } RECEIVER;
 
 RECEIVER receiver[MAX_RECEIVERS];

@@ -39,7 +39,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="Server">
     <attribute name="title">
@@ -530,6 +530,19 @@
        <width>151</width>
        <height>27</height>
       </rect>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="rtpCheckBox">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>240</y>
+       <width>97</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Use RTP</string>
      </property>
     </widget>
    </widget>

@@ -65,7 +65,7 @@ static struct option long_options[] = {
 	{0, 0, 0, 0}
 };
 
-static char* short_options="s:d:i:o:vf:m:r:p:j";
+static char* short_options="s:d:i:o:v:f:m:r:p:j";
 static int option_index;
 
 int si570=0;
