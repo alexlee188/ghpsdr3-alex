@@ -193,7 +193,7 @@ void* audio_thread(void* arg) {
     int old_state, old_type;
     int bytes_read;
     int on=1;
-
+<<<<<<< HEAD
 	int error_no;
 	int  pipe_left = *softrock_get_jack_write_pipe_left(rx->client->receiver);
 	int  pipe_right = *softrock_get_jack_write_pipe_right(rx->client->receiver);
@@ -201,13 +201,18 @@ void* audio_thread(void* arg) {
 	int blocked_num = 0;
 static int second_time = 0;
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> daf2c1a490d8dc062e7e8635861016bf7cc1dae6
+=======
+=======
+>>>>>>> parent of daf2c1a... softrock: resolve merge conflict of jack code.  Compiled but not tested yet.
     BUFFER buffer;
     unsigned long sequence=0L;
     unsigned short offset=0;;
 
+>>>>>>> bdf88e7484fe1ec82cbf943217c4bf2ab2dbfa5e
 
     if (softrock_get_verbose()) fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 	
@@ -275,9 +280,12 @@ static int second_time = 0;
         }
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 #endif
 >>>>>>> daf2c1a490d8dc062e7e8635861016bf7cc1dae6
+=======
+>>>>>>> parent of daf2c1a... softrock: resolve merge conflict of jack code.  Compiled but not tested yet.
 		if (softrock_get_jack () == 1) { 
 			if (second_time == 32) {// This is for testing only.  It will fail the second connection from QtRadio.
 				softrock_set_client_active_rx(rx->client->receiver, ADD_RX);	
@@ -305,10 +313,15 @@ static int second_time = 0;
 		} else {
         	process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
 		}
+=======
+#endif
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 #endif
 
+=======
+>>>>>>> parent of daf2c1a... softrock: resolve merge conflict of jack code.  Compiled but not tested yet.
 /*
 #ifdef JACKAUDIO
 	if(softrock_get_jack () == 1) 
@@ -317,11 +330,16 @@ static int second_time = 0;
 	{
         process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
 	}
+<<<<<<< HEAD
 
     }
 =======
     	}
 >>>>>>> daf2c1a490d8dc062e7e8635861016bf7cc1dae6
+=======
+>>>>>>> bdf88e7484fe1ec82cbf943217c4bf2ab2dbfa5e
+    }
+>>>>>>> parent of daf2c1a... softrock: resolve merge conflict of jack code.  Compiled but not tested yet.
 	softrock_set_client_active_rx (rx->client->receiver, DEC_RX); 
 }
 
