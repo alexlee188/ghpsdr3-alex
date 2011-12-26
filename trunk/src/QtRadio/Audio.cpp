@@ -50,9 +50,20 @@ void Audio_playback::stop()
 qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
    int bytes_read = 0;
+   qint16 v;
 
     while ((!p->decoded_buffer.isEmpty()) && (bytes_read < maxlen)){
-        data[bytes_read++] = p->decoded_buffer.dequeue();
+        v = p->decoded_buffer.dequeue();
+        switch(p->audio_byte_order) {
+        case QAudioFormat::LittleEndian:
+            data[bytes_read++]=(char)(v&0xFF);
+            data[bytes_read++]=(char)((v>>8)&0xFF);
+            break;
+        case QAudioFormat::BigEndian:
+            data[bytes_read++]=(char)((v>>8)&0xFF);
+            data[bytes_read++]=(char)(v&0xFF);
+            break;
+        }
     }
     return bytes_read;
  }
@@ -371,16 +382,7 @@ void Audio::resample(int no_of_samples){
     else {
         for (i = 0; i < sr_data.output_frames_gen; i++){
             v = buffer_out[i]*32767.0;
-            switch(audio_byte_order) {
-            case QAudioFormat::LittleEndian:
-                decoded_buffer.enqueue((qint8)(v&0xFF));
-                decoded_buffer.enqueue((qint8)((v>>8)&0xFF));
-                break;
-            case QAudioFormat::BigEndian:
-                decoded_buffer.enqueue((qint8)((v>>8)&0xFF));
-                decoded_buffer.enqueue((qint8)(v&0xFF));
-                break;
-            }
+            decoded_buffer.enqueue(v);
         }
     }
 

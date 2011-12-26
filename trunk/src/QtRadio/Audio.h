@@ -73,7 +73,8 @@ public:
 //    Audio(const Audio& orig);
     virtual ~Audio();
     int get_audio_encoding();
-    QQueue <qint8> decoded_buffer;
+    QQueue <qint16> decoded_buffer;
+    QAudioFormat::Endian audio_byte_order;
 signals:
     void bufferProcessed(void);
 public slots:
@@ -105,7 +106,6 @@ private:
     double src_ratio;
     int sampleRate;
     int audio_channels;
-    QAudioFormat::Endian audio_byte_order;
     int audio_encoding;
     G711A g711a;
 };
