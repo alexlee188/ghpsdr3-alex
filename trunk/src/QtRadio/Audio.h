@@ -33,6 +33,7 @@
 #include <QtGui/QComboBox>
 #include <QMutex>
 #include <samplerate.h>
+#include <QThread>
 #include "G711A.h"
 
 #define AUDIO_BUFFER_SIZE 800
@@ -74,7 +75,6 @@ public:
     int get_audio_encoding();
     QQueue <qint16> decoded_buffer;
     QAudioFormat::Endian audio_byte_order;
-    bool isConnected;
 signals:
     void bufferProcessed(void);
 public slots:
@@ -86,8 +86,6 @@ public slots:
     void get_audio_devices(QComboBox* comboBox);
     void set_audio_encoding(int enc);
     void set_src_ratio(double ratio);
-    void set_connected(void);
-    void set_disconnected(void);
 
 private:
     void * codec2;
@@ -110,6 +108,7 @@ private:
     int audio_channels;
     int audio_encoding;
     G711A g711a;
+
 };
 
 

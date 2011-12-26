@@ -69,10 +69,6 @@ UI::UI(const QString server) {
     configure.initAudioDevices(audio);
     audio_buffer_count = 0;     // keeps track of how many audio buffers are in Audio's event queue
 
-    audio_thread = new QThread();
-    audio->moveToThread(audio_thread);
-    audio_thread->start(QThread::TimeCriticalPriority);
-
     mic_codec2 = codec2_create();
     audioinput = new AudioInput(0, mic_codec2); // separate codec2 state so both audio and audioinput
                                                 // can run concurrently in separate threads
@@ -112,8 +108,6 @@ UI::UI(const QString server) {
 
     connect(audio,SIGNAL(bufferProcessed()),this,SLOT(audioBufferProcessed()));
     connect(this,SIGNAL(set_src_ratio(double)),audio,SLOT(set_src_ratio(double)));
-    connect(&connection,SIGNAL(isConnected()),audio,SLOT(set_connected()));
-    connect(&connection,SIGNAL(disconnected(QString)),audio,SLOT(set_disconnected()));
 
     connect(widget.actionConfig,SIGNAL(triggered()),this,SLOT(actionConfigure()));
 

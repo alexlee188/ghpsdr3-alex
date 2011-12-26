@@ -50,12 +50,13 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
    qint64 bytes_read = 0;
    qint16 v;
+   qint64 bytes_to_read = maxlen > 400 ? 400 : maxlen;
 
    if (p->decoded_buffer.isEmpty()) {
-       memset(data, 0, maxlen);
-       bytes_read = maxlen;
+       memset(data, 0, bytes_to_read);
+       bytes_read = bytes_to_read;
    } else {
-       while ((!p->decoded_buffer.isEmpty()) && (bytes_read < maxlen)){
+       while ((!p->decoded_buffer.isEmpty()) && (bytes_read < bytes_to_read)){
            v = p->decoded_buffer.dequeue();
             switch(p->audio_byte_order) {
             case QAudioFormat::LittleEndian:
@@ -85,8 +86,6 @@ Audio::Audio(void * codec) {
     audio_encoding = 0;
     audio_channels=1;
     audio_byte_order=QAudioFormat::LittleEndian;
-
-    isConnected = false;
 
     qDebug() << "Audio: LittleEndian=" << QAudioFormat::LittleEndian << " BigEndian=" << QAudioFormat::BigEndian;
 
@@ -217,8 +216,8 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
     }
     sr_state = src_new (
                          //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
-                         SRC_SINC_MEDIUM_QUALITY,
-                         //SRC_SINC_FASTEST,
+                         //SRC_SINC_MEDIUM_QUALITY,
+                         SRC_SINC_FASTEST,
                          //SRC_ZERO_ORDER_HOLD,
                          //SRC_LINEAR,
                          audio_channels, &sr_error
@@ -320,13 +319,6 @@ int Audio::get_audio_encoding() {
     return audio_encoding;
 }
 
-void Audio::set_connected(){
-    isConnected = true;
-}
-
-void Audio::set_disconnected(){
-    isConnected = false;
-}
 
 void Audio::process_audio(char* header,char* buffer,int length) {
 
@@ -342,8 +334,7 @@ void Audio::process_audio(char* header,char* buffer,int length) {
 }
 
 void Audio::process_rtp_audio(char* buffer,int length) {
-    int written=0;
-    int length_to_write, total_to_write;
+    int total_to_write;
     char* decodedBuffer;
     int i;
     short v;

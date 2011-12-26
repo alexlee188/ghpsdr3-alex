@@ -282,7 +282,6 @@ private:
     Ui::UI widget;
 
     Audio* audio;
-    QThread * audio_thread;
     int audio_device;
     int audio_sample_rate;
     int audio_channels;
