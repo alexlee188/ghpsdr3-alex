@@ -270,7 +270,7 @@ static int second_time = 0;
             perror("recvfrom socket failed for audio buffer");
             exit(1);
         }
-<<<<<<< HEAD
+
 		if (softrock_get_jack () == 1) { 
 			if (second_time == 32) {// This is for testing only.  It will fail the second connection from QtRadio.
 				softrock_set_client_active_rx(rx->client->receiver, ADD_RX);	
