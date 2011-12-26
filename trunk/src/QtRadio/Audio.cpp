@@ -49,10 +49,9 @@ void Audio_playback::stop()
 
 qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
-    qint64 bytes_read = 0;
+   int bytes_read = 0;
 
-    if (maxlen < 400) qDebug() << "Audio_playback error...";
-    while ((!p->decoded_buffer.isEmpty()) && (bytes_read <= 400)){
+    while ((!p->decoded_buffer.isEmpty()) && (bytes_read < maxlen)){
         data[bytes_read++] = p->decoded_buffer.dequeue();
     }
     return bytes_read;
@@ -227,7 +226,6 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
     if(audio_output!=NULL) {
         audio_out->stop();
         delete audio_out;
-        audio_output->disconnect(this);
         delete audio_output;
     }
 
@@ -375,12 +373,12 @@ void Audio::resample(int no_of_samples){
             v = buffer_out[i]*32767.0;
             switch(audio_byte_order) {
             case QAudioFormat::LittleEndian:
-                decoded_buffer.enqueue((char)(v&0xFF));
-                decoded_buffer.enqueue((char)((v>>8)&0xFF));
+                decoded_buffer.enqueue((qint8)(v&0xFF));
+                decoded_buffer.enqueue((qint8)((v>>8)&0xFF));
                 break;
             case QAudioFormat::BigEndian:
-                decoded_buffer.enqueue((char)((v>>8)&0xFF));
-                decoded_buffer.enqueue((char)(v&0xFF));
+                decoded_buffer.enqueue((qint8)((v>>8)&0xFF));
+                decoded_buffer.enqueue((qint8)(v&0xFF));
                 break;
             }
         }
