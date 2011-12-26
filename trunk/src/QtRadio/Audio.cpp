@@ -48,25 +48,29 @@ void Audio_playback::stop()
 
 qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
-   int bytes_read = 0;
+   qint64 bytes_read = 0;
    qint16 v;
 
-   while ((!p->decoded_buffer.isEmpty()) && (bytes_read < maxlen)){
-       v = p->decoded_buffer.dequeue();
-        switch(p->audio_byte_order) {
-        case QAudioFormat::LittleEndian:
-            data[bytes_read++]=(char)(v&0xFF);
-            data[bytes_read++]=(char)((v>>8)&0xFF);
-            break;
-        case QAudioFormat::BigEndian:
-            data[bytes_read++]=(char)((v>>8)&0xFF);
-            data[bytes_read++]=(char)(v&0xFF);
-            break;
-        default:
-            qDebug() << "Audio_playback: QaudioFormat Error";
+   if (p->decoded_buffer.isEmpty()) {
+       memset(data, 0, maxlen);
+       bytes_read = maxlen;
+   } else {
+       while ((!p->decoded_buffer.isEmpty()) && (bytes_read < maxlen)){
+           v = p->decoded_buffer.dequeue();
+            switch(p->audio_byte_order) {
+            case QAudioFormat::LittleEndian:
+                data[bytes_read++]=(char)(v&0xFF);
+                data[bytes_read++]=(char)((v>>8)&0xFF);
+                break;
+            case QAudioFormat::BigEndian:
+                data[bytes_read++]=(char)((v>>8)&0xFF);
+                data[bytes_read++]=(char)(v&0xFF);
+                break;
+            }
         }
-    }
-    return bytes_read;
+   }
+
+   return bytes_read;
  }
 
  qint64 Audio_playback::writeData(const char *data, qint64 len){
@@ -81,6 +85,8 @@ Audio::Audio(void * codec) {
     audio_encoding = 0;
     audio_channels=1;
     audio_byte_order=QAudioFormat::LittleEndian;
+
+    isConnected = false;
 
     qDebug() << "Audio: LittleEndian=" << QAudioFormat::LittleEndian << " BigEndian=" << QAudioFormat::BigEndian;
 
@@ -314,6 +320,14 @@ int Audio::get_audio_encoding() {
     return audio_encoding;
 }
 
+void Audio::set_connected(){
+    isConnected = true;
+}
+
+void Audio::set_disconnected(){
+    isConnected = false;
+}
+
 void Audio::process_audio(char* header,char* buffer,int length) {
 
     if (audio_encoding == 0) aLawDecode(buffer,length);
@@ -384,8 +398,6 @@ void Audio::resample(int no_of_samples){
             decoded_buffer.enqueue(v);
         }
     }
-    //qDebug() << "resample: " << decoded_buffer.length();
-
 }
 
 void Audio::aLawDecode(char* buffer,int length) {

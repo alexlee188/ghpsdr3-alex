@@ -74,6 +74,7 @@ public:
     int get_audio_encoding();
     QQueue <qint16> decoded_buffer;
     QAudioFormat::Endian audio_byte_order;
+    bool isConnected;
 signals:
     void bufferProcessed(void);
 public slots:
@@ -85,6 +86,8 @@ public slots:
     void get_audio_devices(QComboBox* comboBox);
     void set_audio_encoding(int enc);
     void set_src_ratio(double ratio);
+    void set_connected(void);
+    void set_disconnected(void);
 
 private:
     void * codec2;

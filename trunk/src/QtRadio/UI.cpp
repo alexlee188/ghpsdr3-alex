@@ -112,6 +112,8 @@ UI::UI(const QString server) {
 
     connect(audio,SIGNAL(bufferProcessed()),this,SLOT(audioBufferProcessed()));
     connect(this,SIGNAL(set_src_ratio(double)),audio,SLOT(set_src_ratio(double)));
+    connect(&connection,SIGNAL(isConnected()),audio,SLOT(set_connected()));
+    connect(&connection,SIGNAL(disconnected(QString)),audio,SLOT(set_disconnected()));
 
     connect(widget.actionConfig,SIGNAL(triggered()),this,SLOT(actionConfigure()));
 
