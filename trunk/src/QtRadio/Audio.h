@@ -61,7 +61,6 @@ public:
 
 private:
     Audio* p;
-    int has_more;
 signals:
 };
 

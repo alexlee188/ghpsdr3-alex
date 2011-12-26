@@ -30,7 +30,6 @@ Audio_playback::Audio_playback(QObject *parent)
     :   QIODevice(parent)
 {
     p = (Audio*) parent;
-    has_more = 0;
 }
 
 Audio_playback::~Audio_playback()
@@ -52,8 +51,8 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
    int bytes_read = 0;
    qint16 v;
 
-    while ((!p->decoded_buffer.isEmpty()) && (bytes_read < maxlen)){
-        v = p->decoded_buffer.dequeue();
+   while ((!p->decoded_buffer.isEmpty()) && (bytes_read < maxlen)){
+       v = p->decoded_buffer.dequeue();
         switch(p->audio_byte_order) {
         case QAudioFormat::LittleEndian:
             data[bytes_read++]=(char)(v&0xFF);
@@ -63,6 +62,8 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
             data[bytes_read++]=(char)((v>>8)&0xFF);
             data[bytes_read++]=(char)(v&0xFF);
             break;
+        default:
+            qDebug() << "Audio_playback: QaudioFormat Error";
         }
     }
     return bytes_read;
@@ -71,7 +72,6 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  qint64 Audio_playback::writeData(const char *data, qint64 len){
      Q_UNUSED(data)
      Q_UNUSED(len)
-     return 0;
  }
 
 Audio::Audio(void * codec) {
