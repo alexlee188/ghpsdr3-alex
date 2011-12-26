@@ -200,7 +200,10 @@ void* audio_thread(void* arg) {
 	int num_bytes = sizeof(float)*BUFFER_SIZE;
 	int blocked_num = 0;
 static int second_time = 0;
+<<<<<<< HEAD
 
+=======
+>>>>>>> daf2c1a490d8dc062e7e8635861016bf7cc1dae6
     BUFFER buffer;
     unsigned long sequence=0L;
     unsigned short offset=0;;
@@ -271,6 +274,10 @@ static int second_time = 0;
             exit(1);
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+#endif
+>>>>>>> daf2c1a490d8dc062e7e8635861016bf7cc1dae6
 		if (softrock_get_jack () == 1) { 
 			if (second_time == 32) {// This is for testing only.  It will fail the second connection from QtRadio.
 				softrock_set_client_active_rx(rx->client->receiver, ADD_RX);	
@@ -299,6 +306,7 @@ static int second_time = 0;
         	process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
 		}
 
+<<<<<<< HEAD
 #endif
 
 /*
@@ -311,6 +319,9 @@ static int second_time = 0;
 	}
 
     }
+=======
+    	}
+>>>>>>> daf2c1a490d8dc062e7e8635861016bf7cc1dae6
 	softrock_set_client_active_rx (rx->client->receiver, DEC_RX); 
 }
 
