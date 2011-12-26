@@ -322,7 +322,6 @@ void Audio::process_audio(char* header,char* buffer,int length) {
     else {
         qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
     }
-
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);
     emit bufferProcessed();
@@ -367,7 +366,7 @@ if(length>0 && length<=2048) {
 
 void Audio::resample(int no_of_samples){
     int i;
-    short v;
+    qint16 v;
     int rc;
 
     sr_data.data_in = buffer_in;
@@ -385,6 +384,7 @@ void Audio::resample(int no_of_samples){
             decoded_buffer.enqueue(v);
         }
     }
+    //qDebug() << "resample: " << decoded_buffer.length();
 
 }
 
