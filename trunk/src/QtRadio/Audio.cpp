@@ -52,11 +52,11 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
    qint16 v;
    qint64 bytes_to_read = maxlen > 400 ? 400 : maxlen;
 
-   if (p->decoded_buffer.isEmpty()) {
+   if (p->decoded_buffer.isEmpty()) {       // probably not connected or late arrival of packets.  Send silence.
        memset(data, 0, bytes_to_read);
        bytes_read = bytes_to_read;
    } else {
-       while ((!p->decoded_buffer.isEmpty()) && (bytes_read < bytes_to_read)){
+       while ((!p->decoded_buffer.isEmpty()) && (bytes_read < maxlen)){
            v = p->decoded_buffer.dequeue();
             switch(p->audio_byte_order) {
             case QAudioFormat::LittleEndian:
@@ -77,6 +77,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  qint64 Audio_playback::writeData(const char *data, qint64 len){
      Q_UNUSED(data)
      Q_UNUSED(len)
+     return 0;
  }
 
 Audio::Audio(void * codec) {

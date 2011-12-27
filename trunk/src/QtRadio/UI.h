@@ -33,7 +33,6 @@
 #include <QTimer>
 #include <QAudioFormat>
 #include <QVector>
-#include <QThread>
 #include <QQueue>
 
 #include "servers.h"
