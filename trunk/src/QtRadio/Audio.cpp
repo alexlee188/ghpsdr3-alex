@@ -120,6 +120,7 @@ Audio::~Audio() {
     src_delete(sr_state);
     codec2_destroy(codec2);
     delete audio_processing;
+    delete audio_processing_thread;
 }
 
 
@@ -346,8 +347,6 @@ void Audio_processing::process_audio(char* header,char* buffer,int length) {
 }
 
 void Audio::process_rtp_audio(char* buffer,int length) {
-    int total_to_write;
-    char* decodedBuffer;
     int i;
     short v;
 
@@ -355,22 +354,10 @@ if(length>0 && length<=2048) {
 
     if (audio_encoding == 0) {
         //aLawDecode(buffer,length);
-        total_to_write=sizeof(short)*length;
-        decodedBuffer=(char*)malloc(total_to_write);
         for(i=0;i<length;i++) {
             v=g711a.decode(buffer[i]);
-            switch(audio_byte_order) {
-            case QAudioFormat::LittleEndian:
-                decodedBuffer[(i*2)]=(char)(v&0xFF);
-                decodedBuffer[(i*2)+1]=(char)((v>>8)&0xFF);
-                break;
-            case QAudioFormat::BigEndian:
-                decodedBuffer[(i*2)]=(char)((v>>8)&0xFF);
-                decodedBuffer[(i*2)+1]=(char)(v&0xFF);
-                break;
-            }
+            decoded_buffer.enqueue(v);
         }
-        if (decodedBuffer != NULL) free(decodedBuffer);
     } else {
         qDebug() << "Audio::process_rtp_audio only support aLaw";
     }
@@ -388,15 +375,12 @@ void Audio_processing::resample(int no_of_samples){
 
     if (queue->length() > 16000) {
         src_ratio = 0.9;
-        qDebug() << "src_ratio = " << src_ratio;
     }
     else if(queue->length() > 4800) {
         src_ratio = 0.95;
-        qDebug() << "src_ratio = " << src_ratio;
     }
     else if(queue->length() > 1600){
         src_ratio = 0.99;
-        qDebug() << "src_ratio = " << src_ratio;
     }
     else src_ratio = 1.0;
 
