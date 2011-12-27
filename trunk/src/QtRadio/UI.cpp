@@ -101,8 +101,6 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(remoteRTP(char*,int)),this,SLOT(setRemote(char*,int)));
     connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
-
-    connect(audio,SIGNAL(bufferProcessed()),this,SLOT(audioBufferProcessed()));
     connect(this,SIGNAL(set_src_ratio(double)),audio,SLOT(set_src_ratio(double)));
 
     connect(widget.actionConfig,SIGNAL(triggered()),this,SLOT(actionConfigure()));
@@ -253,7 +251,6 @@ UI::UI(const QString server) {
     connect(widget.vfoFrame,SIGNAL(frequencyChanged(long long)),this,SLOT(frequencyChanged(long long)));
     connect(widget.vfoFrame,SIGNAL(subRxButtonClicked()),this,SLOT(actionSubRx()));
     connect(widget.vfoFrame,SIGNAL(vfoStepBtnClicked(int)),this,SLOT(vfoStepBtnClicked(int)));
-    connect(this,SIGNAL(initialize_audio(int)),audio,SLOT(initialize_audio(int)));
     connect(this,SIGNAL(process_audio(char*,char*,int)),audio,SLOT(process_audio(char*,char*,int)));
     connect(widget.ctlFrame,SIGNAL(pttChange(int,bool)),this,SLOT(pttChange(int,bool)));
     connect(widget.ctlFrame,SIGNAL(pwrSlider_valueChanged(double)),this,SLOT(pwrSlider_valueChanged(double)));
@@ -275,7 +272,6 @@ UI::UI(const QString server) {
     audio_sample_rate=configure.getSampleRate();
     audio_channels=configure.getChannels();
     audio_byte_order=configure.getByteOrder();
-    emit initialize_audio(AUDIO_BUFFER_SIZE);
 
     // load any saved settings
     loadSettings();
@@ -685,18 +681,7 @@ void UI::audioBuffer(char* header,char* buffer) {
 // g0orx binary header
     //length=atoi(&header[AUDIO_LENGTH_POSITION]);
     length=((header[3]&0xFF)<<8)+(header[4]&0xFF);
-
-    if(audio_buffers==0) {
-        first_audio_header=header;
-        first_audio_buffer=buffer;
-        audio_buffers++;
-    } else if(audio_buffers==1) {
-        audio_buffers++;
-        emit process_audio(first_audio_header,first_audio_buffer,length);
-        emit process_audio(header,buffer,length);
-    } else {
-        emit process_audio(header,buffer,length);
-    }
+    emit process_audio(header,buffer,length);
  }
 
 

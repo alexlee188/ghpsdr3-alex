@@ -56,12 +56,7 @@ void RTP::run() {
     int err;
     char* buffer;
     int has_more;
-    char *first_buffer, *second_buffer;
-    int first_length, second_length;
 
-    int audio_buffers = 0;
-
-#define BUFFER_LENGTH 1024
 
     qDebug() << "RTP::run"; 
     if(!initialized) {
@@ -71,34 +66,16 @@ void RTP::run() {
         while(cont) {
             has_more=1;
             while(has_more) {
-                buffer=(char*)malloc(BUFFER_LENGTH);
-                err=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,BUFFER_LENGTH,recv_ts,&has_more);
+                buffer=(char*)malloc(RTP_BUFFER_LENGTH);
+                err=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,RTP_BUFFER_LENGTH,recv_ts,&has_more);
                 if (err>0) {
-                    if (audio_buffers > 2) {
-                        emit rtp_packet_received(buffer,err);
-                    }
-                    else if (audio_buffers == 0){       // preload 2 buffers
-                        first_buffer = buffer;
-                        first_length = err;
-                        audio_buffers++;
-                    }
-                    else if (audio_buffers == 1){
-                        second_buffer = buffer;
-                        second_length = err;
-                        audio_buffers++;
-                    }
-                    else if (audio_buffers == 2){
-                        emit rtp_packet_received(first_buffer,first_length);
-                        emit rtp_packet_received(second_buffer,second_length);
-                        emit rtp_packet_received(buffer,err);
-                        audio_buffers++;
-                    };
+                    emit rtp_packet_received(buffer,err);
                     recv_ts+=err;
                 }  else if(err==0) {
-                    recv_ts+=BUFFER_LENGTH;
+                    recv_ts+=RTP_BUFFER_LENGTH;
                 }  else if(err<0) {
                     qDebug() << "rtp received error:" << err;
-                    recv_ts+=BUFFER_LENGTH;
+                    recv_ts+=RTP_BUFFER_LENGTH;
                 }
             }
             usleep(2000);

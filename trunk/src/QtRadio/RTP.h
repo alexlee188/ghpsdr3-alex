@@ -4,6 +4,7 @@
 #include "ortp/ortp.h"
 
 #define RTP_PORT 10010
+#define RTP_BUFFER_LENGTH 1024
 
 class RTP : public QThread {
     Q_OBJECT
