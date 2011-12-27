@@ -98,7 +98,6 @@ Audio::Audio(void * codec) {
     audio_format.setByteOrder(audio_byte_order);
     codec2 = codec;
 
-    src_ratio = 1.0;
     sr_state = src_new (
                          //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
                          SRC_SINC_MEDIUM_QUALITY,
@@ -110,23 +109,16 @@ Audio::Audio(void * codec) {
 
     if (sr_state == 0) {
         qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
-    } else {
-        qDebug() <<  "Audio::audio sample rate init successfully at ratio:" << src_ratio;
     }
+    audio_processing = new Audio_processing(this);
 }
 
 Audio::~Audio() {
     src_delete(sr_state);
     codec2_destroy(codec2);
+    delete audio_processing;
 }
 
-void Audio::set_src_ratio(double ratio){
-    src_ratio = ratio;
-}
-
-void Audio::initialize_audio(int buffer_size) {
-    init_decodetable();
-}
 
 void Audio::get_audio_devices(QComboBox* comboBox) {
     int sr_error;
@@ -226,9 +218,8 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
 
     if (sr_state == 0) {
         qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
-    } else {
-        qDebug() <<  "Audio::get_audio_devices: sample rate init successfully at ratio:" << src_ratio;
     }
+    audio_processing->update_sr_state();
 }
 
 void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder) {
@@ -291,9 +282,8 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
 
     if (sr_state == 0) {
         qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
-    } else {
-        qDebug() <<  "Audio:select_audio: sample rate init successfully at ratio:" << src_ratio;
-    }
+        }
+    audio_processing->update_sr_state();
 }
 
 void Audio::stateChanged(QAudio::State State){
@@ -320,18 +310,36 @@ int Audio::get_audio_encoding() {
     return audio_encoding;
 }
 
+void Audio::process_audio(char* header, char* buffer, int length){
+    audio_processing->process_audio(header,buffer,length);
+}
 
-void Audio::process_audio(char* header,char* buffer,int length) {
+Audio_processing::Audio_processing(QObject *parent){
+    p = (Audio*)parent;
+    codec2 = p->codec2;
+    queue = &p->decoded_buffer;
+    sr_state = p->sr_state;
+    init_decodetable();
+    src_ratio = 1.0;
+}
 
-    if (audio_encoding == 0) aLawDecode(buffer,length);
-    else if (audio_encoding == 1) pcmDecode(buffer,length);
-    else if (audio_encoding == 2) codec2Decode(buffer,length);
+Audio_processing::~Audio_processing(){
+}
+
+void Audio_processing::update_sr_state(){
+    sr_state = p->sr_state;
+}
+
+void Audio_processing::process_audio(char* header,char* buffer,int length) {
+
+    if (p->audio_encoding == 0) aLawDecode(buffer,length);
+    else if (p->audio_encoding == 1) pcmDecode(buffer,length);
+    else if (p->audio_encoding == 2) codec2Decode(buffer,length);
     else {
-        qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
+        qDebug() << "Error: Audio::process_audio:  audio_encoding = " << p->audio_encoding;
     }
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);
-    emit bufferProcessed();
 }
 
 void Audio::process_rtp_audio(char* buffer,int length) {
@@ -370,10 +378,24 @@ if(length>0 && length<=2048) {
 }
 
 
-void Audio::resample(int no_of_samples){
+void Audio_processing::resample(int no_of_samples){
     int i;
     qint16 v;
     int rc;
+
+    if (queue->length() > 16000) {
+        src_ratio = 0.9;
+        qDebug() << "src_ratio = " << src_ratio;
+    }
+    else if(queue->length() > 4800) {
+        src_ratio = 0.95;
+        qDebug() << "src_ratio = " << src_ratio;
+    }
+    else if(queue->length() > 1600){
+        src_ratio = 0.99;
+        qDebug() << "src_ratio = " << src_ratio;
+    }
+    else src_ratio = 1.0;
 
     sr_data.data_in = buffer_in;
     sr_data.data_out = buffer_out;
@@ -387,12 +409,12 @@ void Audio::resample(int no_of_samples){
     else {
         for (i = 0; i < sr_data.output_frames_gen; i++){
             v = buffer_out[i]*32767.0;
-            decoded_buffer.enqueue(v);
+            queue->enqueue(v);
         }
     }
 }
 
-void Audio::aLawDecode(char* buffer,int length) {
+void Audio_processing::aLawDecode(char* buffer,int length) {
     int i;
     short v;
 
@@ -405,7 +427,7 @@ void Audio::aLawDecode(char* buffer,int length) {
 
 }
 
-void Audio::pcmDecode(char* buffer,int length) {
+void Audio_processing::pcmDecode(char* buffer,int length) {
     int i;
     short v;
 
@@ -417,7 +439,7 @@ void Audio::pcmDecode(char* buffer,int length) {
 
 }
 
-void Audio::codec2Decode(char* buffer,int length) {
+void Audio_processing::codec2Decode(char* buffer,int length) {
     int i,j,k;
     short v[CODEC2_SAMPLES_PER_FRAME];
     unsigned char bits[BITS_SIZE];
@@ -437,7 +459,7 @@ void Audio::codec2Decode(char* buffer,int length) {
     resample(k*CODEC2_SAMPLES_PER_FRAME);
 }
 
-void Audio::init_decodetable() {
+void Audio_processing::init_decodetable() {
     qDebug() << "init_decodetable";
     for (int i = 0; i < 256; i++) {
         int input = i ^ 85;

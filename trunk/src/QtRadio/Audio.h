@@ -34,6 +34,7 @@
 #include <QMutex>
 #include <samplerate.h>
 #include <QThread>
+#include <QQueue>
 #include "G711A.h"
 
 #define AUDIO_BUFFER_SIZE 800
@@ -53,16 +54,38 @@ class Audio_playback : public QIODevice
 public:
     Audio_playback(QObject *parent);
     ~Audio_playback();
-
     void start();
     void stop();
-
     qint64 readData(char *data, qint64 maxlen);
     qint64 writeData(const char *data, qint64 len);
-
 private:
     Audio* p;
 signals:
+};
+
+class Audio_processing : public QObject {
+    Q_OBJECT
+public:
+    Audio_processing(QObject *parent);
+    ~Audio_processing();
+public slots:
+    void process_audio(char* header, char* buffer, int length);
+    void update_sr_state(void);
+private:
+    Audio* p;
+    void aLawDecode(char* buffer,int length);
+    void pcmDecode(char * buffer,int length);
+    void codec2Decode(char* buffer, int length);
+    void resample(int no_of_samples);
+    void init_decodetable();
+    float buffer_in[RESAMPLING_BUFFER_SIZE];
+    float buffer_out[RESAMPLING_BUFFER_SIZE];
+    short decodetable[256];
+    SRC_STATE *sr_state;
+    SRC_DATA  sr_data;
+    double src_ratio;
+    QQueue<qint16>* queue;
+    void* codec2;
 };
 
 
@@ -75,40 +98,27 @@ public:
     int get_audio_encoding();
     QQueue <qint16> decoded_buffer;
     QAudioFormat::Endian audio_byte_order;
+    SRC_STATE *sr_state;
+    void* codec2;
+    int audio_encoding;
 signals:
-    void bufferProcessed(void);
 public slots:
     void stateChanged(QAudio::State);
-    void initialize_audio(int buffer_size);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void process_audio(char* header,char* buffer,int length);
     void process_rtp_audio(char* buffer,int length);
     void get_audio_devices(QComboBox* comboBox);
     void set_audio_encoding(int enc);
-    void set_src_ratio(double ratio);
 
 private:
-    void * codec2;
-    void aLawDecode(char* buffer,int length);
-    void pcmDecode(char * buffer,int length);
-    void codec2Decode(char* buffer, int length);
-    void resample(int no_of_samples);
-    void init_decodetable();
     QAudioFormat     audio_format;
     QAudioOutput*    audio_output;
     QAudioDeviceInfo audio_device;
     Audio_playback*  audio_out;
-    float buffer_in[RESAMPLING_BUFFER_SIZE];
-    float buffer_out[RESAMPLING_BUFFER_SIZE];
-    short decodetable[256];
-    SRC_STATE *sr_state;
-    SRC_DATA  sr_data;
-    double src_ratio;
     int sampleRate;
     int audio_channels;
-    int audio_encoding;
     G711A g711a;
-
+    Audio_processing* audio_processing;
 };
 
 

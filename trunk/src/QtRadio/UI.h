@@ -249,15 +249,10 @@ public slots:
     void selectBookmark(QAction* action);
     void getBandFrequency();
     void vfoStepBtnClicked(int direction);
-//    void vfoScanBtnClicked(int direction);
     void pttChange(int caller, bool ptt);
     void pwrSlider_valueChanged(double pwr);
     void printStatusBar(QString message);
-
-    void audioBufferProcessed();
-
     void setRemote(char* host,int port);
-
 signals:
     void subRxStateChanged(bool state);
     void set_src_ratio(double ratio);
@@ -279,7 +274,6 @@ private:
     QString stringFrequency(long long frequency);
 
     Ui::UI widget;
-
     Audio* audio;
     int audio_device;
     int audio_sample_rate;
@@ -289,13 +283,11 @@ private:
     QMutex audio_mutex;
     char* first_audio_buffer;
     char* first_audio_header;
-    int audio_buffer_count;     // how may audio buffers are in Audio's event queue
     int gain;
     int subRxGain;
     bool subRx;
-
     AudioInput* audioinput;
-    QThread* audioinput_thread;
+    //QThread* audioinput_thread;
     int mic_buffer_count;       // counter of mic_buffer, to encode if reaches CODEC2_SAMPLE_PER_FRAME
     int mic_frame_count;        // counter of mic_buffer, to encode enough frames before sending
 
