@@ -111,6 +111,9 @@ Audio::Audio(void * codec) {
         qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
     }
     audio_processing = new Audio_processing(this);
+    audio_processing_thread = new QThread;
+    audio_processing->moveToThread(audio_processing_thread);
+    audio_processing_thread->start(QThread::NormalPriority);
 }
 
 Audio::~Audio() {

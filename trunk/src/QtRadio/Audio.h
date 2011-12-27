@@ -119,6 +119,7 @@ private:
     int audio_channels;
     G711A g711a;
     Audio_processing* audio_processing;
+    QThread* audio_processing_thread;
 };
 
 

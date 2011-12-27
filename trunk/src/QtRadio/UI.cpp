@@ -26,12 +26,9 @@
 #include <QDebug>
 #include <QSettings>
 #include <QPainter>
-#include <QThread>
 #include <QMessageBox>
 #include <QTimer>
-
 #include <ortp/ortp.h>
-
 #include "UI.h"
 #include "About.h"
 #include "Configure.h"
