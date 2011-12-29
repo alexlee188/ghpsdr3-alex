@@ -461,10 +461,7 @@ void UI::audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFo
     audio_sample_rate = rate;
     audio_channels = channels;
     audio_byte_order = byteOrder;
-    audio->moveToThread(QThread::currentThread());
     audio->select_audio(info, rate, channels, byteOrder);
-    audio->moveToThread(audio_thread);
-    audio_thread->start(QThread::TimeCriticalPriority);
 }
 
 void UI::encodingChanged(int choice){
