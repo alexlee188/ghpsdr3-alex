@@ -102,6 +102,7 @@ public:
     void* codec2;
     int audio_encoding;
 signals:
+    void audio_processing_process_audio(char* header,char* buffer,int length);
 public slots:
     void stateChanged(QAudio::State);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);

@@ -100,8 +100,8 @@ Audio::Audio(void * codec) {
 
     sr_state = src_new (
                          //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
-                         SRC_SINC_MEDIUM_QUALITY,
-                         //SRC_SINC_FASTEST,
+                         //SRC_SINC_MEDIUM_QUALITY,
+                         SRC_SINC_FASTEST,
                          //SRC_ZERO_ORDER_HOLD,
                          //SRC_LINEAR,
                          audio_channels, &sr_error
@@ -113,12 +113,14 @@ Audio::Audio(void * codec) {
     audio_processing = new Audio_processing(this);
     audio_processing_thread = new QThread;
     audio_processing->moveToThread(audio_processing_thread);
-    audio_processing_thread->start(QThread::NormalPriority);
+    connect(this,SIGNAL(audio_processing_process_audio(char*,char*,int)),audio_processing,SLOT(process_audio(char*,char*,int)));
+    audio_processing_thread->start(QThread::HighPriority);
 }
 
 Audio::~Audio() {
     src_delete(sr_state);
     codec2_destroy(codec2);
+    disconnect(this,SIGNAL(audio_processing_process_audio(char*,char*,int)),audio_processing,SLOT(process_audio(char*,char*,int)));
     delete audio_processing;
     delete audio_processing_thread;
 }
@@ -315,7 +317,7 @@ int Audio::get_audio_encoding() {
 }
 
 void Audio::process_audio(char* header, char* buffer, int length){
-    audio_processing->process_audio(header,buffer,length);
+    emit audio_processing_process_audio(header,buffer,length);
 }
 
 Audio_processing::Audio_processing(QObject *parent){
