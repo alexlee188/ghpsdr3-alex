@@ -114,7 +114,7 @@ Audio::Audio(void * codec) {
     audio_processing_thread = new QThread;
     audio_processing->moveToThread(audio_processing_thread);
     connect(this,SIGNAL(audio_processing_process_audio(char*,char*,int)),audio_processing,SLOT(process_audio(char*,char*,int)));
-    audio_processing_thread->start(QThread::HighPriority);
+    audio_processing_thread->start(QThread::LowPriority);
     qDebug() << "audio_processing_thread : " << audio_processing_thread;
 }
 

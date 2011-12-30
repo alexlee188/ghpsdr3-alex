@@ -63,7 +63,7 @@ UI::UI(const QString server) {
 
     connection_thread = new QThread();
     connection.moveToThread(connection_thread);
-    connection_thread->start(QThread::HighPriority);
+    connection_thread->start(QThread::LowPriority);
     qDebug() << "connection_thread : " << connection_thread;
 
     codec2 = codec2_create();
