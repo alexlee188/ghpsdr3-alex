@@ -31,6 +31,7 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
     qDebug() << "Audio::get_audioinput_devices";
     for(int i=0;i<devices.length();i++) {
         device_info=devices.at(i);
+
         qDebug() << "Audio::get_audioinput_devices: " << device_info.deviceName();
 
         qDebug() << "    Codecs:";

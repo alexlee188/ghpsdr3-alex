@@ -115,6 +115,7 @@ Audio::Audio(void * codec) {
     audio_processing->moveToThread(audio_processing_thread);
     connect(this,SIGNAL(audio_processing_process_audio(char*,char*,int)),audio_processing,SLOT(process_audio(char*,char*,int)));
     audio_processing_thread->start(QThread::HighPriority);
+    qDebug() << "audio_processing_thread : " << audio_processing_thread;
 }
 
 Audio::~Audio() {
@@ -131,21 +132,23 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
     QList<QAudioDeviceInfo> devices=QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
     QAudioDeviceInfo device_info;
 
+
     qDebug() << "Audio::get_audio_devices";
     for(int i=0;i<devices.length();i++) {
         device_info=devices.at(i);
+
         qDebug() << "Audio::get_audio_devices: " << device_info.deviceName();
 
         qDebug() << "    Codecs:";
         QStringList codecs=device_info.supportedCodecs();
         for(int j=0;j<codecs.size();j++) {
-            qDebug() << "        " << codecs.at(j).toLocal8Bit().constData();
+             qDebug() << "        " << codecs.at(j).toLocal8Bit().constData();
         }
 
         qDebug() << "    Byte Orders";
         QList<QAudioFormat::Endian> byteOrders=device_info.supportedByteOrders();
         for(int j=0;j<byteOrders.size();j++) {
-            qDebug() << "        " << (byteOrders.at(j)==QAudioFormat::BigEndian?"BigEndian":"LittleEndian");
+             qDebug() << "        " << (byteOrders.at(j)==QAudioFormat::BigEndian?"BigEndian":"LittleEndian");
         }
 
         qDebug() << "    Sample Type";

@@ -101,7 +101,6 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(remoteRTP(char*,int)),this,SLOT(setRemote(char*,int)));
     connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
-    connect(this,SIGNAL(set_src_ratio(double)),audio,SLOT(set_src_ratio(double)));
 
     connect(widget.actionConfig,SIGNAL(triggered()),this,SLOT(actionConfigure()));
 

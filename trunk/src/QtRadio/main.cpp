@@ -61,6 +61,9 @@ int main(int argc, char *argv[]) {
 
     QApplication app(argc, argv);
 
+    qDebug() << "Main GUI thread : " << app.thread()->currentThread();
+
+
     //trying to get the arguments into a list    
     QStringList args = app.arguments();
 
