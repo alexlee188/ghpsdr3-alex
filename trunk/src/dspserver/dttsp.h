@@ -203,5 +203,6 @@ extern void SetTXLevelerSt (unsigned int thread, BOOLEAN state);
 extern void SetTXLevelerAttack (unsigned int thread, int attack);
 extern void SetTXLevelerHang (unsigned int thread, int decay);
 extern void SetTXLevelerTop (unsigned int thread, double maxgain);
+extern float CalculateTXMeter(int thread,unsigned int subrx);
 
 #endif
