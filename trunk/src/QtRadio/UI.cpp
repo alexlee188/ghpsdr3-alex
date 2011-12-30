@@ -28,6 +28,7 @@
 #include <QPainter>
 #include <QMessageBox>
 #include <QTimer>
+#include <QThread>
 #include <ortp/ortp.h>
 #include "UI.h"
 #include "About.h"
@@ -59,6 +60,11 @@ UI::UI(const QString server) {
     meter=-121;
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
+
+    connection_thread = new QThread();
+    connection.moveToThread(connection_thread);
+    connection_thread->start(QThread::HighPriority);
+    qDebug() << "connection_thread : " << connection_thread;
 
     codec2 = codec2_create();
     audio = new Audio(codec2);
