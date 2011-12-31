@@ -378,38 +378,7 @@ void Spectrum::paintEvent(QPaintEvent*) {
         painter.drawText(width()-48,squelchY,text);
     }
 
-
-/*    // show the frequency
-    painter.setPen(QPen(Qt::green,1));
-    painter.setFont(QFont("Verdana", 30));
-    painter.drawText(width()/2,30,strFrequency);
-
-    // show the band and mode and filter
-    painter.setFont(QFont("Arial", 12));
-    text=band+" "+mode+" "+filter+"Hz";
-    painter.drawText((width()/2),50,text);
-
-    // gvj code changes
-
-
-    // show the server and receiver
-    text="Server:"+host+" Rx:"+QString::number(receiver);
-    painter.drawText(5,15,text);
-*/
-    // gvj some code deleted
-    // draw the analog meters
-//    painter.setOpacity(0.8);
-//    QImage image=sMeterMain->getImage(meter);
-//    painter.drawImage(width()-image.width()-5,0,image);
     emit meterValue(meter, subrx_meter);
-
-//    qDebug() << "Spectrum meter value = " << meter;
-//    if(subRx) {
-//        image=sMeterSub->getImage(subrx_meter);
-//        painter.drawImage(width()-image.width()-5,image.height()+5,image);
-//        emit meterValue(subrx_meter);
-//    }
-
 
     // plot Spectrum
     painter.setOpacity(0.9);
@@ -421,16 +390,9 @@ void Spectrum::paintEvent(QPaintEvent*) {
 
     // show the subrx frequency
     if(subRx) {
-        /*
-        filterRight = (filterHigh - (-sampleRate / 2) + (subRxFrequency-frequency)) * width() / sampleRate;
-        painter.setPen(QPen(Qt::black,1));
-        painter.setFont(QFont("Arial", 12));
-        painter.drawText(filterRight,height()-20,strSubRxFrequency);
-        */
         // show the frequency
         painter.setPen(QPen(Qt::green,1));
         painter.setFont(QFont("Verdana", 30));
-//        painter.drawText(width()/2,image.height()+5+30,strSubRxFrequency);
     }
 }
 
