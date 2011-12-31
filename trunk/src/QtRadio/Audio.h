@@ -38,7 +38,7 @@
 #include "G711A.h"
 
 #define AUDIO_BUFFER_SIZE 800
-#define AUDIO_OUTPUT_BUFFER_SIZE 2048
+#define AUDIO_OUTPUT_BUFFER_SIZE (1024*2)
 #define RESAMPLING_BUFFER_SIZE (10600*2)    // 2 channels of 9600 + 10%
 
 #define BIGENDIAN

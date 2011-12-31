@@ -274,8 +274,10 @@ private:
     QString stringFrequency(long long frequency);
 
     Ui::UI widget;
+
     QThread* connection_thread;
     Audio* audio;
+    QThread* audio_thread;
     int audio_device;
     int audio_sample_rate;
     int audio_channels;
@@ -288,7 +290,6 @@ private:
     int subRxGain;
     bool subRx;
     AudioInput* audioinput;
-    //QThread* audioinput_thread;
     int mic_buffer_count;       // counter of mic_buffer, to encode if reaches CODEC2_SAMPLE_PER_FRAME
     int mic_frame_count;        // counter of mic_buffer, to encode enough frames before sending
 

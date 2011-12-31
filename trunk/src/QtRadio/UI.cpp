@@ -57,23 +57,30 @@
 UI::UI(const QString server) {
 
     widget.setupUi(this);
+
     meter=-121;
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
 
-    connection_thread = new QThread();
+    connection_thread = new QThread;
     connection.moveToThread(connection_thread);
-    connection_thread->start(QThread::LowPriority);
+    connection_thread->start(QThread::NormalPriority);
     qDebug() << "connection_thread : " << connection_thread;
 
     codec2 = codec2_create();
     audio = new Audio(codec2);
+    audio_thread = new QThread;
+    audio->moveToThread(audio_thread);
+    audio_thread->start(QThread::HighestPriority);
+    qDebug() << "audio_thread : " << audio_thread;
+
     useRTP=configure.getRTP();
     configure.initAudioDevices(audio);
 
     mic_codec2 = codec2_create();
     audioinput = new AudioInput(0, mic_codec2); // separate codec2 state so both audio and audioinput
                                                 // can run concurrently in separate threads
+
     configure.initMicDevices(audioinput);
 
     mic_buffer_count = 0;
