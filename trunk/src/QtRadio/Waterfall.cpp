@@ -288,8 +288,8 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int size) {
             waterfallHigh=waterfallLow+60;
         }
     }
-
-    this->repaint();
+    QTimer::singleShot(0,this,SLOT(repaint()));
+    //this->repaint();
 
 }
 

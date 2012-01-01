@@ -513,7 +513,8 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
         for (i = 0; i < width; i++) {
             plot << QPoint(i, (int) floor(((float) spectrumHigh - samples[i])*(float) height() / (float) (spectrumHigh - spectrumLow)));
         }
-        this->update();
+        QTimer::singleShot(0,this,SLOT(update()));
+        //this->update();
     }
 }
 
