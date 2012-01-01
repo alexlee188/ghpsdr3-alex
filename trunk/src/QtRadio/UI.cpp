@@ -103,6 +103,7 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(audioBuffer(char*,char*)),this,SLOT(audioBuffer(char*,char*)));
     connect(&connection,SIGNAL(spectrumBuffer(char*,char*)),this,SLOT(spectrumBuffer(char*,char*)));
     connect(&connection,SIGNAL(remoteRTP(char*,int)),this,SLOT(setRemote(char*,int)));
+    connect(&rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
 
@@ -642,7 +643,7 @@ void UI::disconnected(QString message) {
     spectrumTimer->stop();
 
     if(useRTP) {
-        QTimer::singleShot(0,audio,SLOT(rtp_set_disconnected()));
+        audio->rtp_set_disconnected();
         rtp.shutdown();
     }
 //    widget.statusbar->showMessage(message,0); //gvj deleted code
