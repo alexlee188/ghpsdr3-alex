@@ -32,6 +32,7 @@ Audio_playback::Audio_playback(QObject *parent)
     :   QIODevice(parent)
 {
     p = (Audio*) parent;
+    recv_ts = 0;
 }
 
 Audio_playback::~Audio_playback()
