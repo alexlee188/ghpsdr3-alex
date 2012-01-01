@@ -69,16 +69,12 @@ UI::UI(const QString server) {
 
     codec2 = codec2_create();
     audio = new Audio(codec2);
-    audio_thread = new QThread;
-    audio->moveToThread(audio_thread);
-    audio_thread->start(QThread::HighestPriority);
-    qDebug() << "audio_thread : " << audio_thread;
 
     useRTP=configure.getRTP();
     configure.initAudioDevices(audio);
 
     mic_codec2 = codec2_create();
-    audioinput = new AudioInput(0, mic_codec2); // separate codec2 state so both audio and audioinput
+    audioinput = new AudioInput(mic_codec2); // separate codec2 state so both audio and audioinput
                                                 // can run concurrently in separate threads
 
     configure.initMicDevices(audioinput);

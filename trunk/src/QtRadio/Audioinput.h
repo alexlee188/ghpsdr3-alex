@@ -37,8 +37,8 @@ class AudioInput : public QObject
 {
     Q_OBJECT
 public:
-    explicit AudioInput(QObject *parent = 0, void * codec = 0);
-    virtual ~AudioInput();
+    AudioInput(void * codec = 0);
+    ~AudioInput();
     void get_audioinput_devices(QComboBox* comboBox);
 signals:
     void mic_update_level(qreal level);

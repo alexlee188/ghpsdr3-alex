@@ -1,7 +1,6 @@
 #include "Audioinput.h"
 
-AudioInput::AudioInput(QObject *parent, void *codec) :
-    QObject(parent)
+AudioInput::AudioInput(void *codec)
 {
     m_audioInput=NULL;
     m_sampleRate=8000;

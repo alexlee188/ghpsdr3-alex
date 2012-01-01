@@ -100,8 +100,8 @@ Audio::Audio(void * codec) {
 
     sr_state = src_new (
                          //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
-                         //SRC_SINC_MEDIUM_QUALITY,
-                         SRC_SINC_FASTEST,
+                         SRC_SINC_MEDIUM_QUALITY,
+                         //SRC_SINC_FASTEST,
                          //SRC_ZERO_ORDER_HOLD,
                          //SRC_LINEAR,
                          audio_channels, &sr_error
