@@ -232,6 +232,7 @@ UI::UI(const QString server) {
 
 
     connect(&configure,SIGNAL(useRTP(bool)),this,SLOT(setRTP(bool)));
+    connect(&configure,SIGNAL(useRTP(bool)),audio,SLOT(set_RTP(bool)));
 
     connect(&configure,SIGNAL(hostChanged(QString)),this,SLOT(hostChanged(QString)));
     connect(&configure,SIGNAL(receiverChanged(int)),this,SLOT(receiverChanged(int)));
@@ -579,7 +580,6 @@ void UI::connected() {
        if(useRTP) {
            // g0orx RTP
            port=5004;
-           connect(&rtp,SIGNAL(rtp_packet_received(char*,int)),audio,SLOT(process_rtp_audio(char*,int)));
            command.clear(); QTextStream(&command) << "startRTPStream "
                  << port
                  << " " << audio->get_audio_encoding()
@@ -642,7 +642,7 @@ void UI::disconnected(QString message) {
     spectrumTimer->stop();
 
     if(useRTP) {
-        disconnect(&rtp,SIGNAL(rtp_packet_received(char*,int)),audio,SLOT(process_rtp_audio(char*,int)));
+        QTimer::singleShot(0,audio,SLOT(rtp_set_disconnected()));
         rtp.shutdown();
     }
 //    widget.statusbar->showMessage(message,0); //gvj deleted code
@@ -1907,7 +1907,7 @@ void UI::getMeterValue(int m, int s)
 
 void UI::printWindowTitle(QString message)
 {
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "  - rxtx-rtp 31 Dec 2011");
+    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "  - rxtx-rtp 1 Jan 2012");
 }
 
 void UI::printStatusBar(QString message)
@@ -2111,12 +2111,11 @@ void UI::squelchValueChanged(int val) {
 }
 
 void UI::setRemote(char* host,int port) {
-    int p;
     // should only come back if we requested RTP audio
     if(useRTP) {
         //fprintf(stderr,"calling rtp.init\n");
-        p=rtp.init(host,port);
-        rtp.start();
+        rtp.init(host,port);
+        QTimer::singleShot(0,audio,SLOT(rtp_set_connected()));
     }
 }
 

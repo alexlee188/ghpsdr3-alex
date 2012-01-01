@@ -9,7 +9,6 @@ qDebug() << "RTP::RTP";
     remote_set=0;
     jittcomp=40;
     adapt=TRUE;
-    recv_ts=0;
     send_ts=0;
 
     ortp_init();
@@ -38,6 +37,7 @@ int RTP::init(char* host,int port) {
 
     qDebug() << "RTP initialized socket=" <<  rtp_session_get_rtp_socket(rtpSession) << " port=" << rtp_session_get_local_port(rtpSession);
     initialized=1;
+    emit rtp_set_session(rtpSession);
     return rtp_session_get_local_port(rtpSession);
 }
 
@@ -47,46 +47,11 @@ void RTP::setRemote(char* host,int port) {
     remote_set=1;
 }
 
-void RTP::shutdown() {
-    qDebug() << "shutdown";
-    cont=0;
-}
 
-void RTP::run() {
-    int err;
-    char* buffer;
-    int has_more;
-
-
-    qDebug() << "RTP::run"; 
-    if(!initialized) {
-        qDebug() << "RTP:run call before init";
-    } else {
-        cont=1;
-        while(cont) {
-            has_more=1;
-            while(has_more) {
-                buffer=(char*)malloc(RTP_BUFFER_LENGTH);
-                err=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,RTP_BUFFER_LENGTH,recv_ts,&has_more);
-                if (err>0) {
-                    emit rtp_packet_received(buffer,err);
-                    recv_ts+=err;
-                }  else if(err==0) {
-                    recv_ts+=RTP_BUFFER_LENGTH;
-                }  else if(err<0) {
-                    qDebug() << "rtp received error:" << err;
-                    recv_ts+=RTP_BUFFER_LENGTH;
-                }
-            }
-            usleep(2000);
-        }
-qDebug() << "RTP::run ending";
-
+void RTP::shutdown(){
         rtp_session_destroy(rtpSession);
         ortp_global_stats_display();
         remote_set=0;
-    }
-qDebug() << "RTP::run exiting";
 }
 
 void RTP::send(unsigned char* buffer,int length) {

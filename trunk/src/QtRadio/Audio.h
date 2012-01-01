@@ -35,6 +35,8 @@
 #include <samplerate.h>
 #include <QThread>
 #include <QQueue>
+#include <ortp/rtp.h>
+#include <ortp/rtpsession.h>
 #include "G711A.h"
 
 #define AUDIO_BUFFER_SIZE 800
@@ -60,6 +62,7 @@ public:
     qint64 writeData(const char *data, qint64 len);
 private:
     Audio* p;
+    quint32 recv_ts;
 signals:
 };
 
@@ -101,16 +104,22 @@ public:
     SRC_STATE *sr_state;
     void* codec2;
     int audio_encoding;
+    bool useRTP;
+    bool rtp_connected;
+    RtpSession* rtpSession;
+    G711A g711a;
 signals:
     void audio_processing_process_audio(char* header,char* buffer,int length);
 public slots:
     void stateChanged(QAudio::State);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void process_audio(char* header,char* buffer,int length);
-    void process_rtp_audio(char* buffer,int length);
     void get_audio_devices(QComboBox* comboBox);
     void set_audio_encoding(int enc);
-
+    void set_RTP(bool use);
+    void rtp_set_connected(void);
+    void rtp_set_disconnected(void);
+    void rtp_set_rtpSession(RtpSession*);
 private:
     QAudioFormat     audio_format;
     QAudioOutput*    audio_output;
@@ -118,7 +127,6 @@ private:
     Audio_playback*  audio_out;
     int sampleRate;
     int audio_channels;
-    G711A g711a;
     Audio_processing* audio_processing;
     QThread* audio_processing_thread;
 };

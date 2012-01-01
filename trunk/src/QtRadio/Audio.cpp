@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Audio.cpp
  * Author: John Melton, G0ORX/N6LYT
  * 
@@ -23,8 +23,10 @@
 *
 */
 
+#include <ortp/rtp.h>
 #include "Audio.h"
 #include "codec2.h"
+
 
 Audio_playback::Audio_playback(QObject *parent)
     :   QIODevice(parent)
@@ -51,6 +53,32 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
    qint64 bytes_read = 0;
    qint16 v;
    qint64 bytes_to_read = maxlen > 400 ? 400 : maxlen;
+   int has_more;
+
+   if (p->useRTP && p->rtp_connected){
+       int i;
+       short v;
+       int length;
+
+       quint8* buffer;
+
+       buffer = (quint8*)malloc(bytes_to_read/2);       // aLaw encoded
+       length=rtp_session_recv_with_ts(p->rtpSession,(uint8_t*)buffer,bytes_to_read/2,recv_ts,&has_more);
+       if (length>0) {
+           recv_ts+=length;
+           if (p->audio_encoding == 0) {
+               //aLawDecode(buffer,length);
+               for(i=0;i<length;i++) {
+                   v=p->g711a.decode(buffer[i]);
+                   p->decoded_buffer.enqueue(v);
+               }
+           } else {
+               qDebug() << "Audio::process_rtp_audio only support aLaw";
+           }
+       }
+       else recv_ts+=bytes_to_read/2;
+       free(buffer);
+   }
 
    if (p->decoded_buffer.isEmpty()) {       // probably not connected or late arrival of packets.  Send silence.
        memset(data, 0, bytes_to_read);
@@ -323,6 +351,22 @@ void Audio::process_audio(char* header, char* buffer, int length){
     emit audio_processing_process_audio(header,buffer,length);
 }
 
+void Audio::set_RTP(bool use){
+    useRTP = use;
+}
+
+void Audio::rtp_set_connected(void){
+    rtp_connected = true;
+}
+
+void Audio::rtp_set_disconnected(void){
+    rtp_connected = false;
+}
+
+void Audio::rtp_set_rtpSession(RtpSession* session){
+    rtpSession = session;
+}
+
 Audio_processing::Audio_processing(QObject *parent){
     p = (Audio*)parent;
     codec2 = p->codec2;
@@ -350,28 +394,6 @@ void Audio_processing::process_audio(char* header,char* buffer,int length) {
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);
 }
-
-void Audio::process_rtp_audio(char* buffer,int length) {
-    int i;
-    short v;
-
-if(length>0 && length<=2048) {
-
-    if (audio_encoding == 0) {
-        //aLawDecode(buffer,length);
-        for(i=0;i<length;i++) {
-            v=g711a.decode(buffer[i]);
-            decoded_buffer.enqueue(v);
-        }
-    } else {
-        qDebug() << "Audio::process_rtp_audio only support aLaw";
-    }
-    } else {
-        qDebug() << "process_rtp_audio: length=" << length;
-        }
-    if (buffer != NULL) free(buffer);
-}
-
 
 void Audio_processing::resample(int no_of_samples){
     int i;
