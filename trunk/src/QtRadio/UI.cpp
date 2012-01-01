@@ -62,11 +62,6 @@ UI::UI(const QString server) {
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
 
-    connection_thread = new QThread;
-    connection.moveToThread(connection_thread);
-    connection_thread->start(QThread::NormalPriority);
-    qDebug() << "connection_thread : " << connection_thread;
-
     codec2 = codec2_create();
     audio = new Audio(codec2);
 

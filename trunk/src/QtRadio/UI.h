@@ -274,8 +274,6 @@ private:
     QString stringFrequency(long long frequency);
 
     Ui::UI widget;
-
-    QThread* connection_thread;
     Audio* audio;
     int audio_device;
     int audio_sample_rate;
