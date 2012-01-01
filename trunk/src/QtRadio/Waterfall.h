@@ -60,6 +60,10 @@ public:
 signals:
     void frequencyMoved(int steps,int step);
 
+private slots:
+    void updateWaterfall_2(void);
+    void updateWaterfall_3(void);
+    void updateWaterfall_4(void);
 protected:
     void paintEvent(QPaintEvent*);
 
@@ -101,6 +105,7 @@ private:
     long long frequency;
     long long subRxFrequency;
     bool subRx;
+    int size;
 };
 
 

@@ -211,11 +211,8 @@ void Waterfall::paintEvent(QPaintEvent*) {
 }
 
 
-void Waterfall::updateWaterfall(char*header,char* buffer,int size) {
+void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     int i,j;
-    int x,y;
-    int sample;
-    int average;
     int version,subversion;
     int offset;
 
@@ -252,7 +249,12 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int size) {
             samples[i] = -(buffer[j] & 0xFF);
         }
     }
+    size = length;
+    QTimer::singleShot(0,this,SLOT(updateWaterfall_2()));
+}
 
+void Waterfall::updateWaterfall_2(void){
+    int x,y;
 
     if(image.width()!=width() ||
        image.height()!=height()) {
@@ -260,13 +262,17 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int size) {
         //qDebug() << "Waterfall::updateWaterfall " << size << "(" << width() << ")," << height();
         image = QImage(width(), height(), QImage::Format_RGB32);
 
-        int x, y;
         for (x = 0; x < width(); x++) {
             for (y = 0; y < height(); y++) {
                 image.setPixel(x, y, 0xFF000000);
             }
         }
     }
+    QTimer::singleShot(0,this,SLOT(updateWaterfall_3()));
+}
+
+void Waterfall::updateWaterfall_3(void){
+    int x,y;
 
     if(size==width()) {
         // move the pixel array down
@@ -275,18 +281,25 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int size) {
                 image.setPixel(x,y,image.pixel(x,y-1));
             }
         }
+    }
+    QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
+}
 
-        average=0;
-        // draw the new line
-        for(x=0;x<size;x++) {
-            image.setPixel(x,0,this->calculatePixel(samples[x]));
-            average+=samples[x];
-        }
 
-        if(waterfallAutomatic) {
-            waterfallLow=(average/size)-10;
-            waterfallHigh=waterfallLow+60;
-        }
+
+void Waterfall::updateWaterfall_4(void){
+    int x;
+    int average=0;
+
+    // draw the new line
+    for(x=0;x<size;x++) {
+        image.setPixel(x,0,this->calculatePixel(samples[x]));
+        average+=samples[x];
+    }
+
+    if(waterfallAutomatic) {
+        waterfallLow=(average/size)-10;
+        waterfallHigh=waterfallLow+60;
     }
     QTimer::singleShot(0,this,SLOT(repaint()));
     //this->repaint();
