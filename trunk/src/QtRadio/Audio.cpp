@@ -114,7 +114,7 @@ Audio::Audio(void * codec) {
     audio_processing_thread = new QThread;
     audio_processing->moveToThread(audio_processing_thread);
     connect(this,SIGNAL(audio_processing_process_audio(char*,char*,int)),audio_processing,SLOT(process_audio(char*,char*,int)));
-    audio_processing_thread->start(QThread::LowPriority);
+    audio_processing_thread->start(QThread::NormalPriority);
     qDebug() << "audio_processing_thread : " << audio_processing_thread;
 }
 
@@ -218,8 +218,8 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
     }
     sr_state = src_new (
                          //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
-                         //SRC_SINC_MEDIUM_QUALITY,
-                         SRC_SINC_FASTEST,
+                         SRC_SINC_MEDIUM_QUALITY,
+                         //SRC_SINC_FASTEST,
                          //SRC_ZERO_ORDER_HOLD,
                          //SRC_LINEAR,
                          audio_channels, &sr_error
@@ -383,6 +383,9 @@ void Audio_processing::resample(int no_of_samples){
     }
     else if(queue->length() > 4800) {
         src_ratio = 0.95;
+    }
+    else if(queue->length() > 3200){
+        src_ratio = 0.97;
     }
     else if(queue->length() > 1600){
         src_ratio = 0.99;
