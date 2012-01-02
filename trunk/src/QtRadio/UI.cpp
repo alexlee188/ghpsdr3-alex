@@ -591,7 +591,7 @@ void UI::connected() {
                  << " " << audio_sample_rate << " "
                  << " " << audio_channels;
 
-           QTimer::singleShot(2000,audio,SLOT(rtp_set_connected()));
+           QTimer::singleShot(500,audio,SLOT(rtp_set_connected()));
        } else {
            command.clear(); QTextStream(&command) << "startAudioStream "
                 << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " "

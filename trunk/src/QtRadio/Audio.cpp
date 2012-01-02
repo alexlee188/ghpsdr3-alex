@@ -358,12 +358,13 @@ void Audio::set_RTP(bool use){
 
 void Audio::rtp_set_connected(void){
     qDebug() << "Audio::rtp_set_connected";
+#if 1
     /*
      *  send first packet in order to help to establish session
      */
     unsigned char fake [] = "BBBBBBBBBBBBBBBB";
     rtp_session_send_with_ts(rtpSession,(uint8_t*)fake,sizeof(fake),1);
-
+#endif
     rtp_connected = true;
 }
 
