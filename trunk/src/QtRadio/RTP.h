@@ -15,18 +15,13 @@ class RTP : public QObject {
         int init(const char* host,int port);
         void run();
         void send(unsigned char* buffer,int length);
-        void shutdown();
         void dump_buffer(unsigned char* buffer,int length);
         RtpSession* rtpSession;
     signals:
-        void rtp_remote_set(int set);
         void rtp_set_session(RtpSession* session);
 
     public slots:
-        void setRemote(char* host,int port);
         void shutdown();
-//    public slots:
-//        void setRemote(char* host,int port);
 
     private:
         int initialized;

@@ -116,7 +116,7 @@ void rtp_send(char* buffer,int length) {
 int rtp_receive(unsigned char* buffer,int length) {
     int rc = -1;
 
-    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&has_more);
+    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
     recv_ts+=length;
     rtp_connected = 1;
 
