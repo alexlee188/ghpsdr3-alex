@@ -582,16 +582,17 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 void writecb(struct bufferevent *bev, void *ctx){
 	struct audio_entry *item;
 	client_entry *client_item;
-	int rtp_client_count = 0;
+	int rtp_client_count;
 
 	sem_wait(&bufferevent_semaphore);
 	while ((item = audio_stream_queue_remove()) != NULL){
+		rtp_client_count = 0;
 		TAILQ_FOREACH(client_item, &Client_list, entries){
                         if(client_item->rtp == connection_tcp) {
 			    bufferevent_write(client_item->bev, item->buf, item->length);
                             }
 			else if (client_item->rtp == connection_rtp) rtp_client_count++;
-			}
+		}
 
 		if (rtp_client_count) rtp_send(&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
 
