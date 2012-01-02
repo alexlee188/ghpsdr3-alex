@@ -52,49 +52,98 @@
 
 #include "rtp.h"
 
-RtpSession* rtpSession;
-int rtp_connected=0;
+static RtpSession* rtpSession = 0;
 int recv_ts=0;
 int send_ts=0;
-int rtp_receive_has_more;
+int rtp_receive_has_more = 0;
 int jittcomp=40;
 int adapt=1;
 
+       int rtp_connected   = 0;
+static int rtp_initialized = 0;
+static int rtp_listening   = 0;
+
 void rtp_init() {
+
+    if (rtp_initialized) {
+       fprintf (stderr, "rtp_init: WARNING: double init discarded !!!!!!\n");
+       return;
+    } else {
+       fprintf (stderr, "rtp_init: init ! ****************** \n");
+    }
     ortp_init();
     ortp_scheduler_init();
+    ortp_set_log_file (stdout);
     ortp_set_log_level_mask(ORTP_DEBUG|ORTP_MESSAGE|ORTP_WARNING|ORTP_ERROR);
     jittcomp=40;
     adapt=1;
-    rtp_connected=0;
+
+    rtp_connected   = 0;
+    rtp_listening   = 0;
+    rtp_initialized = 1;
 }
 
-int rtp_listen() {
+int rtp_listen(const char *remote_addr, unsigned short remote_port) {
+
+    if (rtp_initialized == 0) {
+       fprintf (stderr, "rtp_listen: ERROR: attempting to start to listen without init !!!!!!\n");
+       return -1;
+    } 
+    if (rtp_listening) {
+       fprintf (stderr, "rtp_listen: WARNING: multiple listening discarded !!!!!!\n");
+       if (remote_addr) rtp_session_set_remote_addr	(rtpSession, remote_addr, remote_port );
+       fprintf(stderr,"RTP initialized socket=%d local port=%d remote port: %d remote_addr: %s\n",
+            rtp_session_get_rtp_socket(rtpSession),rtp_session_get_local_port(rtpSession),
+            remote_port, remote_addr
+       );
+
+       return rtp_session_get_local_port(rtpSession);
+    } else {
+       fprintf (stderr, "rtp_listen: listening ! ****************** \n");
+    }
+
     recv_ts=0;
     send_ts=0;
     rtpSession=rtp_session_new(RTP_SESSION_SENDRECV);
-    rtp_session_set_scheduling_mode(rtpSession,1);
-    rtp_session_set_blocking_mode(rtpSession,1);
+    rtp_session_set_scheduling_mode(rtpSession,TRUE);
+    rtp_session_set_blocking_mode(rtpSession,TRUE);
+
     rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
+
+    // kludge !!
+    if (remote_addr) rtp_session_set_remote_addr	(rtpSession, remote_addr, remote_port );
+
     rtp_session_set_connected_mode(rtpSession,TRUE);
     rtp_session_set_symmetric_rtp(rtpSession,TRUE);
+
     rtp_session_enable_adaptive_jitter_compensation(rtpSession,adapt);
     rtp_session_set_jitter_compensation(rtpSession,jittcomp);
     rtp_session_set_payload_type(rtpSession,0);
     //rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)ssrc_cb,0);
-    rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)rtp_session_reset,0);
+    rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)rtp_session_reset,rtpSession);
 
-    fprintf(stderr,"RTP initialized socket=%d port=%d\n",rtp_session_get_rtp_socket(rtpSession),rtp_session_get_local_port(rtpSession));
+    fprintf(stderr,"RTP initialized socket=%d local port=%d remote port: %d remote_addr: %s\n",
+            rtp_session_get_rtp_socket(rtpSession),rtp_session_get_local_port(rtpSession),
+            remote_port, remote_addr
+           );
 
     // that connected state is set in rtp_receive, i.e. on the first received packet from remote
     // because, in order to allow for a corrwect session establishment in firewalls along the line, it is critical
     // that we (from the server side point of view) wait 
     //rtp_ connected=1;
 
+    rtp_listening = 1;
+
     return rtp_session_get_local_port(rtpSession);
 }
 
 void rtp_disconnect() {
+   
+    if (rtp_listening == 0) {
+       fprintf (stderr, "rtp_disconnect: ERROR: attempting to disconnect without listening !!!!!!");
+       return;
+    }
+
     rtp_session_destroy(rtpSession);
     rtp_connected=0;
     ortp_global_stats_display();
@@ -102,23 +151,67 @@ void rtp_disconnect() {
 
 void rtp_send(char* buffer,int length) {
     int rc;
+
+    if (rtp_initialized == 0) {
+       fprintf (stderr, "rtp_listen: ERROR: attempting to send without init !!!!!!");
+       return;
+    }
+
     if(rtp_connected)  {
         rc=rtp_session_send_with_ts(rtpSession,(uint8_t*)buffer,length,send_ts);
         if(rc<=0) {
-            fprintf(stderr,"RTP:send rc=%d\n",rc);
+            fprintf(stderr,"rtp_send: ERROR rc=%d\n",rc);
         }
         send_ts+=length;
     } else {
-        fprintf(stderr,"rtp_send: not connected\n");
+//        fprintf(stderr,"rtp_send: ERROR: refuses to send: not yet connected (has to wait at least the first packet from client)\n");
     }
 }
 
-int rtp_receive(unsigned char* buffer,int length) {
+int rtp_receive (unsigned char* buffer,int length) {
     int rc = -1;
+    
+    if (rtp_initialized == 0) {
+       fprintf (stderr, "rtp_receive: ERROR: attempting to receive without init !!!!!!");
+       return rc;
+    }
+
+    if (rtp_listening == 0) {
+       fprintf (stderr, "rtp_receive: ERROR: attempting to receive without listening !!!!!!");
+       return rc;
+    }
+
+    if (rtp_connected == 0 ) {
+       unsigned char buffer [BUFSIZ];
+
+       //fprintf(stderr,"rtp_receive: buffer: %p len: %d\n", buffer, length);
+
+       int rc = rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,sizeof(buffer),recv_ts,&rtp_receive_has_more);
+
+       if (rc > 0) {
+           fprintf(stderr,"rtp_receive: first RTP packet received !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+           rtp_connected = 1;
+           recv_ts+=length;
+       } else {
+           //fprintf(stderr,"rtp_receive: %d\n", rc);
+       }
+    } else {
 
     rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
-    recv_ts+=length;
-    rtp_connected = 1;
+    if(rc < 0) {
+       fprintf(stderr,"rtp_receive: ERROR rc=%d\n",rc);
+    } else
 
+      if (rc == 0) {
+          //fprintf(stderr,"rtp_receive: ERROR rc=%d\n",rc);
+      } else {
+          recv_ts+=length;
+          if (rtp_connected == 0) {
+             fprintf(stderr,"rtp_receive: first RTP packet received !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+             rtp_connected = 1;
+          }
+      }
+    }
+    rtp_connected = 1;
     return rc;
 }

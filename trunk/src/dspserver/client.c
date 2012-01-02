@@ -678,10 +678,11 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                                    if(token!=NULL) {
 		                                        audio_channels=atoi(token);
 
-	fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
+	fprintf(stderr,"%s: %d: starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
+		        __FUNCTION__, __LINE__,
 		        inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
-
-		                                        int port=rtp_listen();
+                                                fprintf(stdout,"%s: %d: startrtpstream: listening on RTP socket\n", __FILE__, __LINE__);
+		                                        int port=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
 		                                        //current_item->rtp=connection_rtp;
 							audio_stream_reset();
 		                                        error=0;
@@ -927,8 +928,8 @@ void readcb(struct bufferevent *bev, void *ctx){
 
 fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                 inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
-
-                                                int port=rtp_listen();
+                                                fprintf(stdout,"client.c: startrtpstream port encoding samplerate channels: listening on RTP socket\n");
+                                                int port=rtp_listen( inet_ntoa(item->client.sin_addr), rtpport);
                                                 item->rtp=connection_rtp;
 						audio_stream_reset();
                                                 error=0;
@@ -1207,11 +1208,15 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                        } else if(strncmp(token,"setclient",9)==0) {
                         	token=strtok_r(NULL," ",&saveptr);
                         	if(token!=NULL) {
+                                    int xp = 0;
+
                             		time(&tt);
                             		tod=localtime(&tt);
                             		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
-                                    // put the rtp session on listen just now            
-                                    rtp_listen();
+                                    // put the rtp session on listen just now    
+                                    xp = rtp_listen(0,0);
+                                    fprintf(stdout,"%s: %d: setclient: listening on RTP port %d\n", __FILE__, __LINE__, xp);
+
                                     item->rtp=1;
                                     send_audio=1;
 
