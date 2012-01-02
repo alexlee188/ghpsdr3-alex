@@ -521,7 +521,6 @@ void UI::actionQuick_Server_List() {
 
 void UI::connected() {
     QString command;
-    int port;
 
     qDebug() << "UI::connected";
     isConnected = true;
@@ -580,17 +579,19 @@ void UI::connected() {
     if (!getenv("QT_RADIO_NO_LOCAL_AUDIO")) {
        if(useRTP) {
            // g0orx RTP
-           command.clear(); QTextStream(&command) << "startRTPStream "
-                 << port
-                 << " " << audio->get_audio_encoding()
-                 << " " << audio_sample_rate << " "
-                 << " " << audio_channels;
            char host_ip[64];
            QString host = connection.getHost();
            memcpy(host_ip, host.toUtf8().constData(),host.length());
            host_ip[host.length()]=0;
-           rtp.init(host_ip, 5004);
-           QTimer::singleShot(0,audio,SLOT(rtp_set_connected()));
+           int local_port = rtp.init(host_ip, 5004);
+
+           command.clear(); QTextStream(&command) << "startRTPStream "
+                 << local_port
+                 << " " << audio->get_audio_encoding()
+                 << " " << audio_sample_rate << " "
+                 << " " << audio_channels;
+
+           QTimer::singleShot(2000,audio,SLOT(rtp_set_connected()));
        } else {
            command.clear(); QTextStream(&command) << "startAudioStream "
                 << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " "
