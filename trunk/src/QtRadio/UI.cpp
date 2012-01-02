@@ -102,7 +102,7 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(disconnected(QString)),this,SLOT(disconnected(QString)));
     connect(&connection,SIGNAL(audioBuffer(char*,char*)),this,SLOT(audioBuffer(char*,char*)));
     connect(&connection,SIGNAL(spectrumBuffer(char*,char*)),this,SLOT(spectrumBuffer(char*,char*)));
-    connect(&connection,SIGNAL(remoteRTP(char*,int)),this,SLOT(setRemote(char*,int)));
+
     connect(&rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
@@ -580,12 +580,20 @@ void UI::connected() {
     if (!getenv("QT_RADIO_NO_LOCAL_AUDIO")) {
        if(useRTP) {
            // g0orx RTP
+<<<<<<< HEAD
            port=5004;
            command.clear(); QTextStream(&command) << "startRTPStream "
                  << port
                  << " " << audio->get_audio_encoding()
                  << " " << audio_sample_rate << " "
                  << " " << audio_channels;
+=======
+           //port=5004;
+           int local_port = rtp.init (connection.getHost(), 5004);
+           connect(&rtp,SIGNAL(rtp_packet_received(char*,int)),audio,SLOT(process_rtp_audio(char*,int)));
+           // start immediately
+           rtp.start();
+>>>>>>> iw0hdv
        } else {
            command.clear(); QTextStream(&command) << "startAudioStream "
                 << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " "

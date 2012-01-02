@@ -26,7 +26,7 @@
 */
 
 void rtp_init();
-int rtp_connect(char* host,int port);
+int rtp_listen();
 void rtp_disconnect();
 void rtp_send(char* buffer,int length);
 int rtp_receive(unsigned char* buffer,int length);

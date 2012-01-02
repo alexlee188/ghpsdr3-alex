@@ -20,14 +20,17 @@ qDebug() << "RTP::RTP";
 RTP::~RTP() {
 }
 
-int RTP::init(char* host,int port) {
+int RTP::init(const char* host,int port) {
     //signal(SIGINT,stop_handler);
     rtpSession=rtp_session_new(RTP_SESSION_SENDRECV);
     rtp_session_set_scheduling_mode(rtpSession,1);
     rtp_session_set_blocking_mode(rtpSession,1);
-    rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
+    //rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
     rtp_session_set_connected_mode(rtpSession,TRUE);
     rtp_session_set_remote_addr(rtpSession,host,port);
+
+qDebug() << "RTP connect to remote: " << host << " - " << port;
+
     rtp_session_set_symmetric_rtp(rtpSession,TRUE);
     rtp_session_enable_adaptive_jitter_compensation(rtpSession,adapt);
     rtp_session_set_jitter_compensation(rtpSession,jittcomp);
@@ -38,14 +41,23 @@ int RTP::init(char* host,int port) {
     qDebug() << "RTP initialized socket=" <<  rtp_session_get_rtp_socket(rtpSession) << " port=" << rtp_session_get_local_port(rtpSession);
     initialized=1;
     emit rtp_set_session(rtpSession);
+
+    /*
+     *  send first packet in order to help to establish session
+     */
+    unsigned char fake [] = "AAAAAAAAAAAAAAAA";
+    rtp_session_send_with_ts(rtpSession,(uint8_t*)fake,sizeof(fake),send_ts);
+
     return rtp_session_get_local_port(rtpSession);
 }
 
+#if 0
 void RTP::setRemote(char* host,int port) {
     qDebug() << "RTP::setRemote " << host <<":" << port;
     rtp_session_set_remote_addr(rtpSession,host,port);
     remote_set=1;
 }
+#endif
 
 
 void RTP::shutdown(){
