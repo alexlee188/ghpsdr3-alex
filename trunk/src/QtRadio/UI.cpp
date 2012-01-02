@@ -585,8 +585,12 @@ void UI::connected() {
                  << " " << audio->get_audio_encoding()
                  << " " << audio_sample_rate << " "
                  << " " << audio_channels;
-
-           rtp.init (connection.getHost(), 5004);
+           char host_ip[64];
+           QString host = connection.getHost();
+           memcpy(host_ip, host.toUtf8().constData(),host.length());
+           host_ip[host.length()]=0;
+           rtp.init(host_ip, 5004);
+           QTimer::singleShot(0,audio,SLOT(rtp_set_connected()));
        } else {
            command.clear(); QTextStream(&command) << "startAudioStream "
                 << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " "
@@ -2112,14 +2116,6 @@ void UI::squelchValueChanged(int val) {
     }
 }
 
-void UI::setRemote(char* host,int port) {
-    // should only come back if we requested RTP audio
-    if(useRTP) {
-        //fprintf(stderr,"calling rtp.init\n");
-        rtp.init(host,port);
-        QTimer::singleShot(0,audio,SLOT(rtp_set_connected()));
-    }
-}
 
 void UI::setRTP(bool state) {
     useRTP=state;

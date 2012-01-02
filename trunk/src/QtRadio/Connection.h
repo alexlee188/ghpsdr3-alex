@@ -69,7 +69,7 @@ public:
     void freeBuffers(char* header,char* buffer);
     QSemaphore SemSpectrum;
     void setMuted(bool);
-    const char *getHost();
+    QString getHost();
 
 public slots:
     void connected();

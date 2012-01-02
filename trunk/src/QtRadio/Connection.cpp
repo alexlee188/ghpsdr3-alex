@@ -44,9 +44,9 @@ Connection::~Connection() {
     qDebug() << "Connection::~Connection";
 }
 
-const char *Connection::getHost() {
+QString Connection::getHost() {
     qDebug() << "Connection::getHost: " << host;
-    return host.toUtf8().constData();
+    return host;
 }
 
 void Connection::connect(QString h,int p) {

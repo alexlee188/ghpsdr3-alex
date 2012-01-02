@@ -22,10 +22,12 @@ RTP::~RTP() {
 
 int RTP::init(const char* host,int port) {
     //signal(SIGINT,stop_handler);
+
+    qDebug() << "RTP::init host " << host << " port " << port;
     rtpSession=rtp_session_new(RTP_SESSION_SENDRECV);
     rtp_session_set_scheduling_mode(rtpSession,1);
     rtp_session_set_blocking_mode(rtpSession,1);
-    //rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
+    rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
     rtp_session_set_connected_mode(rtpSession,TRUE);
     rtp_session_set_remote_addr(rtpSession,host,port);
 
@@ -35,7 +37,6 @@ qDebug() << "RTP connect to remote: " << host << " - " << port;
     rtp_session_enable_adaptive_jitter_compensation(rtpSession,adapt);
     rtp_session_set_jitter_compensation(rtpSession,jittcomp);
     rtp_session_set_payload_type(rtpSession,0);
-    //rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)ssrc_cb,0);
     rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)rtp_session_reset,0);
 
     qDebug() << "RTP initialized socket=" <<  rtp_session_get_rtp_socket(rtpSession) << " port=" << rtp_session_get_local_port(rtpSession);

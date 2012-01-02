@@ -252,7 +252,6 @@ public slots:
     void pttChange(int caller, bool ptt);
     void pwrSlider_valueChanged(double pwr);
     void printStatusBar(QString message);
-    void setRemote(char* host,int port);
 signals:
     void subRxStateChanged(bool state);
     void set_src_ratio(double ratio);
