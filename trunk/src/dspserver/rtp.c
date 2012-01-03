@@ -120,8 +120,8 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
     rtp_session_set_jitter_compensation(rtpSession,jittcomp);
     rtp_session_set_payload_type(rtpSession,0);
     //rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)ssrc_cb,0);
-    rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)rtp_session_reset,rtpSession);
-
+    //rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)rtp_session_reset,rtpSession);
+    rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)rtp_session_reset,0);
     fprintf(stderr,"RTP initialized socket=%d local port=%d remote port: %d remote_addr: %s\n",
             rtp_session_get_rtp_socket(rtpSession),rtp_session_get_local_port(rtpSession),
             remote_port, remote_addr
