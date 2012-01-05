@@ -59,7 +59,7 @@ Waterfall::Waterfall(QWidget*& widget) {
         }
     }
 
-    samples=NULL;
+    cy = image.height()/2 - 1;
 
 }
 
@@ -105,13 +105,14 @@ void Waterfall::setGeometry(QRect rect) {
 
     samples = (float*) malloc(rect.width() * sizeof (float));
 
-    image = QImage(rect.width(), rect.height(), QImage::Format_RGB32);
-
+    // no scroll algorithm needs 2 copies of waterfaull
+    image = QImage(rect.width(), rect.height()*2, QImage::Format_RGB32);
+    cy = rect.height()-1;
     qDebug() << "Waterfall::Waterfall " << rect.width() << ":" << rect.height();
 
     int x, y;
     for (x = 0; x < rect.width(); x++) {
-        for (y = 0; x < rect.height(); x++) {
+        for (y = 0; y < rect.height()*2; y++) {
             image.setPixel(x, y, 0xFF000000);
         }
     }
@@ -207,7 +208,9 @@ void Waterfall::paintEvent(QPaintEvent*) {
 
     //painter.fillRect(0, 0, width(), height(), Qt::black);
 
-    painter.drawImage(QPoint(0,0),image);
+    painter.drawImage(0,0,image,0,cy,image.width(),image.height()/2,Qt::AutoColor);
+    if (cy <= 0) cy = image.height()/2 - 1;
+    else cy--;          // "scroll"
 }
 
 
@@ -257,32 +260,22 @@ void Waterfall::updateWaterfall_2(void){
     int x,y;
 
     if(image.width()!=width() ||
-       image.height()!=height()) {
+       (image.height()/2) != (height())) {
 
-        //qDebug() << "Waterfall::updateWaterfall " << size << "(" << width() << ")," << height();
-        image = QImage(width(), height(), QImage::Format_RGB32);
-
+        qDebug() << "Waterfall::updateWaterfall " << size << "(" << width() << ")," << height();
+        image = QImage(width(), height()*2, QImage::Format_RGB32);
+        cy = image.height()/2 - 1;
         for (x = 0; x < width(); x++) {
-            for (y = 0; y < height(); y++) {
+            for (y = 0; y < image.height(); y++) {
                 image.setPixel(x, y, 0xFF000000);
             }
         }
     }
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_3()));
+    QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
 }
 
 void Waterfall::updateWaterfall_3(void){
-    int x,y;
 
-    if(size==width()) {
-        // move the pixel array down
-        for(y=height()-1;y>0;y--) {
-            for(x=0;x<size;x++) {
-                image.setPixel(x,y,image.pixel(x,y-1));
-            }
-        }
-    }
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
 }
 
 
@@ -292,8 +285,10 @@ void Waterfall::updateWaterfall_4(void){
     int average=0;
 
     // draw the new line
-    for(x=0;x<size;x++) {
-        image.setPixel(x,0,this->calculatePixel(samples[x]));
+    for(x=0;x<size;x++){
+        uint pixel = calculatePixel(samples[x]);
+        image.setPixel(x,cy,pixel);
+        image.setPixel(x,cy+height(),pixel);
         average+=samples[x];
     }
 
@@ -301,6 +296,7 @@ void Waterfall::updateWaterfall_4(void){
         waterfallLow=(average/size)-10;
         waterfallHigh=waterfallLow+60;
     }
+
     QTimer::singleShot(0,this,SLOT(repaint()));
     //this->repaint();
 
