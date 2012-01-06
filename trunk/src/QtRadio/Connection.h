@@ -40,6 +40,7 @@
 #define AUDIO_BUFFER        1
 #define BANDSCOPE_BUFFER    2
 #define RTP_REPLY_BUFFER    3
+#define ANSWER_BUFFER       4
 
 // minimum supported header version
 #define HEADER_VERSION 2
@@ -58,6 +59,7 @@
 #define READ_HEADER_TYPE 3
 #define READ_AUDIO_HEADER 4
 #define READ_RTP_REPLY 5
+#define READ_ANSWER 6
 
 class Connection : public QObject {
     Q_OBJECT
@@ -102,6 +104,7 @@ private:
     char* buffer;
     short length;   // int causes errors in converting 2 char bytes to integer
     int bytes;
+    char* answer;
     bool muted;
 
     QQueue<Buffer*> queue;

@@ -24,6 +24,7 @@
 */
 
 #include "Connection.h"
+#include <QDebug>
 
 Connection::Connection() {
     qDebug() << "Connection::Connection";
@@ -130,6 +131,7 @@ void Connection::connected() {
     qDebug() << "Connection::Connected" << tcpSocket->isValid();
     emit isConnected();
     state=READ_HEADER_TYPE;
+    sendCommand("q-version");
 }
 
 void Connection::sendCommand(QString command) {
@@ -176,6 +178,7 @@ void Connection::socketData() {
     int version;
     int subversion;
     int header_size;
+    int answer_size;
 
     if (bytes < 0) {
         fprintf(stderr,"QtRadio: FATAL: INVALID byte counter: %d\n", bytes);
@@ -193,8 +196,7 @@ void Connection::socketData() {
         switch(state) {
         case READ_HEADER_TYPE:
             thisRead=tcpSocket->read(&hdr[0],3);
-
-            if (thisRead == 3) 
+            if (thisRead == 3)
                bytes+=3;
             else {
                  fprintf(stderr,"QtRadio: FATAL: only %d read instead of 3\n", thisRead);
@@ -232,6 +234,13 @@ void Connection::socketData() {
                     break;
                 case RTP_REPLY_BUFFER:
                     state=READ_RTP_REPLY;
+                    break;
+               case 52: //ANSWER_BUFFER
+                    // answer size is in hdr pos 1 & 2 max 99
+                    state = READ_ANSWER;
+                    bytes = 0;
+                    answer_size = atoi(hdr) - 400 ; // 1st digt is buffer type 4
+                    answer = (char*)malloc(answer_size);
                     break;
             }
             break;
@@ -321,6 +330,21 @@ qDebug() << "Connection READ_RTP_REPLY bytes="<<bytes;
             }
             bytes=0;
             state=READ_HEADER_TYPE;
+            break;
+        case READ_ANSWER:
+            qDebug() << "Connection READ ANSWER";
+            thisRead=tcpSocket->read(&answer[bytes],answer_size - bytes);
+            if (thisRead < 0) {
+               fprintf(stderr,"QtRadio: FATAL: READ_BUFFER: error in read: %d\n", thisRead);
+               tcpSocket->close();
+               return;
+            }
+            bytes+=thisRead;
+            if(bytes==answer_size) {
+                 qDebug() << "ANSWER bytes "<< bytes <<" answer "<< answer;
+                bytes=0;
+                state=READ_HEADER_TYPE;
+            }
             break;
         default:
             fprintf (stderr, "FATAL: WRONG STATUS !!!!!\n");         

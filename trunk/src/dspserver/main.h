@@ -32,3 +32,4 @@ int cwPitch;
 
 extern int toShareOrNotToShare;
 
+const char *version = "20120102-rxtx-rtp";

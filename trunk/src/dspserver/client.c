@@ -631,7 +631,9 @@ void readcb(struct bufferevent *bev, void *ctx){
 		               	token[i]=tolower(token[i]);
 		               	i++;
                     		}
-	 			if(strncmp(token,"getspectrum",11)==0) {
+                                if(strncmp(token,"q",1)==0){	
+				   answer_question(message,"slave", bev);
+				}else if(strncmp(token,"getspectrum",11)==0) {
 				        token=strtok_r(NULL," ",&saveptr);
 				        if(token!=NULL) {
 		                    	    samples=atoi(token);
@@ -730,7 +732,9 @@ void readcb(struct bufferevent *bev, void *ctx){
 		               	token[i]=tolower(token[i]);
 		               	i++;
                     		}
- 			if(strncmp(token,"getspectrum",11)==0) {
+                        if(strncmp(token,"q",1)==0){	
+			    answer_question(message,"master", bev);
+ 			}else if(strncmp(token,"getspectrum",11)==0) {
 		                token=strtok_r(NULL," ",&saveptr);
 		                if(token!=NULL) {
                             	    samples=atoi(token);
@@ -1351,5 +1355,40 @@ void printcountrythread()
   pclose(fp);
 
   return;
+}
+
+void answer_question(char *message, char *clienttype, struct bufferevent *bev){
+	// reply = 4LLqqq:aaaa LL= length (limit 99 + header 3) followed by question : answer
+	char *reply; 
+	char answer[101] ="xxx";
+	int length;
+	char len[10];
+	
+	if (strcmp(message,"q-version") == 0){
+		 strcat(answer,"q-version:");
+		 strcat(answer,version);
+	}else if (strcmp(message,"q-master") == 0){
+		 strcat(answer,"q-master:");
+		 strcat(answer,clienttype);
+	}else{
+		fprintf(stderr,"Unknown question: %s\n",message);
+		return;
+	}
+	fprintf(stderr,"answer_question: %s is %s and ver is %s\n", message, answer, version);
+	answer[0] = '4';  //ANSWER_BUFFER
+	length = strlen(answer) - 3; // - header
+	if (length > 99){
+	   fprintf(stderr,"Oversize reply!!: %s = %u\n",message, length);
+	   return;
+	}
+	
+	sprintf(len,"%02u", length);
+	answer[1] = len[0];
+	answer[2] = len[1];
+	fprintf(stderr,"len=%s\n", len);
+	reply = (char *)&answer;
+	bufferevent_write(bev, reply, strlen(answer) );
+	
+	
 }
 
