@@ -1908,7 +1908,7 @@ void UI::getMeterValue(int m, int s)
 
 void UI::printWindowTitle(QString message)
 {
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "  - rxtx-rtp 1 Jan 2012");
+    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "  - rxtx-rtp 5 Jan 2012");
 }
 
 void UI::printStatusBar(QString message)
