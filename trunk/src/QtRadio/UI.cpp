@@ -82,6 +82,8 @@ UI::UI(const QString server) {
     modeFlag = false;
     slave = 1; //start as master
     infotick = 0;
+    dspversion = 0;
+    dspversiontxt = "Unknown";
 
     // layout the screen
     widget.gridLayout->setContentsMargins(0,0,0,0);
@@ -267,6 +269,7 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(slaveSetFreq(long long)),this,SLOT(frequencyChanged(long long)));
     connect(&connection,SIGNAL(slaveSetMode(int)),this,SLOT(slaveSetMode(int)));
     connect(&connection,SIGNAL(slaveSetSlave(int)),this,SLOT(slaveSetSlave(int)));
+    connect(&connection,SIGNAL(setdspversion(long, QString)),this,SLOT(setdspversion(long, QString)));
 
     bandscope=NULL;
 
@@ -1919,7 +1922,13 @@ void UI::getMeterValue(int m, int s)
 
 void UI::printWindowTitle(QString message)
 {
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "  - rxtx-rtp 7 Jan 2012");
+    if (message.compare("Remote disconnected")==0){
+        dspversion = 0;
+        dspversiontxt = "";
+    }
+    qDebug() << "version:"<< dspversion <<" & "<< dspversiontxt <<"<-";
+    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + getversionstring() +  message + "  - rxtx-rtp 7 Jan 2012");
+    lastmessage = message;
 }
 
 void UI::printStatusBar(QString message)
@@ -2142,4 +2151,25 @@ void UI::setRTP(bool state) {
 
 void UI::slaveSetSlave(int s){
     slave = s;
+}
+
+QString UI::getversionstring(){
+    QString str;
+    if( dspversion != 0){
+      str.setNum(dspversion);
+      str.prepend("  (Remote = ");
+      str.append("  ");
+      str.append(dspversiontxt);
+      str.append(")  ");
+    }else{
+      str ="";
+    }
+    return str;
+}
+
+void UI::setdspversion(long ver, QString vertxt){
+    dspversion = ver;
+    dspversiontxt = vertxt;
+    printWindowTitle(lastmessage);
+
 }

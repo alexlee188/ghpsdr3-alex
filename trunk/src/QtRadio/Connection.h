@@ -93,6 +93,7 @@ signals:
     void slaveSetFreq(long long f);
     void slaveSetMode(int m);
     void slaveSetSlave(int slave);
+    void setdspversion(long, QString);
 
 private:
     // really not used (and not even implemented)

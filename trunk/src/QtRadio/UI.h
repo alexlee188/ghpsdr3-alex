@@ -255,6 +255,7 @@ public slots:
     void setRemote(char* host,int port);
     void slaveSetMode(int newmode);
     void slaveSetSlave(int slave); // 0 = slave
+    void setdspversion(long dspversion, QString dspversiontxt);
 
 signals:
     void subRxStateChanged(bool state);
@@ -271,7 +272,7 @@ private:
     void setGain(bool state);
     void initRigCtl();
     RigCtlServer *rigCtl;
-
+    QString getversionstring();
     void appendBookmark(Bookmark* bookmark);
 
     QString stringFrequency(long long frequency);
@@ -364,6 +365,9 @@ private:
     int tuning;
     int slave;  // 0 = slave mode
     int infotick;
+    long dspversion;
+    QString dspversiontxt;
+    QString lastmessage;
 };
 
 #endif	/* _UI_H */

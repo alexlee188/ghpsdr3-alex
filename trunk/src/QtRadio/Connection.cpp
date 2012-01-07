@@ -81,6 +81,7 @@ void Connection::connect(QString h,int p) {
 void Connection::disconnected() {
     qDebug() << "Connection::disconnected: emits: " << "Remote disconnected";
     emit disconnected("Remote disconnected");
+
     if(tcpSocket!=NULL) {
         QObject::disconnect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
                 this, SLOT(socketError(QAbstractSocket::SocketError)));
@@ -350,13 +351,18 @@ qDebug() << "Connection READ_RTP_REPLY bytes="<<bytes;
                 fprintf(stderr,"ans length = %d\n",strlen(ans));
                 ans[answer_size] = '\0';
                 answer = ans;
+                QRegExp rx;
                 if(answer.contains("q-version")){
+                    //"20120107;-rxtx-rtp"; YYYYMMDD; text desc
+                    rx.setPattern(":(\\d+);-(\\S+)");
+                    rx.indexIn(answer);
+                    emit setdspversion(rx.cap(1).toLong(),rx.cap(2).toAscii());
                     sendCommand("q-master");
                 }else if(answer.contains("q-master") && answer.contains("slave")){
                     sendCommand("q-info");  // we are a slave so lets see where master is tuned
                 }else if(answer.contains("q-info")){
 
-                    QRegExp rx("info:s;(\\d+);f;(\\d+);m;(\\d+)");// q-info:0;f;14008750;m;4;
+                    rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+)");// q-info:0;f;14008750;m;4;
                     rx.indexIn(answer);
                     QString slave = rx.cap(1);
                     QString f = rx.cap(2);
