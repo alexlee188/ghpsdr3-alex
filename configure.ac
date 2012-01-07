@@ -289,7 +289,9 @@ AC_CONFIG_FILES([Makefile
                  trunk/src/widget-server/Makefile
                  trunk/src/server/Makefile
                  trunk/bin/Makefile
-                 trunk/src/pylauncher/Makefile])
+                 trunk/src/pylauncher/Makefile
+                 trunk/src/hiqsdr/Makefile
+		 ])
 
 
 
