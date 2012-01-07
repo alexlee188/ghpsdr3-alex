@@ -253,6 +253,9 @@ public slots:
     void pwrSlider_valueChanged(double pwr);
     void printStatusBar(QString message);
     void setRemote(char* host,int port);
+    void slaveSetMode(int newmode);
+    void slaveSetSlave(int slave); // 0 = slave
+
 signals:
     void subRxStateChanged(bool state);
     void set_src_ratio(double ratio);
@@ -359,6 +362,8 @@ private:
     bool useRTP;
 
     int tuning;
+    int slave;  // 0 = slave mode
+    int infotick;
 };
 
 #endif	/* _UI_H */

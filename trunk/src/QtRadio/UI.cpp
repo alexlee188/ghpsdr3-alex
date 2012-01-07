@@ -80,6 +80,8 @@ UI::UI(const QString server) {
 
     isConnected = false;
     modeFlag = false;
+    slave = 1; //start as master
+    infotick = 0;
 
     // layout the screen
     widget.gridLayout->setContentsMargins(0,0,0,0);
@@ -261,6 +263,10 @@ UI::UI(const QString server) {
     connect(widget.ctlFrame,SIGNAL(pwrSlider_valueChanged(double)),this,SLOT(pwrSlider_valueChanged(double)));
     connect(widget.vfoFrame,SIGNAL(rightBandClick()),this,SLOT(quickMemStore()));
     connect(&band,SIGNAL(printStatusBar(QString)),this,SLOT(printStatusBar(QString)));
+    connect(&connection,SIGNAL(printStatusBar(QString)),this,SLOT(printStatusBar(QString)));
+    connect(&connection,SIGNAL(slaveSetFreq(long long)),this,SLOT(frequencyChanged(long long)));
+    connect(&connection,SIGNAL(slaveSetMode(int)),this,SLOT(slaveSetMode(int)));
+    connect(&connection,SIGNAL(slaveSetSlave(int)),this,SLOT(slaveSetSlave(int)));
 
     bandscope=NULL;
 
@@ -660,6 +666,11 @@ void UI::updateSpectrum() {
     QString command;
         command.clear(); QTextStream(&command) << "getSpectrum " << widget.spectrumFrame->width();
         connection.sendCommand(command);
+        if(slave == 0 && infotick == 5){
+           connection.sendCommand("q-info"); // get master freq changes
+           infotick = 0;
+        }
+        infotick++;
 }
 
 void UI::spectrumBuffer(char* header,char* buffer) {
@@ -1908,7 +1919,7 @@ void UI::getMeterValue(int m, int s)
 
 void UI::printWindowTitle(QString message)
 {
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "  - rxtx-rtp 5 Jan 2012");
+    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + message + "  - rxtx-rtp 7 Jan 2012");
 }
 
 void UI::printStatusBar(QString message)
@@ -1969,6 +1980,11 @@ void UI::rigctlSetMode(int newmode)
 {
     modeChanged(mode.getMode(), newmode);
     mode.setMode(newmode);
+}
+
+void UI::slaveSetMode(int m)
+{
+    rigctlSetMode(m);
 }
 
 void UI::getBandFrequency()
@@ -2124,3 +2140,6 @@ void UI::setRTP(bool state) {
     useRTP=state;
 }
 
+void UI::slaveSetSlave(int s){
+    slave = s;
+}

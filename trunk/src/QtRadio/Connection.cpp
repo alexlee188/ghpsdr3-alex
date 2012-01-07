@@ -25,6 +25,7 @@
 
 #include "Connection.h"
 #include <QDebug>
+#include <QRegExp>
 
 Connection::Connection() {
     qDebug() << "Connection::Connection";
@@ -131,6 +132,9 @@ void Connection::connected() {
     qDebug() << "Connection::Connected" << tcpSocket->isValid();
     emit isConnected();
     state=READ_HEADER_TYPE;
+    lastFreq = 0;
+    lastMode = 99;
+    lastSlave =1;
     sendCommand("q-version");
 }
 
@@ -179,6 +183,8 @@ void Connection::socketData() {
     int subversion;
     int header_size;
     int answer_size;
+    char* ans;
+    QString answer;
 
     if (bytes < 0) {
         fprintf(stderr,"QtRadio: FATAL: INVALID byte counter: %d\n", bytes);
@@ -240,7 +246,7 @@ void Connection::socketData() {
                     state = READ_ANSWER;
                     bytes = 0;
                     answer_size = atoi(hdr) - 400 ; // 1st digt is buffer type 4
-                    answer = (char*)malloc(answer_size);
+                    ans = (char*)malloc(answer_size +1);
                     break;
             }
             break;
@@ -333,7 +339,7 @@ qDebug() << "Connection READ_RTP_REPLY bytes="<<bytes;
             break;
         case READ_ANSWER:
             qDebug() << "Connection READ ANSWER";
-            thisRead=tcpSocket->read(&answer[bytes],answer_size - bytes);
+            thisRead=tcpSocket->read(&ans[bytes],answer_size - bytes);
             if (thisRead < 0) {
                fprintf(stderr,"QtRadio: FATAL: READ_BUFFER: error in read: %d\n", thisRead);
                tcpSocket->close();
@@ -341,7 +347,47 @@ qDebug() << "Connection READ_RTP_REPLY bytes="<<bytes;
             }
             bytes+=thisRead;
             if(bytes==answer_size) {
-                 qDebug() << "ANSWER bytes "<< bytes <<" answer "<< answer;
+                fprintf(stderr,"ans length = %d\n",strlen(ans));
+                ans[answer_size] = '\0';
+                answer = ans;
+                if(answer.contains("q-version")){
+                    sendCommand("q-master");
+                }else if(answer.contains("q-master") && answer.contains("slave")){
+                    sendCommand("q-info");  // we are a slave so lets see where master is tuned
+                }else if(answer.contains("q-info")){
+
+                    QRegExp rx("info:s;(\\d+);f;(\\d+);m;(\\d+)");// q-info:0;f;14008750;m;4;
+                    rx.indexIn(answer);
+                    QString slave = rx.cap(1);
+                    QString f = rx.cap(2);
+                    QString m =rx.cap(3);
+                    long long newf = f.toLongLong();
+                    int newmode = m.toInt();
+                    int newslave = slave.toInt();
+                    //qDebug() << "emit Freq  f is =" << newf <<";";
+                    emit slaveSetSlave(newslave);
+                    if(newf != lastFreq ){
+                      emit slaveSetFreq(newf);
+                    }
+                    if(newmode != lastMode){
+                      emit slaveSetMode(newmode);
+                    }
+                    if(newslave != lastSlave){
+                       if(newslave == 0){
+                         emit printStatusBar("  ...Slave Mode... ");
+                       }else{
+                         emit printStatusBar("  ...Master Mode... ");
+                       }
+                    }
+                    lastFreq = newf;
+                    lastMode = newmode;
+                    lastSlave = newslave;
+
+                }
+                answer.prepend("  Question/Answer ");
+                //emit printStatusBar(answer);
+                //qDebug() << "ANSWER bytes "<< bytes <<" answer "<< ans;
+                free(ans);
                 bytes=0;
                 state=READ_HEADER_TYPE;
             }
