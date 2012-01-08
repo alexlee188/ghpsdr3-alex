@@ -27,7 +27,7 @@
 * http://openhpsdr.org/wiki/index.php?title=Ghpsdr3
 */
 
-#define LISTEN_PORT 11001
+#define LISTEN_PORT 11000
 
 
 void create_listener_thread();

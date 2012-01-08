@@ -46,7 +46,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
-#define AUDIO_PORT 15001
+#define AUDIO_PORT 15000
 
 
 typedef enum {
