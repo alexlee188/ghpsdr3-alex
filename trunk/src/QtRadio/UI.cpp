@@ -669,7 +669,7 @@ void UI::updateSpectrum() {
     QString command;
         command.clear(); QTextStream(&command) << "getSpectrum " << widget.spectrumFrame->width();
         connection.sendCommand(command);
-        if(slave == 0 && infotick == 5){
+        if(slave == 0 && infotick > 5){
            connection.sendCommand("q-info"); // get master freq changes
            infotick = 0;
         }

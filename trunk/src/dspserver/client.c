@@ -1400,7 +1400,7 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	sprintf(len,"%02u", length);
 	answer[1] = len[0];
 	answer[2] = len[1];
-	//fprintf(stderr,"answer=%s<-\n", answer);
+	fprintf(stderr,"answer=%s<-\n", answer);
 	reply = (char *)&answer;
 	bufferevent_write(bev, reply, strlen(answer) );
 	
