@@ -48,8 +48,13 @@ static int active_rx[MAX_RECEIVERS] = {0,0,0,0}; // This flag tells how many cli
 // using this receiver.
 
 static int use_jack=0;
+#ifdef USE_PIPES
 int pipe_handle_left[MAX_RECEIVERS][2];
 int pipe_handle_right[MAX_RECEIVERS][2];
+#else // Use ringbuffers
+jack_ringbuffer_t * rb_right[MAX_RECEIVERS];
+jack_ringbuffer_t * rb_left[MAX_RECEIVERS];
+#endif
 
 static int speed=0;
 static int sample_rate=48000;
@@ -105,7 +110,9 @@ int create_softrock_thread() {
 #ifdef JACKAUDIO //(Using callback)
 	else {
 		for (int i = 0; i < softrock_get_receivers ();i++) {
-			if (pipe2(&(pipe_handle_left[i][0]),O_NONBLOCK) == -1) { // Perhaps make O_NONBLOCK and use perror, see man -s 2,7 pipe
+#ifdef USE_PIPES
+			//Create the pipes.
+			if (pipe2(&(pipe_handle_left[i][0]),O_NONBLOCK) == 	-1) { // Perhaps make O_NONBLOCK and use perror, see man -s 2,7 pipe
 				if (softrock_get_verbose ()) perror( "Problem opening left pipe for Jack transmit for receiver.\n");
 			}
 			else {
@@ -119,15 +126,21 @@ int create_softrock_thread() {
 				if (softrock_get_verbose ()) fprintf(stderr, "Right pipe for receiver %d for Jack transmit open.\n",i);
 				//fcntl(pipe_handle_right[i][1], F_SETFL, O_NONBLOCK);
 			}	
+#else // Use ringbuffer
+			rb_right[i] = jack_ringbuffer_create(sizeof(float)*JACK_RINGBUFFER_SZ);
+			rb_left[i] = jack_ringbuffer_create(sizeof(float)*JACK_RINGBUFFER_SZ);
+#endif
+			
 		}
+#ifdef USE_PIPES
 		fprintf(stderr,"Softrock.c &pipe_handle_left[0][0] is: %d \n",&pipe_handle_left[0][0]);
 		//fprintf(stderr,"Softrock.c &pipe_handle_left[3][1] is: %d \n",&pipe_handle_left[3][1]);
 		fprintf(stderr,"Softrock.c &pipe_handle_left[0][1] is: %d \n",&pipe_handle_left[0][1]);
 		fprintf(stderr,"Softrock.c pipe_handle_left[0][0] is: %d \n",pipe_handle_left[0][0]);
 		fprintf(stderr,"Softrock.c pipe_handle_left[0][1] is: %d \n",pipe_handle_left[0][1]);
+#endif
 		if (init_jack_audio() != 0) {
 			if(verbose) fprintf(stderr, "There was a problem initializing Jack Audio.\n");
-			// Jack uses a callback that reads the output of this pipe.
 			return 1;
 		}
 		else{
@@ -138,6 +151,13 @@ int create_softrock_thread() {
 #endif			
 }
 
+void delete_jack_ringbuffers(void)
+{
+	for (int i = 0; i < softrock_get_receivers ();i++) {
+		if(rb_right[i] != NULL) jack_ringbuffer_free(rb_right[i]);
+		if(rb_left[i] != NULL) jack_ringbuffer_free(rb_left[i]);
+	}
+}
 
 void softrock_set_device(char* d) {
 	if(verbose) fprintf(stderr,"softrock_set_device %s\n",d);
@@ -189,6 +209,7 @@ int softrock_get_jack() {
     return use_jack;
 }
 
+#ifdef USE_PIPES
 int * softrock_get_jack_read_pipe_left(int rx) {
 	return &pipe_handle_left[rx][0];
 }
@@ -204,6 +225,15 @@ int * softrock_get_jack_read_pipe_right(int rx) {
  int * softrock_get_jack_write_pipe_right(int rx) {
 	return &pipe_handle_right[rx][1];
 }
+#else // Use ringbuffers
+jack_ringbuffer_t * softrock_get_jack_rb_left(int rx) {
+	return rb_left[rx];
+}
+
+jack_ringbuffer_t * softrock_get_jack_rb_right(int rx) {
+	return rb_right[rx];
+}
+#endif
 
 void softrock_set_client_active_rx(int receiver, int inc) {
 	active_rx[receiver] = active_rx[receiver] + inc; // keep track of active receivers.

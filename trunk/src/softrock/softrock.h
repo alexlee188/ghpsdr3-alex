@@ -30,6 +30,7 @@
 //#define PORTAUDIO
 //#define DIRECTAUDIO
 #define JACKAUDIO
+//#define USE_PIPES
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -68,10 +69,17 @@ void softrock_playback_buffer(char* buffer,int length);
 
 void softrock_set_jack(int flag);
 int softrock_get_jack(void);
+#ifdef USE_PIPES
 int * softrock_get_jack_read_pipe_left(int rx);
 int * softrock_get_jack_read_pipe_right(int rx);
 int * softrock_get_jack_write_pipe_left(int rx);
 int * softrock_get_jack_write_pipe_right(int rx);
+#else // Use ringbuffers
+jack_ringbuffer_t * softrock_get_jack_rb_left(int rx);
+jack_ringbuffer_t * softrock_get_jack_rb_right(int rx);
+void delete_jack_ringbuffers(void);
+#define JACK_RINGBUFFER_SZ 65536
+#endif
 void softrock_set_client_active_rx(int receiver, int inc);
 int softrock_get_client_active_rx(int receiver);
 

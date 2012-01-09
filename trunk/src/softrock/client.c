@@ -195,8 +195,13 @@ void* audio_thread(void* arg) {
     int on=1;
 
 	int error_no;
+#ifdef USE_PIPES
 	int  pipe_left = *softrock_get_jack_write_pipe_left(rx->client->receiver);
 	int  pipe_right = *softrock_get_jack_write_pipe_right(rx->client->receiver);
+#else // Use ringbuffers
+	jack_ringbuffer_t rb_left = *softrock_get_jack_rb_left(rx->client->receiver);
+	jack_ringbuffer_t rb_right = *softrock_get_jack_rb_right(rx->client->receiver);
+#endif
 	int num_bytes = sizeof(float)*BUFFER_SIZE;
 	int blocked_num = 0;
 static int second_time = 0;
@@ -235,7 +240,7 @@ static int second_time = 0;
 
     while(1) {
         // get audio from a client
-#ifdef SMALL_PACKETS
+#ifdef SMALL_PACKETS  // Need to make JACK work with small packets....
         while(1) {
             bytes_read=recvfrom(rx->audio_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&audio,(socklen_t *)&audio_length);
             if(bytes_read<0) {
@@ -282,6 +287,7 @@ static int second_time = 0;
 			}
 			//fprintf(stderr,"client.c pipe_left is: %d \n",pipe_left);
 			//fprintf(stderr,"rx->client->receiver is: %d\n",rx->client->receiver);
+#ifdef USE_PIPES
 			error_no = write(pipe_left, &rx->output_buffer[0], num_bytes);
 			if (error_no == -1) {
 				if ( softrock_get_verbose () == 1) perror("There were problems writing the left pipe for Jack in client.c");
@@ -295,6 +301,17 @@ static int second_time = 0;
 				if ( softrock_get_verbose () == 1) perror("There were problems writing the right pipe for Jack in client.c.");
 				fprintf(stderr, "Note: resource temporarilly unavailable indicates write would have blocked.\n");
 			}
+#else  // Use ringbuffers
+			if (( jack_ringbuffer_write_space (rb_left) >= num_bytes ) &&  jack_ringbuffer_write_space (rb_right) >= num_bytes ))
+			{
+				jack_ringbuffer_write (rb_left, &rx->output_buffer[0], num_bytes);
+				jack_ringbuffer_write (rb_right, &rx->output_buffer[BUFFER_SIZE], num_bytes);
+			}
+			else
+			{
+				fprintf(stderr, "No space left to write in jack ringbuffers.\n");
+			}
+#endif
 		} else {
         	process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
 		}
