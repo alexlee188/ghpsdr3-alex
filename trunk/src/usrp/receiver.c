@@ -110,7 +110,7 @@ const char* attach_receiver(int rx,CLIENT* client) {
 		usrp_audio_open (usrp_get_client_rx_rate());
 		fprintf(stderr, "Server side audio open, passed USRP sample rate %d\n", usrp_get_client_rx_rate());    		
 	} else {
-		fprintf(stderr, "Server side audio disabled\n", usrp_get_client_rx_rate());    		
+		fprintf(stderr, "Server side audio disabled\n");    		
 	}
 
     sprintf(response,"%s %d",OK, usrp_get_client_rx_rate());

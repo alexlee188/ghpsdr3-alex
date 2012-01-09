@@ -63,7 +63,10 @@ public:
 
 static USRP usrp;
 static int DECIM = 16;
-static int INTERP = 3;  //For the rational resampler, maybe
+static int INTERP = 3;  //For the rational resampler
+// for the swap option
+static int real_position = 1;
+static int imag_position = 0;
 
 bool usrp_init (const char *subdev_par)
 {
@@ -139,6 +142,18 @@ void usrp_set_subdev_args(const char *sargs)
         exit(1);        
     }        
 }
+
+void usrp_set_swap_iq(int swp)
+{
+	if (swp == 1) {
+		real_position = 0;
+		imag_position = 1;
+	} else {
+		real_position = 1;
+		imag_position = 0;		
+	}
+}
+
 
 void usrp_set_receivers(int n)
 {
@@ -262,8 +277,8 @@ void *usrp_receiver_thread (void *param)
         //1. Interleaving real/imag in the resampler buffer
         for (unsigned int i=0; i<num_rx_samps; ++i) {                    
             
-            rresamp_data->data_in[2*i]   = buff[i].real();
-            rresamp_data->data_in[2*i+1] = buff[i].imag();            
+            rresamp_data->data_in[2*i+imag_position] = buff[i].imag();
+            rresamp_data->data_in[2*i+real_position] = buff[i].real();            
         }
         
         //2.Rational resampling API here

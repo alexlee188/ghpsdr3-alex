@@ -57,6 +57,8 @@ static struct option long_options[] = {
     {"subdev",required_argument, 0, 1},
     {"receivers",required_argument, 0, 2},    
 	{"with-audio",no_argument, 0, 3},
+	{"reverse-iq",no_argument, 0, 4},
+	{"help",no_argument, 0, 5},
 /*
     {"dither",required_argument, 0, 3},
     {"random",required_argument, 0, 4},
@@ -79,10 +81,11 @@ static const char* short_options="s:d:";
 static int option_index;
 
 //Parameters holders
-static char subdev_par[10] = "B:A";    
+static char subdev_par[10] = "";    
 static int rx_client_rate_par = DEFAULT_CLIENT_RX_SAMPLE_RATE;
 static int receivers_par = 1;
 static int with_audio = 0;
+static int reverse_iq = 0;
 
 void process_args(int argc,char* argv[]);
 void set_defaults(void);
@@ -108,6 +111,7 @@ int main(int argc,char* argv[]) {
 	usrp_set_receivers(receivers_par);
     usrp_set_client_rx_rate(rx_client_rate_par);
 	usrp_set_server_audio (with_audio);
+	usrp_set_swap_iq(reverse_iq);
 
     init_receivers();  //receiver
     init_bandscope();  //bandscope
@@ -151,7 +155,13 @@ void process_args(int argc,char* argv[]) {
 			case 3: // with-audio: enables the server side audio
                 with_audio = 1;
                 break;
-/*
+				
+			case 4: // reverse-iq: swaps i stream with q stream
+                reverse_iq = 1;
+                break;
+			
+/*          case 5 IS NEAR DEFAULT!!
+
             case 3: // dither
                 if(strcmp(optarg,"off")==0) {
                     ozy_set_dither(0);
@@ -248,14 +258,17 @@ void process_args(int argc,char* argv[]) {
 //fprintf(stderr,"metisip=%s\n",metisip);
                 break;
 */
+            case 5:
             default:
                 fprintf(stderr,"Usage: \n");
                 fprintf(stderr,"  usrp_server -s, --samplerate 48000 | 96000 | 192000 (default 48000)\n");
                 fprintf(stderr,"              -d, --subdev spec (default \"\")\n");                
                 fprintf(stderr,"              --receivers N (default 1)\n");
 				fprintf(stderr,"              --with-audio\n");
+				fprintf(stderr,"              --reverse-iq\n");
+				fprintf(stderr,"              --help\n");
                 fprintf(stderr,"\n");
-                fprintf(stderr,"NOTE: samplerate is towards the client (e.g. dspserver)");
+                fprintf(stderr,"NOTE: samplerate is towards the client (e.g. dspserver)\n");
 /*
                 fprintf(stderr,"         --dither off|on\n");
                 fprintf(stderr,"         --random off|on\n");

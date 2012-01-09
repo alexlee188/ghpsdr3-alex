@@ -51,6 +51,11 @@ void usrp_deinit (void);
  */
 void usrp_set_subdev_args(const char *args);
 
+/*! 
+ * Sets the swap iq option.
+ */
+void usrp_set_swap_iq(int);
+
 /*!
  * Receiver count setter
  */
