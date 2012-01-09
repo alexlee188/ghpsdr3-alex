@@ -275,8 +275,8 @@ void *usrp_receiver_thread (void *param)
             
             for (int i=0; i<rresamp_data->output_frames_gen ; ++i) {                    
                     
-                pRec->input_buffer[pRec->samples]             = rresamp_data->data_out[i];
-                pRec->input_buffer[pRec->samples+BUFFER_SIZE] = rresamp_data->data_out[i+1];
+                pRec->input_buffer[pRec->samples]             = rresamp_data->data_out[2*i];
+                pRec->input_buffer[pRec->samples+BUFFER_SIZE] = rresamp_data->data_out[2*i+1];
 
                 pRec->samples++;
 
