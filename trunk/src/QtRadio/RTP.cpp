@@ -10,6 +10,7 @@ qDebug() << "RTP::RTP";
     jittcomp=40;
     adapt=TRUE;
     send_ts=0;
+    timestamp_jump_limit = 200;
 
     ortp_init();
     ortp_scheduler_init();
@@ -38,7 +39,9 @@ int RTP::init(const char* host,int port) {
     rtp_session_enable_adaptive_jitter_compensation(rtpSession,adapt);
     rtp_session_set_jitter_compensation(rtpSession,jittcomp);
     rtp_session_set_payload_type(rtpSession,0);
+    rtp_session_set_time_jump_limit	(rtpSession, timestamp_jump_limit);
     rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)rtp_session_reset,0);
+    rtp_session_signal_connect(rtpSession,"timestamp_jump",(RtpCallback)rtp_session_resync,0);
 
     qDebug() << "RTP initialized socket=" <<  rtp_session_get_rtp_socket(rtpSession) 
              << " local port= " << rtp_session_get_local_port(rtpSession);

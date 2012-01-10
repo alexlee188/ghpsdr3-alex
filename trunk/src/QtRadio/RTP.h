@@ -27,6 +27,7 @@ class RTP : public QObject {
         int initialized;
         int remote_set;
         int jittcomp;
+        int timestamp_jump_limit;
         bool_t adapt;
         uint32_t send_ts;
         int cont;
