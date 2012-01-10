@@ -40,6 +40,7 @@
 #define AUDIO_BUFFER        1
 #define BANDSCOPE_BUFFER    2
 #define RTP_REPLY_BUFFER    3
+#define ANSWER_BUFFER       4
 
 // minimum supported header version
 #define HEADER_VERSION 2
@@ -57,6 +58,8 @@
 #define READ_BUFFER 1
 #define READ_HEADER_TYPE 3
 #define READ_AUDIO_HEADER 4
+#define READ_RTP_REPLY 5
+#define READ_ANSWER 6
 
 class Connection : public QObject {
     Q_OBJECT
@@ -86,6 +89,12 @@ signals:
     void audioBuffer(char* header,char* buffer);
     void spectrumBuffer(char* header,char* buffer);
     void bandscopeBuffer(char* header,char* buffer);
+    void remoteRTP(char* host,int port);
+    void printStatusBar(QString message);
+    void slaveSetFreq(long long f);
+    void slaveSetMode(int m);
+    void slaveSetSlave(int slave);
+    void setdspversion(long, QString);
 
 private:
     // really not used (and not even implemented)
@@ -101,7 +110,12 @@ private:
     char* buffer;
     short length;   // int causes errors in converting 2 char bytes to integer
     int bytes;
+    //char* ans;
+    //QString answer;
     bool muted;
+    long long lastFreq;
+    int lastMode;
+    int lastSlave;
 
     QQueue<Buffer*> queue;
 };

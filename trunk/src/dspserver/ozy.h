@@ -106,6 +106,11 @@ char server_address[64];
 
 int hpsdr;
 
+// values saved from last change to send to slaves
+long long lastFreq;
+int lastMode;
+
+
 /* --------------------------------------------------------------------------*/
 /** 
 * @brief Initialize the Ozy interface 

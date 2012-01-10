@@ -54,6 +54,7 @@ void client_set_timing();
 void printcountry();
 void setprintcountry();
 void printcountrythread();
+void answer_question(char *message, char *clienttype, struct bufferevent *bev);
 
 extern double mic_src_ratio;
 

@@ -631,7 +631,9 @@ void readcb(struct bufferevent *bev, void *ctx){
 		               	token[i]=tolower(token[i]);
 		               	i++;
                     		}
-	 			if(strncmp(token,"getspectrum",11)==0) {
+                                if(strncmp(token,"q",1)==0){	
+				   answer_question(message,"slave", bev);
+				}else if(strncmp(token,"getspectrum",11)==0) {
 				        token=strtok_r(NULL," ",&saveptr);
 				        if(token!=NULL) {
 		                    	    samples=atoi(token);
@@ -720,7 +722,9 @@ void readcb(struct bufferevent *bev, void *ctx){
 		               	token[i]=tolower(token[i]);
 		               	i++;
                     		}
- 			if(strncmp(token,"getspectrum",11)==0) {
+                        if(strncmp(token,"q",1)==0){	
+			    answer_question(message,"master", bev);
+ 			}else if(strncmp(token,"getspectrum",11)==0) {
 		                token=strtok_r(NULL," ",&saveptr);
 		                if(token!=NULL) {
                             	    samples=atoi(token);
@@ -764,6 +768,8 @@ void readcb(struct bufferevent *bev, void *ctx){
 		                    SetMode(0,0,mode);
 		                    SetMode(0,1,mode);
 				    SetMode(1,0,mode);
+				    lastMode=mode;
+				    
 				    switch (mode){
 					case USB: SetTXFilter(1,150, 2850); break;
 					case LSB: SetTXFilter(1,-2850, -150); break;
@@ -1339,5 +1345,53 @@ void printcountrythread()
   pclose(fp);
 
   return;
+}
+
+void answer_question(char *message, char *clienttype, struct bufferevent *bev){
+	// reply = 4LLqqq:aaaa LL= length (limit 99 + header 3) followed by question : answer
+	char *reply; 
+	char answer[101] ="xxx";
+	int length;
+	char len[10];
+	
+	if (strcmp(message,"q-version") == 0){
+		 strcat(answer,"q-version:");
+		 strcat(answer,version);
+	}else if (strcmp(message,"q-master") == 0){
+		 strcat(answer,"q-master:");
+		 strcat(answer,clienttype);
+	}else if (strcmp(message,"q-info") == 0){
+		 strcat(answer,"q-info:");
+		 if(strcmp(clienttype,"slave") == 0){
+		    strcat(answer,"s;0");
+		 }else{
+			strcat(answer,"s;1"); 
+		 }
+		 strcat(answer,";f;");
+		 char f[30];
+		 sprintf(f,"%lld;m;",lastFreq);
+		 strcat(answer,f);
+		 char m[10];
+		 sprintf(m,"%d;",lastMode);	
+		 strcat(answer,m); 
+	}else{
+		fprintf(stderr,"Unknown question: %s\n",message);
+		return;
+	}
+	answer[0] = '4';  //ANSWER_BUFFER
+	length = strlen(answer) - 3; // 
+	if (length > 99){
+	   fprintf(stderr,"Oversize reply!!: %s = %u\n",message, length);
+	   return;
+	}
+	
+	sprintf(len,"%02u", length);
+	answer[1] = len[0];
+	answer[2] = len[1];
+	//fprintf(stderr,"answer=%s<-\n", answer);
+	reply = (char *)&answer;
+	bufferevent_write(bev, reply, strlen(answer) );
+	
+	
 }
 

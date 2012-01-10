@@ -173,6 +173,8 @@ double src_ratio;
 
 
 
+
+
 void dump_udp_buffer(unsigned char* buffer);
 
 void* iq_thread(void* arg) {
@@ -475,6 +477,7 @@ int ozySetFrequency(long long ddsAFrequency) {
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
             result=0;
+            lastFreq = ddsAFrequency;
         } else if (strcmp(token,"ERROR")==0) {
             result=1;
         } else {

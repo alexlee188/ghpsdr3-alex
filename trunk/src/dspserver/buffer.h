@@ -26,6 +26,7 @@
 #define AUDIO_BUFFER        1
 #define BANDSCOPE_BUFFER    2
 #define RTP_REPLY_BUFFER    3
+#define ANSWER_BUFFER    	4
 
 // g0orx binary header
 #define HEADER_VERSION  2

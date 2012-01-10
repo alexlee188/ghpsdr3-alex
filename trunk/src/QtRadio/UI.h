@@ -252,6 +252,11 @@ public slots:
     void pttChange(int caller, bool ptt);
     void pwrSlider_valueChanged(double pwr);
     void printStatusBar(QString message);
+ //   void setRemote(char* host,int port);
+    void slaveSetMode(int newmode);
+    void slaveSetSlave(int slave); // 0 = slave
+    void setdspversion(long dspversion, QString dspversiontxt);
+
 signals:
     void subRxStateChanged(bool state);
     void set_src_ratio(double ratio);
@@ -267,7 +272,7 @@ private:
     void setGain(bool state);
     void initRigCtl();
     RigCtlServer *rigCtl;
-
+    QString getversionstring();
     void appendBookmark(Bookmark* bookmark);
 
     QString stringFrequency(long long frequency);
@@ -358,6 +363,11 @@ private:
     bool useRTP;
 
     int tuning;
+    int slave;  // 0 = slave mode
+    int infotick;
+    long dspversion;
+    QString dspversiontxt;
+    QString lastmessage;
 };
 
 #endif	/* _UI_H */
