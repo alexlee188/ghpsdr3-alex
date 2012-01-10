@@ -66,7 +66,6 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
        buffer = (quint8*)malloc(bytes_to_read/2);       // aLaw encoded
        length=rtp_session_recv_with_ts(p->rtpSession,(uint8_t*)buffer,bytes_to_read/2,recv_ts,&has_more);
        if (length>0) {
-           recv_ts+=length;
            if (p->audio_encoding == 0) {
                //aLawDecode(buffer,length);
                for(i=0;i<length;i++) {
@@ -77,7 +76,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
                qDebug() << "Audio::process_rtp_audio only support aLaw";
            }
        }
-       else recv_ts+=bytes_to_read/2;
+       recv_ts+=bytes_to_read/2;
        free(buffer);
    }
 
