@@ -7,10 +7,10 @@ RTP::RTP() {
 qDebug() << "RTP::RTP";
     initialized=0;
     remote_set=0;
-    jittcomp=40;
+    jittcomp=100;
     adapt=TRUE;
     send_ts=0;
-    timestamp_jump_limit = 200;
+    timestamp_jump_limit = 300;
 
     ortp_init();
     ortp_scheduler_init();
