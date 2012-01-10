@@ -146,6 +146,7 @@ void rtp_disconnect() {
 
     rtp_session_destroy(rtpSession);
     rtp_connected=0;
+    rtp_listening = 0;
     ortp_global_stats_display();
 }
 
