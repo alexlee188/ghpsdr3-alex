@@ -177,8 +177,9 @@ int rtp_receive (unsigned char* buffer,int length) {
        return rc;
     }
 
+
     if (rtp_listening == 0) {
-       fprintf (stderr, "rtp_receive: ERROR: attempting to receive without listening !!!!!!");
+       //fprintf (stderr, "rtp_receive: ERROR: attempting to receive without listening !!!!!!");
        return rc;
     }
 
