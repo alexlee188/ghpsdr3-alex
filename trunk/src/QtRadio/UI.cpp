@@ -1932,8 +1932,7 @@ void UI::printWindowTitle(QString message)
         dspversion = 0;
         dspversiontxt = "";
     }
-    qDebug() << "version:"<< dspversion <<" & "<< dspversiontxt <<"<-";
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + getversionstring() +  message + "  - rxtx-rtp-symm 10 Jan 2012");
+    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "+ QString::number(configure.getReceiver()) +") .. " + getversionstring() +  message + "  - rxtx-rtp-symm 12 Jan 2012");
     lastmessage = message;
 }
 
