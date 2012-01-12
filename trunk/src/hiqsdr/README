@@ -1,0 +1,167 @@
+
+0. HIQSDR SERVER
+================
+
+This file documents an attempt to write a I/Q server for HIQSDR, a Software Defined Radio Transceiver.
+For more information on the hardware, please refer to the official web site:
+
+   http://www.hiqsdr.org/
+
+
+A server program, in the ghpsdr3 suite, is the program 
+that forms the interface to the hardware.  One instance of this program 
+must be running to allow the DSP process to communicate with the HiQSDR hardware.
+
+Please note that HiQSDR is itself a IP devices and it is interfaced to the outside world via a Fast Ethernet.
+
+Currently the hiqsdr-server program is a command line program and it has few options, as follows:
+
+      -s [ --samplerate ] arg (=96000) samplerate in Samples/second
+                                       (48000 | 96000 | 192000)    
+      -i [ --ip ] arg (=192.168.2.196) ip address of HiqSdr        
+      -h [ --help ]                    print usage message         
+      -d [ --debug ] arg (=0)          debug level                 
+
+
+0.1 Credits and Acknowledgements
+--------------------------------
+
+The code base was derived (by Alex Lee 9V1AL et al.) from John Melton G0ORX/N6LYT code for HPSDR Ozymandias card.
+
+The code specific for Hiqsdr  has been written by Andrea Montefusco, IW0HDV (andrew att montefusco dott com),
+thanks to the invaluable support by Sid Boyce G3VBV, that provided his radio, Linux PC and Internet connection for the development.
+
+Many thanks too to Mario Roessler DH5YM that wrote a precious document (found at http://hiqsdr.finken-net.de/FPGA-N2ADR/n2adr_control_doc.pdf)
+that explains in the detail the network protocols that you have to implement in order to control 
+and send/receive data to/from HiQSDR hardware.
+
+
+1. PREREQUISITE
+===============
+
+To build the server, no special prerequisite has to be fullfilled, aside the usual compiler and build tools.
+
+
+2. BUILD
+========
+
+The Hiqsdr server gets built automatically in ghpsdr3-alex package.
+However, some limitation holds, because, at the moment, the server is only supported in master branch of git repository;
+
+https://github.com/alexlee188/ghpsdr3-alex
+
+Please refer to build and install instructions in 
+
+http://napan.ca/ghpsdr3/index.php/QtRadio_Installation#Installation_from_Git
+
+
+3. NETWORK SETUP AND PRELIMINARY TEST
+=====================================
+
+Before your attempt to run the server, you have to properly setup the network configuration
+of machine were the server process has to be run.
+
+The IP address of the HiQSDR (192.168.2.196 / 24) is hardcoded in the FPGA configuration, if you would like change the 
+IP address of your HiQSDR, make the changes (ethernet.v) at the FPGA sources compile and upload the new code to your HiQSDR.
+Albeit this process is feasible, I will explain how you can easily circumvent this limitation.
+
+Of course what explained here doesn't apply if you, by chance, are already using on your ethernet the right subnet, i.e. 192.168.2.0/24.
+
+
+3.1 Configuring another ethernet interface
+------------------------------------------
+
+This is the easy case: you need to configure the supplemental interface on the 192.168.2.0/24 subnet, assigning, for example,
+the 192.168.2.1 address to the second interface.
+Please note that it is not needed to enable the router functionalities (packet forwarding) into the operating system, because
+the HiQSDR hardware has not to be reached from packets generated from remote.
+
+
+3.2 What if I have a single ethernet interface on my computer ?
+---------------------------------------------------------------
+
+In this case you have to configure an alias address on the same physical interface used for the regular traffic.
+Lets suppose you have the eth0 ethernet interface configured on 192.168.10.0/24 with IP address assigned by DHCP server,
+being 192.168.10.33.
+The command for define the additional address is as follows:
+
+$ sudo ifconfig eth0:1 192.168.2.1
+
+Checking with the ifconfig:
+
+$ ifconfig
+eth0      Link encap:Ethernet  HWaddr 00:01:2e:27:13:58  
+          inet addr:192.168.10.33  Bcast:192.168.10.255  Mask:255.255.255.0
+          inet6 addr: fe80::201:2eff:fe27:1358/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:398891 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:185459 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:269562428 (269.5 MB)  TX bytes:18310799 (18.3 MB)
+          Interrupt:22 Base address:0x6000 
+
+eth0:1    Link encap:Ethernet  HWaddr 00:01:2e:27:13:58  
+          inet addr:192.168.2.1  Bcast:192.168.2.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          Interrupt:22 Base address:0x6000 
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:412 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:412 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:31903 (31.9 KB)  TX bytes:31903 (31.9 KB)
+
+
+
+Please verify that the routing to the new subnet has been successfully established:
+
+$ netstat -rn
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
+192.168.2.0     0.0.0.0         255.255.255.0   U         0 0          0 eth0
+192.168.10.0    0.0.0.0         255.255.255.0   U         0 0          0 eth0
+169.254.0.0     0.0.0.0         255.255.0.0     U         0 0          0 eth0
+0.0.0.0         192.168.10.252  0.0.0.0         UG        0 0          0 eth0
+
+
+The first test to do is a simple ping:
+
+$ ping 192.168.2.196
+PING 192.168.2.196 (192.168.2.196) 56(84) bytes of data.
+64 bytes from 192.168.2.196: icmp_seq=1 ttl=64 time=1.99 ms
+64 bytes from 192.168.2.196: icmp_seq=2 ttl=64 time=0.462 ms
+64 bytes from 192.168.2.196: icmp_seq=3 ttl=64 time=0.479 ms
+64 bytes from 192.168.2.196: icmp_seq=4 ttl=64 time=0.467 ms
+
+
+Finally, to run the test program, you have to submit 
+
+$ hiqsdr-test
+
+This programs looks for an attached (and turned on) HiQSDR but doesn't activate it.
+
+
+
+4. RUN
+======
+
+We have to run three components: server, dsp processing and graphical user interface.
+At the moment you need to run them in three separate terminal windows, strictly in the order shown below:
+
+xterm -e 'hiqsdr-server -d3 -s96000' &
+xterm -e 'dspserver --lo 0' &
+QtRadio &
+
+When the GUI shows up, connect it to the DSP server (Menu Receiver, submenu Connect) and select the
+127.0.0.1 (localhost) server address. That if you are running the trhee pieces altogether in the same machine.
+Elsewhere  use the IP address of the machine where the dspserver is running.
+
+
+
+
+
+
+

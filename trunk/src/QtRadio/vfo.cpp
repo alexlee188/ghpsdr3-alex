@@ -542,9 +542,17 @@ void vfo::vfohotkey(QString cmd)
         setStepMark();
         return;
     }
-    if (cmd.compare("StepDown") == 0  && curstep >0){
-        //qDebug() <<"Step Down old =" <<vfohotstep << " curstep=" << curstep;
-        curstep--;
+
+    if (cmd.compare("StepUp") == 0  && curstep == 1 ){
+        qDebug() <<"old =" <<vfohotstep;
+        curstep = 9;
+        vfohotstep = mult[curstep];
+        qDebug() <<"new =" <<vfohotstep;
+        return;
+    }
+    if (cmd.compare("StepDown") == 0  && curstep <9){
+        qDebug() <<"old =" <<vfohotstep;
+        curstep++;
         vfohotstep = mult[curstep];
         //qDebug() <<"new =" <<vfohotstep;
         setStepMark();

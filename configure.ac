@@ -2,7 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.65])
-AC_INIT([ghpsdr3], [rxtx-event-2-3], [andrew att montefusco dott com])
+
+AC_INIT([ghpsdr3], [rxtx-rtp-symm], [andrew att montefusco dott com])
+
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -16,6 +18,9 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_MAKE_SET
+
+# Python checks for pylauncher
+AM_PATH_PYTHON([2.5],, [:])
 
 #
 # Checking for build cpu
@@ -38,6 +43,18 @@ AM_PROG_CC_C_O
 
 # library (in DttSP) used but `RANLIB' is undefined:  the usual way to define `RANLIB' is to add `AC_PROG_RANLIB'
 AC_PROG_RANLIB
+
+#
+# Check for user options in order to selectively compile servers
+#
+AC_ARG_ENABLE([perseus],
+              [  --enable-perseus  enable Perseus SDR server generation],
+              [perseus=${enableval}], [perseus=no]
+)
+AC_ARG_ENABLE([usrp],
+              [  --enable-usrp  enable USRP server generation],
+              [usrp=${enableval}], [usrp=no]
+)
 
 #
 # Checks for libraries.
@@ -76,9 +93,6 @@ AC_SEARCH_LIBS([config_init], [config],[have_config=yes])
 
 have_usb10=no
 AC_SEARCH_LIBS([libusb_init], [usb-1.0],[have_usb10=yes])
-
-have_event20=no
-AC_SEARCH_LIBS([event_init], [event],[have_event20=yes])
 
 have_samplerate=no
 AC_SEARCH_LIBS([src_new], [samplerate],[have_samplerate=yes])
@@ -216,18 +230,6 @@ if test "x${have_usb10}" = xno; then
 
 fi
 
-if test "x${have_event20}" = xyes; then
-    AC_CHECK_HEADERS([event2/event.h], [], [have_event20=no])
-fi
-
-if test "x${have_event20}" = xno; then
-    AC_MSG_ERROR([
------------------------------------
-  The libevent-2.0 library and header file required to build ghpsdr3. See README for installation instructions.
------------------------------------])
-
-fi
-
 if test "x${have_samplerate}" = xyes; then
     AC_CHECK_HEADERS([samplerate.h], [], [have_samplerate=no])
 fi
@@ -270,13 +272,44 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([floor ftime getcwd gethostbyname gettimeofday inet_ntoa memset pow select socket sqrt strrchr strstr strtol])
 
 
+
+if test "x${perseus}" = xyes; then
+    AC_MSG_NOTICE([
+-----------------------------------
+  Perseus SDR enabled.
+-----------------------------------])  
+
+    AC_CONFIG_SUBDIRS([trunk/src/perseus])
+fi
+AM_CONDITIONAL([MAKE_PERSEUS], [test "x${perseus}" = xyes])
+AC_CONFIG_FILES([trunk/src/perseus/Makefile])
+
+
+if test "x${usrp}" = xyes; then
+    AC_MSG_NOTICE([
+-----------------------------------
+  USRP enabled.
+-----------------------------------])  
+
+    AC_CONFIG_SUBDIRS([trunk/src/usrp])
+fi
+AM_CONDITIONAL([MAKE_USRP], [test "x${usrp}" = xyes])
+#
+# Uncomment the following line when the usrp directory gets populated
+#
+#AC_CONFIG_FILES([trunk/src/usrp/Makefile])
+
 AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
 AC_CONFIG_FILES([Makefile
                  trunk/src/softrock/Makefile
                  trunk/src/DttSP/Makefile
                  trunk/src/dspserver/Makefile
                  trunk/src/widget-server/Makefile
-                 trunk/src/server/Makefile])
+                 trunk/src/server/Makefile
+                 trunk/bin/Makefile
+                 trunk/src/pylauncher/Makefile
+                 trunk/src/hiqsdr/Makefile
+		 ])
 
 
 

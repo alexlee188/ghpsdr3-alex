@@ -106,6 +106,7 @@ void Connection::disconnected() {
 void Connection::disconnect() {
 
     qDebug() << "Connection::disconnect Line " << __LINE__;
+
     if(tcpSocket!=NULL) {
         tcpSocket->close();
         // object deletion moved in connect method 
@@ -142,6 +143,7 @@ void Connection::connected() {
     lastMode = 99;
     lastSlave =1;
     sendCommand("q-version");
+
 }
 
 void Connection::sendCommand(QString command) {
@@ -454,8 +456,10 @@ void Connection::freeBuffers(char* header,char* buffer) {
     if (buffer != NULL) free(buffer);
 }
 
+
 // added by gvj
 void Connection::setMuted(bool muteState)
 {
     muted = muteState;
 }
+

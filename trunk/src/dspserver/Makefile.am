@@ -1,10 +1,12 @@
 
 
 bin_PROGRAMS = dspserver
+
 dspserver_CFLAGS = -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function -msse -msse3 -ffast-math
 #dspserver_CFLAGS = -g -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function -msse -msse3 -ffast-math -march=core2 
 dspserver_LDADD = ../DttSP/libDttSP.a -lortp
-#dspserver_LDFLAGS = -lpulse-simple -lusb -lfftw3f -lcodec2 -lsamplerate -lconfig -lm -levent
+dspserver_LDFLAGS = -lpulse-simple -lusb -lfftw3f -lcodec2 -lsamplerate -lconfig -lm -levent
+
 
 dspserver_SOURCES = main.c\
          ozy.c\

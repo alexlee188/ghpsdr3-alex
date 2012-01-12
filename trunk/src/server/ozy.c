@@ -33,7 +33,11 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/timeb.h>
+#include <sys/stat.h> // for stat
 #include <pthread.h>
+#include <unistd.h>   // for readlink
+#include <limits.h>   // for PATH_MAX
+#include <errno.h>
 #else
 #include "pthread.h"
 #endif
@@ -153,8 +157,8 @@ static float mic_gain=0.26F;
 static float mic_left_buffer[BUFFER_SIZE];
 static float mic_right_buffer[BUFFER_SIZE];
 
-static char ozy_firmware[64];
-static char ozy_fpga[64];
+static char ozy_firmware[64] = {0};
+static char ozy_fpga[64] = {0};
 
 static unsigned char ozy_output_buffer[OZY_BUFFER_SIZE];
 static int ozy_output_buffer_index=OZY_HEADER_SIZE;
@@ -181,6 +185,14 @@ void process_bandscope_buffer(char* buffer);
 #define bool int
 bool init_hpsdr();
 #endif
+
+void ozy_set_fpga_image(const char *s) {
+    strcpy (ozy_fpga, s);
+}
+
+void ozy_set_hex_image(const char *s) {
+    strcpy (ozy_firmware, s);
+}
 
 void ozy_set_buffers(int buffers) {
     ozy_buffers=buffers;
@@ -324,15 +336,70 @@ int ozy_get_sample_rate() {
     return sample_rate;
 }
 
+
+static int file_exists (const char * fileName)
+{
+   struct stat buf;
+   int i = stat ( fileName, &buf );
+   return ( i == 0 ) ? 1 : 0 ;
+}
+
+#ifdef __linux__
+int filePath (char *sOut, const char *sIn) {
+    int rc = 0;
+
+    if ((rc = file_exists (sIn))) {
+       strcpy (sOut, sIn); 
+       rc = 1;
+    } else {
+      char cwd[PATH_MAX];
+      char s[PATH_MAX];
+      char xPath [PATH_MAX] = {0};
+      char *p;
+
+      int  rc = readlink ("/proc/self/exe", xPath, sizeof(xPath));
+
+      // try to detect the directory from which the executable has been loaded
+      if (rc >= 0) {
+
+          if ( (p = strrchr (xPath, '/')) ) *(p+1) = '\0';
+          fprintf (stderr, "%d, Path of executable: [%s]\n", rc, xPath);
+
+          strcpy (s, xPath); strcat (s, sIn);
+
+          if ((rc = file_exists (s))) {
+             // found in the same dir of executable
+             fprintf (stderr, "File: [%s]\n", s);
+             strcpy(sOut, s);
+          } else { 
+            if (getcwd(cwd, sizeof(cwd)) != NULL) {
+                fprintf(stdout, "Current working dir: %s\n", cwd);
+
+                strcpy (s, cwd); strcat (s, "/"); strcat (s, sIn);
+                if ((rc = file_exists (s))) {
+                   fprintf (stderr, "File: [%s]\n", s);
+                   strcpy(sOut, s);
+                }
+            }
+          }
+       } else {
+          fprintf (stderr, "%d: %s\n", errno, strerror(errno));
+       }
+    }
+    return rc;
+}
+#endif
+
+
 int ozy_init() {
     int rc;
     int i;
 
-    strcpy(ozy_firmware,"ozyfw-sdr1k.hex");
-    strcpy(ozy_fpga,"Ozy_Janus.rbf");
-
-        // On Windows, the following is replaced by init_hpsdr() in OzyInit.c
+    // On Windows, the following is replaced by init_hpsdr() in OzyInit.c
 #ifdef __linux__
+
+    if (strlen(ozy_firmware) == 0) filePath (ozy_firmware,"ozyfw-sdr1k.hex");
+    if (strlen(ozy_fpga) == 0)     filePath (ozy_fpga,"Ozy_Janus.rbf");
 
     // open ozy
     rc = ozy_open();
@@ -356,8 +423,10 @@ ozy_open();
     ozy_open();
     rc=ozy_get_firmware_string(ozy_firmware_version,8);
     fprintf(stderr,"Ozy FX2 version: %s\n",ozy_firmware_version);
+#else
+    strcpy(ozy_firmware,"ozyfw-sdr1k.hex");
+    strcpy(ozy_fpga,"Ozy_Janus.rbf");
 #endif
-
 
     return rc;
 }

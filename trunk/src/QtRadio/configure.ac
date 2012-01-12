@@ -1,4 +1,5 @@
-AC_INIT([QtRadio Build], [rxtx-event-2-3], [andrew att montefusco dott com], [QtRadio])
+AC_INIT([QtRadio Build], [rxtx-rtp-symm], [andrew att montefusco dott com], [QtRadio])
+
 
 #AC_CONFIG_AUX_DIR([build-aux])
 #AC_CONFIG_MACRO_DIR([m4])
