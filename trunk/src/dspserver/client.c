@@ -150,7 +150,7 @@ static float meter;
 static float subrx_meter;
 int encoding = 0;
 
-static sem_t bufferevent_semaphore, mic_semaphore;
+static sem_t bufferevent_semaphore, mic_semaphore, memory_semaphore;
 
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
@@ -253,9 +253,11 @@ void client_init(int receiver) {
 
     sem_init(&bufferevent_semaphore,0,1);
     sem_init(&mic_semaphore,0,1);
+    sem_init(&memory_semaphore,0,1);
     signal(SIGPIPE, SIG_IGN);
     sem_post(&bufferevent_semaphore);
     sem_post(&mic_semaphore);
+    sem_post(&memory_semaphore);
 
     port=BASE_PORT+receiver;
     clientSocket=-1;
@@ -287,6 +289,8 @@ void *memory_thread(void *arg) {
 
 	usleep(100000);	// sleep 100ms
 	memory_count = 0;
+
+	sem_wait(&memory_semaphore);
 	TAILQ_FOREACH(item, &Memory_Pool, entries){
 		memory_count++;
 	}
@@ -296,11 +300,12 @@ void *memory_thread(void *arg) {
 			item = TAILQ_FIRST(&Memory_Pool);
 			if (item != NULL){			// should not happen, but check anyway
 				TAILQ_REMOVE(&Memory_Pool, item, entries);
-				free(item->memory);
+				if (item->memory != NULL) free(item->memory);
 				free(item);
 			}
 		}
 	}
+	sem_post(&memory_semaphore);
     }
 }
 
@@ -1453,7 +1458,9 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	
 	item = malloc(sizeof(*item));
 	item->memory = reply;
+	sem_wait(&memory_semaphore);
 	TAILQ_INSERT_TAIL(&Memory_Pool, item, entries);
+	sem_post(&memory_semaphore);
 	
 	
 }
