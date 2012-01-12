@@ -100,7 +100,7 @@ static int timing=0;
 
 static int rtp_tx_init_done = 0;
 
-static pthread_t client_thread_id, tx_thread_id;
+static pthread_t client_thread_id, tx_thread_id, memory_thread_id;
 
 #define BASE_PORT 8000
 static int port=BASE_PORT;
@@ -136,6 +136,9 @@ TAILQ_HEAD(, audio_entry) Mic_audio_stream;
 
 // Client_list is the HEAD of a queue of connected clients
 TAILQ_HEAD(, _client_entry) Client_list;
+
+// Mem_Pool is the HEAD of a queue of memory pool allocated with malloc, to be free()'d with delay
+TAILQ_HEAD(, _memory_entry) Memory_Pool;
 
 //
 // samplerate library data structures
@@ -246,6 +249,7 @@ void client_init(int receiver) {
     int rc;
 
     TAILQ_INIT(&Client_list);
+    TAILQ_INIT(&Memory_Pool);
 
     sem_init(&bufferevent_semaphore,0,1);
     sem_init(&mic_semaphore,0,1);
@@ -261,7 +265,43 @@ void client_init(int receiver) {
         fprintf(stderr,"pthread_create failed on client_thread: rc=%d\n", rc);
     }
     else rc=pthread_detach(client_thread_id);
+
+    rc=pthread_create(&memory_thread_id,NULL,memory_thread,NULL);
+
+    if(rc != 0) {
+        fprintf(stderr,"pthread_create failed on memory_thread: rc=%d\n", rc);
+    }
+    else rc=pthread_detach(memory_thread_id);
+
     rtp_init();
+}
+
+void *memory_thread(void *arg) {
+    memory_entry *item;
+    int memory_count;
+    int to_free_count;
+    int i;
+
+    fprintf(stderr, "memory_thread started...\n");
+    while (1){
+
+	usleep(100000);	// sleep 100ms
+	memory_count = 0;
+	TAILQ_FOREACH(item, &Memory_Pool, entries){
+		memory_count++;
+	}
+	if (memory_count > 10){
+		to_free_count = memory_count - 10;
+		for (i=0; i< to_free_count; i++){
+			item = TAILQ_FIRST(&Memory_Pool);
+			if (item != NULL){			// should not happen, but check anyway
+				TAILQ_REMOVE(&Memory_Pool, item, entries);
+				free(item->memory);
+				free(item);
+			}
+		}
+	}
+    }
 }
 
 void tx_init(void){
@@ -1368,10 +1408,11 @@ void printcountrythread()
 void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	// reply = 4LLqqq:aaaa LL= length (limit 99 + header 3) followed by question : answer
 	char *reply; 
-	char answer[101] ="xxx";
-	int length;
+	char answer[101]="xxx";
+	unsigned short length;
 	char len[10];
-	
+	memory_entry *item = NULL;
+
 	if (strcmp(message,"q-version") == 0){
 		 strcat(answer,"q-version:");
 		 strcat(answer,version);
@@ -1402,13 +1443,17 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	   fprintf(stderr,"Oversize reply!!: %s = %u\n",message, length);
 	   return;
 	}
-	
+
 	sprintf(len,"%02u", length);
 	answer[1] = len[0];
 	answer[2] = len[1];
-	//fprintf(stderr,"answer=%s<-\n", answer);
-	reply = (char *)&answer;
+
+	reply = (char *) malloc(length+4);		// need to include the terminating null
 	bufferevent_write(bev, reply, strlen(answer) );
+	
+	item = malloc(sizeof(*item));
+	item->memory = reply;
+	TAILQ_INSERT_TAIL(&Memory_Pool, item, entries);
 	
 	
 }

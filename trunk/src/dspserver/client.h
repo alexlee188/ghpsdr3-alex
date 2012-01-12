@@ -43,6 +43,11 @@ typedef struct _client_entry {
 	TAILQ_ENTRY(_client_entry) entries;
 } client_entry;
 
+typedef struct _memory_entry {
+	char* memory;
+	TAILQ_ENTRY(_memory_entry) entries;
+} memory_entry;
+
 extern int encoding;
 extern int tx_length;
 void client_init(int receiver);
@@ -50,6 +55,7 @@ void rtp_tx_init(void);
 void tx_init(void);
 void spectrum_init();
 void *spectrum_thread(void *);
+void *memory_thread(void *);
 void client_set_timing();
 void printcountry();
 void setprintcountry();
