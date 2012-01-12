@@ -1454,6 +1454,7 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	answer[2] = len[1];
 
 	reply = (char *) malloc(length+4);		// need to include the terminating null
+	memcpy(reply, answer, length+4);
 	bufferevent_write(bev, reply, strlen(answer) );
 	
 	item = malloc(sizeof(*item));
