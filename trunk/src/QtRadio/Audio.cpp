@@ -51,9 +51,9 @@ void Audio_playback::stop()
 
 qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
-   qint64 bytes_read = 0;
+   qint64 bytes_read;
    qint16 v;
-   qint64 bytes_to_read = maxlen > 400 ? 400 : maxlen;
+   qint64 bytes_to_read = maxlen > 200 ? 200 : maxlen;
    int has_more;
 
    if (p->useRTP && p->rtp_connected){
@@ -61,27 +61,35 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
        short v;
        int length;
 
-       quint8* buffer;
+       uint8_t* buffer;
 
        // aLaw encoded from RTP, but readData is reading in bytes (each sample 2 bytes for PCM)
-       buffer = (quint8*)malloc(bytes_to_read/2);
-       length=rtp_session_recv_with_ts(p->rtpSession,(uint8_t*)buffer,bytes_to_read/2,recv_ts,&has_more);
+       buffer = (uint8_t*)malloc(bytes_to_read/2);
+
+       length=rtp_session_recv_with_ts(p->rtpSession,buffer,bytes_to_read/2,recv_ts,&has_more);
        if (length>0) {
-           recv_ts+=length;
+           recv_ts += length;
            if (p->audio_encoding == 0) {
-               //aLawDecode(buffer,length);
                for(i=0;i<length;i++) {
                    v=p->g711a.decode(buffer[i]);
                    p->decoded_buffer.enqueue(v);
                }
            } else {
-               qDebug() << "Audio::process_rtp_audio only support aLaw";
+               qDebug() << "Audio: rtp_audio only support aLaw";
            }
        }
-       else recv_ts+=bytes_to_read/2;
-
        free(buffer);
+
+       if (length <= 0){
+           recv_ts+=bytes_to_read/2;
+           memset(data, 0, bytes_to_read);
+           bytes_read = bytes_to_read;
+           return bytes_read;
+        }
+
    }
+
+   bytes_read = 0;
 
    if (p->decoded_buffer.isEmpty()) {       // probably not connected or late arrival of packets.  Send silence.
        memset(data, 0, bytes_to_read);
