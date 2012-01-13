@@ -231,8 +231,8 @@ int process(jack_nframes_t number_of_frames, void* arg)
 			if (stop_print == 0) {
 #ifdef USE_PIPES
 				fprintf(stderr,"jackio.c *softrock get jack pipe left(r) is: %d \n",*softrock_get_jack_read_pipe_left(r));
+				fprintf(stderr,"jackio.c r : %d\n",r);
 #endif
-					fprintf(stderr,"jackio.c r : %d\n",r);
 			}
 			if(softrock_get_iq()) {
 				/*for(i=0;i<number_of_frames;i++) {
@@ -241,6 +241,20 @@ int process(jack_nframes_t number_of_frames, void* arg)
 			}*/
 #ifdef USE_PIPES
 				bytes_read = read(*softrock_get_jack_read_pipe_left(r),sample_buffer_left[r],size);
+				//fprintf(stderr,"Read %d bytes on left.\n", bytes_read);
+				if (bytes_read != size) {
+					fprintf(stderr,"In process, number read  %d  number blocked  %d \n", stop_print, num_blocked);
+					if ( bytes_read == -1) { perror("Read");  
+						num_blocked++;
+					}
+					else fprintf(stderr,"There was a problem reading from the left pipe.  Read %d bytes.\n", bytes_read);	
+				}
+
+				bytes_read = read(*softrock_get_jack_read_pipe_right(r),sample_buffer_right[r],size);
+				if (bytes_read != size) {
+					if (bytes_read == -1) perror("Read");
+					else fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes. \n", bytes_read);
+				}
 #else // Use ringbuffers
 				//put right stuff to read rb here.
 				if ( jack_ringbuffer_read_space (rb_left[r]) >= size )
@@ -251,52 +265,49 @@ int process(jack_nframes_t number_of_frames, void* arg)
 				{
 					fprintf(stderr, "No space left to write in jack ringbuffers (left).\n");
 				}
-#endif
-				//fprintf(stderr,"Read %d bytes on left.\n", bytes_read);
-				if (bytes_read != size) {
-					fprintf(stderr,"In process, number read  %d  number blocked  %d \n", stop_print, num_blocked);
-					if ( bytes_read == -1) { perror("Read");  
-						num_blocked++;
-					}
-					else fprintf(stderr,"There was a problem reading from the left pipe.  Read %d bytes.\n", bytes_read);	
-				}
-#ifdef USE_PIPES
-				bytes_read = read(*softrock_get_jack_read_pipe_right(r),sample_buffer_right[r],size);
-#else // Use ringbuffers
+				
 				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
 				{
-					jack_ringbuffer_read (rb_left[r], sample_buffer_right[r], size); //(void *) will fix the warning.  Better check it first.
+					jack_ringbuffer_read (rb_right[r], sample_buffer_right[r], size); //(void *) will fix the warning.  Better check it first.
 				}
 				else
 				{
 					fprintf(stderr, "No space left to write in jack ringbuffers (right).\n");
 				}
 #endif
-				if (bytes_read != size) {
-					if (bytes_read == -1) perror("Read");
-					else fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes. \n", bytes_read);
-				}
-				} else {
+				} else { // qi instead of iq
 					/*for(i=0;i<number_of_frames;i++) {
 						sample_buffer_left[r][i] = (jack_default_audio_sample_t)right_tx_samples[i];
 						sample_buffer_right[r][i] = (jack_default_audio_sample_t)left_tx_samples[i];
-				}*/
+					}*/
 #ifdef USE_PIPES
 					bytes_read = read(*softrock_get_jack_read_pipe_left(r),sample_buffer_right[r],size);
-#else // Use ringbuffers
-					//put right stuff to read rb here.
-#endif
 					if (bytes_read  != size) {
 						//fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
 					}
-#ifdef USE_PIPES
 					bytes_read = read(*softrock_get_jack_read_pipe_right(r),sample_buffer_left[r],size);
-#else
-					//put right stuff to read rb here.
-#endif
 					if (bytes_read != size) {
 						//fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
 					}
+#else  // use ringbuffers
+				if ( jack_ringbuffer_read_space (rb_left[r]) >= size )
+				{
+					jack_ringbuffer_read (rb_left[r], (void *)sample_buffer_right[r], size);
+				}
+				else
+				{
+					fprintf(stderr, "No space left to write in jack ringbuffers (left).\n");
+				}
+				
+				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
+				{
+					jack_ringbuffer_read (rb_right[r], sample_buffer_left[r], size); //(void *) will fix the warning.  Better check it first.
+				}
+				else
+				{
+					fprintf(stderr, "No space left to write in jack ringbuffers (right).\n");
+				}
+#endif
 				}
 				stop_print++;
 				} 
