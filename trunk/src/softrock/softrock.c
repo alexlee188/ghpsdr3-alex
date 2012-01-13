@@ -227,6 +227,7 @@ int softrock_get_jack() {
 
 #ifdef USE_PIPES
 int * softrock_get_jack_read_pipe_left(int rx) {
+	if( softrock_get_verbose ()) fprintf(stderr,"Compiled for Pipes, not jackfifo.\n");
 	return &pipe_handle_left[rx][0];
 }
 
