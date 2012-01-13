@@ -377,7 +377,12 @@ int softrock_init(void) {
 				if(verbose) fprintf(stderr,"opening %s\n",filename);
     }
 
-	if(!softrock_get_jack ())  //If Jack Audio this isn't needed.
+	// The last line needs to be uncommented, but when it is it 
+	// breaks receive.  There is somewhere in the code that when jack is
+	// used, pulse audio is still called and without setting it up in 
+	// softrock_open() we get a crash.  So find out where that is and
+	// fix it!
+	if(!softrock_get_jack ())  //If Jack Audio this isn't needed.  
 	{
 		// open softrock audio  
 		rc = softrock_open();
