@@ -93,7 +93,7 @@ int softrock_init(void);
 int init_jack_audio (void);
 
 int create_softrock_thread() {
-	int rc;
+	int rc, res;
 	softrock_init();
 #ifdef JACKAUDIO
 	if(softrock_get_jack() == 0) 
@@ -128,7 +128,19 @@ int create_softrock_thread() {
 			}	
 #else // Use ringbuffer
 			rb_right[i] = jack_ringbuffer_create(sizeof(float)*JACK_RINGBUFFER_SZ);
+			res = jack_ringbuffer_mlock(rb_right[i]);
+  			// check if we've locked the memory successfully
+  			if ( res ) {
+    			fprintf(stderr, "Error locking memory for jack ringbuffer!");
+    			return -1;
+  			}
 			rb_left[i] = jack_ringbuffer_create(sizeof(float)*JACK_RINGBUFFER_SZ);
+			res = jack_ringbuffer_mlock(rb_left[i]);
+  			// check if we've locked the memory successfully
+  			if ( res ) {
+    			fprintf(stderr, "Error locking memory for jack ringbuffer!");
+    			return -1;
+  			}
 #endif
 			
 		}
@@ -203,6 +215,9 @@ int softrock_get_receivers() {
 
 void softrock_set_jack(int flag) {
 	use_jack = flag;
+	if(flag) {
+		if(softrock_get_verbose ()) fprintf(stderr,"Using Jack\n");
+	}
 }
 
 int softrock_get_jack() {
@@ -360,12 +375,15 @@ int softrock_init(void) {
 				if(verbose) fprintf(stderr,"opening %s\n",filename);
     }
 
-    // open softrock audio
-    rc = softrock_open();
-    if (rc != 0) {
-        if(verbose) fprintf(stderr,"Cannot open softrock\n");
-        return (-1);
-    }
+	if(!softrock_get_jack ())  //If Jack Audio this isn't needed.
+	{
+		// open softrock audio  
+		rc = softrock_open();
+		if (rc != 0) {
+			if(verbose) fprintf(stderr,"Cannot open softrock\n");
+			return (-1);
+		}
+	}
 
     for(i=0;i<receivers;i++) {
         receiver[i].frequency=7056000L;

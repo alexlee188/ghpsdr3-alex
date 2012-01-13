@@ -45,6 +45,8 @@
 #include "receiver.h"
 #include "operations.h"
 
+void how(void);
+
 static struct option long_options[] = {
     {"samplerate",required_argument, 0, 's'},
     {"device",required_argument, 0, 'd'},
@@ -116,7 +118,6 @@ void process_args(int argc,char* argv[]) {
     softrock_set_receivers(1);
     softrock_set_sample_rate(96000);
 	softrock_set_jack(0);
-	
     //softrock_set_device("/dev/dsp");
 
     while((i=getopt_long(argc,argv,short_options,long_options,&option_index))!=EOF) {
@@ -170,23 +171,45 @@ void process_args(int argc,char* argv[]) {
             case 11: // serial ID
                 usbSerialID=optarg;
                 break;
-            case 12: // record
+            case 'r': // record
                 softrock_set_record(optarg);
                 break;
-            case 13: // playback
+            case 'p': // playback
                 softrock_set_playback(optarg);
                 break;
-			case 'r': // receivers
+			case 14: // receivers
                 softrock_set_receivers(atoi(optarg));
                 break;
-				case 'j': // jack
+			case 'j': // jack
+				fprintf(stderr, "Jack in on\n");
                 softrock_set_jack(1);
                 break;
             default:
-                fprintf(stderr,"invalid argument\n"); 
-				//To do: Make a usage routine that prints out the options.
+				fprintf(stderr,"invalid argument\n");
+				how(); 
                 exit(1);
         }
     }
 }
 
+void how( void )
+{
+	fprintf(stderr,"Usage options:\n");
+	fprintf(stderr,"	-s= or --samplerate=  \n");
+	fprintf(stderr,"	-d= or --device= (OSS audio device) \n");
+	fprintf(stderr,"	-i= or --input= (Port Audio device for input) \n");
+	fprintf(stderr,"	-o= or --output= (Port Audio device for output) \n");
+	fprintf(stderr,"	--iq or --qi (to swap I and Q channels)  \n");
+	fprintf(stderr,"	--si570 (to use a unit having a Si570 oscillater) \n");
+	fprintf(stderr,"	-v or --verbose  \n");
+	fprintf(stderr,"	-f= or --startupfreq= (set Si570 startup frequency) \n");
+	fprintf(stderr,"	-m= or --multiplier= (set Si570 multiplier) \n");
+	fprintf(stderr,"	--correctedfreq= (set Si570 corrected frequency) \n");
+	fprintf(stderr,"	--serialid=  \n");
+	fprintf(stderr,"	--record=filename (record to this file)\n");
+	fprintf(stderr,"	--playback=filename (playback this file)  \n");
+	fprintf(stderr,"	--receivers= (number of receivers) \n");
+	fprintf(stderr,"	-j or --jack (use Jack Audio Connection Kit for audio in/out)  \n");
+}
+
+	        
