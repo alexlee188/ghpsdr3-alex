@@ -340,7 +340,7 @@ short readSi570Address(usb_dev_handle *handle) {
   
   nBytes = usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN, REQUEST_SET_SI570_ADDR, 0, 0, (char *) &i2cAddress, sizeof(i2cAddress), 500);
   
-  if (nBytes = 1) {
+  if (nBytes == 1) {
     printf("Si570 I2C   : %x Hex\n", i2cAddress);
     return i2cAddress;
   } else {
