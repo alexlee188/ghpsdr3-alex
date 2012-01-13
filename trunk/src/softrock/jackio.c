@@ -171,7 +171,9 @@ void jack_cleanup(void) {
 		jack_deactivate(softrock_client);	
 		jack_client_close(softrock_client);
 	}
+#ifndef USE_PIPES
 	delete_jack_ringbuffers();
+#endif
 }
 
 

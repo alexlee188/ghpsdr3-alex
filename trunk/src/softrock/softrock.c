@@ -162,7 +162,7 @@ int create_softrock_thread() {
 	}
 #endif			
 }
-
+#ifndef USE_PIPES
 void delete_jack_ringbuffers(void)
 {
 	for (int i = 0; i < softrock_get_receivers ();i++) {
@@ -170,6 +170,7 @@ void delete_jack_ringbuffers(void)
 		if(rb_left[i] != NULL) jack_ringbuffer_free(rb_left[i]);
 	}
 }
+#endif
 
 void softrock_set_device(char* d) {
 	if(verbose) fprintf(stderr,"softrock_set_device %s\n",d);
