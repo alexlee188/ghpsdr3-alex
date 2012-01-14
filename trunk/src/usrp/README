@@ -6,17 +6,44 @@ must be running to communicate with the USRP hardware.
 
 Currently the server program is a command line program and it has several options.
 
---receivers (1|2|3|4)
+--receivers | -r [1|2|3|4]
 
   receivers (note the plural) is the number of simultaneous receiver you 
 want to monitor from your receiver card.  the use of this option is 
 dependent on the version of the FPGA code you are using.  All versions 
-support one receiver.  Bruce Walkers FPGA code supports 4 receivers.  
+support one receiver.  Bruce Walkers FPGA code supports 4 receivers.
+Default is 1.
+NOTE: at the current stage, the usrp-server has been tested only with 1 receiver
 
---samplerate (48000|96000|192000)
+--samplerate [48000|96000|192000]
 
-  samplerate is the rate at which you want the HPSDR hardware to sample the 
-incoming signals.  
+  samplerate is the rate at which you want the usrp-server to provide baseband 
+signal samples to its client (dspserver). Note that USRP samplerate is fixed at this 
+stage to 256 KSPS. Alteration of USRP sample rate is not available at this stage
+and may be part of future enhancements.
+Default is 48000.
+
+--subdev | -d SUBDEV_STRING
+ 
+  subdev (or -d) option allows to select the USRP daughter board as receiver front
+end. Please refer to UHD documentation for valid selections by SUBDEV_STRING.
+(http://files.ettus.com/uhd_docs/manual/html/general.html#specifying-the-subdevice-to-use)
+Default is "", meaning that UHD will automatically select the first available receiver
+front-end among USRP A and B sides.
+
+--reverse-iq
+
+  reverse-iq option, if specified, swaps I and Q streams from the USRP.
+Usually is not needed, may be useful for specific applications
+
+--with-audio
+
+  with-audio option, if specified, let the usrp-server open a audio stream to the 
+audio subsystem. This is useful for tests, e.g without audio enabled clients.
+
+--help
+
+  help displays the short help text.
 
 *** PLEASE READ AT THE END OF THE FILE FOR the TODO LIST ***
 
@@ -28,8 +55,8 @@ incoming signals.
 1.1 UHD - Universal Hardware Driver installation
 
   Extract the code from the git repository:
-  cd
-  git clone git://code.ettus.com/ettus/uhd.git
+$ cd
+$ git clone git://code.ettus.com/ettus/uhd.git
 
   that results in a uhd directory being created in your home.
 
@@ -42,41 +69,45 @@ incoming signals.
 
   Assuming Ubuntu platfom, download the binary image:
   
-  wget http://www.ettus.com/downloads/uhd_images/UHD-images-0001.20101214004901.3ed60b6/UHD-images-0001.20101214004901.3ed60b6-Linux.deb
+$ wget http://www.ettus.com/downloads/uhd_images/UHD-images-0001.20101214004901.3ed60b6/UHD-images-0001.20101214004901.3ed60b6-Linux.deb
 
   and install it:
 
-  sudo dpkg -i UHD-images-0001.20101214004901.3ed60b6-Linux.deb
+$ sudo dpkg -i UHD-images-0001.20101214004901.3ed60b6-Linux.deb
 
   After the installations above are successfully ended, several utility and test program are available in ~/uhd/host/build/examples/
   Use 
   
-  uhd_find_devices --args="type=usrp1"
+$ uhd_find_devices --args="type=usrp1"
 
   to test your USRP and UHD installation.
   Use rx_samples_to_file to verify the end to end working of the platform.
 
 1.2 ghpsdr3-alex, Alex Lee package forked from John Melton's ghpsdr3 project.
 
-  To install the package do the following steps:
+To install the package do the following steps:
+
+a. Clone the repository from GitHub:
+$ cd
+$ git clone git@github.com:alexlee188/ghpsdr3-alex.git ghpsdr3-alex
   
-  //FIXME: CHANGE THIS (albtrentadue)
+b. build the software
 
-  sudo apt-get install subversion
-  sudo apt-get install libqt4-dev
-  sudo apt-get install libfftw3-3
-  cd
-  svn co svn://svn.openhpsdr.org/svn/repos_sdr_hpsdr/trunk/N6LYT/ghpsdr3
-  cd ~/ghpsdr3/trunk/src/
-  cd DttSP/
-  make 
-  cd ../dspserver
-  make
-  cd ../QtRadio
-  qmake-qt4 QtRadio.pro
-  make
+Please read the README file in the directory ~/ghpsdr3-alex as it descibes
+all requirements and dependencies that must be fulfilled to build.
+After all pre-requisites are satisfied:
 
-  //FIXME: CHANGE ABOVE (albtrentadue)
+Building the ghpsdr3-alex software
+==================================
+To build:
+
+$ cd ~/ghpsdr3-alex
+$ autoreconf -i
+$ ./configure
+$ make all
+$ sudo make install
+
+Then the 3 programs will be installed in /usr/local/bin.
 
 1.3 Extract and build this package
 
@@ -84,60 +115,37 @@ incoming signals.
 
   sudo apt-get install libportaudio2 portaudio19-dev libsamplerate0-dev libpulse-dev
 
-  Just for convenience, it is better untar this package into the ghpsdr3 directory hierarchy.
+  At this stage, usrp-server is included in the ghpsdr3-alex repository in a separate
+branch named "usrp-server".
+Note that usrp_server has been tested against the "master" branch of ghpsdr3. Therefore
+it is adviceable ti build the usrp-server in the "usrp_server" branch and all the remaining
+components from the "master" branch. This will make a future merge easier.
 
-  //FIXME: CHANGE THIS (albtrentadue)
-
-  cd ~/ghpsdr3/trunk/src/
-  tar -zxvf ~/Download/ghpsdr3-usrp-1.0.tar.gz
-  cd ghpsdr3-usrp-1.0
+  cd ~/ghpsdr3-alex
+  git checkout usrp-server
+  cd trunk/src/usrp
+  autoreconf -i
   ./configure
   make
-  sudo make install
-
-  //FIXME: CHANGE ABOVE (albtrentadue)
 
 1.4 How to run
 
 We have to run three components: server, dsp processing and graphical user interface.
 At the moment you need to run them in three separate terminal windows in the order shown below:
 
-~/ghpsdr3/trunk/src/ghpsdr3-usrp-1.0/usrp_server
+$ ~/ghpsdr-alex/trunk/src/usrp/usrp_server -d "A:0"
 
-~/ghpsdr3/trunk/bin/dspserver --samplerate 48000
+$ /usr/local/bin/dspserver --lo=0
 
-cd ~/ghpsdr3/trunk/src/QtRadio ; export QT_RADIO_NO_LOCAL_AUDIO=1 ; ./QtRadio
+$ /usr/local/bin/QtRadio
 
 
 1.5 Troubleshooting
-
 
 1.5.1 usrp_server complains about the libuhd shared library.
 
 Please run 
 
 sudo ldconfig
-
-
-1.6 How to build with the autotools build system
-
-In order to test the build, first off install all prerequisite packages ()
-
-cd /tmp
-wget  http://ghpsdr-servers.googlecode.com/files/ghpsdr3-usrp-1.0.tar.gz
-tar -xvf ghpsdr3-usrp-1.0.tar.gz 
-cd ghpsdr3-usrp-1.0/
-./configure && make
-sudo make install
-
-*** TODO LIST ***
-1. Validare le opzioni a riga di comando - OK
-2. verificare il corretto cambio di frequenza - OK
-3. Implementare la scelta della daughter board da opzione a riga di comando - OK
-4. prova di recezione con un trasmettitore HF
-5. Verificare la stabilità con un tempo di esecuzione lungo
-6. Aggiornare il README
-N. Fix this README file to comply to ghpsdr3-alex build standards
-
 
 
