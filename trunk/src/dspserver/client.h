@@ -37,5 +37,4 @@ void client_send_audio();
 void printcountry();
 void setprintcountry();
 void printcountrythread();
-
 #endif

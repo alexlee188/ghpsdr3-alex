@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=ghpsdr3launcher
+Name[xx]=ghpsdr3launcher
+Generic Name=SDR GUI
+Exec=ghpsdr3-mgr.py
+Icon=ghpsdr3launcher
+Terminal=False
+Categories=Network;HamRadio;
+

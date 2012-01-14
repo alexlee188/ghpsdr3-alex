@@ -4,28 +4,34 @@ http://openhpsdr.org/wiki/index.php?title=Ghpsdr3
 
 The changes are in trunk/src/: 
 
-softrock     - added an IF offset of 9khz (ala PSDR-IQ).  Works with all softrocks.
-dspserver    - added IF offset of 9khz.  More robust audio and spectrum transfers.
-server       - hpsdr protocol with full control of sdr-widget/Mobo/SR.  Only for sdr-widget.
+softrock     - Rx and Tx.  Pulse and Jack audio.  Works with all softrocks.
+dspserver    - The LO offset (usually set to 9000 Hz in Si570 controlled softrocks, a la PSDR-IQ) can be set via command line argument --lo
+	       Can be changed to 0 for fixed Xtal Softrocks and DDC radios.  
+	       More robust audio and spectrum transfers.  Rx and Tx.  Hamlib net backend.  rxtx-event
+               branch has non-blocking networking.  Multiple client can access the same dspserver in rxtx-event branch.
+widget-server- hpsdr protocol with full control of sdr-widget/Mobo/SR.  Only for sdr-widget.
 receiver     - Makefile modified to compile in x86_64, changed local-audio to direct alsa output, changed portaudio to use callback.
                To run under Ubuntu with pulseaudio:  $ ./ghpsdr --local-audio 1 --audio-device pulse
 
-QtRadio      - added dialog to store server ip addresses.  Fixed high cpu util bug.  Implemented 16 bit PCM audio.  			
-               See below for codec2 encoding and decoding.  Implemented a separate high priority thread for
-		       Audio with improved sound quality.
+QtRadio      - Many improvements to a full functional rxtx with graphical vfo and multiple audio codecs.
+             - Added a Quick Server Connect Dialog.  Displays a list of all currently online dspservers that were started with 
+	       the --share option.
 
-The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.
+The QtRadio audio quality is vastly improved with the audio codes running in a separate, high priority thread from the main GUI thread.  SSB Tx has now been implemented for the rxtx-event branch.
 
-The next major feature to be developed is SSB Tx.
+There is a Wiki for more detailed information, especially for new comers:
+
+http://napan.ca/ghpsdr3/index.php/Main_Page
 
 Ubuntu Linux Users
 ==================
 
 There is a ppa for the binaries produced from the master branch, maintained by Andrea.
 
-Now the code base is took from the master branch and in the "about" 
+Now the code base is taken from the master branch and in the "about" 
 panel there is some additional information in order to show where the 
-source is coming from. 
+source is coming from.
+
 In order to add this repository to your apt system (U11.10, U11.04, U10.04) 
 please submit the following commands: 
 
@@ -35,34 +41,37 @@ sudo apt-get install ghpsdr3
 
 You will then find the QtRadio app in the Applications > Internet menu
 
+Subsequently you can use the Ubuntu software update process to update to the latest ppa version.
+
 Windows Users
-=====================
+=============
 
 At this time the only application working in Windows is the QtRadio client which can connect to
-any dspserver.  A ready to run windows executable is avilable at:
+any dspserver.  A ready to run windows executable is available at:
+
 	http://www.napan.com/ve9gj
+
+Also check:
+
+http://napan.ca/ghpsdr3/index.php/QtRadio_on_Windows
+
 You can download the zip file which contains all the needed dlls and qtradio.exe.  Extract the qtradio folder
 to somewhere on your windows drive and double click qtradio.exe to run.
+
 The source for building with QtCreator 2.3.0 based on QT 4.7.4 is available via the win32 branch at:
 	https://github.com/alexlee188/ghpsdr3-alex
-Note that codec2 is not working in the win32 version.
 
-Building the software
-=====================
+Note that tx and codec2 is not working in the win32 version.
 
-You will need Qt4.  I would recommend downloading and installing the QtSDK from http://qt.nokia.com/downloads/
-instead of using the distributions's Qt.
-
-Set up your path to point to the QtSDK:
-
-For example, in my system:
-
-$ export PATH=/home/alex/QtSDK/Desktop/Qt/473/gcc/bin:$PATH
+Building the software in Linux
+==============================
+You will need Qt4.  Qt4 is available as a package from Ubuntu.
 
 Note that in addition to Qt, you will need some dev packages to be installed for using Qt
 (used by QtRadio), including (Ubuntu/Debian naming convention):
 
 libqt4-opengl-dev
+qtmobility-dev
 glutg3-dev
 libusb-0.1-4
 libfftw3-dev
@@ -72,10 +81,27 @@ libsamplerate0-dev
 libusb-1.0-0-dev
 libconfig8-dev
 
+libevent
+========
+For the rxtx-event branch of the software, you will also need a version of libevent that is newer than what
+is available from the Ubuntu distribution.  Go to synaptic and completely remove the stock libevent (v1.4) from Ubuntu.
 
 Building the software
 =====================
 
+http://libevent.org/
+
+libevent-2.0.15-stable.tar.gz
+
+Uncompress and follow the instructions to build and install:
+
+$ ./configure
+$ make
+$ sudo make install
+$ sudo ldconfig
+
+Building the ghpsdr3-alex software
+==================================
 To build:
 
 $ cd ghpsdr3-alex
@@ -89,11 +115,15 @@ Then the 3 programs will be installed in /usr/local/bin.
 
 Running the software
 ====================
-
 To run the softrock server (defaults to using pulse for IQ input.  So 
 use pulse chooser to set the default pulse source to the IQ sound 
 card).  You also need to run pulse in network mode.  Use Pulseaudio Device Chooser
-to set up network access by checking the various option boxes.
+to set up network access by checking the various option boxes.  In order to use
+96000 or 192000, you will need to configure pulse audio by editing the /etc/pulse/daemon.conf,
+or better still, copy the file to ~/.pulse/daemon.conf and then edit the file there.
+
+You can also use jack instead of pulse.  For detailed instructions on setting up soundcards with pulse or jack,
+Google and do research.
 
 $ softrock --si570 --iq --samplerate 48000|96000|192000
 
@@ -101,8 +131,11 @@ $ softrock --si570 --iq --samplerate 48000|96000|192000
 
 To run the dspserver: 
 
-$ dspserver 
-dspserver may be started with the option "-- lookupcountry" which will try 
+$ dspserver --lookupcountry --share --lo 0|9000|12000|...
+
+The LO offset can be set by the --lo argument.  For fixed crystal Softrocks and DDC rigs, use --lo 0.  For si570 controlled Softrocks, the usual offset should be set with --lo 9000.  Of course, you can set other offset values depending on your rig.
+
+dspserver may be started with the option "--lookupcountry" which will try 
 to determine the Country of incoming connections by IP. Off by default. No longer blocks.
 
 dspserver now has the ability to "register" it's status in a web database.
@@ -119,16 +152,56 @@ Then you can run QtRadio to connect to the dspserver that is running.
 
 For sdr-widget user only
 ========================
-As an alternative to softrock server, you can use the modified 
-"server", which has been customized to connect to the sdr-widget using 
+As an alternative to softrock server, you can use the widget-server ,
+which has been customized to connect to the sdr-widget using 
 the hpsdr protocol.  You need to setup sdr-widget for the hpsdr 
 protocol (with the WidgetControl.py tool), and then run server: 
 
 cd ~/ghpsdr3-alex/trunk/bin 
-./server --si570 --receivers 1 --samplerate 48000|96000|192000
+./widget-server --si570 --receivers 1 --samplerate 48000|96000|192000
 
 After that, you start dspserver (to connect to this server) and 
 QtRadio etc. 
+
+With hpsdr hardware (Ozy/Metis)
+===============================
+Run the original "server" server.
+
+With Perseus hardware
+=====================
+In order to use Perseus receiver, you have to build the perseus-server process.
+
+First off, download, compile and install the library libperseus-sdr:
+
+cd
+svn checkout http://libperseus-sdr.googlecode.com/svn/tags/REL-0.5 libperseus-sdr
+cd libperseus-sdr
+./bootstrap.sh
+./configure && make -j4
+sudo make install
+
+Next, install the other prerequisite library:
+
+sudo apt-get install liboost-dev
+
+last, run configure, enabling perseus option, and build:
+
+cd ~/ghpsdr3-alex
+autoreconf -i && ./configure --enable-perseus && make -j4
+sudo make install
+
+Run, three different xterm windows:
+
+xterm -e './perseus_server -d3 -s96000' &
+cd ../dspserver
+xterm -e './dspserver --lo 0' &
+cd ../QtRadio
+$(export QT_RADIO_NO_LOCAL_AUDIO=1 ; ./QtRadio ) &
+
+
+With Ettus usrp hardware
+========================
+Use the usrp-server branch.
 
 
 QtRadio with codec2 low bit rate audio encoding and decoding

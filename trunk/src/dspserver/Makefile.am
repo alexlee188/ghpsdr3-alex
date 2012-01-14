@@ -4,6 +4,9 @@ bin_PROGRAMS = dspserver
 
 dspserver_CFLAGS = -g -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function
 dspserver_CPPFLAGS = -I/usr/local/include
+
+#### dspserver_CFLAGS = -g -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function -msse -msse3 -ffast-math -march=core2 
+
 dspserver_LDADD = ../DttSP/libDttSP.a
 
 dspserver_SOURCES = main.c\

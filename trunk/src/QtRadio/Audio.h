@@ -47,6 +47,7 @@ public:
     Audio(const Audio& orig);
     virtual ~Audio();
     void * codec2;
+    int get_audio_encoding();
 
 signals:
     void process_audio_free(int state);
