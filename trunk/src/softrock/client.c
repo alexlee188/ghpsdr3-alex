@@ -199,8 +199,8 @@ void* audio_thread(void* arg) {
 	int  pipe_left = *softrock_get_jack_write_pipe_left(rx->client->receiver);
 	int  pipe_right = *softrock_get_jack_write_pipe_right(rx->client->receiver);
 #else // Use ringbuffers
-	jack_ringbuffer_t rb_left = *softrock_get_jack_rb_left(rx->client->receiver);
-	jack_ringbuffer_t rb_right = *softrock_get_jack_rb_right(rx->client->receiver);
+	jack_ringbuffer_t *rb_left = softrock_get_jack_rb_left(rx->client->receiver);
+	jack_ringbuffer_t *rb_right = softrock_get_jack_rb_right(rx->client->receiver);
 #endif
 	int num_bytes = sizeof(float)*BUFFER_SIZE;
 	int blocked_num = 0;
@@ -303,7 +303,7 @@ void* audio_thread(void* arg) {
 				fprintf(stderr, "Note: resource temporarilly unavailable indicates write would have blocked.\n");
 			}
 #else  // Use ringbuffers
-			if (( jack_ringbuffer_write_space (rb_left) >= num_bytes ) &&  jack_ringbuffer_write_space (rb_right) >= num_bytes ))
+			if (( jack_ringbuffer_write_space (rb_left) >= num_bytes ) &&  (jack_ringbuffer_write_space (rb_right) >= num_bytes ))
 			{
 				jack_ringbuffer_write (rb_left, &rx->output_buffer[0], num_bytes);
 				jack_ringbuffer_write (rb_right, &rx->output_buffer[BUFFER_SIZE], num_bytes);

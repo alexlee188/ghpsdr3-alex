@@ -30,7 +30,7 @@
 //#define PORTAUDIO
 //#define DIRECTAUDIO
 #define JACKAUDIO
-#define USE_PIPES
+//#define USE_PIPES
 
 #include <stdlib.h>
 #include <stdio.h>
