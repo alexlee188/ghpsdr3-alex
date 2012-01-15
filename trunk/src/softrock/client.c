@@ -277,14 +277,14 @@ void* audio_thread(void* arg) {
 		}
 #endif
 		if (softrock_get_jack () == 1) { 
-			/*if (second_time == 32) {// This is for testing only.  It will fail the second connection from QtRadio.
+			if (second_time == 32) {// This is for testing only.  It will fail the second connection from QtRadio.
 				softrock_set_client_active_rx(rx->client->receiver, ADD_RX);	
 			}
 			second_time++;
-			if ( second_time == 4000 ) {
+			/*if ( second_time == 4000 ) {
 				fprintf(stderr, "reached 4000.\n");
 				exit(0);
-			}	*/
+			}*/	
 
 #ifdef USE_PIPES
 			//fprintf(stderr,"client.c pipe_left is: %d \n",pipe_left);
