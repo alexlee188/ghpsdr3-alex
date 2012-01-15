@@ -240,7 +240,7 @@ void* audio_thread(void* arg) {
 
 	while(1) {
 		// get audio from a client
-#ifdef SMALL_PACKETS  // Need to make JACK work with small packets....
+#ifdef SMALL_PACKETS  
 		while(1) {
 			bytes_read=recvfrom(rx->audio_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&audio,(socklen_t *)&audio_length);
 			if(bytes_read<0) {
@@ -275,7 +275,7 @@ void* audio_thread(void* arg) {
 			perror("recvfrom socket failed for audio buffer");
 			exit(1);
 		}
-
+#endif
 		if (softrock_get_jack () == 1) { 
 			if (second_time == 32) {// This is for testing only.  It will fail the second connection from QtRadio.
 				softrock_set_client_active_rx(rx->client->receiver, ADD_RX);	
@@ -284,19 +284,20 @@ void* audio_thread(void* arg) {
 			if ( second_time == 4000 ) {
 				fprintf(stderr, "reached 4000.\n");
 				exit(0);
-			}
+			}	
+
+#ifdef USE_PIPES
 			//fprintf(stderr,"client.c pipe_left is: %d \n",pipe_left);
 			//fprintf(stderr,"rx->client->receiver is: %d\n",rx->client->receiver);
-#ifdef USE_PIPES
-				error_no = write(pipe_left, &rx->output_buffer[0], num_bytes);
+			error_no = write(pipe_left, &rx->output_buffer[0], num_bytes);
 			if (error_no == -1) {
 				if ( softrock_get_verbose () == 1) perror("There were problems writing the left pipe for Jack in client.c");
 				//fprintf(stderr, "Note: resource temporarilly unavailable indicates write would have blocked.  , blocked %d times\n",blocked_num);
 				fprintf(stderr, "blocked %d times\nwritten %d times\n",blocked_num,second_time);
 				blocked_num++;
 			}
-			else //fprintf(stderr,"Wrote %d bytes on left channel.\n",num_bytes);
-				error_no = write(pipe_right, &rx->output_buffer[BUFFER_SIZE], num_bytes);
+			//else fprintf(stderr,"Wrote %d bytes on left channel.\n",num_bytes);
+			error_no = write(pipe_right, &rx->output_buffer[BUFFER_SIZE], num_bytes);
 			if (error_no == -1) {
 				if ( softrock_get_verbose () == 1) perror("There were problems writing the right pipe for Jack in client.c.");
 				fprintf(stderr, "Note: resource temporarilly unavailable indicates write would have blocked.\n");
@@ -312,22 +313,11 @@ void* audio_thread(void* arg) {
 				fprintf(stderr, "No space left to write in jack ringbuffers.\n");
 			}
 #endif
-			} else {
-				process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
-			}
-
-#endif
-
-
-#ifdef JACKAUDIO
-			if(softrock_get_jack () == 0) 
-#endif
-			{
-				process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
-			}
-
+		} else {
+			process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
 		}
-		softrock_set_client_active_rx (rx->client->receiver, DEC_RX); 
 	}
+		softrock_set_client_active_rx (rx->client->receiver, DEC_RX); 
+}
 
 			
