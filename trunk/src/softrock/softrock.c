@@ -145,6 +145,7 @@ int create_softrock_thread() {
 			
 		}
 #ifdef USE_PIPES
+		if( softrock_get_verbose ()) fprintf(stderr,"Compiled for Pipes, not jackfifo.\n");
 		fprintf(stderr,"Softrock.c &pipe_handle_left[0][0] is: %d \n",&pipe_handle_left[0][0]);
 		//fprintf(stderr,"Softrock.c &pipe_handle_left[3][1] is: %d \n",&pipe_handle_left[3][1]);
 		fprintf(stderr,"Softrock.c &pipe_handle_left[0][1] is: %d \n",&pipe_handle_left[0][1]);
@@ -227,7 +228,6 @@ int softrock_get_jack() {
 
 #ifdef USE_PIPES
 int * softrock_get_jack_read_pipe_left(int rx) {
-	if( softrock_get_verbose ()) fprintf(stderr,"Compiled for Pipes, not jackfifo.\n");
 	return &pipe_handle_left[rx][0];
 }
 
