@@ -236,7 +236,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 				fprintf(stderr,"jackio.c r : %d\n",r);
 #endif
 			}
-			if(softrock_get_iq()) {
+			if(!softrock_get_iq()) { //Transmit seems to be switched, so put the ! here.
 				/*for(i=0;i<number_of_frames;i++) {
 					sample_buffer_left[r][i] = (jack_default_audio_sample_t)left_tx_samples[i];
 					sample_buffer_right[r][i] = (jack_default_audio_sample_t)right_tx_samples[i];

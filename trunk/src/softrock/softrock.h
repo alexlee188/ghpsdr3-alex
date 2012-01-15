@@ -30,7 +30,7 @@
 //#define PORTAUDIO
 //#define DIRECTAUDIO
 #define JACKAUDIO
-//#define USE_PIPES
+//#define USE_PIPES //A quick test seems to indicate that ringbuffers work with less overruns.
 
 #include <stdlib.h>
 #include <stdio.h>
