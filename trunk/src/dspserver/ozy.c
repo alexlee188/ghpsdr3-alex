@@ -435,6 +435,18 @@ int make_connection() {
                     case 250000:
                         setSpeed(SPEED_250KHZ);
                         break;
+                    case 53333:
+                        setSpeed(SPEED_53KHZ);
+                        break;
+                    case 111111:
+                        setSpeed(SPEED_111KHZ);
+                        break;
+                    case 133333:
+                        setSpeed(SPEED_133KHZ);
+                        break;
+                    case 185185:
+                        setSpeed(SPEED_185KHZ);
+                        break;
                     default:
                         fprintf (stderr, "make_connection: unexpected sample rate %d\n", sampleRate);
                 }
@@ -631,6 +643,15 @@ fprintf(stderr,"LO_offset %f\n",LO_offset);
         if(s==SPEED_250KHZ) {
             sampleRate=250000;
         }
+        if(s==SPEED_53KHZ) {
+            sampleRate=53333;
+        }
+        if(s==SPEED_111KHZ) {
+            sampleRate=111111;
+        }
+        if(s==SPEED_185KHZ) {
+            sampleRate=185185;
+        }
         output_sample_increment=-1;
         SetSampleRate((double)sampleRate);
     }
@@ -638,7 +659,8 @@ fprintf(stderr,"LO_offset %f\n",LO_offset);
 	SetRXOsc(0,1, -LO_offset);
 	SetTXOsc(1, -LO_offset);
 
-        src_ratio = 48000.0 / ((double) sampleRate);
+    fprintf(stderr,"%s: %f\n", __FUNCTION__, (double) sampleRate);
+    src_ratio = 48000.0 / ((double) sampleRate);
 	mic_src_ratio = (double) sampleRate/ 8000.0;
 }
 

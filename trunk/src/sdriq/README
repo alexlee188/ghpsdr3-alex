@@ -1,0 +1,106 @@
+
+0. SDR-IQ SERVER
+================
+
+This file documents an attempt to write a I/Q server for SDR-IQ, a Software Defined Radio DDC receiver by RF-SPACE.
+For more information on the hardware, please refer to the official web site:
+
+   http://www.rfspace.com/
+
+
+A server program, in the ghpsdr3 suite, is the program 
+that forms the interface to the hardware.  One instance of this program 
+must be running to allow the DSP process to communicate with the HiQSDR hardware.
+
+Please note that HiQSDR is itself a IP devices and it is interfaced to the outside world via a Fast Ethernet.
+
+Currently the sdriq-server program is a command line program and it has few options, as follows:
+
+
+Allowed options:                                                      
+      -s [ --samplerate ] arg (=53333) samplerate in Samples/second       
+                                       (53333  | 111111 | 133333 | 185185)
+      -u [ --usb ] arg (=/dev/ttyUSB0) serial device                      
+      -h [ --help ]                    print usage message                
+      -d [ --debug ]uuu arg (=0)          debug level                        
+
+
+0.1 Credits and Acknowledgements
+--------------------------------
+
+The code base for the server was derived (by Alex Lee 9V1AL et al.) from John Melton G0ORX/N6LYT code for HPSDR Ozymandias card.
+
+The code specific for SDR-IQ  has been written by 
+
+Andrea Montefusco, IW0HDV (andrew att montefusco dott com), did the merge with previous mentioned code base and the 
+the SDR-IQ support code from Quisk 3.5.11 by James C. Ahlstrom.
+
+Thanks to the invaluable support by Ken N9VV, that provided his radio, a powerful Linux PC and Internet connection for the development.
+
+
+
+1. PREREQUISITE
+===============
+
+To build the server, no special prerequisite has to be fullfilled, aside the usual compiler and build tools.
+
+
+2. BUILD
+========
+
+The sdriq server gets built automatically in ghpsdr3-alex package.
+Please refer to build and install instructions in 
+
+http://napan.ca/ghpsdr3/index.php/QtRadio_Installation#Installation_from_Git
+
+
+3. SETUP AND PRELIMINARY TEST
+=============================
+
+For the SDR-IQ, here are the instructions (I will put into README):
+
+1) plug the USB cable
+2) check, with lsusb, that a FTDI peripheral appears
+3) list the USB serial with ls -al /dev/ttyUSB* and take note which really is the port
+4) start the server on the right port:
+
+    sdriq-server -u /dev/ttyUSB0 -s 111111
+
+5) when you see that the server is listening on tcp port 13000, open another window and run
+
+     dspserver --lo 0
+
+   if you want that your server is listed on the public gHPSDR3-alex server
+
+     dspserver --lo 0 --share
+
+   if you see a message complaining of a missing config file, stop the dspserver and
+   edit the /home/$USER/dspserver.conf (I already did in my directory filling your data) 
+6) from the Internet menu or from a third window, start QtRadio GUI,
+ open Receiver->Configure->Server and into the Host dropdown select the IP address or the name of the machine where
+ dspserver is running (localhost if QtRadio is running on the same machine of dspserver).
+ For the local machines, use the internal (private) address, even if the local dspserver is listed into "Active dspserver list".
+In fact, albeit some router allows for this triangulation, you are anyway introducing a needless delay and jitter source.
+ Next press the 'C' key for connect. 
+
+
+4. RUN
+======
+
+We have to run three components: server, dsp processing and graphical user interface.
+At the moment you need to run them in three separate terminal windows, strictly in the order shown below:
+
+xterm -e 'sdriq-server -u /dev/ttyUSB0 -s 53333' &
+xterm -e 'dspserver --lo 0' &
+QtRadio &
+
+When the GUI shows up, connect it to the DSP server (Menu Receiver, submenu Connect) and select the
+127.0.0.1 (localhost) server address. That holds if you are running the trhee pieces altogether in the same machine.
+Elsewhere use the IP address of the machine where the dspserver is running.
+
+
+
+
+
+
+
