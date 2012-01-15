@@ -1,10 +1,10 @@
 /**
-* @file jackio.c
-* @brief Softrock implementation
-* @author Rob Frohne, KL7NA "at" arrl "dot" net
-* @version 0.1
-* @date 20011-09-05
-*/
+ * @file jackio.c
+ * @brief Softrock implementation
+ * @author Rob Frohne, KL7NA "at" arrl "dot" net
+ * @version 0.1
+ * @date 20011-09-05
+ */
 
 /* Copyright (C)
 * 2011 Rob Frohne
@@ -32,6 +32,9 @@
 #ifdef JACKAUDIO
 static int frame;
 static int buffers;
+static jack_ringbuffer_t * rb_left[MAX_RECEIVERS];
+static jack_ringbuffer_t * rb_right[MAX_RECEIVERS];
+
 
 int init_jack_audio()
 {
@@ -61,7 +64,7 @@ int init_jack_audio()
 		jack_cleanup();
 		return 1;
 	}
-	
+
 	/* Set up Jack */
 	//Set up the jack shutdown routine in case we want to do something special on shutdown of jack.
 	jack_on_shutdown (softrock_client, jack_shutdown, 0);
@@ -75,9 +78,14 @@ int init_jack_audio()
 	}
 
 	//Create and register new audio input ports.
-	for(r=0;r < softrock_get_receivers();r++) {		
+	for(r=0;r < softrock_get_receivers();r++) {	
+#ifndef USE_PIPES // Use ringbuffers
+		rb_left[r] = softrock_get_jack_rb_left(r);
+		rb_right[r] = softrock_get_jack_rb_right(r);
+#endif
+		
 		audio_input_port_left[r] = jack_port_register(softrock_client, softrock_rx_port_name_left[r], 
-		                                           JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+		                                              JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
 		if (audio_input_port_left[r] == NULL) {
 			fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_rx_port_name_left[r]);
 			jack_cleanup();
@@ -85,7 +93,7 @@ int init_jack_audio()
 		}
 
 		audio_input_port_right[r] = jack_port_register(softrock_client, softrock_rx_port_name_right[r], 
-		                                            JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+		                                               JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
 		if (audio_input_port_right[r] == NULL) {
 			fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_rx_port_name_right[r]);
 			jack_cleanup();
@@ -93,30 +101,30 @@ int init_jack_audio()
 		}
 		//Create and register new audio output ports.
 		audio_output_port_left[r] = jack_port_register(softrock_client, softrock_tx_port_name_left[r], 
-		                                           JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+		                                               JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 		if (audio_output_port_left[r] == NULL) {
 			fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_tx_port_name_left[r]);
 			jack_cleanup();
 			return 1;
 		}
 		audio_output_port_right[r] = jack_port_register(softrock_client, softrock_tx_port_name_right[r], 
-		                                            JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+		                                                JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 		if (audio_output_port_right[r] == NULL) {
 			fprintf(stderr, "Error: jack_port_register returned NULL for %s.\n",softrock_tx_port_name_right[r]);
 			jack_cleanup();
 			return 1;
 		}
-	
-	//Tell the jackd server what function call when it wants more audio data.
-	if((error = jack_set_process_callback(softrock_client, process,0)) != 0) { 
-		fprintf(stderr, "Jack could not set the callback, (error %i).\n", error);
-		jack_cleanup();
-		return 1;
-	}
+
+		//Tell the jackd server what function call when it wants more audio data.
+		if((error = jack_set_process_callback(softrock_client, process,0)) != 0) { 
+			fprintf(stderr, "Jack could not set the callback, (error %i).\n", error);
+			jack_cleanup();
+			return 1;
+		}
 
 	}
 
-	
+
 	//Tell jack it's ok to start asking us for audio data.
 	if((error = jack_activate(softrock_client)) != 0) {
 		fprintf(stderr, "Jack could not activate the client (error %i).\n", error);
@@ -163,6 +171,9 @@ void jack_cleanup(void) {
 		jack_deactivate(softrock_client);	
 		jack_client_close(softrock_client);
 	}
+#ifndef USE_PIPES
+	delete_jack_ringbuffers();
+#endif
 }
 
 
@@ -176,8 +187,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 	jack_default_audio_sample_t *sample_buffer_right[MAX_RECEIVERS];
 	jack_default_audio_sample_t *out_buffer_left[MAX_RECEIVERS]; 
 	jack_default_audio_sample_t *out_buffer_right[MAX_RECEIVERS]; 
-	int pipe_left[MAX_RECEIVERS][2];
-	int pipe_right[MAX_RECEIVERS][2];
+
 	static int stop_print = 0, num_blocked = 0;
 
 	softrock_set_rx_frame (frame + 1);
@@ -206,11 +216,11 @@ int process(jack_nframes_t number_of_frames, void* arg)
 			}
 		}
 		send_IQ_buffer(r);
-	
+
 		// Now do the tx part (send output IQ data from the dspserver client to
 		// the audio out jacks.
 		if (softrock_get_client_active_rx (r) > 0) {
-			
+
 			int size = sizeof(float)*number_of_frames;
 			//fprintf(stderr,"Made it to read tx\n");
 
@@ -221,14 +231,17 @@ int process(jack_nframes_t number_of_frames, void* arg)
 			left_tx_samples = &receiver[r].output_buffer[0];
 			right_tx_samples = &receiver[r].output_buffer[BUFFER_SIZE];
 			if (stop_print == 0) {
+#ifdef USE_PIPES
 				fprintf(stderr,"jackio.c *softrock get jack pipe left(r) is: %d \n",*softrock_get_jack_read_pipe_left(r));
 				fprintf(stderr,"jackio.c r : %d\n",r);
+#endif
 			}
-			if(softrock_get_iq()) {
+			if(!softrock_get_iq()) { //Transmit seems to be switched, so put the ! here.
 				/*for(i=0;i<number_of_frames;i++) {
 					sample_buffer_left[r][i] = (jack_default_audio_sample_t)left_tx_samples[i];
 					sample_buffer_right[r][i] = (jack_default_audio_sample_t)right_tx_samples[i];
-				}*/
+			}*/
+#ifdef USE_PIPES
 				bytes_read = read(*softrock_get_jack_read_pipe_left(r),sample_buffer_left[r],size);
 				//fprintf(stderr,"Read %d bytes on left.\n", bytes_read);
 				if (bytes_read != size) {
@@ -238,31 +251,73 @@ int process(jack_nframes_t number_of_frames, void* arg)
 					}
 					else fprintf(stderr,"There was a problem reading from the left pipe.  Read %d bytes.\n", bytes_read);	
 				}
+
 				bytes_read = read(*softrock_get_jack_read_pipe_right(r),sample_buffer_right[r],size);
 				if (bytes_read != size) {
 					if (bytes_read == -1) perror("Read");
 					else fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes. \n", bytes_read);
 				}
-			} else {
-				/*for(i=0;i<number_of_frames;i++) {
-					sample_buffer_left[r][i] = (jack_default_audio_sample_t)right_tx_samples[i];
-					sample_buffer_right[r][i] = (jack_default_audio_sample_t)left_tx_samples[i];
-			}*/
-				bytes_read = read(*softrock_get_jack_read_pipe_left(r),sample_buffer_right[r],size);
-				if (bytes_read  != size) {
-					//fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
+#else // Use ringbuffers
+				//put right stuff to read rb here.
+				if ( jack_ringbuffer_read_space (rb_left[r]) >= size )
+				{
+					jack_ringbuffer_read (rb_left[r], (void *)sample_buffer_left[r], size);
 				}
-				bytes_read = read(*softrock_get_jack_read_pipe_right(r),sample_buffer_left[r],size);
-				if (bytes_read != size) {
-					//fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
+				else
+				{
+					fprintf(stderr, "No space left to write in jack ringbuffers (left).\n");
 				}
-			}
-			stop_print++;
-		} 
+				
+				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
+				{
+					jack_ringbuffer_read (rb_right[r], sample_buffer_right[r], size); //(void *) will fix the warning.  Better check it first.
+				}
+				else
+				{
+					fprintf(stderr, "No space left to write in jack ringbuffers (right).\n");
+				}
+#endif
+				} else { // qi instead of iq
+					/*for(i=0;i<number_of_frames;i++) {
+						sample_buffer_left[r][i] = (jack_default_audio_sample_t)right_tx_samples[i];
+						sample_buffer_right[r][i] = (jack_default_audio_sample_t)left_tx_samples[i];
+					}*/
+#ifdef USE_PIPES
+					bytes_read = read(*softrock_get_jack_read_pipe_left(r),sample_buffer_right[r],size);
+					if (bytes_read  != size) {
+						//fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
+					}
+					bytes_read = read(*softrock_get_jack_read_pipe_right(r),sample_buffer_left[r],size);
+					if (bytes_read != size) {
+						//fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
+					}
+#else  // use ringbuffers
+				if ( jack_ringbuffer_read_space (rb_left[r]) >= size )
+				{
+					jack_ringbuffer_read (rb_left[r], (void *)sample_buffer_right[r], size);
+				}
+				else
+				{
+					fprintf(stderr, "No space left to write in jack ringbuffers (left).\n");
+				}
+				
+				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
+				{
+					jack_ringbuffer_read (rb_right[r], sample_buffer_left[r], size); //(void *) will fix the warning.  Better check it first.
+				}
+				else
+				{
+					fprintf(stderr, "No space left to write in jack ringbuffers (right).\n");
+				}
+#endif
+				}
+				stop_print++;
+				} 
 
-	}
+				}
 
-	return 0;
-}
+				return 0;
+				}
 
 #endif
+				
