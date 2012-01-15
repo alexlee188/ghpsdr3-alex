@@ -184,102 +184,109 @@ char* parse_command(CLIENT* client,char* command) {
 	return 0;
 }
 
-					
+
 
 void* audio_thread(void* arg) {
-    RECEIVER *rx=(RECEIVER*)arg;
-    struct sockaddr_in audio;
-    int audio_length=sizeof(audio);
-    int old_state, old_type;
-    int bytes_read;
-    int on=1;
+	RECEIVER *rx=(RECEIVER*)arg;
+	struct sockaddr_in audio;
+	int audio_length=sizeof(audio);
+	int old_state, old_type;
+	int bytes_read;
+	int on=1;
 
 	int error_no;
+#ifdef USE_PIPES
 	int  pipe_left = *softrock_get_jack_write_pipe_left(rx->client->receiver);
 	int  pipe_right = *softrock_get_jack_write_pipe_right(rx->client->receiver);
+#else // Use ringbuffers
+	jack_ringbuffer_t *rb_left = softrock_get_jack_rb_left(rx->client->receiver);
+	jack_ringbuffer_t *rb_right = softrock_get_jack_rb_right(rx->client->receiver);
+#endif
 	int num_bytes = sizeof(float)*BUFFER_SIZE;
 	int blocked_num = 0;
-static int second_time = 0;
+	static int second_time = 0;
 
-    BUFFER buffer;
-    unsigned long sequence=0L;
-    unsigned short offset=0;;
+	BUFFER buffer;
+	unsigned long sequence=0L;
+	unsigned short offset=0;;
 
 
-    if (softrock_get_verbose()) fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
-	
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
-    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);
+	if (softrock_get_verbose()) fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 
-    rx->audio_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
-    if(rx->audio_socket<0) {
-        perror("create socket failed for server audio socket");
-        exit(1);
-    }
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);
 
-    setsockopt(rx->audio_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+	rx->audio_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
+	if(rx->audio_socket<0) {
+		perror("create socket failed for server audio socket");
+		exit(1);
+	}
 
-    memset(&audio,0,audio_length);
-    audio.sin_family=AF_INET;
-    audio.sin_addr.s_addr=htonl(INADDR_ANY);
-    audio.sin_port=htons(audio_port+(rx->id*2));
+	setsockopt(rx->audio_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
-    if(bind(rx->audio_socket,(struct sockaddr*)&audio,audio_length)<0) {
-        perror("bind socket failed for server audio socket");
-        exit(1);
-    }
+	memset(&audio,0,audio_length);
+	audio.sin_family=AF_INET;
+	audio.sin_addr.s_addr=htonl(INADDR_ANY);
+	audio.sin_port=htons(audio_port+(rx->id*2));
 
-	
-	
-    if (softrock_get_verbose()) fprintf(stderr,"listening for tx %d IQ audio on port %d\n",rx->id,audio_port+(rx->id*2));
+	if(bind(rx->audio_socket,(struct sockaddr*)&audio,audio_length)<0) {
+		perror("bind socket failed for server audio socket");
+		exit(1);
+	}
 
-    while(1) {
-        // get audio from a client
-#ifdef SMALL_PACKETS
-        while(1) {
-            bytes_read=recvfrom(rx->audio_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&audio,(socklen_t *)&audio_length);
-            if(bytes_read<0) {
-                perror("recvfrom socket failed for tx iq buffer");
-                exit(1);
-            }
 
-           //fprintf(stderr,"rcvd UDP packet: sequence=%lld offset=%d length=%d\n", buffer.sequence, buffer.offset, buffer.length);
 
-           if(buffer.offset==0) {
-                offset=0;
-                sequence=buffer.sequence;
-                // start of a frame
-                memcpy((char *)&rx->output_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
-                offset+=buffer.length;
-            } else {
-                if((sequence==buffer.sequence) && (offset==buffer.offset)) {
-                    memcpy((char *)&rx->output_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
-                    offset+=buffer.length;
-                    if(offset==sizeof(rx->output_buffer)) {
-                        offset=0;
-                        break;
-                    }
-                } else {
-                        fprintf(stderr,"missing TX IQ frames expected %d.%ld got %d.%ld\n",sequence,offset,buffer.sequence,buffer.offset);
-                }
-            }
-        }
+	if (softrock_get_verbose()) fprintf(stderr,"listening for tx %d IQ audio on port %d\n",rx->id,audio_port+(rx->id*2));
+
+	while(1) {
+		// get audio from a client
+#ifdef SMALL_PACKETS  
+		while(1) {
+			bytes_read=recvfrom(rx->audio_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&audio,(socklen_t *)&audio_length);
+			if(bytes_read<0) {
+				perror("recvfrom socket failed for tx iq buffer");
+				exit(1);
+			}
+
+			//fprintf(stderr,"rcvd UDP packet: sequence=%lld offset=%d length=%d\n", buffer.sequence, buffer.offset, buffer.length);
+
+			if(buffer.offset==0) {
+				offset=0;
+				sequence=buffer.sequence;
+				// start of a frame
+				memcpy((char *)&rx->output_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
+				offset+=buffer.length;
+			} else {
+				if((sequence==buffer.sequence) && (offset==buffer.offset)) {
+					memcpy((char *)&rx->output_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
+					offset+=buffer.length;
+					if(offset==sizeof(rx->output_buffer)) {
+						offset=0;
+						break;
+					}
+				} else {
+					fprintf(stderr,"missing TX IQ frames expected %d.%ld got %d.%ld\n",sequence,offset,buffer.sequence,buffer.offset);
+				}
+			}
+		}
 #else
-        bytes_read=recvfrom(rx->audio_socket,rx->output_buffer,sizeof(rx->output_buffer),0,(struct sockaddr*)&audio,(socklen_t *)&audio_length);
-        if(bytes_read<0) {
-            perror("recvfrom socket failed for audio buffer");
-            exit(1);
-        }
-
+		bytes_read=recvfrom(rx->audio_socket,rx->output_buffer,sizeof(rx->output_buffer),0,(struct sockaddr*)&audio,(socklen_t *)&audio_length);
+		if(bytes_read<0) {
+			perror("recvfrom socket failed for audio buffer");
+			exit(1);
+		}
+#endif
 		if (softrock_get_jack () == 1) { 
 			if (second_time == 32) {// This is for testing only.  It will fail the second connection from QtRadio.
 				softrock_set_client_active_rx(rx->client->receiver, ADD_RX);	
 			}
 			second_time++;
-			if ( second_time == 4000 ) {
+			/*if ( second_time == 4000 ) {
 				fprintf(stderr, "reached 4000.\n");
 				exit(0);
-			}
+			}*/	
+
+#ifdef USE_PIPES
 			//fprintf(stderr,"client.c pipe_left is: %d \n",pipe_left);
 			//fprintf(stderr,"rx->client->receiver is: %d\n",rx->client->receiver);
 			error_no = write(pipe_left, &rx->output_buffer[0], num_bytes);
@@ -289,28 +296,28 @@ static int second_time = 0;
 				fprintf(stderr, "blocked %d times\nwritten %d times\n",blocked_num,second_time);
 				blocked_num++;
 			}
-			else //fprintf(stderr,"Wrote %d bytes on left channel.\n",num_bytes);
+			//else fprintf(stderr,"Wrote %d bytes on left channel.\n",num_bytes);
 			error_no = write(pipe_right, &rx->output_buffer[BUFFER_SIZE], num_bytes);
 			if (error_no == -1) {
 				if ( softrock_get_verbose () == 1) perror("There were problems writing the right pipe for Jack in client.c.");
 				fprintf(stderr, "Note: resource temporarilly unavailable indicates write would have blocked.\n");
 			}
+#else  // Use ringbuffers
+			if (( jack_ringbuffer_write_space (rb_left) >= num_bytes ) &&  (jack_ringbuffer_write_space (rb_right) >= num_bytes ))
+			{
+				jack_ringbuffer_write (rb_left, &rx->output_buffer[0], num_bytes);
+				jack_ringbuffer_write (rb_right, &rx->output_buffer[BUFFER_SIZE], num_bytes);
+			}
+			else
+			{
+				fprintf(stderr, "No space left to write in jack ringbuffers.\n");
+			}
+#endif
 		} else {
-        	process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
+			process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
 		}
-
-#endif
-
-/*
-#ifdef JACKAUDIO
-	if(softrock_get_jack () == 1) 
-#endif
-*/
-	{
-        process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
 	}
-
-    }
-	softrock_set_client_active_rx (rx->client->receiver, DEC_RX); 
+		softrock_set_client_active_rx (rx->client->receiver, DEC_RX); 
 }
 
+			
