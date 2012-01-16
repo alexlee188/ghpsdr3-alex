@@ -124,7 +124,7 @@ int user_data_callback (SAMPLE_T *pi, SAMPLE_T *pq, int nSamples, void *extra)
             fprintf (stderr, "[%s] [%s]\n", pRec->cfg.start, pRec->cfg.stop);
             fprintf (stderr, "%p %p\n", pi, pq);
             fprintf (stderr, ">>>>>>>>>>>>>> %s: #samples: %d\n", __FUNCTION__, nSamples);  
-            fprintf (stderr, ">>>>>>>>>>>>>> LSB first: i: %08X q: %08X\n", *pi, *pq );  
+            fprintf (stderr, ">>>>>>>>>>>>>> LSB first: i: %08f q: %08f\n", *pi, *pq );  
             fprintf (stderr, ">>>>>>>>>>>>>> i: %f q: %f\n", 
                      pRec->input_buffer[pRec->samples], pRec->input_buffer[pRec->samples+BUFFER_SIZE]);
             fflush(stderr);
