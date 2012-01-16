@@ -195,14 +195,14 @@ void Connection::socketData() {
     QString answer;
 
     if (bytes < 0) {
-        fprintf(stderr,"QtRadio: FATAL: INVALID byte counter: %d\n", bytes);
-        tcpSocket->close();
+        //fprintf(stderr,"QtRadio: FATAL: INVALID byte counter: %d\n", bytes);
+        //tcpSocket->close();
         return;
     }            
     toRead=tcpSocket->bytesAvailable();
-    if (toRead < 0) {
-        fprintf(stderr,"QtRadio: FATAL: error in bytesAvailable: %d\n", toRead);
-        tcpSocket->close();
+    if (toRead <= 0) {
+        //fprintf(stderr,"QtRadio: FATAL: error in bytesAvailable: %d\n", toRead);
+        //tcpSocket->close();
         return;
     }
     while(bytesRead<toRead) {
@@ -211,7 +211,31 @@ void Connection::socketData() {
         case READ_HEADER_TYPE:
             thisRead=tcpSocket->read(&hdr[0],3);
             if (thisRead == 3)
-               bytes+=3;
+                bytes+=3;
+            else if (thisRead == 2){
+                bytes+=2;
+                thisRead=tcpSocket->read(&hdr[2],1);
+                if (thisRead == 1){
+                    bytes++;
+                }
+                else  {
+                    fprintf(stderr,"QtRadio: FATAL: only %d read instead of 3\n", thisRead);
+                    tcpSocket->close();
+                    break;
+                }
+            }
+            else if (thisRead == 1){
+                bytes++;
+                thisRead=tcpSocket->read(&hdr[1],2);
+                if (thisRead == 2){
+                    bytes+=2;
+                }
+                else  {
+                    fprintf(stderr,"QtRadio: FATAL: only %d read instead of 3\n", thisRead);
+                    tcpSocket->close();
+                    break;
+                }
+            }
             else {
                  fprintf(stderr,"QtRadio: FATAL: only %d read instead of 3\n", thisRead);
                  tcpSocket->close();
@@ -359,7 +383,7 @@ qDebug() << "Connection READ_RTP_REPLY bytes="<<bytes;
             }
             bytes+=thisRead;
             if(bytes==answer_size) {
-                fprintf(stderr,"ans length = %d\n",strlen(ans));
+                fprintf(stderr,"ans length = %lu\n",strlen(ans));
                 ans[answer_size] = '\0';
                 answer = ans;
                 QRegExp rx;
