@@ -201,86 +201,62 @@ void Connection::socketData() {
     }            
     toRead=tcpSocket->bytesAvailable();
     if (toRead <= 0) {
-        //fprintf(stderr,"QtRadio: FATAL: error in bytesAvailable: %d\n", toRead);
-        //tcpSocket->close();
         return;
     }
     while(bytesRead<toRead) {
         //fprintf (stderr, "%d of %d [%d]\n", bytesRead, toRead, state);
         switch(state) {
         case READ_HEADER_TYPE:
-            thisRead=tcpSocket->read(&hdr[0],3);
-            if (thisRead == 3)
-                bytes+=3;
-            else if (thisRead == 2){
-                bytes+=2;
-                thisRead=tcpSocket->read(&hdr[2],1);
-                if (thisRead == 1){
-                    bytes++;
-                }
-                else  {
-                    fprintf(stderr,"QtRadio: FATAL: only %d read instead of 3\n", thisRead);
-                    tcpSocket->close();
-                    break;
-                }
+            thisRead=tcpSocket->read(&hdr[bytes],3 - bytes);
+            if (thisRead < 0) {
+               fprintf(stderr,"QtRadio: FATAL: READ_AUDIO_HEADER: error in read: %d\n", thisRead);
+               tcpSocket->close();
+               return;
             }
-            else if (thisRead == 1){
-                bytes++;
-                thisRead=tcpSocket->read(&hdr[1],2);
-                if (thisRead == 2){
-                    bytes+=2;
-                }
-                else  {
-                    fprintf(stderr,"QtRadio: FATAL: only %d read instead of 3\n", thisRead);
-                    tcpSocket->close();
-                    break;
-                }
-            }
-            else {
-                 fprintf(stderr,"QtRadio: FATAL: only %d read instead of 3\n", thisRead);
-                 tcpSocket->close();
-                 break;
-            } 
-            switch(hdr[0]) {
-                case AUDIO_BUFFER:
-                    state=READ_AUDIO_HEADER;
-                    break;
-                case SPECTRUM_BUFFER:
-                    version=hdr[1];
-                    subversion=hdr[2];
-                    switch(version) {
-                        case 2:
-                            switch(subversion) {
-                                case 0:
-                                    header_size=HEADER_SIZE_2_0;
-                                    break;
-                                case 1:
-                                    header_size=HEADER_SIZE_2_1;
-                                    break;
-                                default:
-                                    fprintf(stderr,"QtRadio: Invalid subversion. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
-                                    break;
-                            }
-                            break;
-                        default:
-                            fprintf(stderr,"QtRadio: Invalid version. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
-                            break;
-                    }
-                    state=READ_HEADER;
-                    break;
-                case BANDSCOPE_BUFFER:
-                    break;
+            bytes+=thisRead;
+            if (bytes == 3){
 
-               case RTP_REPLY_BUFFER:
-                    state=READ_RTP_REPLY;
-                    break;
-               case 52: //ANSWER_BUFFER
-                    // answer size is in hdr pos 1 & 2 max 99
-                    state = READ_ANSWER;
-                    bytes = 0;
-                    answer_size = atoi(hdr) - 400 ; // 1st digt is buffer type 4
-                    ans = (char*)malloc(answer_size +1);
-                    break;
+                switch(hdr[0]) {
+                    case AUDIO_BUFFER:
+                        state=READ_AUDIO_HEADER;
+                        break;
+                    case SPECTRUM_BUFFER:
+                        version=hdr[1];
+                        subversion=hdr[2];
+                        switch(version) {
+                            case 2:
+                                switch(subversion) {
+                                    case 0:
+                                        header_size=HEADER_SIZE_2_0;
+                                        break;
+                                    case 1:
+                                        header_size=HEADER_SIZE_2_1;
+                                        break;
+                                    default:
+                                        fprintf(stderr,"QtRadio: Invalid subversion. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
+                                        break;
+                                }
+                                break;
+                            default:
+                                fprintf(stderr,"QtRadio: Invalid version. Expected %d.%d got %d.%d\n",HEADER_VERSION,HEADER_SUBVERSION,version,subversion);
+                                break;
+                        }
+                        state=READ_HEADER;
+                        break;
+                   case BANDSCOPE_BUFFER:
+                        break;
+
+                   case RTP_REPLY_BUFFER:
+                        state=READ_RTP_REPLY;
+                        break;
+                   case 52: //ANSWER_BUFFER
+                        // answer size is in hdr pos 1 & 2 max 99
+                        state = READ_ANSWER;
+                        bytes = 0;
+                        answer_size = atoi(hdr) - 400 ; // 1st digt is buffer type 4
+                        ans = (char*)malloc(answer_size +1);
+                        break;
+                }
             }
             break;
 
@@ -305,7 +281,6 @@ void Connection::socketData() {
                     bytes = 0;
                     state = READ_BUFFER;
                 }
-            } else {
             }
             break;
 
@@ -329,7 +304,6 @@ void Connection::socketData() {
                     bytes=0;
                     state=READ_BUFFER;
                 }
-            } else {
             }
             break;
 
@@ -351,28 +325,25 @@ void Connection::socketData() {
                 hdr=(char*)malloc(HEADER_SIZE_2_1);
                 bytes=0;
                 state=READ_HEADER_TYPE;
-            } else {
             }
             break;
 
         case READ_RTP_REPLY:
-/*
-qDebug() << "Connection READ_RTP_REPLY";
             thisRead=tcpSocket->read(&hdr[bytes],7-bytes); // length and port
             bytes+=thisRead;
             if(bytes==7) {
+                /*
                 int port;
                 port=((hdr[5]&0xFF)<<8) + (hdr[6]&0xFF);
                 // configure this ends rtp so we can send to remote
 qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                 emit remoteRTP((char*)host.toUtf8().constData(),port);
-            } else {
-qDebug() << "Connection READ_RTP_REPLY bytes="<<bytes;
+                */
+                bytes=0;
+                state=READ_HEADER_TYPE;
             }
-*/
-            bytes=0;
-            state=READ_HEADER_TYPE;
             break;
+
         case READ_ANSWER:
             qDebug() << "Connection READ ANSWER";
             thisRead=tcpSocket->read(&ans[bytes],answer_size - bytes);
