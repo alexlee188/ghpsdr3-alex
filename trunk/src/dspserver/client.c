@@ -77,7 +77,9 @@
 #include <time.h>
 #include <sys/timeb.h>
 #include <samplerate.h>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 /* For fcntl */
 #include <fcntl.h>
 

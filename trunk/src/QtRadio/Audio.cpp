@@ -24,7 +24,9 @@
 */
 
 #include <ortp/rtp.h>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include "Audio.h"
 #include "codec2.h"
 
