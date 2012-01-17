@@ -53,12 +53,12 @@ Waterfall::Waterfall(QWidget*& widget) {
 
     image = QImage(974, 279, QImage::Format_RGB32);
     int x, y;
+
     for (x = 0; x < image.width(); x++) {
         for (y = 0; y < image.height(); y++) {
             image.setPixel(x, y, 0xFF000000);
         }
-    }
-
+  }
     cy = image.height()/2 - 1;
 
 }

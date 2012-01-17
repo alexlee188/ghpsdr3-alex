@@ -24,6 +24,7 @@
 */
 
 #include <ortp/rtp.h>
+#include <omp.h>
 #include "Audio.h"
 #include "codec2.h"
 
@@ -444,10 +445,10 @@ void Audio_processing::resample(int no_of_samples){
     rc = src_process(sr_state, &sr_data);
     if (rc) qDebug() << "SRATE: error: " << src_strerror (rc) << rc;
     else {
-        for (i = 0; i < sr_data.output_frames_gen; i++){
-            v = buffer_out[i]*32767.0;
-            queue->enqueue(v);
-        }
+            for (i = 0; i < sr_data.output_frames_gen; i++){
+                v = buffer_out[i]*32767.0;
+                queue->enqueue(v);
+            }
     }
 }
 
@@ -459,7 +460,6 @@ void Audio_processing::aLawDecode(char* buffer,int length) {
         v=decodetable[buffer[i]&0xFF];
         buffer_in[i] = (float)v / 32767.0;
     }
-
     resample(length);
 
 }
