@@ -77,6 +77,7 @@
 #include <time.h>
 #include <sys/timeb.h>
 #include <samplerate.h>
+#include <omp.h>
 /* For fcntl */
 #include <fcntl.h>
 
@@ -685,7 +686,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 	    }
 	    if (current_item == NULL) return; // should not happen.
 
-		while (bufferevent_read(bev, message, MSG_SIZE) > 3){
+		while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
 		        message[bytesRead-1]=0;					// for Linux strings terminating in NULL
 		        token=strtok_r(message," ",&saveptr);
                   	if(token!=NULL) {
@@ -1356,6 +1357,9 @@ void client_set_samples(float* samples,int size) {
     } else {
         extras=displayCalibrationOffset+preampOffset;
     }
+#pragma omp parellel shared(size, slope, samples, client_samples) private(max, i, lindex, rindex, j)
+  {
+    #pragma omp for schedule(dynamic,50)
     for(i=0;i<size;i++) {
         max=-10000.0F;
         lindex=(int)floor((float)i*slope);
@@ -1366,7 +1370,7 @@ void client_set_samples(float* samples,int size) {
         }
         client_samples[i+BUFFER_HEADER_SIZE]=(unsigned char)-(max+extras);
     }
-
+  }
 }
 
 
