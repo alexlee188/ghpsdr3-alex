@@ -138,6 +138,8 @@ TAILQ_HEAD(, audio_entry) Mic_audio_stream;
 // Client_list is the HEAD of a queue of connected clients
 TAILQ_HEAD(, _client_entry) Client_list;
 
+// Number of memory chunks to keep, exceeding which to free
+#define MEMORY_LIMIT 50
 // Mem_Pool is the HEAD of a queue of memory pool allocated with malloc, to be free()'d with delay
 TAILQ_HEAD(, _memory_entry) Memory_Pool;
 
@@ -295,8 +297,8 @@ void *memory_thread(void *arg) {
 	TAILQ_FOREACH(item, &Memory_Pool, entries){
 		memory_count++;
 	}
-	if (memory_count > 10){
-		to_free_count = memory_count - 10;
+	if (memory_count > MEMORY_LIMIT){
+		to_free_count = memory_count - MEMORY_LIMIT;
 		for (i=0; i< to_free_count; i++){
 			item = TAILQ_FIRST(&Memory_Pool);
 			if (item != NULL){			// should not happen, but check anyway
@@ -1382,9 +1384,10 @@ void setprintcountry()
 
 void printcountry(){
 	pthread_t lookup_thread;
-    int ret;
+	int ret;
+
     ret = pthread_create( &lookup_thread, NULL, printcountrythread, (void*) NULL);
-    ret = pthread_detach(lookup_thread);
+    if (ret == 0) pthread_detach(lookup_thread);
 		
 }
 
