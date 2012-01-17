@@ -4,7 +4,7 @@
 #
 CC            = g++
 CFLAGS        = -Wall -I/usr/local/uhd/include
-LIBS          = -lpthread -lusb-1.0 -luhd -lportaudio -lsamplerate -L/usr/local/uhd/lib
+LIBS          = -lboost_thread -lusb-1.0 -luhd -lportaudio -lsamplerate -L/usr/local/uhd/lib
 TARGET 	=	./usrp_server
 SOURCES = 	bandscope.c  \
 		listener.c \
