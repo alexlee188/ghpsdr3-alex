@@ -1470,6 +1470,5 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	TAILQ_INSERT_TAIL(&Memory_Pool, item, entries);
 	sem_post(&memory_semaphore);
 	
-	
 }
 

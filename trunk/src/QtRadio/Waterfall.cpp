@@ -23,6 +23,7 @@
 *
 */
 
+#include <omp.h>
 #include "Waterfall.h"
 
 Waterfall::Waterfall() {
@@ -52,8 +53,9 @@ Waterfall::Waterfall(QWidget*& widget) {
     samples=NULL;
 
     image = QImage(974, 279, QImage::Format_RGB32);
-    int x, y;
 
+    int x, y;
+    #pragma omp for schedule(dynamic)
     for (x = 0; x < image.width(); x++) {
         for (y = 0; y < image.height(); y++) {
             image.setPixel(x, y, 0xFF000000);
@@ -111,6 +113,7 @@ void Waterfall::setGeometry(QRect rect) {
     qDebug() << "Waterfall::Waterfall " << rect.width() << ":" << rect.height();
 
     int x, y;
+    #pragma omp for schedule(dynamic)
     for (x = 0; x < rect.width(); x++) {
         for (y = 0; y < rect.height()*2; y++) {
             image.setPixel(x, y, 0xFF000000);
@@ -239,12 +242,14 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
 
     // rotate spectrum display if LO is not 0
     if(LO_offset==0) {
+        #pragma omp for schedule(dynamic)
         for(i=0;i<width();i++) {
             samples[i] = -(buffer[i] & 0xFF);
         }
     } else {
         float step=(float)sampleRate/(float)width();
         offset=(int)((float)LO_offset/step);
+        #pragma omp for schedule(dynamic)
         for(i=0;i<width();i++) {
             j=i-offset;
             if(j<0) j+=width();
@@ -265,6 +270,7 @@ void Waterfall::updateWaterfall_2(void){
         qDebug() << "Waterfall::updateWaterfall " << size << "(" << width() << ")," << height();
         image = QImage(width(), height()*2, QImage::Format_RGB32);
         cy = image.height()/2 - 1;
+        #pragma omp for schedule(dynamic)
         for (x = 0; x < width(); x++) {
             for (y = 0; y < image.height(); y++) {
                 image.setPixel(x, y, 0xFF000000);
