@@ -1359,7 +1359,7 @@ void client_set_samples(float* samples,int size) {
     } else {
         extras=displayCalibrationOffset+preampOffset;
     }
-#pragma omp parellel shared(size, slope, samples, client_samples) private(max, i, lindex, rindex, j)
+#pragma omp parallel shared(size, slope, samples, client_samples) private(max, i, lindex, rindex, j)
   {
     #pragma omp for schedule(dynamic,50)
     for(i=0;i<size;i++) {
