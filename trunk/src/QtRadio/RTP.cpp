@@ -24,7 +24,7 @@ RTP::~RTP() {
 int RTP::init(const char* host,int port) {
     //signal(SIGINT,stop_handler);
 
-    qDebug() << "RTP::init host [" << host << "] port [" << port;
+    qDebug() << "RTP::init host [" << host << "] port [" << port << "]";
     rtpSession=rtp_session_new(RTP_SESSION_SENDRECV);
     rtp_session_set_scheduling_mode(rtpSession,1);
     rtp_session_set_blocking_mode(rtpSession,1);
