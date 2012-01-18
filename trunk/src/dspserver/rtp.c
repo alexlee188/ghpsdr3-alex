@@ -202,8 +202,9 @@ int rtp_receive (unsigned char* buffer,int length) {
        		fprintf(stderr,"rtp_receive: ERROR rc=%d\n",rc);
       	} else {
 		recv_ts+=length;
-		rtp_connected = 1;
+
 	}
     }
+    rtp_connected = 1;
     return rc;
 }
