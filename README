@@ -109,7 +109,7 @@ Then the executables will be installed in /usr/local/bin.
 This will build the default configuration, which is useful for debugging and testing.  However it is not optimized and
 will not run well in slow cpu's etc.
 
-See the sample confuration shell scripts (which replaces the ./configure step above):
+See the sample confuration shell scripts (which replace the ./configure step above):
 
 alex-avx-conf.sh		for building with i3,i5 and i7 cpu's supporting Advanced Vector Extensions (AVX)
 alex-openmp-conf.sh		for building with i3,i5 and i7 cpu's and OpenMP support
