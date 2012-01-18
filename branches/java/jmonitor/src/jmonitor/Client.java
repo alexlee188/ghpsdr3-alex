@@ -47,12 +47,12 @@ public class Client extends Thread {
     }
 
     private synchronized void sendCommand(String command) {
-        byte[] buffer=new byte[32];
+        byte[] buffer=new byte[64];
         byte[] commandBytes=command.getBytes();
 
         //System.err.println(command);
         
-        for(int i=0;i<32;i++) {
+        for(int i=0;i<64;i++) {
             if(i<commandBytes.length) {
                 buffer[i]=commandBytes[i];
             } else {
@@ -84,44 +84,52 @@ public class Client extends Thread {
 
     public void run() {
         int bytes;
-        byte[] buffer = new byte[48 + SAMPLES];
+        int buffer_type;
+        byte[] spectrum_header=new byte[SPECTRUM_HEADER_SIZE];
+        byte[] audio_header=new byte[AUDIO_HEADER_SIZE];
+        byte[] spectrum_buffer=new byte[SPECTRUM_BUFFER_SIZE];
+        byte[] audio_buffer=new byte[AUDIO_BUFFER_SIZE];
         int j;
         if(socket!=null) {
 
             // flush
-            try {
-                while(inputStream.available()>buffer.length) {
-                    inputStream.skip(buffer.length);
-                }
-            } catch (IOException e) {
-                System.err.println("Client.run: flush: "+e.getMessage());
-            }
+//            try {
+//                while(inputStream.available()>buffer.length) {
+//                    inputStream.skip(buffer.length);
+//                }
+//            } catch (IOException e) {
+//                System.err.println("Client.run: flush: "+e.getMessage());
+//            }
             status=null;
             while(running) {
                 try {
-                    bytes=0;
-                    while(bytes<buffer.length) {
-                        bytes += inputStream.read(buffer,bytes,buffer.length-bytes);
+                    buffer_type=inputStream.read();
+                    if(buffer_type==SPECTRUM_BUFFER) {
+                        bytes=0;
+                        while(bytes<SPECTRUM_HEADER_SIZE) {
+                            bytes+=inputStream.read(spectrum_header,bytes,SPECTRUM_HEADER_SIZE-bytes);
+                        }
+                        bytes=0;
+                        while(bytes<SPECTRUM_BUFFER_SIZE) {
+                            bytes+=inputStream.read(spectrum_buffer,bytes,SPECTRUM_BUFFER_SIZE-bytes);
+                        }
+                        processSpectrumBuffer(spectrum_header,spectrum_buffer);
+                    } else if(buffer_type==AUDIO_BUFFER) {
+                        bytes=0;
+                        while(bytes<AUDIO_HEADER_SIZE) {
+                            bytes+=inputStream.read(audio_header,bytes,AUDIO_HEADER_SIZE-bytes);
+                        }
+                        bytes=0;
+                        while(bytes<AUDIO_BUFFER_SIZE) {
+                            bytes+=inputStream.read(audio_buffer,bytes,AUDIO_BUFFER_SIZE-bytes);
+                        }
+                        processAudioBuffer(audio_header,audio_buffer);
+                    } else {
+                        System.err.println("Client: invalid buffer_type "+buffer_type);
                     }
                     if(connected==false) {
-                        sendCommand("startAudioStream "+SAMPLES);
+                        sendCommand("startAudioStream "+AUDIO_BUFFER_SIZE);
                         connected=true;
-                    }
-                    if (bytes == buffer.length) {
-
-                        //System.err.println("input buffer: "+Integer.toString(buffer[0]));
-
-                        if(buffer[0]==0) {
-                            //spectrum buffer
-                            processSpectrumBuffer(buffer);
-                        } else if(buffer[0]==1) {
-                            // audio buffer
-                            processAudioBuffer(buffer);
-                        } else {
-                            System.err.println("invalid buffer");
-                        }
-                    } else {
-                        System.err.println("read spectrum read " + Integer.toString(bytes) + " bytes");
                     }
                 } catch (IOException e) {
                     if(running) {
@@ -137,46 +145,20 @@ public class Client extends Thread {
         }
     }
 
-    private void processSpectrumBuffer(byte[] buffer) {
+    private void processSpectrumBuffer(byte[] header,byte[] buffer) {
         int j;
-        //System.err.println("getSpectrum: read "+Integer.toString(bytes)+" bytes");
-        // Strings sent with NULL terminator
-        //j = 0;
-        //while (buffer[j] != '\0')j++;
-        //frequency=new String(buffer,0,j);
-        //j=0;
-        //while(buffer[j+14]!='\0') j++;
-        //filterLow=new String(buffer,14,j);
-        //j=0;
-        //while(buffer[j+20]!='\0') j++;
-        //filterHigh=new String(buffer,20,j);
-        //j = 0;
-        //while (buffer[j+26] != '\0') j++;
-        //mode=new String(buffer,26,j);
-        j = 0;
-        while (buffer[j + 32] != '\0') {
-            j++;
-        }
-        sampleRate = new String(buffer, 32, j);
-        j = 0;
-        while (buffer[j + 40] != '\0') {
-            j++;
-        }
-        try {
-            meter = Integer.parseInt(new String(buffer, 40, j));
-        } catch (NumberFormatException e) {
-            meter=-121;
-        }
+        sampleRate = ((header[8] & 0xFF) << 24) + ((header[9] & 0xFF) << 16) + ((header[10] & 0xFF) << 8) + (header[11] & 0xFF);
+        meter=(short)(((header[4]&0xFF)<<8)+(header[5]&0xFF));
 
         for (int i = 0; i < SAMPLES; i++) {
-            samples[i] = -(buffer[i + 48] & 0xFF) - 30;
+            samples[i] = -(buffer[i] & 0xFF);
         }
 
         listener.updateSamples(this.getSamples(),this.getFilterLow(),this.getFilterHigh(),this.getSampleRate());
 
     }
 
-    private void processAudioBuffer(byte[] buffer) {
+    private void processAudioBuffer(byte[] header,byte[] buffer) {
         audio.playAudioBuffer(buffer);
     }
 
@@ -211,7 +193,7 @@ public class Client extends Thread {
     }
 
     public int getSampleRate() {
-        return Integer.parseInt(sampleRate);
+        return sampleRate;
     }
 
     public void setFrequency(long frequency) {
@@ -233,7 +215,7 @@ public class Client extends Thread {
     }
 
     public int getMeter() {
-        return meter-30;
+        return meter;
     }
 
     public int getCWPitch() {
@@ -277,10 +259,20 @@ public class Client extends Thread {
         return receiver;
     }
 
-    Audio audio;
-    MonitorUpdateListener listener;
+    private static final int SPECTRUM_BUFFER=0;
+    private static final int AUDIO_BUFFER=1;
+    
+    private static final int SPECTRUM_HEADER_SIZE=12;
+    private static final int AUDIO_HEADER_SIZE=4;
 
-    boolean running=true;
+    private static final int SPECTRUM_BUFFER_SIZE=480;
+    
+    public static final int AUDIO_BUFFER_SIZE=480;
+    
+    private Audio audio;
+    private MonitorUpdateListener listener;
+
+    private boolean running=true;
 
     private int limit;
 
@@ -299,9 +291,10 @@ public class Client extends Thread {
     private int filterLow;
     private int filterHigh;
     private int mode;
-    private String sampleRate;
+    //private String sampleRate;
+    private int sampleRate;
     private int band;
-    private int meter;
+    private short meter;
     private int agc;
 
     private int cwPitch=600;

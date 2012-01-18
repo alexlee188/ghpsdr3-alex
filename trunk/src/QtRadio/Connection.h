@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Connection.h
  * Author: John Melton, G0ORX/N6LYT
  *
@@ -40,8 +40,15 @@
 #define AUDIO_BUFFER        1
 #define BANDSCOPE_BUFFER    2
 
-#define HEADER_SIZE 48
-#define AUDIO_HEADER_SIZE 14
+// minimum supported header version
+#define HEADER_VERSION 2
+#define HEADER_SUBVERSION 0
+
+// g0orx binary header
+//#define HEADER_SIZE 48
+#define HEADER_SIZE 13
+//#define AUDIO_HEADER_SIZE 14
+#define AUDIO_HEADER_SIZE 5
 #define AUDIO_LENGTH_POSITION 1
 
 #define READ_HEADER 0
@@ -53,7 +60,6 @@ class Connection : public QObject {
     Q_OBJECT
 public:
     Connection();
-    Connection(const Connection& orig);
     virtual ~Connection();
     void connect(QString host,int receiver);
     void sendCommand(QString command);
@@ -78,6 +84,10 @@ signals:
     void bandscopeBuffer(char* header,char* buffer);
 
 private:
+    // really not used (and not even implemented)
+    // defined as private in order to prevent unduly usage 
+    Connection(const Connection& orig);
+
     QString host;
     int port;
     QTcpSocket* tcpSocket;

@@ -1,4 +1,4 @@
-AC_INIT([QtRadio Build], [1.6], [andrew att montefusco dott com], [QtRadio])
+AC_INIT([QtRadio Build], [2.2], [andrew att montefusco dott com], [QtRadio])
 
 #AC_CONFIG_AUX_DIR([build-aux])
 #AC_CONFIG_MACRO_DIR([m4])
@@ -25,7 +25,7 @@ AC_PROG_LIBTOOL
 #
 # git repository parameters copied in GITSTR in order to display in "About" panel
 #
-GITSTR=`(git show -s --pretty=format:"%h!%s" 2>&1)`"!"`(git branch --no-color 2>&1  | sed -e '/^[[^*]]/d' -e 's/* \(.*\)/\1/')`
+GITSTR=`(git show -s --pretty=format:"%h!%s" 2>&1 | tr -d '"')`"!"`(git branch --no-color 2>&1  | sed -e '/^[[^*]]/d' -e 's/* \(.*\)/\1/')`
 if { ! ( git show ) 1>/dev/null 2>&1 || test "$GITSTR" = "fatal"; } ;
    then GITSTR=`cat $srcdir/GITSTR`
    else echo $GITSTR>$srcdir/GITSTR

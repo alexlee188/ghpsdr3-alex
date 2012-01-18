@@ -62,8 +62,8 @@ static pthread_t client_thread_id, spectrum_thread_id;
 static int client_terminate=0;
 
 #define BASE_PORT 8000
-
 static int port=BASE_PORT;
+
 
 static int serverSocket;
 static int clientSocket;
@@ -103,10 +103,11 @@ void client_init(int receiver) {
 
     signal(SIGPIPE, SIG_IGN);
 
-    if (encoding == 0) {
+fprintf(stderr,"client_init encoding=%d audio_buffer_size=%d audio_channels=%d\n", encoding,audio_buffer_size,audio_channels);
+    if (encoding == ENCODING_ALAW) {
 audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
 }
-    else if (encoding == 1) {
+    else if (encoding == ENCODING_PCM) {
 audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels*2)+AUDIO_BUFFER_HEADER_SIZE); // 2 byte PCM
 	}
     else {	// encoding = Codec 2
@@ -235,7 +236,7 @@ if(timing) ftime(&start_time);
                     }
                     break;
                 }
-                message[bytesRead]=0;			// for Linux strings terminating in NULL
+                message[bytesRead-1]=0;			// for Linux strings terminating in NULL
 
 //fprintf(stderr,"Message: %s\n",message);
 if(timing) {
@@ -420,10 +421,12 @@ if(timing) {
                             }
                         }
 
-			if (encoding == 2) audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
+			if (encoding == ENCODING_CODEC2) audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
                         
 			fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
-            updateStatus("Busy"); 
+            if  (strlen(share_config_file) > 2) {  //config file must be set
+               updateStatus("1 of 1 Clients"); 
+            }
                         audio_stream_reset();
                         send_audio=1;
                     } else if(strcmp(token,"stopaudiostream")==0) {
@@ -616,7 +619,8 @@ if(timing) {
                     } else if(strcmp(token,"setsquelchval")==0) {
                         token=strtok(NULL," ");
                         if(token!=NULL) {
-                            float value=atof(token);
+                            // +20.0 purely from observation!!!
+                            float value=atof(token)+20.0F;
                             SetSquelchVal(0,0,value);
                         } else {
                             fprintf(stderr,"Invalid command: '%s'\n",message);
@@ -675,6 +679,13 @@ if(timing) {
                         } else {
                             fprintf(stderr,"Invalid command: '%s'\n",message);
                         }
+                    } else if(strcmp(token,"setclient")==0) {
+                        token=strtok(NULL," ");
+                        if(token!=NULL) {
+                            time(&tt);
+                            tod=localtime(&tt);
+                            fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connected from %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
+                        }
                     } else {
                         fprintf(stderr,"Invalid command: token: '%s'\n",token);
                     }
@@ -692,7 +703,9 @@ if(timing) {
             time(&tt);
             tod=localtime(&tt);
             fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnected from %s:%d\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,inet_ntoa(client.sin_addr),ntohs(client.sin_port));
-            updateStatus("Idle"); 
+            if  (strlen(share_config_file) > 2) {  //config file must be set
+               updateStatus("0 of 1 Clients"); 
+		   }
         }
         send_audio=0;
         clientSocket=-1;
@@ -722,8 +735,8 @@ void client_send_audio() {
         if(clientSocket!=-1) {
             sem_wait(&network_semaphore);
             if(send_audio && (clientSocket!=-1)) {
-	    	if (encoding == 1) audio_buffer_length = audio_buffer_size*audio_channels*2;
-	   	else if (encoding == 0) audio_buffer_length = audio_buffer_size*audio_channels;
+	    	if (encoding == ENCODING_PCM) audio_buffer_length = audio_buffer_size*audio_channels*2;
+	   	else if (encoding == ENCODING_ALAW) audio_buffer_length = audio_buffer_size*audio_channels;
 		else audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
                 rc=send(clientSocket,audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE,MSG_NOSIGNAL);
                 if(rc!=(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE)) {
@@ -742,6 +755,9 @@ void client_set_samples(float* samples,int size) {
     float max;
     int lindex,rindex;
 
+// g0orx binary header
+
+/*
     // first byte is the buffer type
     client_samples[0]=SPECTRUM_BUFFER;
     sprintf(&client_samples[1],"%f",HEADER_VERSION);
@@ -760,6 +776,22 @@ void client_set_samples(float* samples,int size) {
 
     // next 8 bytes contain the meter - for compatability
     sprintf(&client_samples[40],"%d",(int)meter);
+*/
+
+    client_samples[0]=SPECTRUM_BUFFER;
+    client_samples[1]=HEADER_VERSION;
+    client_samples[2]=HEADER_SUBVERSION;
+    client_samples[3]=(size>>8)&0xFF;  // samples length
+    client_samples[4]=size&0xFF;
+    client_samples[5]=((int)meter>>8)&0xFF; // mainn rx meter
+    client_samples[6]=(int)meter&0xFF;
+    client_samples[7]=((int)subrx_meter>>8)&0xFF; // sub rx meter
+    client_samples[8]=(int)subrx_meter&0xFF;
+    client_samples[9]=(sampleRate>>24)&0xFF; // sample rate
+    client_samples[10]=(sampleRate>>16)&0xFF;
+    client_samples[11]=(sampleRate>>8)&0xFF;
+    client_samples[12]=sampleRate&0xFF;
+
 
     slope=(float)SAMPLE_BUFFER_SIZE/(float)size;
     for(i=0;i<size;i++) {

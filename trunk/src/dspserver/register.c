@@ -13,7 +13,7 @@
 #include "register.h"
 
 
-char *dspstatus = "Idle";
+char *dspstatus = "0 of 1 Clients";
 char *call = "Unknown";
 char *location = "Unknown";
 char *band = "Unknown";

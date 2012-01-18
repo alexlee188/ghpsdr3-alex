@@ -75,12 +75,14 @@ static int data_addr_length;
 static unsigned char buffer[70];
 
 static pthread_t receive_thread_id;
+static pthread_t watchdog_thread_id;
 static int found=0;
 
 int ep;
 long sequence=-1;
 
 void* metis_receive_thread(void* arg);
+void* metis_watchdog_thread(void* arg);
 void metis_send_buffer(char* buffer,int length);
 
 #define inaddrr(x) (*(struct in_addr *) &ifr->x[sizeof sa.sin_port])
@@ -238,52 +240,58 @@ void metis_start_receive_thread() {
     buffer[0]=0xEF;
     buffer[1]=0xFE;
     buffer[2]=0x04;    // data send state
-    buffer[3]=0x01;    // send (0x00=stop)
+    buffer[3]=0x03;    // send (0x00=stop)
 
     for(i=0;i<60;i++) {
         buffer[i+4]=0x00;
     }
 
-    if(sendto(discovery_socket,buffer,64,0,(struct sockaddr*)&data_addr,data_addr_length)<0) {
-        perror("sendto socket failed for start\n");
+    metis_send_buffer(&buffer[0],64);
+
+fprintf(stderr,"starting metis_watchdog_thread\n");
+    // start a watchdog to make sure we are receiving frames
+    rc=pthread_create(&watchdog_thread_id,NULL,metis_watchdog_thread,NULL);
+    if(rc != 0) {
+        fprintf(stderr,"pthread_create failed on metis_watchdog_thread: rc=%d\n", rc);
         exit(1);
     }
 
 }
 
+static unsigned char input_buffer[2048];
+
 void* metis_receive_thread(void* arg) {
     struct sockaddr_in addr;
     int length;
-    unsigned char buffer[2048];
     int bytes_read;
 
     length=sizeof(addr);
     while(1) {
-   	bytes_read=recvfrom(discovery_socket,buffer,sizeof(buffer),0,(struct sockaddr*)&addr,&length);
+   	bytes_read=recvfrom(discovery_socket,input_buffer,sizeof(input_buffer),0,(struct sockaddr*)&addr,&length);
         if(bytes_read<0) {
             perror("recvfrom socket failed for metis_receive_thread");
             exit(1);
         }
 
-        if(buffer[0]==0xEF && buffer[1]==0xFE) {
-            switch(buffer[2]) {
+        if(input_buffer[0]==0xEF && input_buffer[1]==0xFE) {
+            switch(input_buffer[2]) {
                 case 1:
                     if(!discovering) {
                         // get the end point
-                        ep=buffer[3]&0xFF;
+                        ep=input_buffer[3]&0xFF;
 
                         // get the sequence number
-                        sequence=((buffer[4]&0xFF)<<24)+((buffer[5]&0xFF)<<16)+((buffer[6]&0xFF)<<8)+(buffer[7]&0xFF);
+                        sequence=((input_buffer[4]&0xFF)<<24)+((input_buffer[5]&0xFF)<<16)+((input_buffer[6]&0xFF)<<8)+(input_buffer[7]&0xFF);
                         //fprintf(stderr,"received data ep=%d sequence=%ld\n",ep,sequence);
 
                         switch(ep) {
                             case 6:
                                 // process the data
-                                process_ozy_input_buffer(&buffer[8]);
-                                process_ozy_input_buffer(&buffer[520]);
+                                process_ozy_input_buffer(&input_buffer[8]);
+                                process_ozy_input_buffer(&input_buffer[520]);
                                 break;
                             case 4:
-                                fprintf(stderr,"EP4 data\n");
+                                //fprintf(stderr,"EP4 data\n");
                                 break;
                             default:
                                 fprintf(stderr,"unexpected EP %d length=%d\n",ep,bytes_read);
@@ -293,12 +301,13 @@ void* metis_receive_thread(void* arg) {
                         fprintf(stderr,"unexpected data packet when in discovery mode\n");
                     }
                     break;
-                case 2:  // response to a discovery packet
+                case 2:  // response to a discovery packet - not sending
+                case 3:  // response to a discovery packet - sending
                     if(discovering) {
                         if(found<MAX_METIS_CARDS) {
                             // get MAC address from reply
                             sprintf(metis_cards[found].mac_address,"%02X:%02X:%02X:%02X:%02X:%02X",
-                                       buffer[3]&0xFF,buffer[4]&0xFF,buffer[5]&0xFF,buffer[6]&0xFF,buffer[7]&0xFF,buffer[8]&0xFF);
+                                       input_buffer[3]&0xFF,input_buffer[4]&0xFF,input_buffer[5]&0xFF,input_buffer[6]&0xFF,input_buffer[7]&0xFF,input_buffer[8]&0xFF);
                             fprintf(stderr,"Metis MAC address %s\n",metis_cards[found].mac_address);
     
                             // get ip address from packet header
@@ -309,6 +318,9 @@ void* metis_receive_thread(void* arg) {
                                        (addr.sin_addr.s_addr>>24)&0xFF);
                             fprintf(stderr,"Metis IP address %s\n",metis_cards[found].ip_address);
                             found++;
+                            if(input_buffer[2]==3) {
+                                fprintf(stderr,"Metis is sending\n");
+                            }
                         } else {
                             fprintf(stderr,"too many metis cards!\n");
                         }
@@ -317,11 +329,11 @@ void* metis_receive_thread(void* arg) {
                     }
                     break;
                 default:
-                    fprintf(stderr,"unexpected packet type: 0x%02X\n",buffer[2]);
+                    fprintf(stderr,"unexpected packet type: 0x%02X\n",input_buffer[2]);
                     break;
             }
         } else {
-            fprintf(stderr,"received bad header bytes on data port %02X,%02X\n",buffer[0],buffer[1]);
+            fprintf(stderr,"received bad header bytes on data port %02X,%02X\n",input_buffer[0],input_buffer[1]);
         }
 
     }
@@ -369,9 +381,29 @@ int metis_write(unsigned char ep,char* buffer,int length) {
 }
 
 void metis_send_buffer(char* buffer,int length) {
-//fprintf(stderr,"metis_send_buffer\n");
+//fprintf(stderr,"metis_send_buffer: length=%d\n",length);
     if(sendto(discovery_socket,buffer,length,0,(struct sockaddr*)&data_addr,data_addr_length)<0) {
         perror("sendto socket failed for metis_send_data\n");
         exit(1);
     }
+}
+
+void* metis_watchdog_thread(void* arg) {
+    long last_sequence=-1;
+    // sleep for 1 second
+    // check if packets received
+    fprintf(stderr,"running metis_watchdog_thread\n");
+    while(1) {
+//fprintf(stderr,"watchdog sleeping...\n");
+        sleep(1);
+        if(sequence==last_sequence) {
+            fprintf(stderr,"No metis packets for 1 second: sequence=%ld\n",sequence);
+            dump_metis_buffer("last frame received",sequence,input_buffer);
+            dump_metis_buffer("last frame sent",send_sequence,output_buffer);
+            exit(1);
+        }
+        last_sequence=sequence;
+   }
+
+   fprintf(stderr,"exit watchdog thread\n");
 }

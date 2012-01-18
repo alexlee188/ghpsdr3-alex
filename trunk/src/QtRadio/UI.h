@@ -34,7 +34,7 @@
 #include <QAudioFormat>
 #include <QVector>
 #include <QThread>
-
+#include "servers.h"
 #include "About.h"
 #include "Configure.h"
 #include "Audio.h"
@@ -66,6 +66,7 @@
 #include "vfo.h"
 #include "rigctl.h"
 
+
 #define DSPSERVER_BASE_PORT 8000
 
 #define AGC_LONG 1
@@ -76,7 +77,7 @@
 class UI : public QMainWindow {
     Q_OBJECT
 public:
-    UI();
+    UI(const QString server = QString(""));
     virtual ~UI();
     void loadSettings();
     void saveSettings();
@@ -90,6 +91,7 @@ public:
     void rigctlSetVFOB();
     void rigctlSetFreq(long long f);
     void rigctlSetMode(int newmode);
+
 signals:
     void initialize_audio(int length);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
@@ -101,7 +103,10 @@ public slots:
     void actionConfigure();
     void actionAbout();
     void actionConnect();
+    void actionConnectNow(QString IP);
+    void actionDisconnectNow();
     void actionDisconnect();
+    void actionQuick_Server_List();
     void actionSubRx();
     void actionBandscope();
     void actionRecord();
@@ -119,6 +124,10 @@ public slots:
     void actionGain_80();
     void actionGain_90();
     void actionGain_100();
+
+    void actionSquelch();
+    void actionSquelchReset();
+    void squelchValueChanged(int);
 
     void actionKeypad();
     void setKeypadFrequency(long long);
@@ -226,6 +235,7 @@ public slots:
     void getBandFrequency();
     void vfoStepBtnClicked(int direction);
 
+
 signals:
     void subRxStateChanged(bool state);
 
@@ -256,7 +266,6 @@ private:
     int audio_channels;
     int audio_buffers;
     QAudioFormat::Endian audio_byte_order;
-    int audio_encoding;
     QMutex audio_mutex;
     char* first_audio_buffer;
     char* first_audio_header;
@@ -306,6 +315,11 @@ private:
     KeypadDialog keypad;
     Meter* sMeter;
     int meter;
+    bool isConnected;
+    QString QuickIP;
+
+    bool squelch;
+    float squelchValue;
 };
 
 #endif	/* _UI_H */

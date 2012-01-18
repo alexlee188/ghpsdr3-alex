@@ -67,6 +67,8 @@ static struct option long_options[] = {
     {"metis",no_argument,0,13},
     {"interface",required_argument,0,14},
     {"metisip",required_argument,0,15},
+    {"fpga",required_argument,0,16},
+    {"ozyhex",required_argument,0,17},
     {0,0,0,0},
 };
 static char* short_options="";
@@ -232,9 +234,22 @@ void process_args(int argc,char* argv[]) {
 fprintf(stderr,"metisip=%s\n",metisip);
                 break;
 
+            case 16: // fpga image
+                if(optarg && strlen(optarg) > 0) {
+                    ozy_set_fpga_image(optarg);
+                }
+                break;
+
+            case 17: // hex image
+                if(optarg && strlen(optarg) > 0) {
+                    ozy_set_hex_image(optarg);
+                }
+                break;
+
             default:
                 fprintf(stderr,"Usage: \n");
                 fprintf(stderr,"  server --receivers N (default 1)\n");
+                fprintf(stderr,"         --samplerate 48000|96000|192000\n");
                 fprintf(stderr,"         --dither off|on\n");
                 fprintf(stderr,"         --random off|on\n");
                 fprintf(stderr,"         --preamp off|on\n");
@@ -245,6 +260,8 @@ fprintf(stderr,"metisip=%s\n",metisip);
                 fprintf(stderr,"         --timing 1\n");
                 fprintf(stderr,"         --metis\n");
                 fprintf(stderr,"         --interface if\n");
+                fprintf(stderr,"         --fpga <file name>\n");                
+                fprintf(stderr,"         --ozyhex <file name>\n");
                 exit(1);
                 break;
                

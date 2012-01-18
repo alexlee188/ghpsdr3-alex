@@ -32,6 +32,11 @@
 */
 
 
+#define ENCODING_ALAW 0
+#define ENCODING_PCM 1
+#define ENCODING_CODEC2 2
+#define ENCODING_ALAW2 3
+
 #define AUDIO_BUFFER_SIZE 400
 
 int audio_buffer_size;
