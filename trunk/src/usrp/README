@@ -56,43 +56,13 @@ incoming signals.
   to test your USRP and UHD installation.
   Use rx_samples_to_file to verify the end to end working of the platform.
 
-1.2 gpsdr3 package from John Melton
+1.2 gpsdr3-alex package
 
-  To install the package do the following steps:
-  
-  sudo apt-get install subversion
-  sudo apt-get install libqt4-dev
-  sudo apt-get install libfftw3-3
-  cd
-  svn co svn://svn.openhpsdr.org/svn/repos_sdr_hpsdr/trunk/N6LYT/ghpsdr3
-  cd ~/ghpsdr3/trunk/src/
-  cd DttSP/
-  make 
-  cd ../dspserver
-  make
-  cd ../QtRadio
-  qmake-qt4 QtRadio.pro
-  make
+  To install the package please do refer to Wiki on:
 
+  http://napan.ca/ghpsdr3/index.php/QtRadio_Installation
 
-1.3 Extract and build this package
-
-  First, install the usrp server prerequisite:
-
-  sudo apt-get install libportaudio2 portaudio19-dev libsamplerate0-dev libpulse-dev
-
-  Just for convenience, it is better untar this package into the ghpsdr3 
-directory hierarchy.
-
-  cd ~/ghpsdr3/trunk/src/
-  tar -zxvf ~/Download/ghpsdr3-usrp-1.0.tar.gz
-  cd ghpsdr3-usrp-1.0
-  ./configure
-  make
-  sudo mak install
-
-
-1.4 How to run
+1.3 How to run
 
 We have to run three components: server, dsp processing and graphical user interface.
 At the moment you need to run them in three separate terminal windows in the order shown below:
@@ -104,26 +74,16 @@ At the moment you need to run them in three separate terminal windows in the ord
 cd ~/ghpsdr3/trunk/src/QtRadio ; export QT_RADIO_NO_LOCAL_AUDIO=1 ; ./QtRadio
 
 
-1.5 Troubleshooting
+1.4 Troubleshooting
 
 
-1.5.1 usrp_server complains about the libuhd shared library.
+1.4.1 usrp_server complains about the libuhd shared library.
 
 Please run 
 
 sudo ldconfig
 
 
-1.6 How to build with the autotools build system
-
-In order to test the build, first off install all prerequisite packages ()
-
-cd /tmp
-wget  http://ghpsdr-servers.googlecode.com/files/ghpsdr3-usrp-1.0.tar.gz
-tar -xvf ghpsdr3-usrp-1.0.tar.gz 
-cd ghpsdr3-usrp-1.0/
-./configure && make
-sudo make install
 
 
 

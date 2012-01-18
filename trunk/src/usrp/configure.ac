@@ -33,7 +33,7 @@ AC_SEARCH_LIBS([src_new], [samplerate],[have_samplerate=yes])
 have_uhd=no
 AC_LANG_PUSH(C++)
 AC_COMPILE_IFELSE(
-  [AC_LANG_PROGRAM([[#include <uhd/usrp/single_usrp.hpp>]],[[uhd::device_addr_t hint;]])],
+  [AC_LANG_PROGRAM([[#include <uhd/usrp/multi_usrp.hpp>]],[[uhd::device_addr_t hint;]])],
   [AC_MSG_NOTICE([uhd lib found])
    have_uhd=yes
    AC_SUBST(LIBS, "-luhd $LIBS")
