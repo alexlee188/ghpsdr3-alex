@@ -83,52 +83,13 @@ $ uhd_find_devices --args="type=usrp1"
   to test your USRP and UHD installation.
   Use rx_samples_to_file to verify the end to end working of the platform.
 
-1.2 ghpsdr3-alex, Alex Lee package forked from John Melton's ghpsdr3 project.
 
-To install the package do the following steps:
+1.2 gpsdr3-alex package
 
-a. Clone the repository from GitHub:
-$ cd
-$ git clone git@github.com:alexlee188/ghpsdr3-alex.git ghpsdr3-alex
-  
-b. build the software
+  http://napan.ca/ghpsdr3/index.php/QtRadio_Installation
 
-Please read the README file in the directory ~/ghpsdr3-alex as it descibes
-all requirements and dependencies that must be fulfilled to build.
-After all pre-requisites are satisfied:
 
-Building the ghpsdr3-alex software
-==================================
-To build:
-
-$ cd ~/ghpsdr3-alex
-$ autoreconf -i
-$ ./configure
-$ make all
-$ sudo make install
-
-Then the 3 programs will be installed in /usr/local/bin.
-
-1.3 Extract and build this package
-
-  First, install the usrp server prerequisite:
-
-  sudo apt-get install libportaudio2 portaudio19-dev libsamplerate0-dev libpulse-dev
-
-  At this stage, usrp-server is included in the ghpsdr3-alex repository in a separate
-branch named "usrp-server".
-Note that usrp_server has been tested against the "master" branch of ghpsdr3. Therefore
-it is adviceable ti build the usrp-server in the "usrp_server" branch and all the remaining
-components from the "master" branch. This will make a future merge easier.
-
-  cd ~/ghpsdr3-alex
-  git checkout usrp-server
-  cd trunk/src/usrp
-  autoreconf -i
-  ./configure
-  make
-
-1.4 How to run
+1.3 How to run
 
 We have to run three components: server, dsp processing and graphical user interface.
 At the moment you need to run them in three separate terminal windows in the order shown below:
@@ -140,12 +101,10 @@ $ /usr/local/bin/dspserver --lo=0
 $ /usr/local/bin/QtRadio
 
 
-1.5 Troubleshooting
+1.4 Troubleshooting
 
-1.5.1 usrp_server complains about the libuhd shared library.
+1.4.1 usrp_server complains about the libuhd shared library.
 
 Please run 
 
 sudo ldconfig
-
-
