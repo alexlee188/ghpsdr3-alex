@@ -279,7 +279,7 @@ AM_CONDITIONAL([MAKE_USRP], [test "x${usrp}" = xyes])
 #
 # Uncomment the following line when the usrp directory gets populated
 #
-#AC_CONFIG_FILES([trunk/src/usrp/Makefile])
+AC_CONFIG_FILES([trunk/src/usrp/Makefile])
 
 AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
 AC_CONFIG_FILES([Makefile
