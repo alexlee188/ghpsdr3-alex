@@ -251,6 +251,7 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     } else {
         float step=(float)sampleRate/(float)width();
         offset=(int)((float)LO_offset/step);
+        #pragma omp parallel for schedule(dynamic) private(i,j)
         for(i=0;i<width();i++) {
             j=i-offset;
             if(j<0) j+=width();

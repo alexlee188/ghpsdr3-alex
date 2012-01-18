@@ -56,8 +56,8 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
    qint64 bytes_read;
    qint16 v;
-   qint64 bytes_to_read = maxlen > 200 ? 200 : maxlen;
-   int has_more;
+   qint64 bytes_to_read = maxlen > 200 ? 200 : maxlen; // read in small chunks so this does not hog Qthread
+   int has_more;                                       // as rtp_session_recv...() is running in blocked mode
 
    if (p->useRTP && p->rtp_connected){
        int i;
@@ -83,7 +83,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
        }
        free(buffer);
 
-       if (length <= 0){
+       if (length <= 0){                  // probably not connected or late arrival.  Send silence.
            recv_ts+=bytes_to_read/2;
            memset(data, 0, bytes_to_read);
            bytes_read = bytes_to_read;
@@ -92,6 +92,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
 
    }
 
+   // note both TCP and RTP audio enqueue PCM data in decoded_buffer
    bytes_read = 0;
 
    if (p->decoded_buffer.isEmpty()) {       // probably not connected or late arrival of packets.  Send silence.
