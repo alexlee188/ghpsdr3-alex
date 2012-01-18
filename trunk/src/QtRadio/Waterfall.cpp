@@ -293,10 +293,12 @@ void Waterfall::updateWaterfall_4(void){
     int average=0;
 
     // draw the new line
+    #pragma omp parallel for schedule(dynamic)
     for(x=0;x<size;x++){
         uint pixel = calculatePixel(samples[x]);
         image.setPixel(x,cy,pixel);
         image.setPixel(x,cy+height(),pixel);
+        #pragma omp critical
         average+=samples[x];
     }
 
@@ -306,7 +308,6 @@ void Waterfall::updateWaterfall_4(void){
     }
 
     QTimer::singleShot(0,this,SLOT(repaint()));
-    //this->repaint();
 
 }
 
