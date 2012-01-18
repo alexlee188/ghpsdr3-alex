@@ -164,8 +164,6 @@ void rtp_send(char* buffer,int length) {
             fprintf(stderr,"rtp_send: ERROR rc=%d\n",rc);
         }
         send_ts+=length;
-    } else {
-//        fprintf(stderr,"rtp_send: ERROR: refuses to send: not yet connected (has to wait at least the first packet from client)\n");
     }
 }
 
@@ -184,7 +182,7 @@ int rtp_receive (unsigned char* buffer,int length) {
     }
 
     if (rtp_connected == 0 ) {
-       unsigned char buffer [BUFSIZ];
+       unsigned char buffer[16];		// Client will send 16 bytes of A's
 
        //fprintf(stderr,"rtp_receive: buffer: %p len: %d\n", buffer, length);
 
@@ -193,27 +191,16 @@ int rtp_receive (unsigned char* buffer,int length) {
        if (rc > 0) {
            fprintf(stderr,"rtp_receive: first RTP packet received !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
            rtp_connected = 1;
-           recv_ts+=length;
+           recv_ts+=sizeof(buffer);
        } else {
            //fprintf(stderr,"rtp_receive: %d\n", rc);
        }
-    } else {
+    } else { // rtp is connected
 
-    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
-    if(rc < 0) {
-       fprintf(stderr,"rtp_receive: ERROR rc=%d\n",rc);
-    } else
-
-      if (rc == 0) {
-          //fprintf(stderr,"rtp_receive: ERROR rc=%d\n",rc);
-      } else {
-          recv_ts+=length;
-          if (rtp_connected == 0) {
-             fprintf(stderr,"rtp_receive: first RTP packet received !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-             rtp_connected = 1;
-          }
-      }
+    	rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
+    	if(rc <= 0) {
+       		fprintf(stderr,"rtp_receive: ERROR rc=%d\n",rc);
+      	} else recv_ts+=length;
     }
-    rtp_connected = 1;
     return rc;
 }
