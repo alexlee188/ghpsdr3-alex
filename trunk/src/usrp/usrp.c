@@ -39,10 +39,9 @@
 #endif
 
 #include <string.h>
-#include <boost/thread.hpp>
 #include <samplerate.h>
 
-#include <uhd/usrp/single_usrp.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
 
 #include "client.h"
 #include "receiver.h"
@@ -56,7 +55,7 @@
 
 class USRP {
 public:
-   uhd::usrp::single_usrp::sptr sdev;
+   uhd::usrp::multi_usrp::sptr sdev;
    uhd::device::sptr            dev;
    int receivers;
 };
@@ -90,7 +89,7 @@ bool usrp_init (const char *subdev_par)
         //uhd::device::make(device_addrs[i]); //test make
 
         // USRP discover
-        usrp.sdev = uhd::usrp::single_usrp::make(device_addrs[i]);
+        usrp.sdev = uhd::usrp::multi_usrp::make(device_addrs[i]);
         usrp.dev = usrp.sdev->get_device();
         
         usrp_set_subdev_args(subdev_par);
@@ -230,7 +229,7 @@ void *usrp_receiver_thread (void *param)
 
     usrp_set_frequency(DEFAULT_RX_FREQUENCY); //TEMPORARY
 
-    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
+    sleep(1); //allow for some setup time
     
     //Setup the sample streaming
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);    
