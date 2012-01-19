@@ -1,0 +1,110 @@
+An attempt at a server for USRP hardware using UHD - Universal Hardware Driver API.
+
+The server program in the ghpsdr3 suite of programs is the the program 
+that forms the interface to the hardware.  One instance of this program 
+must be running to communicate with the USRP hardware.
+
+Currently the server program is a command line program and it has several options.
+
+--receivers | -r [1|2|3|4]
+
+  receivers (note the plural) is the number of simultaneous receiver you 
+want to monitor from your receiver card.  the use of this option is 
+dependent on the version of the FPGA code you are using.  All versions 
+support one receiver.  Bruce Walkers FPGA code supports 4 receivers.
+Default is 1.
+NOTE: at the current stage, the usrp-server has been tested only with 1 receiver
+
+--samplerate [48000|96000|192000]
+
+  samplerate is the rate at which you want the usrp-server to provide baseband 
+signal samples to its client (dspserver). Note that USRP samplerate is fixed at this 
+stage to 256 KSPS. Alteration of USRP sample rate is not available at this stage
+and may be part of future enhancements.
+Default is 48000.
+
+--subdev | -d SUBDEV_STRING
+ 
+  subdev (or -d) option allows to select the USRP daughter board as receiver front
+end. Please refer to UHD documentation for valid selections by SUBDEV_STRING.
+(http://files.ettus.com/uhd_docs/manual/html/general.html#specifying-the-subdevice-to-use)
+Default is "", meaning that UHD will automatically select the first available receiver
+front-end among USRP A and B sides.
+
+--reverse-iq
+
+  reverse-iq option, if specified, swaps I and Q streams from the USRP.
+Usually is not needed, may be useful for specific applications
+
+--with-audio
+
+  with-audio option, if specified, let the usrp-server open a audio stream to the 
+audio subsystem. This is useful for tests, e.g without audio enabled clients.
+
+--help
+
+  help displays the short help text.
+
+*** PLEASE READ AT THE END OF THE FILE FOR the TODO LIST ***
+
+1. BUILD
+
+  To build the server, several prerequisite have to be fullfilled.
+
+
+1.1 UHD - Universal Hardware Driver installation
+
+  Extract the code from the git repository:
+$ cd
+$ git clone git://code.ettus.com/ettus/uhd.git
+
+  that results in a uhd directory being created in your home.
+
+  For the build, please refer to procedure available from the Ettus site:
+  http://www.ettus.com/uhd_docs/manual/html/build.html#build-instructions-unix
+
+  Next, you have to download the FPGA's images and firmware for microntroller embedded into USRP1.
+  The procedure is specified in:
+       http://www.ettus.com/uhd_docs/manual/html/images.html
+
+  Assuming Ubuntu platfom, download the binary image:
+  
+$ wget http://www.ettus.com/downloads/uhd_images/UHD-images-0001.20101214004901.3ed60b6/UHD-images-0001.20101214004901.3ed60b6-Linux.deb
+
+  and install it:
+
+$ sudo dpkg -i UHD-images-0001.20101214004901.3ed60b6-Linux.deb
+
+  After the installations above are successfully ended, several utility and test program are available in ~/uhd/host/build/examples/
+  Use 
+  
+$ uhd_find_devices --args="type=usrp1"
+
+  to test your USRP and UHD installation.
+  Use rx_samples_to_file to verify the end to end working of the platform.
+
+
+1.2 gpsdr3-alex package
+
+  http://napan.ca/ghpsdr3/index.php/QtRadio_Installation
+
+
+1.3 How to run
+
+We have to run three components: server, dsp processing and graphical user interface.
+At the moment you need to run them in three separate terminal windows in the order shown below:
+
+$ ~/ghpsdr-alex/trunk/src/usrp/usrp_server -d "A:0"
+
+$ /usr/local/bin/dspserver --lo=0
+
+$ /usr/local/bin/QtRadio
+
+
+1.4 Troubleshooting
+
+1.4.1 usrp_server complains about the libuhd shared library.
+
+Please run 
+
+sudo ldconfig
