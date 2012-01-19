@@ -94,7 +94,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
+#include <signal.h>
 
 #include "client.h"
 #include "dttsp.h"
@@ -128,6 +128,8 @@ char* shortOptions="";
 int optionIndex;
 
 int toShareOrNotToShare = 0;
+
+void signal_shutdown(int signum);
 
 /* --------------------------------------------------------------------------*/
 /** 
@@ -209,7 +211,8 @@ void processCommands(int argc,char** argv) {
 
 
 int main(int argc,char* argv[]) {
-        
+    // Register signal and signal handler
+    signal(SIGINT, signal_shutdown);    
     char directory[1024];
     strcpy(soundCardName,"HPSDR");
     strcpy(server_address,"127.0.0.1"); // localhost
@@ -265,4 +268,18 @@ int main(int argc,char* argv[]) {
 
  //   codec2_destroy(codec2);
     return 0;
+}
+
+void signal_shutdown(int signum)
+{
+   // catch a ctrl c etc
+   printf("Caught signal %d\n",signum);
+   // Cleanup and close up stuff here
+   close_register();
+   if  (toShareOrNotToShare) { 
+	   fprintf(stderr,"Please wait while unregistering ...\n");
+	   doRemove();
+	}
+   // Terminate program
+   exit(signum);
 }

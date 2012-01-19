@@ -33,3 +33,5 @@ int cwPitch;
 extern int toShareOrNotToShare;
 
 const char *version = "20120112;-rxtx-rtp-symm"; //YYYYMMDD; text desc
+
+

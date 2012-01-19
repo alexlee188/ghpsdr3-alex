@@ -19,7 +19,7 @@ char *location = "Unknown";
 char *band = "Unknown";
 char *rig = "Unknown";
 char *ant = "Unknown";
-
+config_t cfg;
 
 /* Converts an integer value to its hex character*/
 char to_hex(char code) {
@@ -97,7 +97,7 @@ void init_register(){
   
   
   
-  config_t cfg;
+  
   const char *str;
   config_init(&cfg);
   if(! config_read_file(&cfg, share_config_file))
@@ -159,4 +159,18 @@ void updateStatus(char *status){
     ret = pthread_create( &thread2, NULL, doUpdate, (void*) NULL );
     ret = pthread_detach(thread2);
 }
+
+void doRemove(){
+	int result;
+    char sCmd[255];
+    sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=Down'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant);
+	result = system(sCmd);
+    
+}
+
+void close_register(){
+	config_destroy(&cfg);
+	
+}
+
 
