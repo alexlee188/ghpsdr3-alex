@@ -449,6 +449,7 @@ void *tx_thread(void *arg){
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
+	   #pragma omp parellel for schedule(dynamic) private(j) 
            for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
               data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
            }
