@@ -291,9 +291,14 @@ void Connection::socketData() {
             if(bytes==header_size) {
 // g0orx binary header
                 length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);
-                buffer=(char*)malloc(length);
-                bytes=0;
-                state=READ_BUFFER;
+                if ((length < 0) || (length > 4096)){
+                        state = READ_HEADER_TYPE;
+                }
+                else {
+                    buffer=(char*)malloc(length);
+                    bytes=0;
+                    state=READ_BUFFER;
+                }
             }
             break;
 

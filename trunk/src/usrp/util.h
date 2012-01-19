@@ -1,11 +1,11 @@
 /** 
-* @file main.h
-* @brief The main files headers files.
+* @file util.h
+* @brief Header files for utility functions
 * @author John Melton, G0ORX/N6LYT, Doxygen Comments Dave Larsen, KV0S
 * @version 0.1
-* @date 2009-04-11
+* @date 2009-03-05
 */
-// main.h
+
 /* Copyright (C) 
 * 2009 - John Melton, G0ORX/N6LYT, Doxygen Comments Dave Larsen, KV0S
 * This program is free software; you can redistribute it and/or
@@ -24,13 +24,21 @@
 * 
 */
 
-char propertiesPath[128];
+#ifndef _UTIL_H
+#define	_UTIL_H
 
-float preampOffset;
+#ifdef	__cplusplus
+extern "C" {
+#endif
 
-int cwPitch;
 
-extern int toShareOrNotToShare;
+extern void dump_ozy_buffer(const char* prefix,int frame,unsigned char* buffer);
+extern void dump_ozy_header(char* prefix,int frame,unsigned char* buffer);
+extern void dump_iq_buffer(unsigned char* buffer);
+extern void dump_udp_buffer(unsigned char* buffer);
+#ifdef	__cplusplus
+}
+#endif
 
-const char *version = "20120119;-rxtx-rtp-symm"; //YYYYMMDD; text desc
+#endif	/* _UTIL_H */
 

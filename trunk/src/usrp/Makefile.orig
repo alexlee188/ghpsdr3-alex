@@ -1,0 +1,39 @@
+#
+# Makefile for Linux version of ghpsdr3
+# modified by Dave Larsen, KV0S
+#
+CC            = g++
+CFLAGS        = -Wall -I/usr/local/uhd/include
+LIBS          = -lboost_thread -lusb-1.0 -luhd -lportaudio -lsamplerate -L/usr/local/uhd/lib
+TARGET 	=	./usrp_server
+SOURCES = 	bandscope.c  \
+		listener.c \
+		receiver.c \
+		transmitter.c \
+		util.c \
+		client.c \
+        usrp.c \
+		server.c \
+		usrp_audio.c
+OBJECTS =       bandscope.o  \
+                listener.o \
+                receiver.o \
+                transmitter.o \
+                util.o \
+                client.o \
+                usrp.o \
+                server.o \
+                usrp_audio.o
+
+.c.o:
+	$(CC) -c $(CFLAGS) $(INCPATH) -o "$@" "$<"
+
+
+all: Makefile $(TARGET)
+
+$(TARGET):  $(OBJECTS)
+	$(CC) -o $(TARGET) $(LIBS) $(OBJECTS) 
+
+clean:
+	-rm -rf $(TARGET)
+	-rm -rf $(OBJECTS)

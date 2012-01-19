@@ -24,6 +24,9 @@
 */
 
 #include <ortp/rtp.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #include "Audio.h"
 #include "codec2.h"
 
@@ -53,8 +56,8 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
    qint64 bytes_read;
    qint16 v;
-   qint64 bytes_to_read = maxlen > 200 ? 200 : maxlen;
-   int has_more;
+   qint64 bytes_to_read = maxlen > 200 ? 200 : maxlen; // read in small chunks so this does not hog Qthread
+   int has_more;                                       // as rtp_session_recv...() is running in blocked mode
 
    if (p->useRTP && p->rtp_connected){
        int i;
@@ -80,7 +83,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
        }
        free(buffer);
 
-       if (length <= 0){
+       if (length <= 0){                  // probably not connected or late arrival.  Send silence.
            recv_ts+=bytes_to_read/2;
            memset(data, 0, bytes_to_read);
            bytes_read = bytes_to_read;
@@ -89,6 +92,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
 
    }
 
+   // note both TCP and RTP audio enqueue PCM data in decoded_buffer
    bytes_read = 0;
 
    if (p->decoded_buffer.isEmpty()) {       // probably not connected or late arrival of packets.  Send silence.
@@ -368,7 +372,7 @@ void Audio::set_RTP(bool use){
 
 void Audio::rtp_set_connected(void){
     qDebug() << "Audio::rtp_set_connected";
-#if 1
+#if 0
     /*
      *  send first packet in order to help to establish session
      */
@@ -444,22 +448,21 @@ void Audio_processing::resample(int no_of_samples){
     rc = src_process(sr_state, &sr_data);
     if (rc) qDebug() << "SRATE: error: " << src_strerror (rc) << rc;
     else {
-        for (i = 0; i < sr_data.output_frames_gen; i++){
-            v = buffer_out[i]*32767.0;
-            queue->enqueue(v);
-        }
+            for (i = 0; i < sr_data.output_frames_gen; i++){
+                v = buffer_out[i]*32767.0;
+                queue->enqueue(v);
+            }
     }
 }
 
 void Audio_processing::aLawDecode(char* buffer,int length) {
     int i;
     short v;
-
+#pragma omp parallel for schedule(dynamic)
     for (i=0; i < length; i++) {
         v=decodetable[buffer[i]&0xFF];
         buffer_in[i] = (float)v / 32767.0;
     }
-
     resample(length);
 
 }
@@ -467,7 +470,7 @@ void Audio_processing::aLawDecode(char* buffer,int length) {
 void Audio_processing::pcmDecode(char* buffer,int length) {
     int i;
     short v;
-
+#pragma omp parallel for schedule(dynamic)
     for (i=0; i < length; i+=2) {
         v = (buffer[i] & 0xff) | ((buffer[i+1] & 0xff) << 8);
         buffer_in[i/2] = v / 32767.0;
@@ -486,7 +489,7 @@ void Audio_processing::codec2Decode(char* buffer,int length) {
     while (j < length) {
         memcpy(bits,&buffer[j],BITS_SIZE);
         codec2_decode(codec2, v, bits);
-
+        #pragma omp parallel for schedule(dynamic)
         for (i=0; i < CODEC2_SAMPLES_PER_FRAME; i++){
             buffer_in[i+k*CODEC2_SAMPLES_PER_FRAME]= v[i]/ 32767.0;
         }
@@ -498,6 +501,7 @@ void Audio_processing::codec2Decode(char* buffer,int length) {
 
 void Audio_processing::init_decodetable() {
     qDebug() << "init_decodetable";
+    #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < 256; i++) {
         int input = i ^ 85;
         int mantissa = (input & 15) << 4;
@@ -513,6 +517,5 @@ void Audio_processing::init_decodetable() {
             value = -value;
         }
         decodetable[i] = (short) value;
-
     }
 }

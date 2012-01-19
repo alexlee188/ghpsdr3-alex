@@ -32,7 +32,7 @@ r ()
     for d in *
     do
         if [ -d "$d" ]; then
-#            echo "DIR: $d"
+            echo "DIR: $d"
             ( r "$d" )
         fi;
     done

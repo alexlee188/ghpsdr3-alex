@@ -11,7 +11,7 @@ endif
 
 if MAKE_USRP
    ###### uncomment the following line when usrp come in
-   ###### USRP_DIR =  trunk/src/usrp
+   USRP_DIR =  trunk/src/usrp
 endif
 
 SUBDIRS = trunk/src/softrock trunk/src/DttSP trunk/src/dspserver trunk/src/widget-server trunk/src/server trunk/bin trunk/src/QtRadio trunk/src/pylauncher trunk/src/hiqsdr  trunk/src/sdriq $(PERSEUS_DIR) $(USRP_DIR) 

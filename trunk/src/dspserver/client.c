@@ -77,6 +77,9 @@
 #include <time.h>
 #include <sys/timeb.h>
 #include <samplerate.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 /* For fcntl */
 #include <fcntl.h>
 
@@ -137,6 +140,8 @@ TAILQ_HEAD(, audio_entry) Mic_audio_stream;
 // Client_list is the HEAD of a queue of connected clients
 TAILQ_HEAD(, _client_entry) Client_list;
 
+// Number of memory chunks to keep, exceeding which to free
+#define MEMORY_LIMIT 50
 // Mem_Pool is the HEAD of a queue of memory pool allocated with malloc, to be free()'d with delay
 TAILQ_HEAD(, _memory_entry) Memory_Pool;
 
@@ -294,8 +299,8 @@ void *memory_thread(void *arg) {
 	TAILQ_FOREACH(item, &Memory_Pool, entries){
 		memory_count++;
 	}
-	if (memory_count > 10){
-		to_free_count = memory_count - 10;
+	if (memory_count > MEMORY_LIMIT){
+		to_free_count = memory_count - MEMORY_LIMIT;
 		for (i=0; i< to_free_count; i++){
 			item = TAILQ_FIRST(&Memory_Pool);
 			if (item != NULL){			// should not happen, but check anyway
@@ -336,7 +341,7 @@ void tx_init(void){
 }
 
 void rtp_tx_init(void){
-	int rc;
+	int rc = -1;
 
 	if (rtp_tx_init_done == 0){
 		rc=pthread_create(&tx_thread_id,NULL,rtp_tx_thread,NULL);
@@ -364,11 +369,11 @@ void *rtp_tx_thread(void *arg) {
 
 
 fprintf(stderr,"rtp_tx_thread started ...\n");
-
+    length = 0;
     while(1) {
-        length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);
-        if(length<=0) {
-	usleep(500);
+        length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);	        
+	if(length<=0) {
+		usleep(50);
         } else {
             for(i=0;i<length;i++) {
                 v=G711A_decode(rtp_buffer[i]);
@@ -444,6 +449,7 @@ void *tx_thread(void *arg){
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
+	   #pragma omp parellel for schedule(dynamic) private(j) 
            for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
               data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
            }
@@ -685,7 +691,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 	    }
 	    if (current_item == NULL) return; // should not happen.
 
-		while (bufferevent_read(bev, message, MSG_SIZE) > 3){
+		while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
 		        message[bytesRead-1]=0;					// for Linux strings terminating in NULL
 		        token=strtok_r(message," ",&saveptr);
                   	if(token!=NULL) {
@@ -1277,19 +1283,9 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                        } else if(strncmp(token,"setclient",9)==0) {
                         	token=strtok_r(NULL," ",&saveptr);
                         	if(token!=NULL) {
-                                    int xp = 0;
-
                             		time(&tt);
                             		tod=localtime(&tt);
                             		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
-                                    // put the rtp session on listen just now    
-                                    xp = rtp_listen(0,0);
-                                    fprintf(stdout,"%s: %d: setclient: listening on RTP port %d\n", __FILE__, __LINE__, xp);
-
-                                    item->rtp=1;
-                                    send_audio=1;
-
-                                    rtp_tx_init();
                         	}
                        } else {
 		                fprintf(stderr,"Invalid command: token: '%s'\n",token);
@@ -1356,6 +1352,9 @@ void client_set_samples(float* samples,int size) {
     } else {
         extras=displayCalibrationOffset+preampOffset;
     }
+#pragma omp parallel shared(size, slope, samples, client_samples) private(max, i, lindex, rindex, j)
+  {
+    #pragma omp for schedule(dynamic,50)
     for(i=0;i<size;i++) {
         max=-10000.0F;
         lindex=(int)floor((float)i*slope);
@@ -1366,7 +1365,7 @@ void client_set_samples(float* samples,int size) {
         }
         client_samples[i+BUFFER_HEADER_SIZE]=(unsigned char)-(max+extras);
     }
-
+  }
 }
 
 
@@ -1378,9 +1377,10 @@ void setprintcountry()
 
 void printcountry(){
 	pthread_t lookup_thread;
-    int ret;
+	int ret;
+
     ret = pthread_create( &lookup_thread, NULL, printcountrythread, (void*) NULL);
-    ret = pthread_detach(lookup_thread);
+    if (ret == 0) pthread_detach(lookup_thread);
 		
 }
 
@@ -1462,7 +1462,6 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	sem_wait(&memory_semaphore);
 	TAILQ_INSERT_TAIL(&Memory_Pool, item, entries);
 	sem_post(&memory_semaphore);
-	
 	
 }
 

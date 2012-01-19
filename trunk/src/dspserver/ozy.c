@@ -268,11 +268,14 @@ fprintf(stderr,"iq_thread\n");
            SRC_DATA data;
 
            assert(buffer_size<=BUFFER_SIZE);
+#pragma omp parallel shared(buffer_size, data_in, output_buffer) private(j)
+	{
+	   #pragma omp for schedule(dynamic, 50)
            for (j=0; j < buffer_size; j++) {
               data_in [j*2]   = output_buffer[j];              //left_samples[i];
               data_in [j*2+1] = output_buffer[j+BUFFER_SIZE];  // right_samples[i];
            }
-
+	}
            data.data_in = data_in;
            data.input_frames = buffer_size ;
 
