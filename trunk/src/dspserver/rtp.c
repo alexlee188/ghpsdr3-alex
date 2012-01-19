@@ -84,6 +84,7 @@ void rtp_init() {
 }
 
 int rtp_listen(const char *remote_addr, unsigned short remote_port) {
+    int rc;
 
     if (rtp_initialized == 0) {
        fprintf (stderr, "rtp_listen: ERROR: attempting to start to listen without init !!!!!!\n");
@@ -108,7 +109,9 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
     rtp_session_set_scheduling_mode(rtpSession,TRUE);
     rtp_session_set_blocking_mode(rtpSession,TRUE);
 
-    rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
+    rc = rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
+    if (rc == 0) fprintf(stderr, "rtp_listen: set_local_addr OK\n");
+    else fprintf(stderr, "rtp_listen: cannot set_local_addr!!!\n");
 
     // kludge !!
     if (remote_addr) rtp_session_set_remote_addr	(rtpSession, remote_addr, remote_port );
