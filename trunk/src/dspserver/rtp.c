@@ -131,12 +131,12 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
            );
 
     // that connected state is set in rtp_receive, i.e. on the first received packet from remote
-    // because, in order to allow for a corrwect session establishment in firewalls along the line, it is critical
+    // because, in order to allow for a correct session establishment in firewalls along the line, it is critical
     // that we (from the server side point of view) wait 
     //rtp_ connected=1;
 
     rtp_listening = 1;
-
+    rtp_connected = 1;
     return rtp_session_get_local_port(rtpSession);
 }
 
@@ -147,10 +147,11 @@ void rtp_disconnect() {
        return;
     }
 
-    rtp_session_destroy(rtpSession);
     rtp_connected=0;
     rtp_listening = 0;
     ortp_global_stats_display();
+    rtp_session_destroy(rtpSession);
+
 }
 
 void rtp_send(char* buffer,int length) {
@@ -184,9 +185,11 @@ int rtp_receive (unsigned char* buffer,int length) {
        return rc;
     }
 
-    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
-    if(rc > 0) recv_ts+=length;
+    //rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
+    if(rc > 0) {
+	fprintf("rtp_receive: %d\n", rc);
+	recv_ts+=length;
+    }
 
-    //rtp_connected = 1;
     return rc;
 }
