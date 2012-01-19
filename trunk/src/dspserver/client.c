@@ -373,7 +373,7 @@ fprintf(stderr,"rtp_tx_thread started ...\n");
     while(1) {
         length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);	        
 	if(length<=0) {
-		usleep(1000);
+		usleep(50);
         } else {
             for(i=0;i<length;i++) {
                 v=G711A_decode(rtp_buffer[i]);

@@ -72,6 +72,7 @@ void RTP::setRemote(char* host,int port) {
 void RTP::shutdown(){
         rtp_session_destroy(rtpSession);
         ortp_global_stats_display();
+        initialized = 0;
         remote_set=0;
 }
 
