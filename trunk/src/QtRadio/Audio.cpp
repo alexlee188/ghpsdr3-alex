@@ -372,7 +372,7 @@ void Audio::set_RTP(bool use){
 
 void Audio::rtp_set_connected(void){
     qDebug() << "Audio::rtp_set_connected";
-#if 1
+#if 0
     /*
      *  send first packet in order to help to establish session
      */
