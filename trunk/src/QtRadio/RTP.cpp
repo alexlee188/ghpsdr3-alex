@@ -46,7 +46,7 @@ int RTP::init(const char* host,int port) {
     qDebug() << "RTP initialized socket=" <<  rtp_session_get_rtp_socket(rtpSession) 
              << " local port= " << rtp_session_get_local_port(rtpSession);
 
-#if 1
+#if 0
     /*
      *  send first packet in order to help to establish session
      */

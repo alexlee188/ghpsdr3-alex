@@ -344,7 +344,7 @@ void rtp_tx_init(void){
 	int rc = -1;
 
 	if (rtp_tx_init_done == 0){
-		//rc=pthread_create(&tx_thread_id,NULL,rtp_tx_thread,NULL);
+		rc=pthread_create(&tx_thread_id,NULL,rtp_tx_thread,NULL);
 		if(rc != 0) {
 			fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
 		}

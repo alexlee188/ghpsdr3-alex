@@ -185,17 +185,15 @@ int rtp_receive (unsigned char* buffer,int length) {
        return rc;
     }
 
-
     if (rtp_listening == 0) {
-       //fprintf (stderr, "rtp_receive: ERROR: attempting to receive without listening !!!!!!");
        return rc;
     }
 
-    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
-    if(rc > 0) {
-	fprintf(stderr,"rtp_receive: %d\n", rc);
-	recv_ts+=length;
+    if (rtp_connected){
+	    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
+	    if(rc > 0) {
+		recv_ts+=length;
+	    }
     }
-
     return rc;
 }
