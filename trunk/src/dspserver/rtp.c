@@ -137,6 +137,7 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
 
     sem_wait(&rtp_semaphore);
     rtp_listening = 1;
+    rtp_connected = 1;
     sem_post(&rtp_semaphore);
     return rtp_session_get_local_port(rtpSession);
 }
@@ -190,13 +191,11 @@ int rtp_receive (unsigned char* buffer,int length) {
        return rc;
     }
 
-    //rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
+    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
     if(rc > 0) {
 	fprintf(stderr,"rtp_receive: %d\n", rc);
 	recv_ts+=length;
     }
-    sem_wait(&rtp_semaphore);
-    rtp_connected = 1;
-    sem_post(&rtp_semaphore);
+
     return rc;
 }
