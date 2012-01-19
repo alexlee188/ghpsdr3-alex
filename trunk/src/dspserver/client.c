@@ -1282,19 +1282,9 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                        } else if(strncmp(token,"setclient",9)==0) {
                         	token=strtok_r(NULL," ",&saveptr);
                         	if(token!=NULL) {
-                                    int xp = 0;
-
                             		time(&tt);
                             		tod=localtime(&tt);
                             		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
-                                    // put the rtp session on listen just now    
-                                    xp = rtp_listen(0,0);
-                                    fprintf(stdout,"%s: %d: setclient: listening on RTP port %d\n", __FILE__, __LINE__, xp);
-
-                                    item->rtp=1;
-                                    send_audio=1;
-
-                                    rtp_tx_init();
                         	}
                        } else {
 		                fprintf(stderr,"Invalid command: token: '%s'\n",token);
