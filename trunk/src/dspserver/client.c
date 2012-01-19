@@ -371,8 +371,7 @@ void *rtp_tx_thread(void *arg) {
 fprintf(stderr,"rtp_tx_thread started ...\n");
     length = 0;
     while(1) {
-        //length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);
-	        
+        length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);	        
 	if(length<=0) {
 		usleep(1000);
         } else {

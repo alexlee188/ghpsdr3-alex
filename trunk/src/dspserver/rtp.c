@@ -47,7 +47,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <semaphore.h>
 #include <ortp/ortp.h>
 
 #include "rtp.h"
@@ -63,7 +63,11 @@ int adapt=1;
 static int rtp_initialized = 0;
 static int rtp_listening   = 0;
 
+static sem_t rtp_semaphore;
+
 void rtp_init() {
+    sem_init(&rtp_semaphore,0,1);
+    sem_post(&rtp_semaphore);
 
     if (rtp_initialized) {
        fprintf (stderr, "rtp_init: WARNING: double init discarded !!!!!!\n");
@@ -84,7 +88,6 @@ void rtp_init() {
 }
 
 int rtp_listen(const char *remote_addr, unsigned short remote_port) {
-    int rc;
 
     if (rtp_initialized == 0) {
        fprintf (stderr, "rtp_listen: ERROR: attempting to start to listen without init !!!!!!\n");
@@ -97,7 +100,6 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
             rtp_session_get_rtp_socket(rtpSession),rtp_session_get_local_port(rtpSession),
             remote_port, remote_addr
        );
-
        return rtp_session_get_local_port(rtpSession);
     } else {
        fprintf (stderr, "rtp_listen: listening ! ****************** \n");
@@ -109,9 +111,7 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
     rtp_session_set_scheduling_mode(rtpSession,TRUE);
     rtp_session_set_blocking_mode(rtpSession,TRUE);
 
-    rc = rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
-    if (rc == 0) fprintf(stderr, "rtp_listen: set_local_addr OK\n");
-    else fprintf(stderr, "rtp_listen: cannot set_local_addr!!!\n");
+    rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
 
     // kludge !!
     if (remote_addr) rtp_session_set_remote_addr	(rtpSession, remote_addr, remote_port );
@@ -135,8 +135,9 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
     // that we (from the server side point of view) wait 
     //rtp_ connected=1;
 
+    sem_wait(&rtp_semaphore);
     rtp_listening = 1;
-    rtp_connected = 1;
+    sem_post(&rtp_semaphore);
     return rtp_session_get_local_port(rtpSession);
 }
 
@@ -147,10 +148,12 @@ void rtp_disconnect() {
        return;
     }
 
+    sem_wait(&rtp_semaphore);
     rtp_connected=0;
     rtp_listening = 0;
     ortp_global_stats_display();
     rtp_session_destroy(rtpSession);
+    sem_post(&rtp_semaphore);
 
 }
 
@@ -162,6 +165,7 @@ void rtp_send(char* buffer,int length) {
        return;
     }
 
+    sem_wait(&rtp_semaphore);
     if(rtp_connected)  {
         rc=rtp_session_send_with_ts(rtpSession,(uint8_t*)buffer,length,send_ts);
         if(rc<=0) {
@@ -169,6 +173,7 @@ void rtp_send(char* buffer,int length) {
         }
         send_ts+=length;
     }
+    sem_post(&rtp_semaphore);
 }
 
 int rtp_receive (unsigned char* buffer,int length) {
@@ -187,9 +192,11 @@ int rtp_receive (unsigned char* buffer,int length) {
 
     //rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
     if(rc > 0) {
-	fprintf("rtp_receive: %d\n", rc);
+	fprintf(stderr,"rtp_receive: %d\n", rc);
 	recv_ts+=length;
     }
-
+    sem_wait(&rtp_semaphore);
+    rtp_connected = 1;
+    sem_post(&rtp_semaphore);
     return rc;
 }
