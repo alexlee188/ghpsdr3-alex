@@ -1934,7 +1934,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - rxtx-rtp-symm 17 Jan 2012");
+                   + getversionstring() +  message + "  - rxtx-rtp-symm 19 Jan 2012");
     lastmessage = message;
 
 }
