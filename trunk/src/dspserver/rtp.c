@@ -112,11 +112,11 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
     rtp_session_set_scheduling_mode(rtpSession,TRUE);
     rtp_session_set_blocking_mode(rtpSession,TRUE);
 
-    rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
-    if (remote_addr) rtp_session_set_remote_addr(rtpSession, remote_addr, remote_port );
+    rtp_session_set_local_addr(rtpSession,"0.0.0.0",-1);
+    rtp_session_set_remote_addr(rtpSession, remote_addr, remote_port );
 
     rtp_session_set_connected_mode(rtpSession,TRUE);
-    //rtp_session_set_symmetric_rtp(rtpSession,TRUE);
+    rtp_session_set_symmetric_rtp(rtpSession,TRUE);
 
     rtp_session_enable_adaptive_jitter_compensation(rtpSession,adapt);
     rtp_session_set_jitter_compensation(rtpSession,jittcomp);
