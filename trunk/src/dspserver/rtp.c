@@ -113,7 +113,7 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
     rtp_session_set_blocking_mode(rtpSession,TRUE);
 
     rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
-    if (remote_addr) rtp_session_set_remote_addr	(rtpSession, remote_addr, remote_port );
+    //if (remote_addr) rtp_session_set_remote_addr	(rtpSession, remote_addr, remote_port );
 
     rtp_session_set_connected_mode(rtpSession,TRUE);
     rtp_session_set_symmetric_rtp(rtpSession,TRUE);
@@ -128,7 +128,7 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
 
     sem_wait(&rtp_semaphore);
     rtp_listening = 1;
-    rtp_connected = 1;
+    //rtp_connected = 1;
     sem_post(&rtp_semaphore);
     return rtp_session_get_local_port(rtpSession);
 }
@@ -183,6 +183,7 @@ int rtp_receive (unsigned char* buffer,int length) {
     rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
     if(rc > 0) {
 	recv_ts+=length;
+	rtp_connected = 1;
     }
     return rc;
 }
