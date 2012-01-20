@@ -62,7 +62,7 @@ int adapt=1;
        int rtp_connected   = 0;
 static int rtp_initialized = 0;
 static int rtp_listening   = 0;
-
+static int timestamp_jump_limit;
 static sem_t rtp_semaphore;
 
 void rtp_init() {
@@ -79,7 +79,8 @@ void rtp_init() {
     ortp_scheduler_init();
     ortp_set_log_file (stdout);
     ortp_set_log_level_mask(ORTP_DEBUG|ORTP_MESSAGE|ORTP_WARNING|ORTP_ERROR);
-    jittcomp=40;
+    jittcomp=100;
+    timestamp_jump_limit = 500;
     adapt=1;
 
     rtp_connected   = 0;
@@ -120,8 +121,11 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
     rtp_session_enable_adaptive_jitter_compensation(rtpSession,adapt);
     rtp_session_set_jitter_compensation(rtpSession,jittcomp);
     rtp_session_set_payload_type(rtpSession,0);
-    //rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)ssrc_cb,0);
+
+    rtp_session_set_time_jump_limit	(rtpSession, timestamp_jump_limit);
     rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)rtp_session_reset,0);
+    rtp_session_signal_connect(rtpSession,"timestamp_jump",(RtpCallback)rtp_session_resync,0);
+
     fprintf(stderr,"RTP initialized socket=%d local port=%d remote port: %d remote_addr: %s\n",
             rtp_session_get_rtp_socket(rtpSession),rtp_session_get_local_port(rtpSession),
             remote_port, remote_addr
