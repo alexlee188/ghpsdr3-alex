@@ -270,6 +270,7 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(slaveSetMode(int)),this,SLOT(slaveSetMode(int)));
     connect(&connection,SIGNAL(slaveSetSlave(int)),this,SLOT(slaveSetSlave(int)));
     connect(&connection,SIGNAL(setdspversion(long, QString)),this,SLOT(setdspversion(long, QString)));
+    connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),&rtp,SLOT(setRemote(QString,int)));
 
     bandscope=NULL;
 

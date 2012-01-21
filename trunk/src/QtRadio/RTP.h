@@ -22,6 +22,7 @@ class RTP : public QObject {
 
     public slots:
         void shutdown();
+        void setRemote(QString,int);
 
     private:
         int initialized;

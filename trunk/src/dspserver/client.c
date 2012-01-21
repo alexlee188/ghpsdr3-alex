@@ -163,6 +163,7 @@ void* tx_thread(void* arg);
 #define RTP_BUFFER_SIZE 400
 static unsigned char rtp_buffer[RTP_BUFFER_SIZE];
 void *rtp_tx_thread(void *arg);
+int local_rtp_port;
 
 void client_send_samples(int size);
 void client_set_samples(float* samples,int size);
@@ -449,7 +450,7 @@ void *tx_thread(void *arg){
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
-	   #pragma omp parellel for schedule(dynamic,50) private(j) 
+	   #pragma omp parallel for schedule(dynamic,50) private(j) 
            for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
               data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
            }
@@ -753,8 +754,9 @@ void readcb(struct bufferevent *bev, void *ctx){
 		        __FUNCTION__, __LINE__,
 		        inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
                                                 fprintf(stdout,"%s: %d: startrtpstream: listening on RTP socket\n", __FILE__, __LINE__);
-		                                        int port=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
-							fprintf(stderr,"dspserver: local port = %d\n", port);
+		                                        local_rtp_port=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
+							fprintf(stderr,"dspserver: local port = %d\n", local_rtp_port);
+							answer_question("q-rtpport","slave", bev);
 		                                        current_item->rtp=connection_rtp;
 							audio_stream_reset();
 		                                        error=0;
@@ -1005,8 +1007,9 @@ void readcb(struct bufferevent *bev, void *ctx){
 fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                 inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
                                                 fprintf(stdout,"client.c: startrtpstream port encoding samplerate channels: listening on RTP socket\n");
-                                                int port=rtp_listen( inet_ntoa(item->client.sin_addr), rtpport);
-						fprintf(stderr,"dspserver: local port = %d\n", port);
+                                                local_rtp_port=rtp_listen( inet_ntoa(item->client.sin_addr), rtpport);
+						fprintf(stderr,"dspserver: local port = %d\n", local_rtp_port);
+						answer_question("q-rtpport","master",bev);
                                                 item->rtp=connection_rtp;
 						audio_stream_reset();
                                                 error=0;
@@ -1440,6 +1443,11 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 		 char m[10];
 		 sprintf(m,"%d;",lastMode);	
 		 strcat(answer,m); 
+	}else if (strcmp(message,"q-rtpport") == 0){
+		 strcat(answer,"q-rtpport:");
+		 char p[10];
+		 sprintf(p,"%d;",local_rtp_port);
+		 strcat(answer,p);
 	}else{
 		fprintf(stderr,"Unknown question: %s\n",message);
 		return;

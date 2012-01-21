@@ -180,11 +180,11 @@ int rtp_receive (unsigned char* buffer,int length) {
        return rc;
     }
 
+    //sem_wait(&rtp_semaphore);
     if (rtp_connected){
 	    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
-	    if(rc > 0) {
-		recv_ts+=length;
-	    }
+	    recv_ts+=length;
     }
+    //sem_post(&rtp_semaphore);
     return rc;
 }

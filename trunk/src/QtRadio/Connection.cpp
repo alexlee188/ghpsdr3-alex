@@ -186,11 +186,11 @@ void Connection::socketData() {
 
     int toRead;
     int bytesRead=0;
-    int thisRead;
+    int thisRead=0;
     int version;
     int subversion;
-    int header_size;
-    int answer_size;
+    int header_size=0;
+    int answer_size=0;
     char* ans;
     QString answer;
 
@@ -361,6 +361,11 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     sendCommand("q-master");
                 }else if(answer.contains("q-master") && answer.contains("slave")){
                     sendCommand("q-info");  // we are a slave so lets see where master is tuned
+                }else if(answer.contains("q-rtpport")){
+                    rx.setPattern("rtpport:(\\d+);");
+                    rx.indexIn(answer);
+                    QString p = rx.cap(1);
+                    emit setRemoteRTPPort(host,p.toInt());
                 }else if(answer.contains("q-info")){
 
                     rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+)");// q-info:0;f;14008750;m;4;
