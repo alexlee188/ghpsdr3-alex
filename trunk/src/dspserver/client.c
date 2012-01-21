@@ -449,7 +449,7 @@ void *tx_thread(void *arg){
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
-	   #pragma omp parellel for schedule(dynamic) private(j) 
+	   #pragma omp parellel for schedule(dynamic,50) private(j) 
            for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
               data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
            }
@@ -754,7 +754,8 @@ void readcb(struct bufferevent *bev, void *ctx){
 		        inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
                                                 fprintf(stdout,"%s: %d: startrtpstream: listening on RTP socket\n", __FILE__, __LINE__);
 		                                        int port=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
-		                                        //current_item->rtp=connection_rtp;
+							fprintf(stderr,"dspserver: local port = %d\n", port);
+		                                        current_item->rtp=connection_rtp;
 							audio_stream_reset();
 		                                        error=0;
 		                                        send_audio=1;
@@ -1005,6 +1006,7 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                 inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
                                                 fprintf(stdout,"client.c: startrtpstream port encoding samplerate channels: listening on RTP socket\n");
                                                 int port=rtp_listen( inet_ntoa(item->client.sin_addr), rtpport);
+						fprintf(stderr,"dspserver: local port = %d\n", port);
                                                 item->rtp=connection_rtp;
 						audio_stream_reset();
                                                 error=0;
