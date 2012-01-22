@@ -13,8 +13,6 @@ class RTP : public QObject {
         RTP();
         virtual ~RTP();
         int init(const char* host,int port);
-        void run();
-        void send(unsigned char* buffer,int length);
         void dump_buffer(unsigned char* buffer,int length);
         RtpSession* rtpSession;
     signals:
@@ -23,7 +21,7 @@ class RTP : public QObject {
     public slots:
         void shutdown();
         void setRemote(QString,int);
-
+        void send(unsigned char* buffer,int length);
     private:
         int initialized;
         int remote_set;

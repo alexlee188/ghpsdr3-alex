@@ -27,7 +27,7 @@ int RTP::init(const char* host,int port) {
     //qDebug() << "RTP::init host [" << host << "] port [" << port << "]";
     rtpSession=rtp_session_new(RTP_SESSION_SENDRECV);
     rtp_session_set_scheduling_mode(rtpSession,1);
-    rtp_session_set_blocking_mode(rtpSession,1);
+    rtp_session_set_blocking_mode(rtpSession,0);
     rtp_session_set_local_addr(rtpSession,"0.0.0.0",-1);
 
     //rtp_session_set_remote_addr(rtpSession,host,port);
@@ -77,7 +77,7 @@ void RTP::shutdown(){
 }
 
 void RTP::send(unsigned char* buffer,int length) {
-    if(initialized)  {
+    if(initialized && remote_set)  {
         rtp_session_send_with_ts(rtpSession,(uint8_t*)buffer,length,send_ts);
         send_ts+=length;
     }

@@ -73,11 +73,11 @@ fprintf(stderr,"G711A_init\n");
     }
 }
 
-unsigned char G711A_encode(short sample) {
+inline unsigned char G711A_encode(short sample) {
     return encodetable[sample&0xFFFF];
 }
 
-short G711A_decode(unsigned char sample) {
+inline short G711A_decode(unsigned char sample) {
     return decodetable[sample&0xFF];
 }
 

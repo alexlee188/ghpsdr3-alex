@@ -65,6 +65,10 @@ UI::UI(const QString server) {
     codec2 = codec2_create();
     audio = new Audio(codec2);
 
+    rtp = new RTP;
+    rtp_thread = new QThread(this);
+    rtp->moveToThread(rtp_thread);
+    rtp_thread->start(QThread::LowPriority);
     useRTP=configure.getRTP();
     configure.initAudioDevices(audio);
 
@@ -107,7 +111,6 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(audioBuffer(char*,char*)),this,SLOT(audioBuffer(char*,char*)));
     connect(&connection,SIGNAL(spectrumBuffer(char*,char*)),this,SLOT(spectrumBuffer(char*,char*)));
 
-    connect(&rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
 
@@ -270,7 +273,9 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(slaveSetMode(int)),this,SLOT(slaveSetMode(int)));
     connect(&connection,SIGNAL(slaveSetSlave(int)),this,SLOT(slaveSetSlave(int)));
     connect(&connection,SIGNAL(setdspversion(long, QString)),this,SLOT(setdspversion(long, QString)));
-    connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),&rtp,SLOT(setRemote(QString,int)));
+    connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),rtp,SLOT(setRemote(QString,int)));
+    connect(rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
+    connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
 
     bandscope=NULL;
 
@@ -606,7 +611,7 @@ void UI::connected() {
            QString host = connection.getHost();
            memcpy(host_ip, host.toUtf8().constData(),host.length());
            host_ip[host.length()]=0;
-           int local_port = rtp.init(host_ip, 5004);
+           int local_port = rtp->init(host_ip, -1);
 
            command.clear(); QTextStream(&command) << "startRTPStream "
                  << local_port
@@ -673,7 +678,7 @@ void UI::disconnected(QString message) {
 
     if(useRTP) {
         audio->rtp_set_disconnected();
-        rtp.shutdown();
+        rtp->shutdown();
     }
 //    widget.statusbar->showMessage(message,0); //gvj deleted code
     printWindowTitle(message);
@@ -741,7 +746,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
                 if (configure.getTxAllowed()){
                     rtp_send_buffer = (unsigned char*) malloc(MIC_BUFFER_SIZE);
                     memcpy(rtp_send_buffer, mic_encoded_buffer, MIC_BUFFER_SIZE);
-                    rtp.send(rtp_send_buffer,MIC_BUFFER_SIZE);
+                    emit rtp_send(rtp_send_buffer,MIC_BUFFER_SIZE);
                 }
                 mic_buffer_count=0;
             }
@@ -1948,7 +1953,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - rxtx-rtp-symm 21 Jan 2012");
+                   + getversionstring() +  message + "  - rxtx-rtp-symm 22 Jan 2012");
     lastmessage = message;
 
 }
