@@ -256,6 +256,7 @@ public slots:
     void slaveSetMode(int newmode);
     void slaveSetSlave(int slave); // 0 = slave
     void setdspversion(long dspversion, QString dspversiontxt);
+    void closeServers ();
 
 signals:
     void subRxStateChanged(bool state);
@@ -336,6 +337,7 @@ private:
 
     About about;
     Configure configure;
+    Servers *servers;
     int sampleRate;
 
     Bandscope* bandscope;

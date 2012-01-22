@@ -57,7 +57,7 @@
 UI::UI(const QString server) {
 
     widget.setupUi(this);
-
+    servers = 0;
     meter=-121;
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
@@ -407,9 +407,21 @@ void UI::receiverChanged(int rx) {
     printWindowTitle("Remote disconnected");
 }
 
+void UI::closeServers ()
+{
+    if (servers) {
+       delete servers;
+       servers = 0;
+    }
+}
+
 void UI::closeEvent(QCloseEvent* event) {
     Q_UNUSED(event);
     saveSettings();
+    if (servers) {
+       servers->close();   // synchronous call, triggers a closeServer signal (see above)
+                           // no needs to delete the object pointed by "servers" 
+    }
 }
 
 void UI::actionConfigure() {
@@ -522,9 +534,10 @@ void UI::actionDisconnect() {
 }
 
 void UI::actionQuick_Server_List() {
-   Servers *servers = new Servers();
+   servers = new Servers();
    QObject::connect(servers, SIGNAL(disconnectNow()), this, SLOT(actionDisconnectNow()));
    QObject::connect(servers, SIGNAL(connectNow(QString)), this, SLOT(actionConnectNow(QString)));
+   QObject::connect(servers, SIGNAL(dialogClosed()), this, SLOT(closeServers()));
    servers->show();
    servers->refreshList();
 }
