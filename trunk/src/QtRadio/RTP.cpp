@@ -77,7 +77,7 @@ void RTP::shutdown(){
 }
 
 void RTP::send(unsigned char* buffer,int length) {
-    if(initialized)  {
+    if(initialized && remote_set)  {
         rtp_session_send_with_ts(rtpSession,(uint8_t*)buffer,length,send_ts);
         send_ts+=length;
     }

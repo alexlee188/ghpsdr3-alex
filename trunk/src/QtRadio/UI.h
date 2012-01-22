@@ -34,6 +34,7 @@
 #include <QAudioFormat>
 #include <QVector>
 #include <QQueue>
+#include <QThread>
 
 #include "servers.h"
 #include "About.h"
@@ -107,6 +108,7 @@ signals:
     void initialize_audio(int length);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void process_audio(char* header,char* buffer,int length);
+    void rtp_send(unsigned char* buffer, int length);
 
 public slots:
     void getMeterValue(int m, int s);
@@ -359,7 +361,8 @@ private:
     bool modeFlag; //Signals mode is changed from main menu
 
     G711A g711a;
-    RTP rtp;
+    RTP *rtp;
+    QThread *rtp_thread;
     bool useRTP;
 
     int tuning;
