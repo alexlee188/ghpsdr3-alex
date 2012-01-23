@@ -157,7 +157,6 @@ void rtp_send(char* buffer,int length) {
        return;
     }
 
-    sem_wait(&rtp_semaphore);
     if(rtp_connected)  {
         rc=rtp_session_send_with_ts(rtpSession,(uint8_t*)buffer,length,send_ts);
         if(rc<=0) {
@@ -165,7 +164,6 @@ void rtp_send(char* buffer,int length) {
         }
         send_ts+=length;
     }
-    sem_post(&rtp_semaphore);
 }
 
 int rtp_receive (unsigned char* buffer,int length) {
@@ -180,11 +178,10 @@ int rtp_receive (unsigned char* buffer,int length) {
        return rc;
     }
 
-    //sem_wait(&rtp_semaphore);
     if (rtp_connected){
 	    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
 	    recv_ts+=length;
     }
-    //sem_post(&rtp_semaphore);
+
     return rc;
 }

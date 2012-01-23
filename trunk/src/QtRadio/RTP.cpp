@@ -50,7 +50,8 @@ int RTP::init(const char* host,int port) {
     /*
      *  send first packet in order to help to establish session
      */
-    unsigned char fake [] = "AAAAAAAAAAAAAAAA";
+    char *fake = (char*)malloc(16);
+    memset(fake,'A',16);
     rtp_session_send_with_ts(rtpSession,(uint8_t*)fake,16,send_ts);
 #endif
     emit rtp_set_session(rtpSession);
