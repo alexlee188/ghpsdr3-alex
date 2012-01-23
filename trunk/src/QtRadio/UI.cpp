@@ -736,13 +736,9 @@ void UI::micSendAudio(QQueue<qint16>* queue){
         unsigned char e;
 
         while(!queue->isEmpty()) {
-            // aLaw encode
             sample=queue->dequeue();
-            if(tuning) {
-                sample=0;
-            }
+            if(tuning) sample=0;
             e=g711a.encode(sample);
-
             mic_encoded_buffer[mic_buffer_count++]=e;
             if(mic_buffer_count >= MIC_BUFFER_SIZE) {
                 if (configure.getTxAllowed()){
