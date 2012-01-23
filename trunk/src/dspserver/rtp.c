@@ -123,6 +123,7 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
     rtp_session_set_payload_type(rtpSession,0);
 
     rtp_session_set_time_jump_limit	(rtpSession, timestamp_jump_limit);
+    //rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)ssrc_cb,0);
     rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)rtp_session_reset,0);
     rtp_session_signal_connect(rtpSession,"timestamp_jump",(RtpCallback)rtp_session_resync,0);
 
@@ -180,7 +181,7 @@ int rtp_receive (unsigned char* buffer,int length) {
 
     if (rtp_connected){
 	    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
-	    recv_ts+=length;
+	    if (!rtp_receive_has_more) recv_ts+=length;
     }
 
     return rc;

@@ -400,11 +400,8 @@ fprintf(stderr,"rtp_tx_thread started ...\n");
                     } else {
                         for (j=0;j< data.output_frames_gen;j++) {
                             // tx_buffer is non-interleaved, LEFT followed by RIGHT data
-
-
                             tx_buffer[iq_buffer_counter] = data_out[2*j];
                             tx_buffer[iq_buffer_counter + TX_BUFFER_SIZE] = data_out[(2*j)+1];
-
                             iq_buffer_counter++;
                             if(iq_buffer_counter>=TX_BUFFER_SIZE) {
                                 // use DttSP to process Mic data into tx IQ
