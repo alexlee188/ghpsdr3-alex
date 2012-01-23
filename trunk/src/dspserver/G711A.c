@@ -39,7 +39,7 @@ void G711A_init() {
     int i;
 
 fprintf(stderr,"G711A_init\n");
-    #pragma omp parallel for schedule(dynamic,50) private(i)
+    #pragma omp parallel for schedule(static,50) private(i)
     for (i = 0; i < 256; i++) {
         int input = i ^ 85;
         int mantissa = (input & 15) << 4;
@@ -51,7 +51,7 @@ fprintf(stderr,"G711A_init\n");
         decodetable[i]=(short)value;
     }
 
-    #pragma omp parallel for schedule(dynamic,50) private(i)
+    #pragma omp parallel for schedule(static,50) private(i)
     for(i=0;i<65536;i++) {
         short sample=(short)i;
 

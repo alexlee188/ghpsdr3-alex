@@ -222,7 +222,7 @@ void init_alaw_tables() {
         decodetable[i]=(short)value;
     }
 */
-    #pragma omp parallel for schedule(dynamic,8000) private(i)
+    #pragma omp parallel for schedule(static,8000) private(i)
     for(i=0;i<65536;i++) {
         short sample=(short)i;
 

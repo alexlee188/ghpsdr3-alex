@@ -463,7 +463,7 @@ void Audio_processing::resample(int no_of_samples){
 void Audio_processing::aLawDecode(char* buffer,int length) {
     int i;
     short v;
-#pragma omp parallel for schedule(dynamic,50)
+#pragma omp parallel for schedule(static,50)
     for (i=0; i < length; i++) {
         v=decodetable[buffer[i]&0xFF];
         buffer_in[i] = (float)v / 32767.0;
@@ -475,7 +475,7 @@ void Audio_processing::aLawDecode(char* buffer,int length) {
 void Audio_processing::pcmDecode(char* buffer,int length) {
     int i;
     short v;
-#pragma omp parallel for schedule(dynamic,50)
+#pragma omp parallel for schedule(static,50)
     for (i=0; i < length; i+=2) {
         v = (buffer[i] & 0xff) | ((buffer[i+1] & 0xff) << 8);
         buffer_in[i/2] = v / 32767.0;
@@ -494,7 +494,7 @@ void Audio_processing::codec2Decode(char* buffer,int length) {
     while (j < length) {
         memcpy(bits,&buffer[j],BITS_SIZE);
         codec2_decode(codec2, v, bits);
-        #pragma omp parallel for schedule(dynamic,50)
+        #pragma omp parallel for schedule(static,50)
         for (i=0; i < CODEC2_SAMPLES_PER_FRAME; i++){
             buffer_in[i+k*CODEC2_SAMPLES_PER_FRAME]= v[i]/ 32767.0;
         }
@@ -506,7 +506,7 @@ void Audio_processing::codec2Decode(char* buffer,int length) {
 
 void Audio_processing::init_decodetable() {
     qDebug() << "init_decodetable";
-    #pragma omp parallel for schedule(dynamic,50)
+    #pragma omp parallel for schedule(static,50)
     for (int i = 0; i < 256; i++) {
         int input = i ^ 85;
         int mantissa = (input & 15) << 4;

@@ -447,7 +447,7 @@ void *tx_thread(void *arg){
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
-	   #pragma omp parallel for schedule(dynamic,50) private(j) 
+	   #pragma omp parallel for schedule(static,50) private(j) 
            for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
               data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
            }
@@ -1356,7 +1356,7 @@ void client_set_samples(float* samples,int size) {
     }
 #pragma omp parallel shared(size, slope, samples, client_samples) private(max, i, lindex, rindex, j)
   {
-    #pragma omp for schedule(dynamic,50)
+    #pragma omp for schedule(static,50)
     for(i=0;i<size;i++) {
         max=-10000.0F;
         lindex=(int)floor((float)i*slope);
