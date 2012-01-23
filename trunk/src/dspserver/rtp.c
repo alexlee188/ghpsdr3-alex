@@ -181,7 +181,7 @@ int rtp_receive (unsigned char* buffer,int length) {
 
     if (rtp_connected){
 	    rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
-	    if (!rtp_receive_has_more) recv_ts+=length;
+	    recv_ts+=length;
     }
 
     return rc;
