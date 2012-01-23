@@ -132,6 +132,7 @@ Audio::Audio(void * codec) {
     audio_encoding = 0;
     audio_channels=1;
     audio_byte_order=QAudioFormat::LittleEndian;
+    rtp_connected = false;
 
     qDebug() << "Audio: LittleEndian=" << QAudioFormat::LittleEndian << " BigEndian=" << QAudioFormat::BigEndian;
 

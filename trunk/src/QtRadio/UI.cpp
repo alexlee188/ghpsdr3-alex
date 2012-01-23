@@ -342,6 +342,8 @@ UI::UI(const QString server) {
 UI::~UI() {
     connection.disconnect();
     codec2_destroy(codec2);
+    delete rtp_thread;
+    delete rtp;
 }
 
 void UI::actionAbout() {
