@@ -659,8 +659,8 @@ void readcb(struct bufferevent *bev, void *ctx){
     time_t tt;
     struct tm *tod;
 
-	if ((item = TAILQ_FIRST(&Client_list)) == NULL) return;		// should not happen.  No clients !!!
-	if (item->bev != bev){						// only allow the first client on Client_list to command dspserver as master
+	if ((item = TAILQ_FIRST(&Client_list)) == NULL) return;	// should not happen.  No clients !!!
+	if (item->bev != bev){					// only allow the first client on Client_list to command dspserver as master
 	// locate the current_item for this slave client
 	    for (current_item = TAILQ_FIRST(&Client_list); current_item != NULL; current_item = tmp_item){
 		tmp_item = TAILQ_NEXT(current_item, entries);
