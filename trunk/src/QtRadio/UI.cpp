@@ -741,7 +741,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
             e=g711a.encode(sample);
             mic_encoded_buffer[mic_buffer_count++]=e;
             if(mic_buffer_count >= MIC_BUFFER_SIZE) {
-                if (configure.getTxAllowed()){
+                if (connection_valid && configure.getTxAllowed()){
                     rtp_send_buffer = (unsigned char*) malloc(MIC_BUFFER_SIZE);
                     memcpy(rtp_send_buffer, mic_encoded_buffer, MIC_BUFFER_SIZE);
                     emit rtp_send(rtp_send_buffer,MIC_BUFFER_SIZE);
@@ -752,7 +752,8 @@ void UI::micSendAudio(QQueue<qint16>* queue){
 
     } else {
         while(! queue->isEmpty()){
-            mic_buffer[mic_buffer_count++] = queue->dequeue();
+            qint16 sample = queue->dequeue();
+            mic_buffer[mic_buffer_count++] = tuning ? 0: sample;
             if (mic_buffer_count >= CODEC2_SAMPLES_PER_FRAME) {
                 mic_buffer_count = 0;
                 codec2_encode(mic_codec2, &mic_encoded_buffer[mic_frame_count*BITS_SIZE], mic_buffer);
