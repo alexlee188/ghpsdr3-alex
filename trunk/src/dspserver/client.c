@@ -323,22 +323,37 @@ void tx_init(void){
 	else rc=pthread_detach(tx_thread_id);
 }
 
+void rtp_tx_timer_handler(int);
+
 void rtp_tx_init(void){
-	int rc = -1;
+	//int rc = -1;
 
 	if (rtp_tx_init_done == 0){
-		rc=pthread_create(&tx_thread_id,NULL,rtp_tx_thread,NULL);
-		if(rc != 0) {
-			fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
-		}
-		else {
-			rtp_tx_init_done = 1;
-			rc=pthread_detach(tx_thread_id);
-		}
+
+	rtp_tx_init_done = 1;
+
+	timer_t timerid;
+	struct itimerspec	value;
+	struct sigevent sev;
+
+	value.it_value.tv_sec = 0;
+	value.it_value.tv_nsec = 50000000;
+
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_nsec = 50000000;
+
+	sev.sigev_notify = SIGEV_THREAD;
+	sev.sigev_notify_function = rtp_tx_timer_handler;
+	sev.sigev_notify_attributes = NULL;
+
+	timer_create (CLOCK_REALTIME, &sev, &timerid);
+	timer_settime (timerid, 0, &value, NULL);
+
 	}
 }
 
-void *rtp_tx_thread(void *arg) {
+
+void rtp_tx_timer_handler(int sv){
     int length;
     int i,j;
     short v;
@@ -350,13 +365,8 @@ void *rtp_tx_thread(void *arg) {
     SRC_DATA data;
     int rc;
 
-fprintf(stderr,"rtp_tx_thread started ...\n");
-    length = 0;
-    while(1) {
         length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);	        
-	if(length<=0) {
-		usleep(50000); // sleep 50ms
-        } else {
+	if (length > 0){
             for(i=0;i<length;i++) {
                 v=G711A_decode(rtp_buffer[i]);
                 fv=(float)v/32767.0F;   // get into the range -1..+1
@@ -398,8 +408,7 @@ fprintf(stderr,"rtp_tx_thread started ...\n");
                     data_in_counter = 0;
                 } // end if data_in_counter
             } // end for i
-        } // end length else
-    } // end while
+        } // end length  > 0
 }
 
 
