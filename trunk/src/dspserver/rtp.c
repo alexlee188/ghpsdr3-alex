@@ -150,7 +150,7 @@ void rtp_disconnect() {
 
 }
 
-void rtp_send(char* buffer,int length) {
+void rtp_send(unsigned char* buffer,int length) {
     int rc;
 
     if (rtp_initialized == 0) {
@@ -159,7 +159,7 @@ void rtp_send(char* buffer,int length) {
     }
 
     if(rtp_connected)  {
-        rc=rtp_session_send_with_ts(rtpSession,(uint8_t*)buffer,length,send_ts);
+        rc=rtp_session_send_with_ts(rtpSession,buffer,length,send_ts);
         if(rc<=0) {
             fprintf(stderr,"rtp_send: ERROR rc=%d\n",rc);
         }
@@ -180,7 +180,7 @@ int rtp_receive (unsigned char* buffer,int length) {
     }
 
     if (rtp_connected){
-	rc=rtp_session_recv_with_ts(rtpSession,(uint8_t*)buffer,length,recv_ts,&rtp_receive_has_more);
+	rc=rtp_session_recv_with_ts(rtpSession,buffer,length,recv_ts,&rtp_receive_has_more);
 	recv_ts+=length;
     }
 

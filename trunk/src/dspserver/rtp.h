@@ -29,7 +29,7 @@ void rtp_init();
 //int rtp_listen();
 int rtp_listen(const char *remote_addr, unsigned short remote_port);
 void rtp_disconnect();
-void rtp_send(char* buffer,int length);
+void rtp_send(unsigned char* buffer,int length);
 int rtp_receive(unsigned char* buffer,int length);
 
 extern int rtp_connected;
