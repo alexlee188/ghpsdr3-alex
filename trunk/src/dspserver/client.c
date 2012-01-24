@@ -85,7 +85,7 @@ static int timing=0;
 
 static int rtp_tx_init_done = 0;
 
-static pthread_t client_thread_id, tx_thread_id, memory_thread_id;
+static pthread_t client_thread_id, tx_thread_id, rtp_tx_thread_id, memory_thread_id;
 
 #define BASE_PORT 8000
 static int port=BASE_PORT;
@@ -124,6 +124,9 @@ TAILQ_HEAD(, audio_entry) IQ_audio_stream;
 // Mic_audio_stream is the HEAD of a queue for encoded Mic audio samples from QtRadio
 TAILQ_HEAD(, audio_entry) Mic_audio_stream;
 
+// Mic_rtp_stream is the HEAD of a queue for encoded Mic audio samples with RTP from QtRadio
+TAILQ_HEAD(, audio_entry) Mic_rtp_stream;
+
 // Client_list is the HEAD of a queue of connected clients
 TAILQ_HEAD(, _client_entry) Client_list;
 
@@ -146,7 +149,6 @@ static sem_t bufferevent_semaphore, mic_semaphore, memory_semaphore;
 
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
-
 void *rtp_tx_thread(void *arg);
 int local_rtp_port;
 
@@ -329,8 +331,14 @@ void tx_init(void){
 void rtp_tx_timer_handler(int);
 
 void rtp_tx_init(void){
+	int rc;
 
 	if (rtp_tx_init_done == 0){
+
+		TAILQ_INIT(&Mic_rtp_stream);
+		rc=pthread_create(&rtp_tx_thread_id,NULL,rtp_tx_thread,NULL);
+		if(rc != 0) fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
+		else rc=pthread_detach(rtp_tx_thread_id);
 
 		rtp_tx_init_done = 1;
 
@@ -354,61 +362,91 @@ void rtp_tx_init(void){
 	}
 }
 
-
 void rtp_tx_timer_handler(int sv){
-    int length;
-    int i,j;
+    int i;
     short v;
     float fv;
+    int length;
     float data_in [TX_BUFFER_SIZE*2]; 		// stereo
-    float data_out[TX_BUFFER_SIZE*2*24];	// data_in is 8khz Mic samples.  May be resampled to 192khz or 24x
+    float *mic_data;
+    struct audio_entry *item;
+
+	length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);	        
+	if (length > 0){
+	    for(i=0;i<length;i++) {
+		v=G711A_decode(rtp_buffer[i]);
+		fv=(float)v/32767.0F;   // get into the range -1..+1
+
+		data_in[data_in_counter*2]=fv;
+		data_in[(data_in_counter*2)+1]=fv;
+		data_in_counter++;
+
+		if (data_in_counter >= TX_BUFFER_SIZE) {
+			mic_data = (float*) malloc(TX_BUFFER_SIZE * 2 * sizeof(float));
+			memcpy(mic_data, data_in, TX_BUFFER_SIZE*2*sizeof(float));
+			item = malloc(sizeof(*item));
+			item->buf = (unsigned char*) mic_data;
+			item->length = TX_BUFFER_SIZE;
+			sem_wait(&mic_semaphore);
+			TAILQ_INSERT_TAIL(&Mic_rtp_stream, item, entries);
+			sem_post(&mic_semaphore);
+			data_in_counter = 0;
+		}
+	    }
+	}
+}
+
+void* rtp_tx_thread(void *arg){
+    int j;
+    float data_out[TX_BUFFER_SIZE*2*24];	// data_in is 8khz (duplicated to stereo) Mic samples.  
+						// May be resampled to 192khz or 24x stereo
     SRC_DATA data;
     int rc;
+    struct audio_entry *item;
 
-        length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);	        
-	if (length > 0){
-            for(i=0;i<length;i++) {
-                v=G711A_decode(rtp_buffer[i]);
-                fv=(float)v/32767.0F;   // get into the range -1..+1
+    while (1){
+	sem_wait(&mic_semaphore);
+	item = TAILQ_FIRST(&Mic_rtp_stream);
+	sem_post(&mic_semaphore);
+	if (item == NULL){
+		usleep(1000);
+		continue;
+		}
 
-                data_in[data_in_counter*2]=fv;
-                data_in[(data_in_counter*2)+1]=fv;
-                data_in_counter++;
+            // resample to the sample rate
+            data.data_in = (float *)item->buf;
+            data.input_frames = TX_BUFFER_SIZE;
+            data.data_out = data_out;
+            data.output_frames = TX_BUFFER_SIZE*24 ;
+            data.src_ratio = mic_src_ratio;
+            data.end_of_input = 0;
 
-                if (data_in_counter >= TX_BUFFER_SIZE) {
-
-                    // resample to the sample rate
-                    data.data_in = data_in;
-                    data.input_frames = TX_BUFFER_SIZE;
-                    data.data_out = data_out;
-                    data.output_frames = TX_BUFFER_SIZE*24 ;
-                    data.src_ratio = mic_src_ratio;
-                    data.end_of_input = 0;
-
-                    rc = src_process (mic_sr_state, &data);
-                    if (rc) {
-                        fprintf (stderr,"rtp_tx_thread: SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
-                    } else {
-                        for (j=0;j< data.output_frames_gen;j++) {
-                            // tx_buffer is non-interleaved, LEFT followed by RIGHT data
-                            tx_buffer[iq_buffer_counter] = data_out[2*j];
-                            tx_buffer[iq_buffer_counter + TX_BUFFER_SIZE] = data_out[(2*j)+1];
-                            iq_buffer_counter++;
-                            if(iq_buffer_counter>=TX_BUFFER_SIZE) {
-                                // use DttSP to process Mic data into tx IQ
-                            	if(!hpsdr || mox) {
-                                    Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
-                                    // send Tx IQ to server, buffer is non-interleaved.
-                                    ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
-                                }
-                                iq_buffer_counter=0;
-                            } // end iq_bufer_counter
-                        } // end for j
-                    } // end rc else
-                    data_in_counter = 0;
-                } // end if data_in_counter
-            } // end for i
-        } // end length  > 0
+            rc = src_process (mic_sr_state, &data);
+            if (rc) {
+                fprintf (stderr,"rtp_tx_thread: SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
+            } else {
+                for (j=0;j< data.output_frames_gen;j++) {
+                    // tx_buffer is non-interleaved, LEFT followed by RIGHT data
+                    tx_buffer[iq_buffer_counter] = data_out[2*j];
+                    tx_buffer[iq_buffer_counter + TX_BUFFER_SIZE] = data_out[(2*j)+1];
+                    iq_buffer_counter++;
+                    if(iq_buffer_counter>=TX_BUFFER_SIZE) {
+                        // use DttSP to process Mic data into tx IQ
+                    	if(!hpsdr || mox) {
+                            Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
+                            // send Tx IQ to server, buffer is non-interleaved.
+                            ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+                        }
+                        iq_buffer_counter=0;
+                    } // end iq_bufer_counter
+                } // end for j
+            } // end rc else
+ 	    sem_wait(&mic_semaphore);
+	    TAILQ_REMOVE(&Mic_rtp_stream, item, entries);
+	    sem_post(&mic_semaphore);
+	    free(item->buf);
+	    free(item);
+    } // end while (1)
 }
 
 
