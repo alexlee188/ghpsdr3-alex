@@ -110,6 +110,8 @@ static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
 #define RTP_BUFFER_SIZE 400
 static unsigned char rtp_buffer[RTP_BUFFER_SIZE];
+int data_in_counter=0;
+int iq_buffer_counter = 0;
 
 #define MSG_SIZE 64
 
@@ -326,28 +328,27 @@ void tx_init(void){
 void rtp_tx_timer_handler(int);
 
 void rtp_tx_init(void){
-	//int rc = -1;
 
 	if (rtp_tx_init_done == 0){
 
-	rtp_tx_init_done = 1;
+		rtp_tx_init_done = 1;
 
-	timer_t timerid;
-	struct itimerspec	value;
-	struct sigevent sev;
+		timer_t timerid;
+		struct itimerspec	value;
+		struct sigevent sev;
 
-	value.it_value.tv_sec = 0;
-	value.it_value.tv_nsec = 50000000;
+		value.it_value.tv_sec = 0;
+		value.it_value.tv_nsec = 50000000;		// every 50ms
 
-	value.it_interval.tv_sec = 0;
-	value.it_interval.tv_nsec = 50000000;
+		value.it_interval.tv_sec = 0;
+		value.it_interval.tv_nsec = 50000000;
 
-	sev.sigev_notify = SIGEV_THREAD;
-	sev.sigev_notify_function = rtp_tx_timer_handler;
-	sev.sigev_notify_attributes = NULL;
+		sev.sigev_notify = SIGEV_THREAD;
+		sev.sigev_notify_function = rtp_tx_timer_handler;
+		sev.sigev_notify_attributes = NULL;
 
-	timer_create (CLOCK_REALTIME, &sev, &timerid);
-	timer_settime (timerid, 0, &value, NULL);
+		timer_create (CLOCK_REALTIME, &sev, &timerid);
+		timer_settime (timerid, 0, &value, NULL);
 
 	}
 }
@@ -360,8 +361,6 @@ void rtp_tx_timer_handler(int sv){
     float fv;
     float data_in [TX_BUFFER_SIZE*2]; 		// stereo
     float data_out[TX_BUFFER_SIZE*2*24];	// data_in is 8khz Mic samples.  May be resampled to 192khz or 24x
-    int data_in_counter=0;
-    int iq_buffer_counter = 0;
     SRC_DATA data;
     int rc;
 
