@@ -42,24 +42,6 @@
 * Foundation, Inc., 59 Temple Pl
 */
 
-/* Copyright (C) - 2012 - Alex Lee, 9V1Al
-*  modifications of the original program by John Melton
-* 
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Pl
-*/
-
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -108,7 +90,6 @@ static pthread_t client_thread_id, tx_thread_id, memory_thread_id;
 #define BASE_PORT 8000
 static int port=BASE_PORT;
 
-
 static int serverSocket;
 static int clientSocket;
 static struct sockaddr_in server;
@@ -126,6 +107,9 @@ static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 #define MIC_NO_OF_FRAMES 4
 #define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
+
+#define RTP_BUFFER_SIZE 400
+static unsigned char rtp_buffer[RTP_BUFFER_SIZE];
 
 #define MSG_SIZE 64
 
@@ -160,8 +144,6 @@ static sem_t bufferevent_semaphore, mic_semaphore, memory_semaphore;
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
 
-#define RTP_BUFFER_SIZE 400
-static unsigned char rtp_buffer[RTP_BUFFER_SIZE];
 void *rtp_tx_thread(void *arg);
 int local_rtp_port;
 
@@ -361,20 +343,19 @@ void *rtp_tx_thread(void *arg) {
     int i,j;
     short v;
     float fv;
-    float data_in [TX_BUFFER_SIZE*2]; // stereo
-    float data_out[TX_BUFFER_SIZE*2*24];
+    float data_in [TX_BUFFER_SIZE*2]; 		// stereo
+    float data_out[TX_BUFFER_SIZE*2*24];	// data_in is 8khz Mic samples.  May be resampled to 192khz or 24x
     int data_in_counter=0;
     int iq_buffer_counter = 0;
     SRC_DATA data;
     int rc;
-
 
 fprintf(stderr,"rtp_tx_thread started ...\n");
     length = 0;
     while(1) {
         length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);	        
 	if(length<=0) {
-		usleep(1000);
+		usleep(50000); // sleep 50ms
         } else {
             for(i=0;i<length;i++) {
                 v=G711A_decode(rtp_buffer[i]);
