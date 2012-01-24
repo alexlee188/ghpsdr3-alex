@@ -109,6 +109,7 @@ static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
 #define RTP_BUFFER_SIZE 400
+#define RTP_TIMER_NS (RTP_BUFFER_SIZE/8 * 1000000)
 static unsigned char rtp_buffer[RTP_BUFFER_SIZE];
 int data_in_counter=0;
 int iq_buffer_counter = 0;
@@ -338,10 +339,10 @@ void rtp_tx_init(void){
 		struct sigevent sev;
 
 		value.it_value.tv_sec = 0;
-		value.it_value.tv_nsec = 50000000;		// every 50ms
+		value.it_value.tv_nsec = RTP_TIMER_NS;
 
 		value.it_interval.tv_sec = 0;
-		value.it_interval.tv_nsec = 50000000;
+		value.it_interval.tv_nsec = RTP_TIMER_NS;
 
 		sev.sigev_notify = SIGEV_THREAD;
 		sev.sigev_notify_function = rtp_tx_timer_handler;

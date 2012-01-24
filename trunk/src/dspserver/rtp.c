@@ -110,9 +110,9 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
     send_ts=0;
     rtpSession=rtp_session_new(RTP_SESSION_SENDRECV);
     rtp_session_set_scheduling_mode(rtpSession,TRUE);
-    rtp_session_set_blocking_mode(rtpSession,TRUE);
+    rtp_session_set_blocking_mode(rtpSession,FALSE);
 
-    rtp_session_set_local_addr(rtpSession,"0.0.0.0",-1);
+    rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
     rtp_session_set_remote_addr(rtpSession, remote_addr, remote_port );
 
     rtp_session_set_connected_mode(rtpSession,TRUE);
