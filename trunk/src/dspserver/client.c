@@ -1040,9 +1040,9 @@ void readcb(struct bufferevent *bev, void *ctx){
 fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                 inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
                                                 fprintf(stdout,"client.c: startrtpstream port encoding samplerate channels: listening on RTP socket\n");
-		                                current_item->session=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
-						answer_question("q-rtpport","master",bev);
+		                                item->session=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
                                                 item->rtp=connection_rtp;
+						answer_question("q-rtpport","master",bev);
 						audio_stream_reset();
                                                 error=0;
                                                 send_audio=1;
