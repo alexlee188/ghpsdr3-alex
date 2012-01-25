@@ -150,7 +150,7 @@ static sem_t bufferevent_semaphore, mic_semaphore, memory_semaphore;
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
 void *rtp_tx_thread(void *arg);
-int local_rtp_port;
+int local_rtp_port = LOCAL_RTP_PORT;
 
 void client_send_samples(int size);
 void client_set_samples(float* samples,int size);
@@ -251,6 +251,7 @@ void client_init(int receiver) {
     sem_post(&bufferevent_semaphore);
     sem_post(&mic_semaphore);
     sem_post(&memory_semaphore);
+    rtp_init();
 
     port=BASE_PORT+receiver;
     clientSocket=-1;
@@ -267,8 +268,6 @@ void client_init(int receiver) {
         fprintf(stderr,"pthread_create failed on memory_thread: rc=%d\n", rc);
     }
     else rc=pthread_detach(memory_thread_id);
-
-    rtp_init();
 }
 
 void *memory_thread(void *arg) {
@@ -370,8 +369,12 @@ void rtp_tx_timer_handler(int sv){
     float data_in [TX_BUFFER_SIZE*2]; 		// stereo
     float *mic_data;
     struct audio_entry *item;
+    client_entry *client_item;
 
-	length=rtp_receive(rtp_buffer,RTP_BUFFER_SIZE);	        
+    if ((client_item = TAILQ_FIRST(&Client_list)) == NULL) return;	// no master client
+    if (client_item->rtp != connection_rtp) return;			// not rtp master
+	length=rtp_receive(client_item->session,rtp_buffer,RTP_BUFFER_SIZE);
+	recv_ts+=RTP_BUFFER_SIZE;		// proceed with timestamp increment as this is timer based	        
 	if (length > 0){
 	    for(i=0;i<length;i++) {
 		v=G711A_decode(rtp_buffer[i]);
@@ -555,7 +558,10 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 	    	fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client disconnection from %s:%d\n",
 			tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
 			receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
-		if (item->rtp == connection_rtp) is_rtp_client = 1;
+		if (item->rtp == connection_rtp) {
+			rtp_disconnect(item->session);
+			is_rtp_client = 1;
+		}
 		TAILQ_REMOVE(&Client_list, item, entries);
 		free(item);
 		break;
@@ -566,10 +572,15 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 	client_count++;
 	if (item->rtp == connection_rtp) rtp_client_count++;
     }
+
+    if ((rtp_client_count <= 0) && is_rtp_client) {
+	rtp_connected = 0; 	// last rtp client disconnected
+	rtp_listening = 0;
+    }
+
     sprintf(status_buf,"%d client(s)", client_count);
     if (toShareOrNotToShare) updateStatus(status_buf);
 
-    if ((rtp_client_count <= 0) && is_rtp_client) rtp_disconnect();
     if (client_count <= 0) send_audio = 0;
     bufferevent_free(bev);
 }
@@ -677,20 +688,18 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 void writecb(struct bufferevent *bev, void *ctx){
 	struct audio_entry *item;
 	client_entry *client_item;
-	int rtp_client_count;
 
 	sem_wait(&bufferevent_semaphore);
 	while ((item = audio_stream_queue_remove()) != NULL){
-		rtp_client_count = 0;
 		TAILQ_FOREACH(client_item, &Client_list, entries){
                         if(client_item->rtp == connection_tcp) {
 			    bufferevent_write(client_item->bev, item->buf, item->length);
                             }
-			else if (client_item->rtp == connection_rtp) rtp_client_count++;
+			else if (client_item->rtp == connection_rtp)
+				rtp_send(client_item->session,&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
 		}
-
-		if (rtp_client_count) rtp_send(&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
-
+ 
+		send_ts += item->length - AUDIO_BUFFER_HEADER_SIZE; // update send_ts for all rtp sessions
 		free(item->buf);
 		free(item);
 	}
@@ -779,8 +788,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 		        __FUNCTION__, __LINE__,
 		        inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
                                                 fprintf(stdout,"%s: %d: startrtpstream: listening on RTP socket\n", __FILE__, __LINE__);
-		                                        local_rtp_port=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
-							fprintf(stderr,"dspserver: local port = %d\n", local_rtp_port);
+		                                        current_item->session=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
 							answer_question("q-rtpport","slave", bev);
 		                                        current_item->rtp=connection_rtp;
 							audio_stream_reset();
@@ -1032,8 +1040,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                 inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
                                                 fprintf(stdout,"client.c: startrtpstream port encoding samplerate channels: listening on RTP socket\n");
-                                                local_rtp_port=rtp_listen( inet_ntoa(item->client.sin_addr), rtpport);
-						fprintf(stderr,"dspserver: local port = %d\n", local_rtp_port);
+		                                current_item->session=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
 						answer_question("q-rtpport","master",bev);
                                                 item->rtp=connection_rtp;
 						audio_stream_reset();

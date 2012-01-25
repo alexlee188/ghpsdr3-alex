@@ -32,5 +32,5 @@ int cwPitch;
 
 extern int toShareOrNotToShare;
 
-const char *version = "20120124;-rxtx-rtp-symm"; //YYYYMMDD; text desc
+const char *version = "20120125;-rxtx-multi"; //YYYYMMDD; text desc
 

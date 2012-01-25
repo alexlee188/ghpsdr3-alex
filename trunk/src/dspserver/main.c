@@ -105,6 +105,8 @@
 #include "codec2loc.h"
 #include "register.h"
 #include "sdrexport.h"
+#include "G711A.h"
+#include "rtp.h"
 
 char propertyPath[128];
 

@@ -52,16 +52,15 @@
 
 #include "rtp.h"
 
-static RtpSession* rtpSession = 0;
-int recv_ts=0;
-int send_ts=0;
+unsigned int recv_ts=0;
+unsigned int send_ts=0;
 int rtp_receive_has_more = 0;
 int jittcomp=40;
 int adapt=1;
 
-       int rtp_connected   = 0;
+int rtp_connected   = 0;
 static int rtp_initialized = 0;
-static int rtp_listening   = 0;
+int rtp_listening   = 0;
 static int timestamp_jump_limit;
 static sem_t rtp_semaphore;
 
@@ -69,12 +68,6 @@ void rtp_init() {
     sem_init(&rtp_semaphore,0,1);
     sem_post(&rtp_semaphore);
 
-    if (rtp_initialized) {
-       fprintf (stderr, "rtp_init: WARNING: double init discarded !!!!!!\n");
-       return;
-    } else {
-       fprintf (stderr, "rtp_init: init ! ****************** \n");
-    }
     ortp_init();
     ortp_scheduler_init();
     ortp_set_log_file (stdout);
@@ -88,23 +81,8 @@ void rtp_init() {
     rtp_initialized = 1;
 }
 
-int rtp_listen(const char *remote_addr, unsigned short remote_port) {
-
-    if (rtp_initialized == 0) {
-       fprintf (stderr, "rtp_listen: ERROR: attempting to start to listen without init !!!!!!\n");
-       return -1;
-    } 
-    if (rtp_listening) {
-       fprintf (stderr, "rtp_listen: WARNING: multiple listening discarded !!!!!!\n");
-       if (remote_addr) rtp_session_set_remote_addr	(rtpSession, remote_addr, remote_port );
-       fprintf(stderr,"RTP initialized socket=%d local port=%d remote port: %d remote_addr: %s\n",
-            rtp_session_get_rtp_socket(rtpSession),rtp_session_get_local_port(rtpSession),
-            remote_port, remote_addr
-       );
-       return rtp_session_get_local_port(rtpSession);
-    } else {
-       fprintf (stderr, "rtp_listen: listening ! ****************** \n");
-    }
+RtpSession* rtp_listen(const char *remote_addr, unsigned short remote_port) {
+RtpSession *rtpSession;
 
     recv_ts=0;
     send_ts=0;
@@ -112,7 +90,7 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
     rtp_session_set_scheduling_mode(rtpSession,TRUE);
     rtp_session_set_blocking_mode(rtpSession,FALSE);
 
-    rtp_session_set_local_addr(rtpSession,"0.0.0.0",5004);
+    rtp_session_set_local_addr(rtpSession,"0.0.0.0",LOCAL_RTP_PORT);
     rtp_session_set_remote_addr(rtpSession, remote_addr, remote_port );
 
     rtp_session_set_connected_mode(rtpSession,TRUE);
@@ -127,30 +105,21 @@ int rtp_listen(const char *remote_addr, unsigned short remote_port) {
     rtp_session_signal_connect(rtpSession,"ssrc_changed",(RtpCallback)rtp_session_reset,0);
     rtp_session_signal_connect(rtpSession,"timestamp_jump",(RtpCallback)rtp_session_resync,0);
 
-    sem_wait(&rtp_semaphore);
     rtp_listening = 1;
     rtp_connected = 1;
-    sem_post(&rtp_semaphore);
-    return rtp_session_get_local_port(rtpSession);
+    return rtpSession;
 }
 
-void rtp_disconnect() {
-   
-    if (rtp_listening == 0) {
-       fprintf (stderr, "rtp_disconnect: ERROR: attempting to disconnect without listening !!!!!!");
-       return;
-    }
+void rtp_disconnect(RtpSession * session) {
 
     sem_wait(&rtp_semaphore);
-    rtp_connected=0;
-    rtp_listening = 0;
     ortp_global_stats_display();
-    rtp_session_destroy(rtpSession);
+    rtp_session_destroy(session);
     sem_post(&rtp_semaphore);
 
 }
 
-void rtp_send(unsigned char* buffer,int length) {
+void rtp_send(RtpSession *session,unsigned char* buffer,int length) {
     int rc;
 
     if (rtp_initialized == 0) {
@@ -159,15 +128,14 @@ void rtp_send(unsigned char* buffer,int length) {
     }
 
     if(rtp_connected)  {
-        rc=rtp_session_send_with_ts(rtpSession,buffer,length,send_ts);
+        rc=rtp_session_send_with_ts(session,buffer,length,send_ts);
         if(rc<=0) {
             fprintf(stderr,"rtp_send: ERROR rc=%d\n",rc);
         }
-        send_ts+=length;
     }
 }
 
-int rtp_receive (unsigned char* buffer,int length) {
+int rtp_receive (RtpSession *session, unsigned char *buffer,int length) {
     int rc = -1;
     
     if (rtp_initialized == 0) {
@@ -180,8 +148,7 @@ int rtp_receive (unsigned char* buffer,int length) {
     }
 
     if (rtp_connected){
-	rc=rtp_session_recv_with_ts(rtpSession,buffer,length,recv_ts,&rtp_receive_has_more);
-	recv_ts+=length;
+	rc=rtp_session_recv_with_ts(session,buffer,length,recv_ts,&rtp_receive_has_more);
     }
 
     return rc;
