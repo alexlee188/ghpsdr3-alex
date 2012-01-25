@@ -651,21 +651,21 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     if (fd < 0) {
         fprintf(stderr,"accept failed\n");
     } else {
-	    // add newly connected client to Client_list
-	    item = malloc(sizeof(*item));
-	    memcpy(&item->client, &ss, sizeof(ss));
+	// add newly connected client to Client_list
+	item = malloc(sizeof(*item));
+	memcpy(&item->client, &ss, sizeof(ss));
 
-            time_t tt;
-            struct tm *tod;
-            time(&tt);
-            tod=localtime(&tt);
-            fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connection from %s:%d\n",
+        time_t tt;
+        struct tm *tod;
+        time(&tt);
+        tod=localtime(&tt);
+        fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connection from %s:%d\n",
 		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
 		receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
-            if(prncountry == 0){
+        if(prncountry == 0){
 	    	memcpy(&client, &ss, sizeof(client));
                 printcountry();
-            }
+        }
 
         struct bufferevent *bev;
         evutil_make_socket_nonblocking(fd);
@@ -768,41 +768,35 @@ void readcb(struct bufferevent *bev, void *ctx){
 				    current_item->rtp = connection_tcp;
 		                } else if(strncmp(token,"startrtpstream",14)==0) {
 				    current_item->rtp = connection_rtp;
-				    if (!rtp_connected){		// master connected through tcp.  So rtp is not connected yet.
-		                        // startrtpstream port encoding samplerate channels				
-		                        int error=1;
-		                        token=strtok_r(NULL," ",&saveptr);
-		                        if(token!=NULL) {
-		                            int rtpport=atoi(token);
-		                            token=strtok_r(NULL," ",&saveptr);
-		                            if(token!=NULL) {
-		                                encoding=atoi(token);
-		                                token=strtok_r(NULL," ",&saveptr);
-		                                if(token!=NULL) {
-		                                    audio_sample_rate=atoi(token);
-		                                    token=strtok_r(NULL," ",&saveptr);
-		                                    if(token!=NULL) {
-		                                        audio_channels=atoi(token);
-
-	fprintf(stderr,"%s: %d: starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
-		        __FUNCTION__, __LINE__,
-		        inet_ntoa(current_item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
-                                                fprintf(stdout,"%s: %d: startrtpstream: listening on RTP socket\n", __FILE__, __LINE__);
-		                                        current_item->session=rtp_listen(inet_ntoa(current_item->client.sin_addr),rtpport);
-							answer_question("q-rtpport","slave", bev); // this answers the LOCAL_RTP_PORT
-		                                        current_item->rtp=connection_rtp;
-							audio_stream_reset();
-		                                        error=0;
-		                                        send_audio=1;
-		                                        rtp_tx_init();
-		                                    }
-		                                }
-		                            }
-		                        }
-		                        if(error) {
-		                            fprintf(stderr,"Invalid command: '%s'\n",message);
-		                  	}
-				    } // if (!rtp_connected)
+				    
+	                        // startrtpstream port encoding samplerate channels				
+	                        int error=1;
+	                        token=strtok_r(NULL," ",&saveptr);
+	                        if(token!=NULL) {
+	                            int rtpport=atoi(token);
+	                            token=strtok_r(NULL," ",&saveptr);
+	                            if(token!=NULL) {
+	                                encoding=atoi(token);
+	                                token=strtok_r(NULL," ",&saveptr);
+	                                if(token!=NULL) {
+	                                    audio_sample_rate=atoi(token);
+	                                    token=strtok_r(NULL," ",&saveptr);
+	                                    if(token!=NULL) {
+	                                        audio_channels=atoi(token);
+                                        	fprintf(stdout,"%s: %d: startrtpstream: listening on RTP socket\n", __FILE__, __LINE__);
+	                                        current_item->session=rtp_listen(inet_ntoa(current_item->client.sin_addr),rtpport);
+						answer_question("q-rtpport","slave", bev); // this answers the LOCAL_RTP_PORT
+						audio_stream_reset();
+	                                        error=0;
+	                                        send_audio=1;
+	                                        rtp_tx_init();
+	                                    }
+	                                }
+	                            }
+	                        }
+	                        if(error) {
+	                            fprintf(stderr,"Invalid command: '%s'\n",message);
+	                  	    }
 				} // end startrtpstream
 			} // end if !=NULL
 		}; // end while
