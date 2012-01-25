@@ -786,10 +786,10 @@ void readcb(struct bufferevent *bev, void *ctx){
 
 	fprintf(stderr,"%s: %d: starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		        __FUNCTION__, __LINE__,
-		        inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
+		        inet_ntoa(current_item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
                                                 fprintf(stdout,"%s: %d: startrtpstream: listening on RTP socket\n", __FILE__, __LINE__);
-		                                        current_item->session=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
-							answer_question("q-rtpport","slave", bev);
+		                                        current_item->session=rtp_listen(inet_ntoa(current_item->client.sin_addr),rtpport);
+							answer_question("q-rtpport","slave", bev); // this answers the LOCAL_RTP_PORT
 		                                        current_item->rtp=connection_rtp;
 							audio_stream_reset();
 		                                        error=0;
