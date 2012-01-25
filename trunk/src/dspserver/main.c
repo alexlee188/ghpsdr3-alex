@@ -262,6 +262,9 @@ int main(int argc,char* argv[]) {
     SetTXOsc(1, LO_offset);
     SetTXAMCarrierLevel(1, 0.5);
 
+    SetCorrectRXIQMu (0, 0, 0.25);
+    SetCorrectIQEnable(1);
+
     tx_init();	// starts the tx_thread
 
     while(1) {
