@@ -108,6 +108,9 @@ Configure::Configure() {
 
     connect(widget.addPushButton,SIGNAL(clicked()),this,SLOT(slotXVTRAdd()));
     connect(widget.deletePushButton,SIGNAL(clicked()),this,SLOT(slotXVTRDelete()));
+
+    on_RxIQcheckBox_toggled(widget.RxIQcheckBox->checkState()); //Honour the checkbox state
+    on_RxIQspinBox_valueChanged(widget.RxIQspinBox->value());   //Honour the RxIQmu spin box value
 }
 
 Configure::~Configure() {
@@ -695,12 +698,10 @@ bool Configure::getTxAllowed()
 
 void Configure::on_RxIQcheckBox_toggled(bool checked)
 {
-//    emit RxIQcheckChanged(widget.RxIQcheckBox->checkState());
     emit RxIQcheckChanged(checked);
 }
 
-void Configure::on_RxIQspinBox_valueChanged(int arg1)
+void Configure::on_RxIQspinBox_valueChanged(int spinValue)
 {
-//    emit RxIQspinChanged((double)widget.RxIQspinBox->value()*0.01);
-    emit RxIQspinChanged((double)arg1*0.01);
+    emit RxIQspinChanged((double)spinValue*0.01);
 }

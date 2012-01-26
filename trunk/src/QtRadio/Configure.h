@@ -164,7 +164,7 @@ private slots:
     void on_pBtnRemHost_clicked();
     void on_encodingComboBox_currentIndexChanged(int index);
     void on_RxIQcheckBox_toggled(bool checked);
-    void on_RxIQspinBox_valueChanged(int arg1);
+    void on_RxIQspinBox_valueChanged(int spinValue);
 
 private:
     Ui::Configure widget;
