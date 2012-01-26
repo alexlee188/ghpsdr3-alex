@@ -31,7 +31,7 @@
 G711A::G711A() {
 
 qDebug() << "G711A init decode table";
-#pragma omp parallel for schedule(static,128)
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < 256; i++) {
         int input = i ^ 85;
         int mantissa = (input & 15) << 4;
@@ -44,7 +44,7 @@ qDebug() << "G711A init decode table";
     }
 
 qDebug() << "G711A init encode table";
-#pragma omp parallel for schedule(static,8000)
+#pragma omp parallel for schedule(static)
     for(int i=0;i<65536;i++) {
         short sample=(short)i;
 
