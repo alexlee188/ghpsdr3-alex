@@ -160,6 +160,7 @@ void rtp_send(char* buffer,int length) {
 
     sem_wait(&rtp_semaphore);
     if(rtp_connected)  {
+		fprintf("len: %d\n",length);
         rc=rtp_session_send_with_ts(rtpSession,(uint8_t*)buffer,length,send_ts);
         if(rc<=0) {
             fprintf(stderr,"rtp_send: ERROR rc=%d\n",rc);
