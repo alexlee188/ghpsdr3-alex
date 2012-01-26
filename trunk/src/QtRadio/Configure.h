@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Configure.h
  * Author: John Melton, G0ORX/N6LYT
  *
@@ -161,6 +161,8 @@ private slots:
     void on_pBtnAddHost_clicked();
     void on_pBtnRemHost_clicked();
     void on_encodingComboBox_currentIndexChanged(int index);
+    void on_RxIQcheckBox_toggled(bool checked);
+    void on_RxIQspinBox_valueChanged(int arg1);
 
 private:
     Ui::Configure widget;
