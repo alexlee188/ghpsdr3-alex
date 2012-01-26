@@ -1328,10 +1328,18 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		                        SetCorrectIQEnable(0);
 					fprintf(stderr,"SetCorrectIQEnable(0)\n");
 				    } else {	
-		                        fprintf(stderr,"Invalid command AAA: '%s'\n",message);
+		                        fprintf(stderr,"Invalid command: '%s'\n",message);
 				    }
 		                } else {
-		                    fprintf(stderr,"Invalid command BBB: '%s'\n",message);
+		                    fprintf(stderr,"Invalid command: '%s'\n",message);
+		                }
+			} else if(strncmp(token,"rxiqmuval",9)==0) {
+				token=strtok_r(NULL," ",&saveptr);
+		                if(token!=NULL) {
+				    fprintf(stderr,"The value of mu sent = '%s'\n",token);
+		                    SetCorrectRXIQMu(0, 0, atof(token));
+		                } else {
+		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
                         } else {
 		            fprintf(stderr,"Invalid command: token: '%s'\n",token);

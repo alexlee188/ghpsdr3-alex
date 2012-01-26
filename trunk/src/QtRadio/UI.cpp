@@ -2196,21 +2196,19 @@ void UI::setdspversion(long ver, QString vertxt){
 
 void UI::RxIQcheckChanged(bool state)
 {
-//    SetCorrectRXIQMu (0, 0, 0.25);
-//    SetCorrectIQEnable(1);
-//    "SetANFVals " << taps<< " " << delay << " " << gain << " " << leakage;
     QString setit;
     QString command;
 
     if(state) setit = "true"; else setit = "false";
     command.clear(); QTextStream(&command) << "SetIQEnable " << setit;
     connection.sendCommand(command);
-
-    qDebug()<<Q_FUNC_INFO<<": The checkbox has been changed to "<<state;
 }
 
 void UI::RxIQspinChanged(double num)
 {
-    qDebug()<<Q_FUNC_INFO<<": The spinbox value = "<<num;
+    QString command;
+
+    command.clear(); QTextStream(&command) << "RxIQmuVal " << num;
+    connection.sendCommand(command);
 }
 
