@@ -120,6 +120,8 @@ signals:
     void addXVTR(QString title,long long minFrequency,long long maxFrequency,long long ifFrequency,long long freq,int m,int filt);
     void deleteXVTR(int index);
 
+    void RxIQcheckChanged(bool state);
+    void RxIQspinChanged(double num);
 
 public slots:
     void slotHostChanged(int selection);

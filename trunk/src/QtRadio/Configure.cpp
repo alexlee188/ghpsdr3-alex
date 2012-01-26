@@ -695,10 +695,12 @@ bool Configure::getTxAllowed()
 
 void Configure::on_RxIQcheckBox_toggled(bool checked)
 {
-    qDebug()<<Q_FUNC_INFO<<": The checkbox has been changed to "<<widget.RxIQcheckBox->checkState();
+//    emit RxIQcheckChanged(widget.RxIQcheckBox->checkState());
+    emit RxIQcheckChanged(checked);
 }
 
 void Configure::on_RxIQspinBox_valueChanged(int arg1)
 {
-    qDebug()<<Q_FUNC_INFO<<": The spinbox value = "<<widget.RxIQspinBox->value();
+//    emit RxIQspinChanged((double)widget.RxIQspinBox->value()*0.01);
+    emit RxIQspinChanged((double)arg1*0.01);
 }

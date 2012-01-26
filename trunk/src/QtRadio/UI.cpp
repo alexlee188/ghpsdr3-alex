@@ -276,6 +276,8 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),rtp,SLOT(setRemote(QString,int)));
     connect(rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
+    connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
+    connect(&configure,SIGNAL(RxIQspinChanged(double)),this,SLOT(RxIQspinChanged(double)));
 
     bandscope=NULL;
 
@@ -2191,3 +2193,24 @@ void UI::setdspversion(long ver, QString vertxt){
     printWindowTitle(lastmessage);
 
 }
+
+void UI::RxIQcheckChanged(bool state)
+{
+//    SetCorrectRXIQMu (0, 0, 0.25);
+//    SetCorrectIQEnable(1);
+//    "SetANFVals " << taps<< " " << delay << " " << gain << " " << leakage;
+    QString setit;
+    QString command;
+
+    if(state) setit = "true"; else setit = "false";
+    command.clear(); QTextStream(&command) << "SetIQEnable " << setit;
+    connection.sendCommand(command);
+
+    qDebug()<<Q_FUNC_INFO<<": The checkbox has been changed to "<<state;
+}
+
+void UI::RxIQspinChanged(double num)
+{
+    qDebug()<<Q_FUNC_INFO<<": The spinbox value = "<<num;
+}
+

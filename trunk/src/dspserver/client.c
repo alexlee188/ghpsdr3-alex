@@ -1317,10 +1317,25 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                             		time(&tt);
                             		tod=localtime(&tt);
                             		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
-                        	}
-                       } else {
-		                fprintf(stderr,"Invalid command: token: '%s'\n",token);
-		            	}
+                       		}
+ 			} else if(strncmp(token,"setiqenable",11)==0) {
+				token=strtok_r(NULL," ",&saveptr);
+		                if(token!=NULL) {
+		                    if(strcmp(token,"true")==0) {
+		                        SetCorrectIQEnable(1);
+					fprintf(stderr,"SetCorrectIQEnable(1)\n"); 
+		                    } else if(strcmp(token,"false")==0) {
+		                        SetCorrectIQEnable(0);
+					fprintf(stderr,"SetCorrectIQEnable(0)\n");
+				    } else {	
+		                        fprintf(stderr,"Invalid command AAA: '%s'\n",message);
+				    }
+		                } else {
+		                    fprintf(stderr,"Invalid command BBB: '%s'\n",message);
+		                }
+                        } else {
+		            fprintf(stderr,"Invalid command: token: '%s'\n",token);
+		            }
                 } else {
                     fprintf(stderr,"Invalid command: message: '%s'\n",message);
                 	}
