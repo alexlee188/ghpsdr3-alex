@@ -796,7 +796,7 @@ BandLimit Band::getBandLimits(long long minDisplay, long long maxDisplay) {
             break;
         }
     }
-    qDebug() << "gvj value of result is min, max ... " << result.min() << "," << result.max();
+//    qDebug() << "gvj value of result is min, max ... " << result.min() << "," << result.max();
     return result;
 
 }
@@ -815,7 +815,7 @@ void Band::setFrequency(long long f) {  //Called by UI::frequencyChanged(long lo
         newBand = BAND_GEN;
     }
 
-    qDebug() << "In setFrequency(), the value of newBand, currentBand & f = " << newBand <<", " << currentBand << ", " << f;
+//    qDebug() << "In setFrequency(), the value of newBand, currentBand & f = " << newBand <<", " << currentBand << ", " << f;
 
     if(currentBand!=newBand) {   //True if we changed band so setup new band
         newStack = bandstack[newBand][0].getInfo() + 1;

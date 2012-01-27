@@ -478,7 +478,7 @@ void *tx_thread(void *arg){
 	   // process codec2 encoded mic_buffer
 	   codec2_decode(mic_codec2, codec2_buffer, bits);
 	   // mic data is mono, so copy to both right and left channels
-	   #pragma omp parallel for schedule(static,50) private(j) 
+	   #pragma omp parallel for schedule(static) private(j) 
            for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
               data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
            }
@@ -1317,10 +1317,33 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
                             		time(&tt);
                             		tod=localtime(&tt);
                             		fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
-                        	}
-                       } else {
-		                fprintf(stderr,"Invalid command: token: '%s'\n",token);
-		            	}
+                       		}
+ 			} else if(strncmp(token,"setiqenable",11)==0) {
+				token=strtok_r(NULL," ",&saveptr);
+		                if(token!=NULL) {
+		                    if(strcmp(token,"true")==0) {
+		                        SetCorrectIQEnable(1);
+					fprintf(stderr,"SetCorrectIQEnable(1)\n"); 
+		                    } else if(strcmp(token,"false")==0) {
+		                        SetCorrectIQEnable(0);
+					fprintf(stderr,"SetCorrectIQEnable(0)\n");
+				    } else {	
+		                        fprintf(stderr,"Invalid command: '%s'\n",message);
+				    }
+		                } else {
+		                    fprintf(stderr,"Invalid command: '%s'\n",message);
+		                }
+			} else if(strncmp(token,"rxiqmuval",9)==0) {
+				token=strtok_r(NULL," ",&saveptr);
+		                if(token!=NULL) {
+				    fprintf(stderr,"The value of mu sent = '%s'\n",token);
+		                    SetCorrectRXIQMu(0, 0, atof(token));
+		                } else {
+		                    fprintf(stderr,"Invalid command: '%s'\n",message);
+		                }
+                        } else {
+		            fprintf(stderr,"Invalid command: token: '%s'\n",token);
+		            }
                 } else {
                     fprintf(stderr,"Invalid command: message: '%s'\n",message);
                 	}
@@ -1385,7 +1408,7 @@ void client_set_samples(float* samples,int size) {
     }
 #pragma omp parallel shared(size, slope, samples, client_samples) private(max, i, lindex, rindex, j)
   {
-    #pragma omp for schedule(static,50)
+    #pragma omp for schedule(static)
     for(i=0;i<size;i++) {
         max=-10000.0F;
         lindex=(int)floor((float)i*slope);

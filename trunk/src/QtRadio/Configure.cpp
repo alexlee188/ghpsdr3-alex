@@ -108,6 +108,9 @@ Configure::Configure() {
 
     connect(widget.addPushButton,SIGNAL(clicked()),this,SLOT(slotXVTRAdd()));
     connect(widget.deletePushButton,SIGNAL(clicked()),this,SLOT(slotXVTRDelete()));
+
+    on_RxIQcheckBox_toggled(widget.RxIQcheckBox->checkState()); //Honour the checkbox state
+    on_RxIQspinBox_valueChanged(widget.RxIQspinBox->value());   //Honour the RxIQmu spin box value
 }
 
 Configure::~Configure() {
@@ -252,6 +255,11 @@ void Configure::loadSettings(QSettings* settings) {
     settings->beginGroup("TxSettings");
     widget.allowTx->setChecked(settings->value("allowTx",FALSE).toBool());
     settings->endGroup();
+
+    settings->beginGroup("RxIQimage");
+    widget.RxIQcheckBox->setChecked(settings->value("RxIQon/off",TRUE).toBool());
+    widget.RxIQspinBox->setValue(settings->value("RxIQmu",25).toInt());
+    settings->endGroup();
 }
 
 void Configure::saveSettings(QSettings* settings) {
@@ -304,7 +312,11 @@ void Configure::saveSettings(QSettings* settings) {
     settings->setValue("threshold",widget.nbThresholdSpinBox->value());
     settings->endGroup();
     settings->beginGroup("TxSettings");
-    settings->setValue("allowTx",widget.allowTx->checkState());
+        settings->setValue("allowTx",widget.allowTx->checkState());
+    settings->endGroup();
+    settings->beginGroup("RxIQimage");
+        settings->setValue("RxIQon/off",widget.RxIQcheckBox->checkState());
+        settings->setValue("RxIQmu",widget.RxIQspinBox->value());
     settings->endGroup();
 }
 
@@ -682,4 +694,14 @@ bool Configure::getGeometryState()
 bool Configure::getTxAllowed()
 {
     return widget.allowTx->checkState();
+}
+
+void Configure::on_RxIQcheckBox_toggled(bool checked)
+{
+    emit RxIQcheckChanged(checked);
+}
+
+void Configure::on_RxIQspinBox_valueChanged(int spinValue)
+{
+    emit RxIQspinChanged((double)spinValue);
 }

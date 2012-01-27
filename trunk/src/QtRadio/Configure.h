@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Configure.h
  * Author: John Melton, G0ORX/N6LYT
  *
@@ -120,6 +120,8 @@ signals:
     void addXVTR(QString title,long long minFrequency,long long maxFrequency,long long ifFrequency,long long freq,int m,int filt);
     void deleteXVTR(int index);
 
+    void RxIQcheckChanged(bool state);
+    void RxIQspinChanged(double num);
 
 public slots:
     void slotHostChanged(int selection);
@@ -161,6 +163,8 @@ private slots:
     void on_pBtnAddHost_clicked();
     void on_pBtnRemHost_clicked();
     void on_encodingComboBox_currentIndexChanged(int index);
+    void on_RxIQcheckBox_toggled(bool checked);
+    void on_RxIQspinBox_valueChanged(int spinValue);
 
 private:
     Ui::Configure widget;

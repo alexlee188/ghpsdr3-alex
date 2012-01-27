@@ -259,6 +259,8 @@ public slots:
     void slaveSetSlave(int slave); // 0 = slave
     void setdspversion(long dspversion, QString dspversiontxt);
     void closeServers ();
+    void RxIQcheckChanged(bool state);
+    void RxIQspinChanged(double num);
 
 signals:
     void subRxStateChanged(bool state);

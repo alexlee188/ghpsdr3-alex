@@ -276,6 +276,8 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),rtp,SLOT(setRemote(QString,int)));
     connect(rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
+    connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
+    connect(&configure,SIGNAL(RxIQspinChanged(double)),this,SLOT(RxIQspinChanged(double)));
 
     bandscope=NULL;
 
@@ -1952,7 +1954,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - rxtx-rtp-symm 24 Jan 2012");
+                   + getversionstring() +  message + "  - rxtx-rtp-symm 26 Jan 2012");
     lastmessage = message;
 
 }
@@ -2191,3 +2193,20 @@ void UI::setdspversion(long ver, QString vertxt){
     printWindowTitle(lastmessage);
 
 }
+
+void UI::RxIQcheckChanged(bool state)
+{
+    QString command;
+
+    command.clear(); QTextStream(&command) << "SetIQEnable " << (state ? "true":"false");
+    connection.sendCommand(command);
+}
+
+void UI::RxIQspinChanged(double num)
+{
+    QString command;
+
+    command.clear(); QTextStream(&command) << "RxIQmuVal " << num;
+    connection.sendCommand(command);
+}
+
