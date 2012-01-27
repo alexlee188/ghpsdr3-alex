@@ -105,6 +105,8 @@
 #include "codec2loc.h"
 #include "register.h"
 #include "sdrexport.h"
+#include "G711A.h"
+#include "rtp.h"
 
 char propertyPath[128];
 
@@ -259,6 +261,9 @@ int main(int argc,char* argv[]) {
     SetTXFilter(1, 150, 2850);
     SetTXOsc(1, LO_offset);
     SetTXAMCarrierLevel(1, 0.5);
+
+    SetCorrectRXIQMu (0, 0, 0.25);
+    SetCorrectIQEnable(1);
 
     tx_init();	// starts the tx_thread
 

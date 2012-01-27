@@ -42,8 +42,16 @@ Servers::~Servers()
     delete ui;
 }
 
+void Servers::closeEvent(QCloseEvent *event)
+{    
+    emit dialogClosed();
+    event->accept();
+}
+
+
 void Servers::on_closebutton_clicked()
 {
+    qDebug() << __FUNCTION__ ;
     this->close();
 }
 
@@ -54,7 +62,7 @@ void Servers::refreshList()
    QNetworkReply* reply = nam->get(QNetworkRequest(url));
 }
 
-void Servers::finishedSlot(QNetworkReply* reply)
+void Servers::finishedSlot(QNetworkReply* reply )
 {
 
     if (reply->error() == QNetworkReply::NoError)

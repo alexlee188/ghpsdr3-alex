@@ -20,6 +20,7 @@ public:
 signals:
     void disconnectNow();
     void connectNow(QString IP);
+    void dialogClosed ();
 
 private slots:
     void on_closebutton_clicked();
@@ -28,6 +29,8 @@ private slots:
     void on_QuickDisconnect_clicked();
     void on_QuickConnect_clicked();
     void TimerFired();
+    void closeEvent(QCloseEvent *event);
+
 private:
     Ui::Servers *ui;
     void populateList(QStringList list);

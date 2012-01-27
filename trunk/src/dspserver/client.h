@@ -29,6 +29,7 @@
 #define __CLIENT_H__
 
 #include <sys/queue.h>
+#include <ortp/ortp.h>
 
 enum CLIENT_CONNECTION {
 	connection_unknown,
@@ -40,6 +41,7 @@ typedef struct _client_entry {
         enum CLIENT_CONNECTION rtp;
 	struct sockaddr_in client;
 	struct bufferevent * bev;
+	RtpSession *session;
 	TAILQ_ENTRY(_client_entry) entries;
 } client_entry;
 

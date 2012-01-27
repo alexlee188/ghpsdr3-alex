@@ -57,7 +57,7 @@
 UI::UI(const QString server) {
 
     widget.setupUi(this);
-
+    servers = 0;
     meter=-121;
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
@@ -65,6 +65,10 @@ UI::UI(const QString server) {
     codec2 = codec2_create();
     audio = new Audio(codec2);
 
+    rtp = new RTP;
+    rtp_thread = new QThread(this);
+    rtp->moveToThread(rtp_thread);
+    rtp_thread->start(QThread::HighPriority);
     useRTP=configure.getRTP();
     configure.initAudioDevices(audio);
 
@@ -107,7 +111,6 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(audioBuffer(char*,char*)),this,SLOT(audioBuffer(char*,char*)));
     connect(&connection,SIGNAL(spectrumBuffer(char*,char*)),this,SLOT(spectrumBuffer(char*,char*)));
 
-    connect(&rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
 
@@ -270,6 +273,9 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(slaveSetMode(int)),this,SLOT(slaveSetMode(int)));
     connect(&connection,SIGNAL(slaveSetSlave(int)),this,SLOT(slaveSetSlave(int)));
     connect(&connection,SIGNAL(setdspversion(long, QString)),this,SLOT(setdspversion(long, QString)));
+    connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),rtp,SLOT(setRemote(QString,int)));
+    connect(rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
+    connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
 
     bandscope=NULL;
 
@@ -336,6 +342,8 @@ UI::UI(const QString server) {
 UI::~UI() {
     connection.disconnect();
     codec2_destroy(codec2);
+    delete rtp_thread;
+    delete rtp;
 }
 
 void UI::actionAbout() {
@@ -406,9 +414,21 @@ void UI::receiverChanged(int rx) {
     printWindowTitle("Remote disconnected");
 }
 
+void UI::closeServers ()
+{
+    if (servers) {
+       delete servers;
+       servers = 0;
+    }
+}
+
 void UI::closeEvent(QCloseEvent* event) {
     Q_UNUSED(event);
     saveSettings();
+    if (servers) {
+       servers->close();   // synchronous call, triggers a closeServer signal (see above)
+                           // no needs to delete the object pointed by "servers" 
+    }
 }
 
 void UI::actionConfigure() {
@@ -521,9 +541,10 @@ void UI::actionDisconnect() {
 }
 
 void UI::actionQuick_Server_List() {
-   Servers *servers = new Servers();
+   servers = new Servers();
    QObject::connect(servers, SIGNAL(disconnectNow()), this, SLOT(actionDisconnectNow()));
    QObject::connect(servers, SIGNAL(connectNow(QString)), this, SLOT(actionConnectNow(QString)));
+   QObject::connect(servers, SIGNAL(dialogClosed()), this, SLOT(closeServers()));
    servers->show();
    servers->refreshList();
 }
@@ -592,7 +613,7 @@ void UI::connected() {
            QString host = connection.getHost();
            memcpy(host_ip, host.toUtf8().constData(),host.length());
            host_ip[host.length()]=0;
-           int local_port = rtp.init(host_ip, 5004);
+           int local_port = rtp->init(host_ip, -1);
 
            command.clear(); QTextStream(&command) << "startRTPStream "
                  << local_port
@@ -659,7 +680,7 @@ void UI::disconnected(QString message) {
 
     if(useRTP) {
         audio->rtp_set_disconnected();
-        rtp.shutdown();
+        rtp->shutdown();
     }
 //    widget.statusbar->showMessage(message,0); //gvj deleted code
     printWindowTitle(message);
@@ -715,19 +736,15 @@ void UI::micSendAudio(QQueue<qint16>* queue){
         unsigned char e;
 
         while(!queue->isEmpty()) {
-            // aLaw encode
             sample=queue->dequeue();
-            if(tuning) {
-                sample=0;
-            }
+            if(tuning) sample=0;
             e=g711a.encode(sample);
-
             mic_encoded_buffer[mic_buffer_count++]=e;
             if(mic_buffer_count >= MIC_BUFFER_SIZE) {
-                if (configure.getTxAllowed()){
+                if (connection_valid && configure.getTxAllowed()){
                     rtp_send_buffer = (unsigned char*) malloc(MIC_BUFFER_SIZE);
                     memcpy(rtp_send_buffer, mic_encoded_buffer, MIC_BUFFER_SIZE);
-                    rtp.send(rtp_send_buffer,MIC_BUFFER_SIZE);
+                    emit rtp_send(rtp_send_buffer,MIC_BUFFER_SIZE);
                 }
                 mic_buffer_count=0;
             }
@@ -735,7 +752,8 @@ void UI::micSendAudio(QQueue<qint16>* queue){
 
     } else {
         while(! queue->isEmpty()){
-            mic_buffer[mic_buffer_count++] = queue->dequeue();
+            qint16 sample = queue->dequeue();
+            mic_buffer[mic_buffer_count++] = tuning ? 0: sample;
             if (mic_buffer_count >= CODEC2_SAMPLES_PER_FRAME) {
                 mic_buffer_count = 0;
                 codec2_encode(mic_codec2, &mic_encoded_buffer[mic_frame_count*BITS_SIZE], mic_buffer);
@@ -1934,7 +1952,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - rxtx-rtp-symm 19 Jan 2012");
+                   + getversionstring() +  message + "  - rxtx-rtp-symm 24 Jan 2012");
     lastmessage = message;
 
 }

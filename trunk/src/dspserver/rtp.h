@@ -25,12 +25,15 @@
 * 
 */
 
-void rtp_init();
-//int rtp_listen();
-int rtp_listen(const char *remote_addr, unsigned short remote_port);
-void rtp_disconnect();
-void rtp_send(char* buffer,int length);
-int rtp_receive(unsigned char* buffer,int length);
+#define LOCAL_RTP_PORT 5004
 
+void rtp_init();
+RtpSession* rtp_listen(const char *remote_addr, unsigned short remote_port);
+void rtp_disconnect(RtpSession* session);
+void rtp_send(RtpSession *session,unsigned char* buffer,int length);
+int rtp_receive(RtpSession * session,unsigned char* buffer,int length);
+
+extern unsigned int recv_ts;
+extern unsigned int send_ts;
 extern int rtp_connected;
-extern int rtp_receive_has_more;
+extern int rtp_listening;

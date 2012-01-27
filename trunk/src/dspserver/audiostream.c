@@ -50,6 +50,9 @@
 #include <netdb.h>
 #include <string.h>
 #include <pthread.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 
 #include "audiostream.h"
@@ -219,6 +222,7 @@ void init_alaw_tables() {
         decodetable[i]=(short)value;
     }
 */
+    #pragma omp parallel for schedule(static,8000) private(i)
     for(i=0;i<65536;i++) {
         short sample=(short)i;
 
