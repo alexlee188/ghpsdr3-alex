@@ -2196,11 +2196,9 @@ void UI::setdspversion(long ver, QString vertxt){
 
 void UI::RxIQcheckChanged(bool state)
 {
-    QString setit;
     QString command;
 
-    if(state) setit = "true"; else setit = "false";
-    command.clear(); QTextStream(&command) << "SetIQEnable " << setit;
+    command.clear(); QTextStream(&command) << "SetIQEnable " << (state ? "true":"false");
     connection.sendCommand(command);
 }
 

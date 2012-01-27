@@ -703,5 +703,5 @@ void Configure::on_RxIQcheckBox_toggled(bool checked)
 
 void Configure::on_RxIQspinBox_valueChanged(int spinValue)
 {
-    emit RxIQspinChanged((double)spinValue*0.01);
+    emit RxIQspinChanged((double)spinValue);
 }
