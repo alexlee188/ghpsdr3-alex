@@ -511,7 +511,7 @@ void Band::loadSettings(QSettings* settings) {
     // Quick memory number 1
     bandstack[BAND_WWV][0].setFrequency(settings->value("frequency.12.0",2500000).toLongLong());
     bandstack[BAND_WWV][0].setMode(settings->value("mode.12.0",MODE_AM).toInt());
-    bandstack[BAND_WWV][0].setFilter(settings->value("filter.12.0",3).toInt());
+    bandstack[BAND_WWV][0].setFilter(settings->value("filter.12.0",4).toInt());
     bandstack[BAND_WWV][0].setSpectrumHigh(settings->value("spectrumHigh.12.0",-40).toInt());
     bandstack[BAND_WWV][0].setSpectrumLow(settings->value("spectrumLow.12.0",-160).toInt());
     bandstack[BAND_WWV][0].setWaterfallHigh(settings->value("waterfallHigh.12.0",-60).toInt());
@@ -520,7 +520,7 @@ void Band::loadSettings(QSettings* settings) {
     // Quick memory number 2
     bandstack[BAND_WWV][1].setFrequency(settings->value("frequency.12.1",5000000).toLongLong());
     bandstack[BAND_WWV][1].setMode(settings->value("mode.12.1",MODE_AM).toInt());
-    bandstack[BAND_WWV][1].setFilter(settings->value("filter.12.1",3).toInt());
+    bandstack[BAND_WWV][1].setFilter(settings->value("filter.12.1",4).toInt());
     bandstack[BAND_WWV][1].setSpectrumHigh(settings->value("spectrumHigh.12.1",-40).toInt());
     bandstack[BAND_WWV][1].setSpectrumLow(settings->value("spectrumLow.12.1",-160).toInt());
     bandstack[BAND_WWV][1].setWaterfallHigh(settings->value("waterfallHigh.12.1",-60).toInt());
@@ -529,7 +529,7 @@ void Band::loadSettings(QSettings* settings) {
     // Quick memory number 3
     bandstack[BAND_WWV][2].setFrequency(settings->value("frequency.12.2",10000000).toLongLong());
     bandstack[BAND_WWV][2].setMode(settings->value("mode.12.2",MODE_AM).toInt());
-    bandstack[BAND_WWV][2].setFilter(settings->value("filter.12.2",3).toInt());
+    bandstack[BAND_WWV][2].setFilter(settings->value("filter.12.2",4).toInt());
     bandstack[BAND_WWV][2].setSpectrumHigh(settings->value("spectrumHigh.12.2",-40).toInt());
     bandstack[BAND_WWV][2].setSpectrumLow(settings->value("spectrumLow.12.2",-160).toInt());
     bandstack[BAND_WWV][2].setWaterfallHigh(settings->value("waterfallHigh.12.2",-60).toInt());
@@ -537,8 +537,8 @@ void Band::loadSettings(QSettings* settings) {
     bandstack[BAND_WWV][2].setInfo(settings->value("info.12.2",0).toInt());  //Pointer to stack for storing
     // Quick memory number 4
     bandstack[BAND_WWV][3].setFrequency(settings->value("frequency.12.3",15000000).toLongLong());
-    bandstack[BAND_WWV][3].setMode(settings->value("mode.11.3",MODE_AM).toInt());
-    bandstack[BAND_WWV][3].setFilter(settings->value("filter.12.3",3).toInt());
+    bandstack[BAND_WWV][3].setMode(settings->value("mode.12.3",MODE_AM).toInt());
+    bandstack[BAND_WWV][3].setFilter(settings->value("filter.12.3",4).toInt());
     bandstack[BAND_WWV][3].setSpectrumHigh(settings->value("spectrumHigh.12.3",-40).toInt());
     bandstack[BAND_WWV][3].setSpectrumLow(settings->value("spectrumLow.12.3",-160).toInt());
     bandstack[BAND_WWV][3].setWaterfallHigh(settings->value("waterfallHigh.12.3",-60).toInt());
@@ -547,7 +547,7 @@ void Band::loadSettings(QSettings* settings) {
     // Quick memory number 5
     bandstack[BAND_WWV][4].setFrequency(settings->value("frequency.12.4",20000000).toLongLong());
     bandstack[BAND_WWV][4].setMode(settings->value("mode.12.4",MODE_AM).toInt());
-    bandstack[BAND_WWV][4].setFilter(settings->value("filter.12.4",3).toInt());
+    bandstack[BAND_WWV][4].setFilter(settings->value("filter.12.4",4).toInt());
     bandstack[BAND_WWV][4].setSpectrumHigh(settings->value("spectrumHigh.12.4",-40).toInt());
     bandstack[BAND_WWV][4].setSpectrumLow(settings->value("spectrumLow.12.4",-160).toInt());
     bandstack[BAND_WWV][4].setWaterfallHigh(settings->value("waterfallHigh.12.4",-60).toInt());
@@ -559,7 +559,7 @@ void Band::loadSettings(QSettings* settings) {
     currentStack=bandstack[currentBand][1].getInfo();
     if(currentBand==BAND_WWV){
         workingStack = currentStack;
-        qDebug()<<Q_FUNC_INFO<<":    in the constructor, currentBand, current stack, workingStack = "<<currentBand<<", "<<currentStack<<", "<<workingStack;
+//        qDebug()<<Q_FUNC_INFO<<":    in the constructor, currentBand, current stack, workingStack = "<<currentBand<<", "<<currentStack<<", "<<workingStack;
     }
 
     for(int x=0;x<4;x++){
