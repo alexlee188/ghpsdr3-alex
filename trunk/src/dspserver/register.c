@@ -9,9 +9,9 @@
 #include <libconfig.h>
 #include <unistd.h>
 #include <ctype.h>
-
 #include "register.h"
-
+#include "defs.h"
+#include "client.h"
 
 char *dspstatus = "0 Client(s)";
 char *call = "Unknown";
@@ -19,7 +19,8 @@ char *location = "Unknown";
 char *band = "Unknown";
 char *rig = "Unknown";
 char *ant = "Unknown";
-config_t cfg;
+//config_t cfg;
+struct config_t cfg;
 
 /* Converts an integer value to its hex character*/
 char to_hex(char code) {
@@ -61,11 +62,14 @@ void init_register(){
       
   // try to open share_config_file for reading
   // if it fails try writing a default config file    
+	  strcat(servername,"Unknown");
 	  FILE *file;
-	  if (file = fopen(share_config_file, "r")) { 
+	  file = fopen(share_config_file, "r");
+	  if (file) { 
 		  fclose(file);
 	  }else{
-		  if (file = fopen(share_config_file,"w")) {
+		  file = fopen(share_config_file,"w");
+		  if (file) {
 			fprintf(file,"%s\n","# Simple config file for ghpsdr3's dspserver.");
 			fprintf(file,"%s\n","# default file is located at ~/dspserver.conf when dsp server is started with --share");
 			fprintf(file,"%s\n","# The information below will be supplied to a web database which will aid QtRadio");
@@ -83,6 +87,22 @@ void init_register(){
 			fprintf(file,"%s\n","band = \"Unknown\";");
 			fprintf(file,"%s\n","rig = \"Unknown\";");
 			fprintf(file,"%s\n","ant = \"Unknown\";");
+			fprintf(file,"%s\n","share = \"yes\"; # Can be yes, no");
+			fprintf(file,"%s\n","lookupcountry = \"no\"; # Can be yes, no");
+			fprintf(file,"\n%s\n","#### Following are new TX options #####");
+			fprintf(file,"\n%s\n","tx = \"no\";  #Can be: no, yes, password");
+			fprintf(file,"\n%s\n","#ve9gj = \"secretpassword\";  #add users/passwords one per line (Remove leading # ! max 20 characters each");
+			fprintf(file,"\n%s\n","groupnames = [\"txrules1\"];  #add group or rulesset names in [\"name1\", \"name2\"]; format (max 20 characters each");
+			fprintf(file,"\n%s\n", "# Add user names in [\"call1\", \"call2\"]; format to list members for each groupname above with an suffix of \"_members\" ");
+			fprintf(file,"%s\n","txrules1_members = [\"ve9gj\", \"call2\"]; ");
+			fprintf(file,"\n%s\n","# Rule sets are defined as group or rulesset name =( (\"mode\", StartFreq in Mhz, End Freq in Mhz),(\"mode\", StartFreq in Mhz, End Freq in Mhz) );");
+			fprintf(file,"%s\n","#  Valid modes are  * SSB, CW, AM, DIG, FM, DRM ,SAM, SPEC Where * means any mode is OK");
+			fprintf(file,"%s\n","#  The two rules below allow any mode on 20M and CW only on the bottom 100Khz of 80M");
+			fprintf(file,"%s\n","#  You can make as many rules and rulesets as you wish. The first matching rule will allow TX");
+			fprintf(file,"\n%s\n","txrules1 = (\n     (\"*\",14.0,14.350), # mode, StartFreq Mhz, EndFreq Mhz");
+			fprintf(file,"%s\n","     (\"CW\",3.5,3.6)");
+			fprintf(file,"%s\n","          );");
+			
 			fclose(file);
 			fprintf(stderr,"%s\n", "**********************************************************");
 			fprintf(stderr,"%s\n", "  A new  dspserver config file template has been created at: ");
@@ -108,6 +128,7 @@ void init_register(){
   }else{
 	 if(config_lookup_string(&cfg, "call", &str)){
          call = str;
+         strncpy(servername,str, 20);
      }
      if(config_lookup_string(&cfg, "location", &str)){
          location = str;
@@ -121,6 +142,35 @@ void init_register(){
      if(config_lookup_string(&cfg, "ant", &str)){
          ant = str;
      }
+     if(config_lookup_string(&cfg, "share", &str)){
+         if (strcmp(str, "yes") == 0){
+			 toShareOrNotToShare = 1;
+         }else{
+             toShareOrNotToShare = 0;
+         }
+     }else{
+		fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a share= setting!!" );
+	 } 
+     if(config_lookup_string(&cfg, "lookupcountry", &str)){
+         if (strcmp(str, "yes") == 0){
+			 setprintcountry();
+         }
+     }else{
+		fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a lookupcountry= setting!!" );
+	 } 
+     if(config_lookup_string(&cfg, "tx", &str)){
+         if (strcmp(str, "yes") == 0){
+			 txcfg = TXALL;
+         }else if(strcmp(str, "password") == 0){
+             txcfg = TXPASSWD;
+         }else{
+			 txcfg = TXNONE;
+		 }
+     }else{
+		fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a tx= setting!!\n TX is now disabled" );
+		txcfg = TXNONE;
+	 } 
+     
   }	    
   
     if (strcmp(call, "Unknown") == 0){
@@ -171,6 +221,132 @@ void doRemove(){
 void close_register(){
 	config_destroy(&cfg);
 	
+}
+
+int chkPasswd(char *user, char *pass){
+  const char *val;
+	// check and see if this user/pass is valid in conf file
+  if(config_lookup_string(&cfg, user, &val)){
+         if(strcmp(val,pass) == 0){
+			 //It's good
+			 return 0;
+		 }
+     }
+  return 1; //no good
+}
+
+int chkFreq(char *user,  long long freq2chk, int mode){
+	// look through settings in conf file until an OK is found
+	// returns on first matching rule
+	// remove //// for debug fprintf
+	
+	char grpname[31];
+	char grpmembers[41];
+	int n, n1, n2;
+	int  memberscount;
+	int  groupnamescount;
+	char rulemode[5];
+	int modeOK = 1;
+	int rulecount;
+	
+	float freq;
+	freq = freq2chk * .000001;
+	////fprintf(stderr,"checkfreq:%lld freq:%f\n",freq2chk, freq);
+	if (txcfg == TXNONE) {
+		return 1;
+	}
+	if (txcfg == TXALL) {
+		return 0;
+	}
+	config_setting_t *groupnames= NULL;
+	config_setting_t *members= NULL;
+	config_setting_t *rules= NULL;
+	config_setting_t *rule= NULL;
+	
+	groupnames = config_lookup(&cfg, "groupnames"); 
+	if (!groupnames){
+	   fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a groupnames= [\"txgroup1\"]setting!!\n TX is disabled" );
+	   return 2;
+	}	
+    groupnamescount = config_setting_length(groupnames);
+    for (n = 0; n < groupnamescount; n++) {
+      // Look through these groupnames_members and see if our user is a member
+      strncpy(grpname,config_setting_get_string_elem(groupnames, n),20);
+      ////fprintf(stderr,"Groupname:%d of %d %s\n",n, groupnamescount, grpname);
+      strcpy( grpmembers,grpname);
+      strcat( grpmembers,"_members");
+      members = config_lookup(&cfg, grpmembers); 
+      if (!members){
+	    fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a groupname_members= [\"member1\",\"member2\"]setting!!\n" );
+	  }else{	
+	    memberscount = config_setting_length(members);
+        for (n1 = 0; n1 < memberscount; n1++) {
+			 ////fprintf(stderr,"     %s %d of %d %s\n",grpmembers, n1, memberscount, config_setting_get_string_elem(members, n1));
+		     if (strcmp(user,config_setting_get_string_elem(members, n1)) == 0 ){
+		       //our user is a member of this group
+			   ////fprintf(stderr, "     %s is a member of %s\n",config_setting_get_string_elem(members, n1),grpname);
+			   rules = config_lookup(&cfg, grpname);
+			   if (!rules){
+	              fprintf(stderr, "Conf File Error - %s%s%s%s%s",  "Your ",share_config_file, " is missing a set of rules for ",grpname, "= (\n (\"mode\",statfreq,endfreq )\n);\n");
+	           }else{
+				  // look through each rule and if it matches then we can TX
+				  rulecount = config_setting_length(rules);
+				  ////fprintf(stderr,"Rule count for %s = %d\n",grpname, rulecount);
+				  for (n2 = 0; n2 < rulecount; n2++) {
+					rule = config_setting_get_elem (rules,n2);
+					   if (!rule || config_setting_length(rule) != 3){
+						   fprintf(stderr, "Conf File Error - %s%s%s%s%s%d%s",  "Your ",share_config_file, " is misconfigured for rulegroup ",grpname, " Rule Number ",n2," has a problem\n");
+						   return 4; 
+				       }else{
+					       //Check this rule
+					       // Do mode first Kind of long but we wat to allow users to write modes by name and not int in conf file
+					       modeOK = 1; // set to nomatch first
+					       strncpy(rulemode,config_setting_get_string_elem(rule,0),4); //mode is max of 4 chars
+					       if(strcmp("*",rulemode) == 0){
+							   // * any mode is OK
+							   modeOK = 0;
+				           }else if(mode == LSB && strcmp("SSB",rulemode) == 0 ){
+							   modeOK = 0;
+						   }else if(mode == USB && strcmp("SSB",rulemode) == 0 ){
+							   modeOK = 0;
+						   }else if(mode == DSB && strcmp("SSB",rulemode) == 0 ){
+							   modeOK = 0;
+						   }else if(mode == CWL && strcmp("CW",rulemode) == 0 ){
+							   modeOK = 0;
+						   }else if(mode == CWU && strcmp("CW",rulemode) == 0 ){
+							   modeOK = 0;
+						   }else if(mode == FMN && strcmp("FM",rulemode) == 0 ){
+							   modeOK = 0;
+						   }else if(mode == AM && strcmp("AM",rulemode) == 0 ){
+							   modeOK = 0;
+						   }else if(mode == DIGU && strcmp("DIG",rulemode) == 0 ){
+							   modeOK = 0;
+						   }else if(mode == SPEC && strcmp("SPEC",rulemode) == 0 ){
+							   modeOK = 0;
+						   }else if(mode == DIGL && strcmp("DIG",rulemode) == 0 ){
+							   modeOK = 0;
+						   }else if(mode == SAM && strcmp("SAM",rulemode) == 0 ){
+							   modeOK = 0;
+						   }else if(mode == DRM && strcmp("DRM",rulemode) == 0 ){
+							   modeOK = 0;
+						   }
+						   ////fprintf(stderr,"  %s rule %d 0f %d modeOK:%d myfreq:%f rulestart:%f ruleend:%f ", grpname, n2, rulecount, modeOK, freq,config_setting_get_float_elem(rule,1),config_setting_get_float_elem(rule,2) );
+						   if ( modeOK==0 && config_setting_get_float_elem(rule,1) <= freq && config_setting_get_float_elem(rule,2) >= freq ){
+							   ////fprintf(stderr," Pass\n");
+							   return 0; // good to TX
+						   }else{
+							   ////fprintf(stderr," Fail\n");
+						   }
+				       } 
+			      }   
+	  	       }
+		   }else{
+			   ////fprintf(stderr, "     %s is NOT a member of %s\n",config_setting_get_string_elem(members, n1),grpname);
+		   }
+        } 
+      }
+	}
+	return 1;
 }
 
 

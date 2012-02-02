@@ -61,7 +61,9 @@ UI::UI(const QString server) {
     meter=-121;
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
-
+    servername = "Unknown";
+    configure.thisuser = "None";
+    configure.thispass= "None";
     codec2 = codec2_create();
     audio = new Audio(codec2);
 
@@ -273,6 +275,7 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(slaveSetMode(int)),this,SLOT(slaveSetMode(int)));
     connect(&connection,SIGNAL(slaveSetSlave(int)),this,SLOT(slaveSetSlave(int)));
     connect(&connection,SIGNAL(setdspversion(long, QString)),this,SLOT(setdspversion(long, QString)));
+    connect(&connection,SIGNAL(setservername(QString)),this,SLOT(setservername(QString)));
     connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),rtp,SLOT(setRemote(QString,int)));
     connect(rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
@@ -1952,7 +1955,7 @@ void UI::printWindowTitle(QString message)
         dspversion = 0;
         dspversiontxt = "";
     }
-    setWindowTitle("QtRadio - Server: " + configure.getHost() + "(Rx "
+    setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
                    + getversionstring() +  message + "  - rxtx-rtp-symm 26 Jan 2012");
     lastmessage = message;
@@ -2066,7 +2069,11 @@ void UI::pttChange(int caller, bool ptt)
             //Mute the receiver audio and freeze the spectrum and waterfall display
             connection.setMuted(true);
             //Key the radio
-            command.clear(); QTextStream(&command) << "Mox " << "on";
+            if (dspversion >= 20120130){
+               command.clear(); QTextStream(&command) << "Mox " << "on " << configure.thisuser <<" " << configure.thispass;
+            }else{
+               command.clear(); QTextStream(&command) << "Mox " << "on";
+            }
             connection.sendCommand(command);
             widget.vfoFrame->pttChange(ptt); //Update the VFO to reflect that we are transmitting
         } else {    // Going from Tx to Rx .................
@@ -2091,7 +2098,11 @@ void UI::pttChange(int caller, bool ptt)
             //Un-mute the receiver audio
             connection.setMuted(false);
             //Send signal to sdr to go to Rx
-            command.clear(); QTextStream(&command) << "Mox " << "off";
+            if (dspversion >= 20120130){
+                command.clear(); QTextStream(&command) << "Mox " << "off " << configure.thisuser <<" " << configure.thispass;
+            }else{
+                command.clear(); QTextStream(&command) << "Mox " << "off";
+            }
             connection.sendCommand(command);
             widget.vfoFrame->pttChange(ptt); //Set band select buttons etc. to Rx state on VFO
         }
@@ -2192,6 +2203,15 @@ void UI::setdspversion(long ver, QString vertxt){
     dspversiontxt = vertxt;
     printWindowTitle(lastmessage);
 
+}
+
+void UI::setservername( QString sname){
+    servername = sname;
+    printWindowTitle(lastmessage);
+    if(!configure.setPasswd(servername)){
+        configure.thisuser = "None";
+        configure.thispass= "None";
+    }
 }
 
 void UI::RxIQcheckChanged(bool state)

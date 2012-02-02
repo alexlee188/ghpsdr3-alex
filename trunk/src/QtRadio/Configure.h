@@ -93,6 +93,9 @@ public:
     double getSdromThreshold();
     bool getGeometryState();
     bool getTxAllowed();
+    bool setPasswd(QString ServerName);
+    QString thisuser;
+    QString thispass;
 
 signals:
     void hostChanged(QString host);
@@ -165,6 +168,8 @@ private slots:
     void on_encodingComboBox_currentIndexChanged(int index);
     void on_RxIQcheckBox_toggled(bool checked);
     void on_RxIQspinBox_valueChanged(int spinValue);
+
+    void on_userpasssave_clicked();
 
 private:
     Ui::Configure widget;

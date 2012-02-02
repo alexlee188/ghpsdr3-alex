@@ -70,6 +70,15 @@ Configure::Configure() {
     widget.sdromThresholdSpinBox->setValue(20);
 
     widget.ifFrequencyLineEdit->setText("28000000");
+    //set up userpass
+    QStringList userlist;
+    widget.userpass->setRowCount(10);
+    widget.userpass->setColumnCount(3);
+    userlist<<"Server" << "User" << "Password";
+    widget.userpass->setHorizontalHeaderLabels(userlist);
+    widget.userpass->setEditTriggers(QAbstractItemView::AllEditTriggers);
+    //QTableWidgetItem *newitem = new QTableWidgetItem("Fill Item");
+    //widget.userpass->setItem(0, 0, newitem);
 
     connect(widget.spectrumHighSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotSpectrumHighChanged(int)));
     connect(widget.spectrumLowSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotSpectrumLowChanged(int)));
@@ -111,6 +120,8 @@ Configure::Configure() {
 
     on_RxIQcheckBox_toggled(widget.RxIQcheckBox->checkState()); //Honour the checkbox state
     on_RxIQspinBox_valueChanged(widget.RxIQspinBox->value());   //Honour the RxIQmu spin box value
+
+
 }
 
 Configure::~Configure() {
@@ -260,6 +271,27 @@ void Configure::loadSettings(QSettings* settings) {
     widget.RxIQcheckBox->setChecked(settings->value("RxIQon/off",TRUE).toBool());
     widget.RxIQspinBox->setValue(settings->value("RxIQmu",25).toInt());
     settings->endGroup();
+    settings->beginGroup("UserPass");
+     //QTableWidgetItem *server, *user, *pass;
+     for (int i=0;i<widget.userpass->rowCount();i++){
+         QString s,u,p;
+         s.setNum(i);
+         u.setNum(i);
+         p.setNum(i);
+         s.append("_Server");
+         u.append("_User");
+         p.append("_Pass");
+       if(settings->contains(s) && settings->contains(u) && settings->contains(p)) {
+           QTableWidgetItem* Server= new QTableWidgetItem(settings->value(s).toString());
+           QTableWidgetItem* User= new QTableWidgetItem(settings->value(u).toString());
+           QTableWidgetItem* Pass= new QTableWidgetItem(settings->value(p).toString());
+           widget.userpass->setItem(i,0,Server);
+           widget.userpass->setItem(i,1,User);
+           widget.userpass->setItem(i,2,Pass);
+
+       }
+      }
+    settings->endGroup();
 }
 
 void Configure::saveSettings(QSettings* settings) {
@@ -318,6 +350,29 @@ void Configure::saveSettings(QSettings* settings) {
         settings->setValue("RxIQon/off",widget.RxIQcheckBox->checkState());
         settings->setValue("RxIQmu",widget.RxIQspinBox->value());
     settings->endGroup();
+    settings->beginGroup("UserPass");
+     QTableWidgetItem *server, *user, *pass;
+     for (int i=0;i<widget.userpass->rowCount();i++){
+        server = widget.userpass->item(i,0);
+        user = widget.userpass->item(i,1);
+        pass = widget.userpass->item(i,2);
+        if (server && user && pass ){
+            QString s,u,p;
+            s.setNum(i);
+            u.setNum(i);
+            p.setNum(i);
+            qDebug() << s;
+            s.append("_Server");
+            qDebug() <<s;
+            u.append("_User");
+            p.append("_Pass");
+            settings->setValue(s,server->text());
+            settings->setValue(u,user->text());
+            settings->setValue(p,pass->text());
+        }
+     }
+    settings->endGroup();
+
 }
 
 void Configure::slotHostChanged(int selection) {
@@ -704,4 +759,28 @@ void Configure::on_RxIQcheckBox_toggled(bool checked)
 void Configure::on_RxIQspinBox_valueChanged(int spinValue)
 {
     emit RxIQspinChanged((double)spinValue);
+}
+
+void Configure::on_userpasssave_clicked()
+{
+  QSettings settings("G0ORX","QtRadio");
+  saveSettings(&settings);
+
+}
+
+bool  Configure::setPasswd(QString ServerName){
+    QTableWidgetItem *server, *user, *pass;
+    for (int i=0;i<widget.userpass->rowCount();i++){
+       server = widget.userpass->item(i,0);
+       user = widget.userpass->item(i,1);
+       pass = widget.userpass->item(i,2);
+       if (server && user && pass ){
+          if(ServerName.compare(server->text()) == 0){
+              thisuser = user->text();
+              thispass = pass->text();
+              return true;
+          }
+       }
+    }
+    return false;
 }

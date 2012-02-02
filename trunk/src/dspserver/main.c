@@ -108,6 +108,7 @@
 #include "G711A.h"
 #include "rtp.h"
 
+
 char propertyPath[128];
 
 struct option longOptions[] = {
@@ -167,7 +168,7 @@ void processCommands(int argc,char** argv) {
                 home = getenv("HOME");
                 strcpy(share_config_file, home );
                 strcat(share_config_file, "/dspserver.conf");
-		toShareOrNotToShare = 1;
+		        toShareOrNotToShare = 1;
                 break;
             case 7:
                 strcpy(share_config_file,optarg);
@@ -219,13 +220,16 @@ int main(int argc,char* argv[]) {
     strcpy(soundCardName,"HPSDR");
     strcpy(server_address,"127.0.0.1"); // localhost
     strcpy(share_config_file, "");
-    processCommands(argc,argv);
-    fprintf(stderr, "rxtx-rtp dev dspserver\n");
+    home = getenv("HOME");
+    strcpy(share_config_file, home );
+    strcat(share_config_file, "/dspserver.conf");
+	processCommands(argc,argv);
     // start web registration if set
     if  (toShareOrNotToShare) {
         fprintf(stderr, "Activating Web register\n");
-	init_register();
 	}
+	fprintf(stderr, "Reading conf file %s\n", share_config_file);
+	init_register(); // we now read our conf always
     fprintf(stderr,"gHPSDR rx %d (Version %s)\n",receiver,VERSION);
 
     setSoundcard(getSoundcardId(soundCardName));

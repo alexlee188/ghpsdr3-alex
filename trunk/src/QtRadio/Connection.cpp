@@ -358,7 +358,15 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     rx.setPattern(":(\\d+);-(\\S+)");
                     rx.indexIn(answer);
                     emit setdspversion(rx.cap(1).toLong(),rx.cap(2).toAscii());
+                    if (rx.cap(1).toLong() >= 20120130){  // tx login start
+                      sendCommand("q-server");
+                    }
                     sendCommand("q-master");
+                }else if(answer.contains("q-server")){
+                    rx.setPattern("q-server:(\\S+)");
+                    rx.indexIn(answer);
+                    QString servername = rx.cap(1);
+                    emit setservername(servername);
                 }else if(answer.contains("q-master") && answer.contains("slave")){
                     sendCommand("q-info");  // we are a slave so lets see where master is tuned
                 }else if(answer.contains("q-rtpport")){

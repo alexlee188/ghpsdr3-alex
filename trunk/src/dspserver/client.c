@@ -1227,9 +1227,56 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		                token=strtok_r(NULL," ",&saveptr);
 		                if(token!=NULL) {
 		                    if(strcmp(token,"on")==0) {
-		                        ozySetMox(1);
+		                        if (txcfg == TXALL){
+		                           ozySetMox(1);
+		                        }else if(txcfg == TXPASSWD){
+									char *thisuser =strtok_r(NULL," ",&saveptr);
+		                            if(thisuser!=NULL) {
+									   //got user
+								       char *thispasswd =strtok_r(NULL," ",&saveptr);
+								       if(thispasswd!=NULL) {
+										   //got passwd
+										   fprintf(stderr,"User:%s Pass:%s\n",thisuser,thispasswd);
+										   //check password
+										   if(chkPasswd(thisuser, thispasswd) == 0){
+											   // password OK check freq
+											   if (chkFreq(thisuser,  lastFreq , lastMode) == 0){
+												   //freqchk passwd good to tx
+												   fprintf(stderr,"Mox on from User:%s\n",thisuser);
+												   ozySetMox(1);
+											   }else{
+												   fprintf(stderr,"Mox denied because user %s has no rule for mode %d on %lld! hz\n",thisuser, lastMode,lastFreq);
+											   }
+										   }else{
+											   fprintf(stderr,"Mox on denied because user %s password check failed!\n",thisuser);
+										   }
+									   }
+								    }   
+									
+								}else{
+									fprintf(stderr,"mox denied because tx = \"no\"\n");
+								}	
 		                    } else if(strcmp(token,"off")==0) {
-		                        ozySetMox(0);
+		                       if (txcfg == TXALL){
+		                           ozySetMox(0);
+		                        }else if(txcfg == TXPASSWD){
+									char *thisuser =strtok_r(NULL," ",&saveptr);
+		                            if(thisuser!=NULL) {
+									   // got user
+									   char *thispasswd =strtok_r(NULL," ",&saveptr);
+									   if(thispasswd!=NULL) {
+										   //got passwd
+										   //fprintf(stderr,"User:%s Pass:%s\n",thisuser,thispasswd);
+										   //check password
+										   if(chkPasswd(thisuser, thispasswd) == 0){
+											  fprintf(stderr,"Mox off from User:%s\n",thisuser);
+											  ozySetMox(0);
+										   }else{
+											   fprintf(stderr,"Mox off denied because user %s password check failed!\n",thisuser);
+										   }
+										}
+									}
+								}
 		                    } else {
 		                        fprintf(stderr,"Invalid command: '%s'\n",message);
 		                    }
@@ -1240,10 +1287,20 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		                token=strtok_r(NULL," ",&saveptr);
 		                if(token!=NULL) {
 		                    double pwr=atof(token);
-		                    if(pwr >= 0 &&
-		                       pwr <= 1) {
-		                        SetTXAMCarrierLevel(1,pwr);
-		                    } else {
+		                    char *thisuser =strtok_r(NULL," ",&saveptr);
+		                    if(thisuser!=NULL) {
+								char *thispasswd =strtok_r(NULL," ",&saveptr);
+								if(thispasswd!=NULL) {
+									if(chkPasswd(thisuser, thispasswd) == 0){ 
+		                               if(pwr >= 0 &&
+		                                 pwr <= 1) {
+		                                 SetTXAMCarrierLevel(1,pwr);
+									   }
+									}else{
+									    fprintf(stderr,"SetTXAMCarrierLevel denied because user %s password check failed!\n",thisuser);
+									}
+								}
+		                     } else {
 		                        fprintf(stderr,"Invalid command arguement: '%s'\n",message);
 		                    }
 		                } else {
@@ -1342,7 +1399,7 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
                         } else {
-		            fprintf(stderr,"Invalid command: token: '%s'\n",token);
+		            fprintf(stderr,"Invalid rxiqmuval command: token: '%s'\n",token);
 		            }
                 } else {
                     fprintf(stderr,"Invalid command: message: '%s'\n",message);
@@ -1475,6 +1532,9 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	if (strcmp(message,"q-version") == 0){
 		 strcat(answer,"q-version:");
 		 strcat(answer,version);
+	}else if (strcmp(message,"q-server") == 0){
+		 strcat(answer,"q-server:");
+		 strcat(answer,servername);
 	}else if (strcmp(message,"q-master") == 0){
 		 strcat(answer,"q-master:");
 		 strcat(answer,clienttype);

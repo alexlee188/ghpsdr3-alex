@@ -258,6 +258,7 @@ public slots:
     void slaveSetMode(int newmode);
     void slaveSetSlave(int slave); // 0 = slave
     void setdspversion(long dspversion, QString dspversiontxt);
+    void setservername(QString sname);
     void closeServers ();
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
@@ -375,6 +376,8 @@ private:
     long dspversion;
     QString dspversiontxt;
     QString lastmessage;
+    QString servername;
+
 };
 
 #endif	/* _UI_H */
