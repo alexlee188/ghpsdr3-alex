@@ -1957,7 +1957,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - rxtx-rtp-symm 26 Jan 2012");
+                   + getversionstring() +  message + "  - rxtx-rtp-symm 01 Feb 2012");
     lastmessage = message;
 
 }
@@ -2069,7 +2069,7 @@ void UI::pttChange(int caller, bool ptt)
             //Mute the receiver audio and freeze the spectrum and waterfall display
             connection.setMuted(true);
             //Key the radio
-            if (dspversion >= 20120130){
+            if (dspversion >= 20120201){
                command.clear(); QTextStream(&command) << "Mox " << "on " << configure.thisuser <<" " << configure.thispass;
             }else{
                command.clear(); QTextStream(&command) << "Mox " << "on";
@@ -2098,7 +2098,7 @@ void UI::pttChange(int caller, bool ptt)
             //Un-mute the receiver audio
             connection.setMuted(false);
             //Send signal to sdr to go to Rx
-            if (dspversion >= 20120130){
+            if (dspversion >= 20120201){
                 command.clear(); QTextStream(&command) << "Mox " << "off " << configure.thisuser <<" " << configure.thispass;
             }else{
                 command.clear(); QTextStream(&command) << "Mox " << "off";
