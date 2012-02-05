@@ -89,4 +89,6 @@ libDttSP_a_SOURCES = \
 	window.h \
 	winmain.c \
 	wscompand.c \
-	wscompand.h 
+	wscompand.h \
+	compress.c \
+	compress.h 
