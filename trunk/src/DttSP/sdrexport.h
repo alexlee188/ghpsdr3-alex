@@ -61,6 +61,7 @@ Bridgewater, NJ 08807
 #include <meter.h>
 #include <spectrum.h>
 #include <diversity.h>
+#include <compress.h>
 
 //------------------------------------------------------------------------
 // max no. simultaneous receivers
@@ -273,11 +274,24 @@ extern struct _tx
     int num;
   } squelch;
 
+
   struct
   {
     DTTSPAGC gen;
     BOOLEAN flag;
   } leveler, alc;
+
+/*  struct // (NR0V)
+  {
+          WCPAGC gen;
+          BOOLEAN flag;
+  } leveler, alc;*/
+
+  struct // (NR0V)
+  {
+          COMPRESSOR gen;
+          BOOLEAN flag;
+  } compressor;
 
   struct
   {
