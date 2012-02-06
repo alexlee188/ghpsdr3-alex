@@ -7,6 +7,7 @@
 
 import os
 import sys 
+import time 
 from PyQt4.QtCore import * 
 from PyQt4.QtGui import * 
 import subprocess
@@ -33,6 +34,17 @@ default_cfg = {
                       }                                                              
 
        },
+      'sdriq': {
+          'startCommand': "sdriq-server -s 111111",
+          'status':  { "No  HiqSDR hardware detected": 'abnormally ended',        
+                       "Listening for TCP connections on port 11000": 'started',     
+                       "asynch_input_thread STARTED": 'running',                      
+                       "detach_receiver: ... done.": 'stopped'         ,           
+                       "Capture from SDR-IQ seria": 'loading.....' 
+                      }                                                              
+
+       },
+
       'widget-server': {
           'startCommand': "widget-server",
           'status':  { "Cannot locate Ozy": 'abnormally ended',        
@@ -80,6 +92,13 @@ default_cfg = {
        },
        'dttsp-ddc': {
           'startCommand': "dspserver --lo 0",
+          'status':  { "connect failed": 'abnormally ended',     
+                       "gHPSDR": 'starting....',
+                       "command bound to port": 'running'
+                     }
+       },
+       'dttsp-ddc-delayed': {
+          'startCommand': '/bin/bash -c "sleep 2 ; dspserver --lo 0"',
           'status':  { "connect failed": 'abnormally ended',     
                        "gHPSDR": 'starting....',
                        "command bound to port": 'running'
@@ -161,6 +180,11 @@ def get_path():
 class MainWin(QMainWindow):
     
     mtbar = [
+              {    'name':      'sdriq',
+                   'tooltip':  'SDR-IQ',
+                   'shortcut': 'Ctrl+Q',
+                   'icon':     'p24.png' 
+              },
               {    'name':      'perseus',
                    'tooltip':  'Perseus',
                    'shortcut': 'Ctrl+P',
@@ -279,7 +303,7 @@ class MainWin(QMainWindow):
             self.tss_d['Hardware servers'].setCurrent('perseus')
             self.tss_d['Hardware servers'].run_command()
 
-            self.tss_d['GUI'].setCurrent('QtRadioPerseus')
+            self.tss_d['GUI'].setCurrent('QtRadio')
             self.tss_d['GUI'].run_command()
 
             self.tss_d['DSP server'].setCurrent('dttsp-ddc')
@@ -295,6 +319,15 @@ class MainWin(QMainWindow):
             self.tss_d['DSP server'].setCurrent('dttsp')
             self.tss_d['DSP server'].run_command()
 
+        if x == 'sdriq':
+            self.tss_d['Hardware servers'].setCurrent('sdriq')
+            self.tss_d['Hardware servers'].run_command()
+
+            self.tss_d['GUI'].setCurrent('QtRadio')
+            self.tss_d['GUI'].run_command()
+
+            self.tss_d['DSP server'].setCurrent('dttsp-ddc-delayed')
+            self.tss_d['DSP server'].run_command()
 
 
 def main(argv): 
