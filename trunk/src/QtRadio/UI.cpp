@@ -761,7 +761,8 @@ void UI::micSendAudio(QQueue<qint16>* queue){
             mic_buffer[mic_buffer_count++] = tuning ? 0: sample;
             if (mic_buffer_count >= CODEC2_SAMPLES_PER_FRAME) {
                 mic_buffer_count = 0;
-                codec2_encode(mic_codec2, &mic_encoded_buffer[mic_frame_count*BITS_SIZE], mic_buffer);
+                if (connection_valid && configure.getTxAllowed())
+                    codec2_encode(mic_codec2, &mic_encoded_buffer[mic_frame_count*BITS_SIZE], mic_buffer);
                 mic_frame_count++;
                 if (mic_frame_count >= MIC_NO_OF_FRAMES){
                     mic_frame_count = 0;
