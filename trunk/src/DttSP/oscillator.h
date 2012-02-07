@@ -39,12 +39,16 @@ Bridgewater, NJ 08807
 #define RealTone 0
 typedef int OscType;
 
+#define RENORMALIZATION_CLOCK 1000000
+
 typedef struct _oscillator
 {
   int size;
   void *signalpoints;
-  double Phase;
-  double Frequency;
+  COMPLEX Phase;		/* the oscillator */
+  COMPLEX dPhase;		/* the change in phase per sample */
+  double Frequency;		/* the radians per dPhase */
+  int clock;			/* the samples until renormalization */
   OscType OscillatorType;
 } oscillator, *OSC;
 
@@ -60,7 +64,9 @@ typedef struct _oscillator
 
 #define OSCsize(p)     ((p)->size)
 #define OSCphase(p)    ((p)->Phase)
+#define OSCdphase(p)   ((p)->dPhase)
 #define OSCfreq(p)     ((p)->Frequency)
+#define OSCclock(p)    ((p)->clock)
 #define OSCtype(p)     ((p)->OscillatorType)
 
 extern void ComplexOSC (OSC);

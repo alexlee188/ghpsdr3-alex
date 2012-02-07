@@ -31,69 +31,57 @@ or by paper mail at
 The DTTS Microwave Society
 6 Kathleen Place
 Bridgewater, NJ 08807
+
+Modified to implement an occasionally renormalized complex oscillator
+which only uses trig at initialization 2012-02-06.
+
+Copyright (C) 2012 by Roger E Critchlow Jr, rec@elf.org, ad5dz
+
+Released under the same terms as the original source.
+
 */
 
 #include <common.h>
 
-#define HUGE_PHASE 1256637061.43593
-
 void
 ComplexOSC (OSC p)
 {
   int i;
-  COMPLEX z, delta_z;
-
-  if (OSCphase (p) > TWOPI)
-    OSCphase (p) -= TWOPI;
-  else if (OSCphase (p) < -TWOPI)
-    OSCphase (p) += TWOPI;
-
-  z = Cmplx ((REAL) cos (OSCphase (p)), (IMAG) sin (OSCphase (p))),
-    delta_z = Cmplx ((REAL) cos (OSCfreq (p)), (IMAG) sin (OSCfreq (p)));
-
-  for (i = 0; i < OSCsize (p); i++)
-    /*z = CXBdata ((CXB) OSCbase (p), i)
-      = Cmul (z, delta_z), OSCphase (p) += OSCfreq (p);*/
-	  CXBdata((CXB)OSCbase(p), i) = Cmplx ((REAL) cos (OSCphase (p)), (IMAG) sin (OSCphase (p))),
-		OSCphase (p) += OSCfreq (p);
-
-}
-
-#ifdef notdef
-void
-ComplexOSC (OSC p)
-{
-  int i;
-/*  if (OSCphase (p) > 1256637061.43593)
-    OSCphase (p) -= 1256637061.43593; */
+  if (--OSCclock(p) == 0)
+    {
+      OSCphase (p) = Cscl(OSCphase (p), 1.0/Cmag (OSCphase (p)));
+      OSCclock(p) = RENORMALIZATION_CLOCK;
+    }
   for (i = 0; i < OSCsize (p); i++)
     {
-      OSCreal (p, i) = cos (OSCphase (p));
-      OSCimag (p, i) = sin (OSCphase (p));
-      OSCphase (p) += OSCfreq (p);
+      OSCphase(p) = Cmul (OSCphase(p), OSCdphase(p));
+      CXBdata ((CXB) OSCbase (p), i) = OSCphase(p);
     }
-}
-#endif
-
-PRIVATE double
-_phasemod (double angle)
-{
-  while (angle >= TWOPI)
-    angle -= TWOPI;
-  while (angle < 0.0)
-    angle += TWOPI;
-  return angle;
 }
 
 void
 RealOSC (OSC p)
 {
   int i;
+  if (--OSCclock (p) == 0)
+    {
+      OSCphase (p) = Cscl(OSCphase (p), 1.0/Cmag (OSCphase (p)));
+      OSCclock (p) = RENORMALIZATION_CLOCK;
+    }
   for (i = 0; i < OSCsize (p); i++)
     {
-      OSCRdata (p, i) = (REAL) sin (OSCphase (p));
-      OSCphase (p) = _phasemod (OSCfreq (p) + OSCphase (p));
+      OSCphase (p) = Cmul (OSCphase (p), OSCdphase (p));
+      OSCRdata (p, i) = c_im (OSCphase (p));
     }
+}
+
+void
+resetOSC(OSC p, double Frequency, double Phase, REAL SampleRate)
+{
+  OSCfreq (p) = 2.0 * M_PI * Frequency / SampleRate;
+  OSCphase (p) = Cmplx((REAL) cos(Phase), (IMAG) sin(Phase));
+  OSCdphase (p) = Cmplx((REAL) cos(OSCfreq(p)), (IMAG) sin(OSCfreq(p)));;
+  OSCclock (p) = 1;
 }
 
 OSC
@@ -102,6 +90,7 @@ newOSC (int size,
 	double Frequency, double Phase, REAL SampleRate, char *tag)
 {
   OSC p = (OSC) safealloc (1, sizeof (oscillator), tag);
+  double freq;
   if ((OSCtype (p) = TypeOsc) == ComplexTone)
     OSCbase (p) = (void *) newCXB (size,
 				   NULL,
@@ -110,8 +99,7 @@ newOSC (int size,
     OSCbase (p) = (void *) newRLB (size,
 				   NULL, "real buffer for oscillator output");
   OSCsize (p) = size;
-  OSCfreq (p) = 2.0 * M_PI * Frequency / SampleRate;
-  OSCphase (p) = Phase;
+  resetOSC(p, Frequency, Phase, SampleRate);
   return p;
 }
 
