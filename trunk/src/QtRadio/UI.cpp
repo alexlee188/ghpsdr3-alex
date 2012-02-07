@@ -70,7 +70,7 @@ UI::UI(const QString server) {
     rtp = new RTP;
     rtp_thread = new QThread(this);
     rtp->moveToThread(rtp_thread);
-    rtp_thread->start(QThread::HighPriority);
+    rtp_thread->start(QThread::LowPriority);
     useRTP=configure.getRTP();
     configure.initAudioDevices(audio);
 
@@ -1958,7 +1958,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - rxtx-rtp-symm 06 Feb 2012");
+                   + getversionstring() +  message + "  - master 07 Feb 2012");
     lastmessage = message;
 
 }
