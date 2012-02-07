@@ -803,7 +803,7 @@ do_rx_pre (int k, unsigned int thread)
 	correctIQ (rx[thread][k].buf.i, rx[thread][k].iqfix, FALSE, k);
 
 	/* 2nd IF conversion happens here */
-	if (rx[thread][k].osc.gen->Frequency != 0.0)
+	if (OSCon(rx[thread][k].osc.gen))
 	{
 		ComplexOSC (rx[thread][k].osc.gen);
 		for (i = 0; i < n; i++)
@@ -1195,7 +1195,7 @@ do_tx_post (unsigned int thread)
 
 	// meter modulated signal
 
-	if (tx[thread].osc.gen->Frequency != 0.0)
+	if (OSCon(tx[thread].osc.gen))
 	{
 		int i;
 		ComplexOSC (tx[thread].osc.gen);

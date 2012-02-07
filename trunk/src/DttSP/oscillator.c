@@ -47,41 +47,52 @@ void
 ComplexOSC (OSC p)
 {
   int i;
-  if (--OSCclock(p) == 0)
-    {
-      OSCphase (p) = Cscl(OSCphase (p), 1.0/Cmag (OSCphase (p)));
-      OSCclock(p) = RENORMALIZATION_CLOCK;
-    }
-  for (i = 0; i < OSCsize (p); i++)
-    {
-      OSCphase(p) = Cmul (OSCphase(p), OSCdphase(p));
-      CXBdata ((CXB) OSCbase (p), i) = OSCphase(p);
-    }
+  COMPLEX dz = OSCdz(p);
+  if (--OSCclock(p) == 0) {
+    OSCz(p) = Cscl(OSCz (p), 1.0/Cmag (OSCz (p)));
+    OSCclock(p) = RENORMALIZATION_CLOCK;
+  }
+  for (i = 0; i < OSCsize (p); i++) {
+    OSCz(p) = Cmul (OSCz(p), dz);
+    CXBdata ((CXB) OSCbase (p), i) = OSCz(p);
+  }
 }
 
 void
 RealOSC (OSC p)
 {
   int i;
-  if (--OSCclock (p) == 0)
-    {
-      OSCphase (p) = Cscl(OSCphase (p), 1.0/Cmag (OSCphase (p)));
-      OSCclock (p) = RENORMALIZATION_CLOCK;
-    }
-  for (i = 0; i < OSCsize (p); i++)
-    {
-      OSCphase (p) = Cmul (OSCphase (p), OSCdphase (p));
-      OSCRdata (p, i) = c_im (OSCphase (p));
-    }
+  COMPLEX dz = OSCdz(p);
+  if (--OSCclock (p) == 0) {
+    OSCz (p) = Cscl(OSCz (p), 1.0/Cmag (OSCz (p)));
+    OSCclock (p) = RENORMALIZATION_CLOCK;
+  }
+  for (i = 0; i < OSCsize (p); i++) {
+    OSCz (p) = Cmul (OSCz (p), dz);
+    OSCRdata (p, i) = c_im (OSCz (p));
+  }
 }
 
 void
-resetOSC(OSC p, double Frequency, double Phase, REAL SampleRate)
+fixOSC(OSC p, double Frequency, double Phase, REAL SampleRate)
 {
-  OSCfreq (p) = 2.0 * M_PI * Frequency / SampleRate;
-  OSCphase (p) = Cmplx((REAL) cos(Phase), (IMAG) sin(Phase));
-  OSCdphase (p) = Cmplx((REAL) cos(OSCfreq(p)), (IMAG) sin(OSCfreq(p)));;
-  OSCclock (p) = 1;
+  setFreqOSC(p, Frequency, SampleRate);
+  setPhaseOSC(p, Phase);
+}
+
+void
+setFreqOSC(OSC p, double Frequency, REAL SampleRate)
+{
+  double radians_per_sample = 2.0 * M_PI * Frequency / SampleRate;
+  COMPLEX dz = Cmplx((REAL) cos(radians_per_sample), (IMAG) sin(radians_per_sample));
+  OSCdz (p) = dz;
+  OSCon(p) = Frequency != 0.0;
+}
+
+void
+setPhaseOSC(OSC p, double Phase)
+{
+  OSCz (p) = Cmplx((REAL) cos(Phase), (IMAG) sin(Phase));
 }
 
 OSC
@@ -99,7 +110,8 @@ newOSC (int size,
     OSCbase (p) = (void *) newRLB (size,
 				   NULL, "real buffer for oscillator output");
   OSCsize (p) = size;
-  resetOSC(p, Frequency, Phase, SampleRate);
+  fixOSC(p, Frequency, Phase, SampleRate);
+  OSCclock (p) = 1;
   return p;
 }
 
