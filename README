@@ -9,7 +9,7 @@ dspserver    - The LO offset (usually set to 9000 Hz in Si570 controlled softroc
 	       Can be changed to 0 for fixed Xtal Softrocks and DDC radios.  
 	       More robust audio and spectrum transfers.  Rx and Tx.  Hamlib net backend allowing interfacing with loggers, gPredict
 	       and fldigi etc.  Multiple client can access the same dspserver: one is the master with control of the vfo etc., and
-               others are slaves who can monitor and listen.  Audio transfers can be via TCP or RTP.  With TCP, automatically
+               others are slaves who can monitor and listen.  Audio transfers can be via TCP or RTP.  With TCP, automatic
 	       resampling keeps client and server in sync.  With RTP, there is automatic time stamp and jitter compensation.
 
 receiver     - Makefile modified to compile in x86_64, changed local-audio to direct alsa output, changed portaudio to use callback.
@@ -29,7 +29,7 @@ http://napan.ca/ghpsdr3/index.php/Main_Page
 Active development branch
 =========================
 
-At present, the most active development branch is rxtx-rtp-symm.  You should install software from this branch for the latest features and bug fixes.  When the development reaches a stable milestone, we will merge it into the master branch.
+The default master branch has the latest stable code base.  There are experimental branches that various developers are working on.  For example, there is an active development branch rxtx-opencl that aims to implement codes that will make use of any available GPU (in video cards) for both heavy duty computations and for OpenGL graphical display.
 
 Ubuntu Linux Users
 ==================
@@ -114,8 +114,9 @@ See the sample confuration shell scripts (which replace the ./configure step abo
 alex-avx-conf.sh		for building with i3,i5 and i7 cpu's supporting Advanced Vector Extensions (AVX)
 alex-openmp-conf.sh		for building with i3,i5 and i7 cpu's and OpenMP support
 alex-sse3-conf.sh		for building with SSE3 capable cpu's
-alex-openmp-sse3-conf.sh	for building with SSE3 cpaable cpu's and OpenMP support
+alex-openmp-sse3-conf.sh	for building with SSE3 capable cpu's and OpenMP support
 
+OpenMP code will run on multi-core machines by making use of all the cores.  It will also run on single core machines with a little overhead only.
 
 Running the software
 ====================
@@ -140,18 +141,25 @@ $ softrock --si570 --iq --samplerate 48000|9600|192000 --jack
 
 To run the dspserver: 
 
-$ dspserver --lookupcountry --share --lo 0|9000|12000|...
+$ dspserver --lo 0|9000|12000|...
 
 The LO offset can be set by the --lo argument.  For fixed crystal Softrocks and DDC rigs, use --lo 0.  For si570 controlled Softrocks, the usual offset should be set with --lo 9000.  Of course, you can set other offset values depending on your rig.
 
-dspserver may be started with the option "--lookupcountry" which will try 
-to determine the Country of incoming connections by IP. Off by default.
+You need to edit a file which will be created when you run dspserver for the first time:
+
+~/dspserver.conf
+
+See:
+
+http://napan.ca/ghpsdr3/index.php/Dspserver.conf
 
 dspserver now has the ability to "register" it's status in a web database.
 This data will be used by QtRadio in the future to assist selecting dspservers.
+
 Another advantage is dspserver will no longer need any form of dyndns service as the current
 IP for the dspserver is registered at the same time.  You can view the current registered dspservers:
 http://qtradio.napan.ca/qtradio/qtradio.pl
+
 To use this feature start dspserver with the "--share" option.  This will look for ~/dspserver.conf for settings.
 If no conf file is found one will be created on startup and is ready for editing.  Editing notes are included in the conf file.
 You may also use option "--shareconfig path_filename" instead to use an alternate conf file. 
@@ -171,6 +179,8 @@ cd ~/ghpsdr3-alex/trunk/bin
 
 After that, you start dspserver (to connect to this server) and 
 QtRadio etc. 
+
+Note that this is Rx only.
 
 With hpsdr hardware (Ozy/Metis)
 ===============================
