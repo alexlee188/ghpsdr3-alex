@@ -1236,7 +1236,6 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 								       char *thispasswd =strtok_r(NULL," ",&saveptr);
 								       if(thispasswd!=NULL) {
 										   //got passwd
-										   fprintf(stderr,"User:%s Pass:%s\n",thisuser,thispasswd);
 										   //check password
 										   if(chkPasswd(thisuser, thispasswd) == 0){
 											   // password OK check freq
@@ -1266,7 +1265,6 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 									   char *thispasswd =strtok_r(NULL," ",&saveptr);
 									   if(thispasswd!=NULL) {
 										   //got passwd
-										   //fprintf(stderr,"User:%s Pass:%s\n",thisuser,thispasswd);
 										   //check password
 										   if(chkPasswd(thisuser, thispasswd) == 0){
 											  fprintf(stderr,"Mox off from User:%s\n",thisuser);
@@ -1570,7 +1568,6 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
          result = strtok( message, delims ); //returns q-cantx
          if ( result != NULL )  result = strtok( NULL, delims ); // this should be call/user
 		 if ( result != NULL ){
-			 fprintf(stderr,"q-cantx:call%s\n", result);
 			 if (chkFreq(result,  lastFreq , lastMode) == 0){
 				 strcat(answer,"q-cantx:Y");
 			 }else{
