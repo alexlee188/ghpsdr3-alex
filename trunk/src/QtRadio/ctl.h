@@ -47,6 +47,7 @@ signals:
 
 public slots:
     void update_mic_level(qreal level);
+    void HideTX(bool cantx);
 
 private slots:
 

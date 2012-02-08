@@ -97,6 +97,8 @@ signals:
     void setdspversion(long, QString);
     void setservername( QString);
     void setRemoteRTPPort(QString,int);
+    void setCanTX(bool);
+    void setChkTX(bool);  // password style server
 
 private:
     // really not used (and not even implemented)
@@ -115,6 +117,7 @@ private:
     //char* ans;
     //QString answer;
     bool muted;
+    bool amSlave;
     long long lastFreq;
     int lastMode;
     int lastSlave;

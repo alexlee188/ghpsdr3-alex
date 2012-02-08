@@ -109,6 +109,7 @@ signals:
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void process_audio(char* header,char* buffer,int length);
     void rtp_send(unsigned char* buffer, int length);
+    void HideTX(bool cantx);
 
 public slots:
     void getMeterValue(int m, int s);
@@ -258,7 +259,9 @@ public slots:
     void slaveSetMode(int newmode);
     void slaveSetSlave(int slave); // 0 = slave
     void setdspversion(long dspversion, QString dspversiontxt);
+    void setChkTX(bool chk);
     void setservername(QString sname);
+    void setCanTX(bool tx);
     void closeServers ();
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
@@ -266,6 +269,7 @@ public slots:
 signals:
     void subRxStateChanged(bool state);
     void set_src_ratio(double ratio);
+
 protected:
 //    void paintEvent(QPaintEvent*);
 
@@ -373,10 +377,13 @@ private:
     int tuning;
     int slave;  // 0 = slave mode
     int infotick;
+    int infotick2;
     long dspversion;
     QString dspversiontxt;
     QString lastmessage;
     QString servername;
+    bool canTX;
+    bool chkTX;
 
 };
 

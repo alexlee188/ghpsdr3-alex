@@ -32,5 +32,5 @@ int cwPitch;
 
 
 
-const char *version = "20120201;-rxtx-rtp-symm"; //YYYYMMDD; text desc
+const char *version = "20120207;-master"; //YYYYMMDD; text desc
 

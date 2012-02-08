@@ -53,6 +53,7 @@
 #include "smeter.h"
 #include "codec2.h"
 #include "servers.h"
+#include "ctl.h"
 
 UI::UI(const QString server) {
 
@@ -64,6 +65,7 @@ UI::UI(const QString server) {
     servername = "Unknown";
     configure.thisuser = "None";
     configure.thispass= "None";
+    canTX = true;  // set to false if dspserver says so
     codec2 = codec2_create();
     audio = new Audio(codec2);
 
@@ -88,8 +90,10 @@ UI::UI(const QString server) {
     modeFlag = false;
     slave = 1; //start as master
     infotick = 0;
+    infotick2 = 0;
     dspversion = 0;
     dspversiontxt = "Unknown";
+    chkTX = false;
 
     // layout the screen
     widget.gridLayout->setContentsMargins(0,0,0,0);
@@ -275,7 +279,10 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(slaveSetMode(int)),this,SLOT(slaveSetMode(int)));
     connect(&connection,SIGNAL(slaveSetSlave(int)),this,SLOT(slaveSetSlave(int)));
     connect(&connection,SIGNAL(setdspversion(long, QString)),this,SLOT(setdspversion(long, QString)));
+    connect(this,SIGNAL(HideTX(bool)),widget.ctlFrame,SLOT(HideTX(bool)));
     connect(&connection,SIGNAL(setservername(QString)),this,SLOT(setservername(QString)));
+    connect(&connection,SIGNAL(setCanTX(bool)),this,SLOT(setCanTX(bool)));
+    connect(&connection,SIGNAL(setChkTX(bool)),this,SLOT(setChkTX(bool)));
     connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),rtp,SLOT(setRemote(QString,int)));
     connect(rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
@@ -682,6 +689,11 @@ void UI::disconnected(QString message) {
     connection_valid = FALSE;
     isConnected = false;
     spectrumTimer->stop();
+    configure.thisuser = "none";
+    configure.thispass ="none";
+    servername = "";
+    canTX = true;
+    chkTX = false;
 
     if(useRTP) {
         audio->rtp_set_disconnected();
@@ -701,11 +713,20 @@ void UI::updateSpectrum() {
     QString command;
         command.clear(); QTextStream(&command) << "getSpectrum " << widget.spectrumFrame->width();
         connection.sendCommand(command);
-        if(slave == 0 && infotick > 5){
-           connection.sendCommand("q-info"); // get master freq changes
+        if(infotick > 5){
+           if (slave == 0) connection.sendCommand("q-info"); // get master freq changes
            infotick = 0;
         }
+        if(infotick2 == 0){ // set to 0 wehen we first connect
+           if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
+        }
+        if(infotick2 == 25){
+           if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
+           infotick2 = 0;
+        }
         infotick++;
+        infotick2++;
+
 }
 
 void UI::spectrumBuffer(char* header,char* buffer) {
@@ -1958,7 +1979,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - rxtx-rtp-symm 06 Feb 2012");
+                   + getversionstring() +  message + "  - master 07 Feb 2012");
     lastmessage = message;
 
 }
@@ -2231,3 +2252,14 @@ void UI::RxIQspinChanged(double num)
     connection.sendCommand(command);
 }
 
+void UI::setCanTX(bool tx){
+    canTX = tx;
+    emit HideTX(tx);
+
+}
+
+void UI::setChkTX(bool chk){
+   chkTX = true;
+   infotick2 = 0;
+
+}

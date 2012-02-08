@@ -34,6 +34,7 @@ Ctl::Ctl(QWidget *parent) :
     moxPwr = 100;
     TunePwr = 50;
     ui->pwrSlider->setValue(moxPwr);
+    HideTX(false); // Hide buttons because we have not connected to anything yet
 }
 
 Ctl::~Ctl()
@@ -98,4 +99,15 @@ void Ctl::clearMoxBtn()
 {
     ui->btnMox->setChecked(false);
     ui->btnTune->setChecked(false);
+}
+
+void Ctl::HideTX(bool cantx){
+    if (cantx){
+        ui->btnMox->setEnabled(true);
+        ui->btnTune->setEnabled(true);
+    }else{
+        clearMoxBtn();
+        ui->btnMox->setEnabled(false);
+        ui->btnTune->setEnabled(false);
+    }
 }

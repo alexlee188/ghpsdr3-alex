@@ -143,6 +143,7 @@ void Connection::connected() {
     lastMode = 99;
     lastSlave =1;
     sendCommand("q-version");
+    amSlave = true;
 
 }
 
@@ -349,7 +350,7 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
             }
             bytes+=thisRead;
             if(bytes==answer_size) {
-                fprintf(stderr,"ans length = %lu\n",strlen(ans));
+                //fprintf(stderr,"ans length = %lu\n",strlen(ans));
                 ans[answer_size] = '\0';
                 answer = ans;
                 QRegExp rx;
@@ -360,6 +361,8 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     emit setdspversion(rx.cap(1).toLong(),rx.cap(2).toAscii());
                     if (rx.cap(1).toLong() >= 20120201){  // tx login start
                       sendCommand("q-server");
+                    }else{
+                      emit setCanTX(true);  //server to old to tell
                     }
                     sendCommand("q-master");
                 }else if(answer.contains("q-server")){
@@ -367,13 +370,40 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     rx.indexIn(answer);
                     QString servername = rx.cap(1);
                     emit setservername(servername);
+                    rx.setPattern("([YNP])$"); // Y no checking, N no TX, P depend who  and where we are
+                    rx.indexIn(answer);
+                    QString hasTX = rx.cap(1);
+                    qDebug()<<answer<<":"<< hasTX;
+                    if (hasTX.compare("N") == 0){
+                        emit setCanTX(false);
+                    }else if(hasTX.compare("P") == 0){
+                        emit setCanTX(false);
+                        emit setChkTX(true);
+                    }else{
+                        if (amSlave){
+                          emit setCanTX(false);
+                        }else{
+                          emit setCanTX(true);
+                        }
+                    }
                 }else if(answer.contains("q-master") && answer.contains("slave")){
+                    amSlave = true;
                     sendCommand("q-info");  // we are a slave so lets see where master is tuned
                 }else if(answer.contains("q-rtpport")){
                     rx.setPattern("rtpport:(\\d+);");
                     rx.indexIn(answer);
                     QString p = rx.cap(1);
                     emit setRemoteRTPPort(host,p.toInt());
+                }else if(answer.contains("q-cantx:")){
+                    rx.setPattern("([YN])$");
+                    rx.indexIn(answer);
+                    QString TXNow= rx.cap(1);
+                    if (TXNow.compare("Y") == 0){
+                        emit setCanTX(true);
+                    }else{
+                        emit setCanTX(false);
+                    }
+
                 }else if(answer.contains("q-info")){
 
                     rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+)");// q-info:0;f;14008750;m;4;
@@ -397,6 +427,7 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                          emit printStatusBar("  ...Slave Mode... ");
                        }else{
                          emit printStatusBar("  ...Master Mode... ");
+                         amSlave = false;
                        }
                     }
                     lastFreq = newf;

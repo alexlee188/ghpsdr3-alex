@@ -1535,6 +1535,13 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	}else if (strcmp(message,"q-server") == 0){
 		 strcat(answer,"q-server:");
 		 strcat(answer,servername);
+		 if (txcfg == TXNONE){
+			 strcat(answer," N");
+		 }else if (txcfg == TXPASSWD){
+			 strcat(answer," P");
+		 }else{  // must be TXALL
+			 strcat(answer," Y");
+		 }
 	}else if (strcmp(message,"q-master") == 0){
 		 strcat(answer,"q-master:");
 		 strcat(answer,clienttype);
@@ -1557,6 +1564,21 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 		 char p[10];
 		 sprintf(p,"%d;",local_rtp_port);
 		 strcat(answer,p);
+	}else if (strncmp(message,"q-cantx",7) == 0){
+		 char delims[] = "#";
+		 char *result = NULL;
+         result = strtok( message, delims ); //returns q-cantx
+         if ( result != NULL )  result = strtok( NULL, delims ); // this should be call/user
+		 if ( result != NULL ){
+			 fprintf(stderr,"q-cantx:call%s\n", result);
+			 if (chkFreq(result,  lastFreq , lastMode) == 0){
+				 strcat(answer,"q-cantx:Y");
+			 }else{
+				 strcat(answer,"q-cantx:N");;
+			 } 
+		 }else{
+		    strcat(answer,"q-cantx:N");
+		 }
 	}else{
 		fprintf(stderr,"Unknown question: %s\n",message);
 		return;
