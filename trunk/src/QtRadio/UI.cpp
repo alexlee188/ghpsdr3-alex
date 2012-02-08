@@ -2269,12 +2269,22 @@ void UI::setChkTX(bool chk){
 =======
 void UI::testSliderChange(int value)
 {
+    QString command;
+
+    command.clear(); QTextStream(&command) << "testSlider " << value;
+    connection.sendCommand(command);
+
     qDebug()<<Q_FUNC_INFO<<":   The value of the slider = "<<value;
 }
 
 void UI::testButtonClick(bool state)
 {
-    qDebug()<<Q_FUNC_INFO<<":   The state of the pushbutton is "<<state;
+    QString command;
+
+    command.clear(); QTextStream(&command) << "testbutton " << (state ? "true":"false");
+    connection.sendCommand(command);
+
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
 }
 
 >>>>>>> Connected test controls to main UI
