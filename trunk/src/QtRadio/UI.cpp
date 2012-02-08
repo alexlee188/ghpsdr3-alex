@@ -2254,7 +2254,7 @@ void UI::RxIQspinChanged(double num)
     connection.sendCommand(command);
 }
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
 void UI::setCanTX(bool tx){
     canTX = tx;
     emit HideTX(tx);
@@ -2266,7 +2266,7 @@ void UI::setChkTX(bool chk){
    infotick2 = 0;
 
 }
-=======
+//=======
 void UI::testSliderChange(int value)
 {
     QString command;
@@ -2287,4 +2287,4 @@ void UI::testButtonClick(bool state)
     qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
 }
 
->>>>>>> Connected test controls to main UI
+//>>>>>>> Connected test controls to main UI

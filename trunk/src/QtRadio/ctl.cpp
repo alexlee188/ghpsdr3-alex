@@ -34,12 +34,11 @@ Ctl::Ctl(QWidget *parent) :
     moxPwr = 100;
     TunePwr = 50;
     ui->pwrSlider->setValue(moxPwr);
-<<<<<<< HEAD
+
     HideTX(false); // Hide buttons because we have not connected to anything yet
-=======
+
     ui->pwrSlider_2->setValue(0);
     ui->spinBox->setMaximum(100);
->>>>>>> Connected test controls to main UI
 }
 
 Ctl::~Ctl()
@@ -106,7 +105,6 @@ void Ctl::clearMoxBtn()
     ui->btnTune->setChecked(false);
 }
 
-<<<<<<< HEAD
 void Ctl::HideTX(bool cantx){
     if (cantx){
         ui->btnMox->setEnabled(true);
@@ -117,7 +115,7 @@ void Ctl::HideTX(bool cantx){
         ui->btnTune->setEnabled(false);
     }
 }
-=======
+
 void Ctl::on_checkBox_stateChanged(int arg1)
 {
     if(ui->checkBox->isChecked()){
@@ -165,4 +163,3 @@ void Ctl::on_pushButton_toggled(bool checked)
 //    qDebug()<<Q_FUNC_INFO<<":   The state of the pushbutton is "<<checked;
     emit testBtnClick(checked);
 }
->>>>>>> Created test pushbutton, slider & spinbox
