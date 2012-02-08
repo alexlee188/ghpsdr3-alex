@@ -101,6 +101,7 @@ void Ctl::clearMoxBtn()
     ui->btnTune->setChecked(false);
 }
 
+<<<<<<< HEAD
 void Ctl::HideTX(bool cantx){
     if (cantx){
         ui->btnMox->setEnabled(true);
@@ -111,3 +112,52 @@ void Ctl::HideTX(bool cantx){
         ui->btnTune->setEnabled(false);
     }
 }
+=======
+void Ctl::on_checkBox_stateChanged(int arg1)
+{
+    if(ui->checkBox->isChecked()){
+        ui->pushButton->setCheckable(true);
+    } else {
+        ui->pushButton->setCheckable(false);
+    }
+}
+
+void Ctl::on_pwrSlider_2_valueChanged(int value)
+{
+    if(ui->spinBox->value()!=value) ui->spinBox->setValue(value);
+    emit testSliderChange(value);
+    qDebug()<<Q_FUNC_INFO<<":   The value of slider = "<<value;
+}
+
+void Ctl::on_spinBox_valueChanged(int arg1)
+{
+    if(ui->pwrSlider_2->value()!=arg1) {
+        ui->pwrSlider_2->setValue(arg1);
+    } else {
+        emit testSliderChange(arg1);
+        qDebug()<<Q_FUNC_INFO<<":   The value of slider = "<<arg1;
+    }
+}
+
+void Ctl::on_pushButton_pressed()
+{
+    if(!ui->pushButton->isCheckable()) {
+        qDebug()<<Q_FUNC_INFO<<":   The state of the pushbutton is "<<true;
+        emit testBtnClick(true);
+    }
+}
+
+void Ctl::on_pushButton_released()
+{
+    if(!ui->pushButton->isCheckable()) {
+        qDebug()<<Q_FUNC_INFO<<":   The state of the pushbutton is "<<false;
+        emit testBtnClick(false);
+    }
+}
+
+void Ctl::on_pushButton_toggled(bool checked)
+{
+    qDebug()<<Q_FUNC_INFO<<":   The state of the pushbutton is "<<checked;
+    emit testBtnClick(checked);
+}
+>>>>>>> Created test pushbutton, slider & spinbox
