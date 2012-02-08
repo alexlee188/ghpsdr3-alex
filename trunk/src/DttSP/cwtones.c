@@ -33,27 +33,6 @@ Bridgewater, NJ 08807
 
 #include <cwtones.h>
 
-void
-CWComplexOSC (OSC p, double harmonic, double phase, double amplitude)
-{
-	int i;
-
-	if(OSCphase (p) > TWOPI)
-		OSCphase (p) -= TWOPI;
-	else if (OSCphase (p) < -TWOPI)
-		OSCphase (p) += TWOPI;
-	  
-	for (i = 0; i < OSCsize (p); i++)
-	{
-		double harm_phase;
-
-		harm_phase = harmonic*OSCphase(p);
-		CXBdata((CXB)OSCbase(p), i) = Cmplx ((REAL) (cos (OSCphase (p)) + amplitude*cos(harm_phase+phase)) ,
-											 (IMAG) (sin (OSCphase (p)) + amplitude*sin(harm_phase+phase)));
-		OSCphase (p) += OSCfreq (p);
-  }
-}
-
 //------------------------------------------------------------------------
 // An ASR envelope on a complex phasor,
 // with asynchronous trigger for R stage.
@@ -65,7 +44,7 @@ CWTone (CWToneGen cwt)
 {
 	int i, n = cwt->size;
 
-	CWComplexOSC (cwt->osc.gen, cwt->harmonic, cwt->phase, cwt->amplitude);
+	ComplexOSC (cwt->osc.gen);
 
 	for (i = 0; i < n; i++)
 	{
@@ -140,10 +119,6 @@ CWToneOn (CWToneGen cwt)
 		cwt->fall.incr = 1.0;
 	else
 		cwt->fall.incr = 1.0f / (cwt->fall.want - 1);
-
-	// freq is in Hz
-	OSCfreq (cwt->osc.gen) = 2.0 * M_PI * cwt->osc.freq / cwt->sr;
-	OSCphase (cwt->osc.gen) = 0.0;
 
 	cwt->stage = CWTone_RISE;
 }
