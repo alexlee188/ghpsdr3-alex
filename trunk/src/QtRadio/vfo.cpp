@@ -490,7 +490,7 @@ QString vfo::rigctlGetvfo()
 }
 
 void vfo::keyPressEvent( QKeyEvent * event){
-    qDebug() << event->key();
+    //qDebug() << event->key();
     if(event->key() == Qt::Key_Up) {
        vfohotkey("StepUp");
        event->accept();
@@ -543,16 +543,10 @@ void vfo::vfohotkey(QString cmd)
         return;
     }
 
-    if (cmd.compare("StepUp") == 0  && curstep == 1 ){
-        qDebug() <<"old =" <<vfohotstep;
-        curstep = 9;
-        vfohotstep = mult[curstep];
-        qDebug() <<"new =" <<vfohotstep;
-        return;
-    }
-    if (cmd.compare("StepDown") == 0  && curstep <9){
-        qDebug() <<"old =" <<vfohotstep;
-        curstep++;
+
+    if (cmd.compare("StepDown") == 0  && curstep >0){
+        //qDebug() <<"old =" <<vfohotstep;
+        curstep--;
         vfohotstep = mult[curstep];
         //qDebug() <<"new =" <<vfohotstep;
         setStepMark();
@@ -571,6 +565,7 @@ void vfo::setStepMark()
     ui->m4->hide();
     ui->m5->hide();
     ui->m6->hide();
+    //qDebug() <<"setStepMark new =" <<curstep;
     switch (curstep){
       case 0:
         ui->m0->show();
