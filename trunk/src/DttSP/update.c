@@ -313,9 +313,8 @@ SetRXOsc (unsigned int thread, unsigned subrx, double newfreq)
 	if (fabs (newfreq) >= 0.5 * uni[thread].samplerate)
 		return -1;
 
-	newfreq *= 2.0 * M_PI / uni[thread].samplerate;
 	sem_wait(&top[thread].sync.upd.sem);
-	rx[thread][subrx].osc.gen->Frequency = (REAL)newfreq;
+	setFreqOSC(rx[thread][subrx].osc.gen, newfreq, uni[thread].samplerate);
 	sem_post(&top[thread].sync.upd.sem);
 	return 0;
 }
@@ -326,9 +325,8 @@ SetTXOsc (unsigned int thread, double newfreq)
 	if (fabs (newfreq) >= 0.5 * uni[thread].samplerate)
 		return -1;
 
-	newfreq *= 2.0 * M_PI / uni[thread].samplerate;
 	sem_wait(&top[thread].sync.upd.sem);
-	tx[thread].osc.gen->Frequency = (REAL)newfreq;
+	setFreqOSC(tx[thread].osc.gen, newfreq, uni[thread].samplerate);
 	sem_post(&top[thread].sync.upd.sem);
 	return 0;
 }
@@ -1317,7 +1315,7 @@ SetSquelchVal (unsigned int thread, unsigned int subrx, float setit)
 	sem_post(&top[thread].sync.upd.sem);
 }
 
-DttSP_EXP
+DttSP_EXP void
 SetSquelchState (unsigned int thread, unsigned int subrx,BOOLEAN setit)
 {
 	sem_wait(&top[thread].sync.upd.sem);

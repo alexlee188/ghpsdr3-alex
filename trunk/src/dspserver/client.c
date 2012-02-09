@@ -1388,6 +1388,31 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		                } else {
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
+ 			} else if(strncmp(token,"testbutton",10)==0) {
+				token=strtok_r(NULL," ",&saveptr);
+		                if(token!=NULL) {
+		                    if(strcmp(token,"true")==0) {
+		                        fprintf(stdout,"The button is pressed: '%s'\n",message);
+		                    } else if(strcmp(token,"false")==0) {
+		                        fprintf(stdout,"The button is released: '%s'\n",message);
+				    } else {	
+		                        fprintf(stderr,"Invalid command: '%s'\n",message);
+				    }
+		                } else {
+		                    fprintf(stderr,"Invalid command: '%s'\n",message);
+		                }
+
+                        } else if(strncmp(token,"testslider",10)==0) {
+		                int value;
+		                token=strtok_r(NULL," ",&saveptr);
+		                if(token!=NULL) {
+		                    value=atoi(token);
+		                    fprintf(stdout,"The slider value is '%d'\n",value);
+		                } else {
+		                    fprintf(stderr,"Invalid command: '%s'\n",message);
+		                }
+
+
 			} else if(strncmp(token,"rxiqmuval",9)==0) {
 				token=strtok_r(NULL," ",&saveptr);
 		                if(token!=NULL) {
@@ -1397,7 +1422,7 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
                         } else {
-		            fprintf(stderr,"Invalid rxiqmuval command: token: '%s'\n",token);
+		            fprintf(stderr,"Invalid command: token: '%s'\n",token);
 		            }
                 } else {
                     fprintf(stderr,"Invalid command: message: '%s'\n",message);

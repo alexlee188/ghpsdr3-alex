@@ -44,19 +44,26 @@ public:
 signals:
     void pttChange(int caller, bool ptt);//0 = MOX, 1 = Tune, 2 = VOX, 3 = Extern H'ware
     void pwrSlider_valueChanged(double pwr);
+    void testBtnClick(bool state);
+    void testSliderChange(int value);
 
 public slots:
     void update_mic_level(qreal level);
     void HideTX(bool cantx);
 
 private slots:
-
     void on_btnMox_clicked(bool checked);
-
     void on_btnTune_clicked(bool checked);
-
     void on_pwrSlider_valueChanged(int value);
+    void on_checkBox_stateChanged(int arg1);
+    void on_pwrSlider_2_valueChanged(int value);
+    void on_spinBox_valueChanged(int arg1);
 
+    void on_pushButton_pressed();
+
+    void on_pushButton_released();
+
+    void on_pushButton_toggled(bool checked);
 
 private:
     Ui::Ctl *ui;

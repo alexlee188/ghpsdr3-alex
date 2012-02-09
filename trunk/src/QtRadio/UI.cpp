@@ -288,6 +288,8 @@ UI::UI(const QString server) {
     connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
     connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
     connect(&configure,SIGNAL(RxIQspinChanged(double)),this,SLOT(RxIQspinChanged(double)));
+    connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
+    connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
 
     bandscope=NULL;
 
@@ -2252,6 +2254,7 @@ void UI::RxIQspinChanged(double num)
     connection.sendCommand(command);
 }
 
+//<<<<<<< HEAD
 void UI::setCanTX(bool tx){
     canTX = tx;
     emit HideTX(tx);
@@ -2263,3 +2266,25 @@ void UI::setChkTX(bool chk){
    infotick2 = 0;
 
 }
+//=======
+void UI::testSliderChange(int value)
+{
+    QString command;
+
+    command.clear(); QTextStream(&command) << "testSlider " << value;
+    connection.sendCommand(command);
+
+    qDebug()<<Q_FUNC_INFO<<":   The value of the slider = "<<value;
+}
+
+void UI::testButtonClick(bool state)
+{
+    QString command;
+
+    command.clear(); QTextStream(&command) << "testbutton " << (state ? "true":"false");
+    connection.sendCommand(command);
+
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+}
+
+//>>>>>>> Connected test controls to main UI

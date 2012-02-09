@@ -265,6 +265,8 @@ public slots:
     void closeServers ();
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
+    void testSliderChange(int value);
+    void testButtonClick(bool state);
 
 signals:
     void subRxStateChanged(bool state);
