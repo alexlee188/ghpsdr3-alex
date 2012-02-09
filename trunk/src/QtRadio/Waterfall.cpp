@@ -54,7 +54,7 @@ Waterfall::Waterfall(QWidget*& widget) {
 
     samples=NULL;
 
-    image = QImage(974, 279, QImage::Format_RGB32);
+    image = QImage(width()*2, height(), QImage::Format_RGB32);
 
     int x, y;
     #pragma omp parallel for schedule(static)
