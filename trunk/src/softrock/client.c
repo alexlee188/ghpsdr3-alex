@@ -305,8 +305,8 @@ void* audio_thread(void* arg) {
 #else  // Use ringbuffers
 			if (( jack_ringbuffer_write_space (rb_left) >= num_bytes ) &&  (jack_ringbuffer_write_space (rb_right) >= num_bytes ))
 			{
-				jack_ringbuffer_write (rb_left, &rx->output_buffer[0], num_bytes);
-				jack_ringbuffer_write (rb_right, &rx->output_buffer[BUFFER_SIZE], num_bytes);
+				jack_ringbuffer_write (rb_left, (const char *) &rx->output_buffer[0], num_bytes);
+				jack_ringbuffer_write (rb_right, (const char *) &rx->output_buffer[BUFFER_SIZE], num_bytes);
 			}
 			else
 			{
@@ -317,7 +317,7 @@ void* audio_thread(void* arg) {
 			process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
 		}
 	}
-		softrock_set_client_active_rx (rx->client->receiver, DEC_RX); 
+	softrock_set_client_active_rx (rx->client->receiver, DEC_RX); 
 }
 
 			

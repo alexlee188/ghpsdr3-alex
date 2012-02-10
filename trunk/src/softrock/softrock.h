@@ -78,7 +78,7 @@ int * softrock_get_jack_write_pipe_right(int rx);
 jack_ringbuffer_t * softrock_get_jack_rb_left(int rx);
 jack_ringbuffer_t * softrock_get_jack_rb_right(int rx);
 void delete_jack_ringbuffers(void);
-#define JACK_RINGBUFFER_SZ 65536
+#define JACK_RINGBUFFER_SZ 1048576
 #endif
 void softrock_set_client_active_rx(int receiver, int inc);
 int softrock_get_client_active_rx(int receiver);

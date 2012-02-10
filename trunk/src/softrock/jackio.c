@@ -182,18 +182,16 @@ int process(jack_nframes_t number_of_frames, void* arg)
 {
 	// Start out with current_receiver = 0 (one receiver) fix later.
 	jack_nframes_t i;
-	int r, bytes_read;
+	int r;
 	jack_default_audio_sample_t *sample_buffer_left[MAX_RECEIVERS];
 	jack_default_audio_sample_t *sample_buffer_right[MAX_RECEIVERS];
-	jack_default_audio_sample_t *out_buffer_left[MAX_RECEIVERS]; 
-	jack_default_audio_sample_t *out_buffer_right[MAX_RECEIVERS]; 
 
 	static int stop_print = 0, num_blocked = 0;
 
 	softrock_set_rx_frame (frame + 1);
 	softrock_set_input_buffers(buffers +1);
 
-	float *left_samples, *right_samples, *left_tx_samples, *right_tx_samples;
+	float *left_samples, *right_samples;
 
 	for ( r = 0; r < softrock_get_receivers(); r++ ) {
 		sample_buffer_left[r] = 
@@ -220,27 +218,19 @@ int process(jack_nframes_t number_of_frames, void* arg)
 		// Now do the tx part (send output IQ data from the dspserver client to
 		// the audio out jacks.
 		if (softrock_get_client_active_rx (r) > 0) {
-
 			int size = sizeof(float)*number_of_frames;
 			//fprintf(stderr,"Made it to read tx\n");
-
 			sample_buffer_left[r] = 
 				(jack_default_audio_sample_t *) jack_port_get_buffer(audio_output_port_left[r], number_of_frames);
 			sample_buffer_right[r] = 
 				(jack_default_audio_sample_t *) jack_port_get_buffer(audio_output_port_right[r], number_of_frames);
-			left_tx_samples = &receiver[r].output_buffer[0];
-			right_tx_samples = &receiver[r].output_buffer[BUFFER_SIZE];
 			if (stop_print == 0) {
 #ifdef USE_PIPES
 				fprintf(stderr,"jackio.c *softrock get jack pipe left(r) is: %d \n",*softrock_get_jack_read_pipe_left(r));
 				fprintf(stderr,"jackio.c r : %d\n",r);
 #endif
 			}
-			if(!softrock_get_iq()) { //Transmit seems to be switched, so put the ! here.
-				/*for(i=0;i<number_of_frames;i++) {
-					sample_buffer_left[r][i] = (jack_default_audio_sample_t)left_tx_samples[i];
-					sample_buffer_right[r][i] = (jack_default_audio_sample_t)right_tx_samples[i];
-			}*/
+			if(!softrock_get_iq()) {
 #ifdef USE_PIPES
 				bytes_read = read(*softrock_get_jack_read_pipe_left(r),sample_buffer_left[r],size);
 				//fprintf(stderr,"Read %d bytes on left.\n", bytes_read);
@@ -261,53 +251,49 @@ int process(jack_nframes_t number_of_frames, void* arg)
 				//put right stuff to read rb here.
 				if ( jack_ringbuffer_read_space (rb_left[r]) >= size )
 				{
-					jack_ringbuffer_read (rb_left[r], (void *)sample_buffer_left[r], size);
+					jack_ringbuffer_read (rb_left[r], (char *)sample_buffer_left[r], size);
 				}
 				else
 				{
-					fprintf(stderr, "No space left to write in jack ringbuffers (left).\n");
+					fprintf(stderr, "No space left to read in jack ringbuffers (left).\n");
 				}
 				
 				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
 				{
-					jack_ringbuffer_read (rb_right[r], sample_buffer_right[r], size); //(void *) will fix the warning.  Better check it first.
+					jack_ringbuffer_read (rb_right[r], (char *)sample_buffer_right[r], size); 
 				}
 				else
 				{
-					fprintf(stderr, "No space left to write in jack ringbuffers (right).\n");
+					fprintf(stderr, "No space left to read in jack ringbuffers (right).\n");
 				}
 #endif
 				} else { // qi instead of iq
-					/*for(i=0;i<number_of_frames;i++) {
-						sample_buffer_left[r][i] = (jack_default_audio_sample_t)right_tx_samples[i];
-						sample_buffer_right[r][i] = (jack_default_audio_sample_t)left_tx_samples[i];
-					}*/
 #ifdef USE_PIPES
 					bytes_read = read(*softrock_get_jack_read_pipe_left(r),sample_buffer_right[r],size);
 					if (bytes_read  != size) {
-						//fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
+						fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
 					}
 					bytes_read = read(*softrock_get_jack_read_pipe_right(r),sample_buffer_left[r],size);
 					if (bytes_read != size) {
-						//fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
+						fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
 					}
 #else  // use ringbuffers
 				if ( jack_ringbuffer_read_space (rb_left[r]) >= size )
 				{
-					jack_ringbuffer_read (rb_left[r], (void *)sample_buffer_right[r], size);
+					jack_ringbuffer_read (rb_left[r], (char *)sample_buffer_right[r], size);
 				}
 				else
 				{
-					fprintf(stderr, "No space left to write in jack ringbuffers (left).\n");
+					fprintf(stderr, "No space left to read in jack ringbuffers (left).\n");
 				}
 				
 				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
 				{
-					jack_ringbuffer_read (rb_right[r], sample_buffer_left[r], size); //(void *) will fix the warning.  Better check it first.
+					jack_ringbuffer_read (rb_right[r], (char *)sample_buffer_left[r], size); 
 				}
 				else
 				{
-					fprintf(stderr, "No space left to write in jack ringbuffers (right).\n");
+					fprintf(stderr, "No space left to read in jack ringbuffers (right).\n");
 				}
 #endif
 				}
