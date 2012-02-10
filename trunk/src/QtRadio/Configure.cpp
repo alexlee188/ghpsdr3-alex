@@ -751,6 +751,11 @@ bool Configure::getTxAllowed()
     return widget.allowTx->checkState();
 }
 
+void Configure::setTxAllowed(bool newstate)
+{
+     widget.allowTx->setChecked(newstate);
+}
+
 void Configure::on_RxIQcheckBox_toggled(bool checked)
 {
     emit RxIQcheckChanged(checked);

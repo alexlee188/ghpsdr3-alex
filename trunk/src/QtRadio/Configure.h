@@ -93,6 +93,7 @@ public:
     double getSdromThreshold();
     bool getGeometryState();
     bool getTxAllowed();
+    void setTxAllowed(bool newstate);
     bool setPasswd(QString ServerName);
     QString thisuser;
     QString thispass;

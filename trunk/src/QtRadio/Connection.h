@@ -121,7 +121,8 @@ private:
     long long lastFreq;
     int lastMode;
     int lastSlave;
-
+    long serverver;
+    bool initialTxAllowedState;
     QQueue<Buffer*> queue;
 };
 
