@@ -66,8 +66,7 @@ UI::UI(const QString server) {
     configure.thisuser = "None";
     configure.thispass= "None";
     canTX = true;  // set to false if dspserver says so
-    codec2 = codec2_create();
-    audio = new Audio(codec2);
+    audio = new Audio;
 
     rtp = new RTP;
     rtp_thread = new QThread(this);
@@ -77,9 +76,7 @@ UI::UI(const QString server) {
     configure.initAudioDevices(audio);
 
     mic_codec2 = codec2_create();
-    audioinput = new AudioInput(mic_codec2); // separate codec2 state so both audio and audioinput
-                                                // can run concurrently in separate threads
-
+    audioinput = new AudioInput;
     configure.initMicDevices(audioinput);
 
     mic_buffer_count = 0;
@@ -355,9 +352,8 @@ UI::UI(const QString server) {
 
 UI::~UI() {
     connection.disconnect();
-    codec2_destroy(codec2);
-    delete rtp_thread;
-    delete rtp;
+    rtp->deleteLater();
+    codec2_destroy(mic_codec2);
 }
 
 void UI::actionAbout() {

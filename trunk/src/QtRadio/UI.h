@@ -101,8 +101,6 @@ public:
     void rigctlSetVFOB();
     void rigctlSetFreq(long long f);
     void rigctlSetMode(int newmode);
-    void * codec2;
-    void * mic_codec2;
 
 signals:
     void initialize_audio(int length);
@@ -305,6 +303,7 @@ private:
     AudioInput* audioinput;
     int mic_buffer_count;       // counter of mic_buffer, to encode if reaches CODEC2_SAMPLE_PER_FRAME
     int mic_frame_count;        // counter of mic_buffer, to encode enough frames before sending
+    void * mic_codec2;
 
 #if CODEC2_SAMPLES_PER_FRAME > MIC_BUFFER_SIZE
     qint16 mic_buffer[CODEC2_SAMPLES_PER_FRAME];

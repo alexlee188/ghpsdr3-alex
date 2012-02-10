@@ -1,6 +1,6 @@
 #include "Audioinput.h"
 
-AudioInput::AudioInput(void *codec)
+AudioInput::AudioInput()
 {
     m_audioInput=NULL;
     m_sampleRate=8000;
@@ -13,9 +13,7 @@ AudioInput::AudioInput(void *codec)
     m_format.setSampleSize(16);
     m_format.setCodec("audio/pcm");
     m_format.setByteOrder(m_byte_order);
-    codec2 = codec;                         // pointer to codec2 state
-                                            // codec2 lib is probably NOT re-entrant
-                                            // so make sure only one thread is actively using it
+
 }
 
 AudioInput::~AudioInput()

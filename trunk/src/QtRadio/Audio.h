@@ -95,19 +95,19 @@ private:
 class Audio : public QObject {
     Q_OBJECT
 public:
-    Audio(void * codec2);
+    Audio();
 //    Audio(const Audio& orig);
     virtual ~Audio();
     int get_audio_encoding();
     QQueue <qint16> decoded_buffer;
     QAudioFormat::Endian audio_byte_order;
     SRC_STATE *sr_state;
-    void* codec2;
     int audio_encoding;
     bool useRTP;
     bool rtp_connected;
     RtpSession* rtpSession;
     G711A g711a;
+    void* codec2;
 signals:
     void audio_processing_process_audio(char* header,char* buffer,int length);
 public slots:

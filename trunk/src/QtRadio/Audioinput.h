@@ -37,7 +37,7 @@ class AudioInput : public QObject
 {
     Q_OBJECT
 public:
-    AudioInput(void * codec = 0);
+    AudioInput();
     ~AudioInput();
     void get_audioinput_devices(QComboBox* comboBox);
 signals:
@@ -60,8 +60,6 @@ private:
     int m_channels;
     QAudioFormat::Endian m_byte_order;
     int m_audio_encoding;
-
-    void *codec2;
 };
 
 

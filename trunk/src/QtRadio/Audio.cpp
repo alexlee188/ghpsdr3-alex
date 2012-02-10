@@ -125,7 +125,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
      return 0;
  }
 
-Audio::Audio(void * codec) {
+Audio::Audio() {
     int sr_error;
     audio_output=NULL;
     sampleRate=8000;
@@ -143,7 +143,7 @@ Audio::Audio(void * codec) {
     audio_format.setSampleSize(16);
     audio_format.setCodec("audio/pcm");
     audio_format.setByteOrder(audio_byte_order);
-    codec2 = codec;
+    codec2 = codec2_create();
 
     sr_state = src_new (
                          //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
@@ -169,8 +169,7 @@ Audio::~Audio() {
     src_delete(sr_state);
     codec2_destroy(codec2);
     disconnect(this,SIGNAL(audio_processing_process_audio(char*,char*,int)),audio_processing,SLOT(process_audio(char*,char*,int)));
-    delete audio_processing;
-    delete audio_processing_thread;
+    audio_processing->deleteLater();
 }
 
 
