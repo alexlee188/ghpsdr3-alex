@@ -1292,6 +1292,7 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 									if(chkPasswd(thisuser, thispasswd) == 0){ 
 		                               if(pwr >= 0 &&
 		                                 pwr <= 1) {
+									     fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
 		                                 SetTXAMCarrierLevel(1,pwr);
 									   }
 									}else{
@@ -1302,11 +1303,12 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		                        if (txcfg == TXALL){
 		                           if(pwr >= 0 &&
 		                                 pwr <= 1) {
+										 fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
 		                                 SetTXAMCarrierLevel(1,pwr);
 									}
 		                           
 		                        }else{
-									fprintf(stderr,"SetTXAMCarrierLevel denied because Invalid command argument : '%s'\n",message);
+									fprintf(stderr,"SetTXAMCarrierLevel denied because Invalid command argument : '%s' txcfg = %d\n",message, txcfg);
 							    }
 		                    }
 		                } else {
