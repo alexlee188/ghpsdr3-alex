@@ -99,6 +99,7 @@ signals:
     void setRemoteRTPPort(QString,int);
     void setCanTX(bool);
     void setChkTX(bool);  // password style server
+    void resetbandedges(double loffset);
 
 private:
     // really not used (and not even implemented)

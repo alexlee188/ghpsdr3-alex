@@ -265,6 +265,7 @@ public slots:
     void RxIQspinChanged(double num);
     void testSliderChange(int value);
     void testButtonClick(bool state);
+    void resetbandedges(double offset);
 
 signals:
     void subRxStateChanged(bool state);
@@ -385,6 +386,7 @@ private:
     QString servername;
     bool canTX;
     bool chkTX;
+    double loffset;
 
 };
 

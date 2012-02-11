@@ -145,6 +145,7 @@ void Connection::connected() {
     lastMode = 99;
     lastSlave =1;
     sendCommand("q-version");
+    sendCommand("q-loffset");
     amSlave = true;
     serverver = 0;
 }
@@ -413,6 +414,11 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                         emit setCanTX(false);
                     }
 
+                }else if(answer.contains("q-loffset:")){
+                    rx.setPattern("q-loffset:(\\d+)\\.");
+                    rx.indexIn(answer);
+                    double loffset= rx.cap(1).toDouble();
+                    emit resetbandedges(loffset);
                 }else if(answer.contains("q-info")){
 
                     rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+)");// q-info:0;f;14008750;m;4;

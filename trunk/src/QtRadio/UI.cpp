@@ -67,6 +67,7 @@ UI::UI(const QString server) {
     configure.thispass= "None";
     canTX = true;  // set to false if dspserver says so
     audio = new Audio;
+    loffset =0;
 
     rtp = new RTP;
     rtp_thread = new QThread(this);
@@ -281,6 +282,7 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(setservername(QString)),this,SLOT(setservername(QString)));
     connect(&connection,SIGNAL(setCanTX(bool)),this,SLOT(setCanTX(bool)));
     connect(&connection,SIGNAL(setChkTX(bool)),this,SLOT(setChkTX(bool)));
+    connect(&connection,SIGNAL(resetbandedges(double)),this,SLOT(resetbandedges(double)));
     connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),rtp,SLOT(setRemote(QString,int)));
     connect(rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
@@ -693,6 +695,7 @@ void UI::disconnected(QString message) {
     servername = "";
     canTX = true;
     chkTX = false;
+    loffset = 0;
 
     if(useRTP) {
         audio->rtp_set_disconnected();
@@ -1052,7 +1055,7 @@ void UI::bandChanged(int previousBand,int newBand) {
 
 //    widget.spectrumFrame->setBand(band.getStringBand()); //gvj obsolete code as spectrum no longer paints text data
     BandLimit limits=band.getBandLimits(band.getFrequency()-(samplerate/2),band.getFrequency()+(samplerate/2));
-    widget.spectrumFrame->setBandLimits(limits.min(),limits.max());
+    widget.spectrumFrame->setBandLimits(limits.min() + loffset,limits.max()+loffset);
 
 }
 
@@ -2297,3 +2300,11 @@ void UI::testButtonClick(bool state)
 }
 
 //>>>>>>> Connected test controls to main UI
+
+ void UI::resetbandedges(double offset)
+ {
+     loffset= offset;
+     BandLimit limits=band.getBandLimits(band.getFrequency()-(widget.spectrumFrame->samplerate()/2),band.getFrequency()+(widget.spectrumFrame->samplerate()/2));
+     widget.spectrumFrame->setBandLimits(limits.min() + loffset,limits.max()+loffset);
+     qDebug()<<"loffset = "<<loffset;
+ }

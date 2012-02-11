@@ -1586,15 +1586,15 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 			strcat(answer,"s;1"); 
 		 }
 		 strcat(answer,";f;");
-		 char f[30];
+		 char f[50];
 		 sprintf(f,"%lld;m;",lastFreq);
 		 strcat(answer,f);
-		 char m[10];
+		 char m[50];
 		 sprintf(m,"%d;",lastMode);	
 		 strcat(answer,m); 
 	}else if (strcmp(message,"q-rtpport") == 0){
 		 strcat(answer,"q-rtpport:");
-		 char p[10];
+		 char p[50];
 		 sprintf(p,"%d;",local_rtp_port);
 		 strcat(answer,p);
 	}else if (strncmp(message,"q-cantx",7) == 0){
@@ -1611,6 +1611,12 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 		 }else{
 		    strcat(answer,"q-cantx:N");
 		 }
+	}else if (strcmp(message,"q-loffset") == 0){
+		 strcat(answer,"q-loffset:");
+		 char p[50];
+		 sprintf(p,"%f;",LO_offset);
+		 strcat(answer,p);
+		 fprintf(stderr,"q-loffset: %s\n",answer);
 	}else{
 		fprintf(stderr,"Unknown question: %s\n",message);
 		return;
