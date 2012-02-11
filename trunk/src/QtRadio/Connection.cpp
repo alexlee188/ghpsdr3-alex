@@ -343,7 +343,7 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
             break;
 
         case READ_ANSWER:
-            qDebug() << "Connection READ ANSWER";
+            //qDebug() << "Connection READ ANSWER";
             thisRead=tcpSocket->read(&ans[bytes],answer_size - bytes);
             if (thisRead < 0) {
                fprintf(stderr,"QtRadio: FATAL: READ_BUFFER: error in read: %d\n", thisRead);

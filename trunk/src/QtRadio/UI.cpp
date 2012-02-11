@@ -2083,7 +2083,11 @@ void UI::pttChange(int caller, bool ptt)
             if(caller==1) { //We have clicked the tune button so switch to AM and set carrier level
                workingMode = mode.getMode(); //Save the current mode for restoration when we finish tuning
                // Set the AM carrier level to match the tune power slider value in a scale 0 to 1.0
-               command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100;
+                if (dspversion >= 20120201){
+                  command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100 <<" "<< configure.thisuser <<" " << configure.thispass;;
+                }else{
+                  command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100;
+                }
                connection.sendCommand(command);
                actionAM();
             }
@@ -2100,7 +2104,11 @@ void UI::pttChange(int caller, bool ptt)
         } else {    // Going from Tx to Rx .................
             if(caller==1) {
                 //Restore AM carrier level to 0.5 the standard carrier level for AM mode.
-                command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << 0.5;
+                if (dspversion >= 20120201){
+                    command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << 0.5 <<" " << configure.thispass;
+                }else{
+                    command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << 0.5;
+                }
                 connection.sendCommand(command);
                 //Restore the mode back to original before tuning
                 switch(workingMode) {
@@ -2133,8 +2141,11 @@ void UI::pttChange(int caller, bool ptt)
 void UI::pwrSlider_valueChanged(double pwr)
 {
     QString command;
-
-    command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << pwr;
+    if (dspversion >= 20120201){
+       command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << pwr << " " << configure.thisuser << " " << configure.thispass;;
+    }else{
+       command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << pwr;
+    }
     connection.sendCommand(command);
 }
 

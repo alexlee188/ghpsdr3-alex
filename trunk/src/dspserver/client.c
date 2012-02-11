@@ -1299,7 +1299,15 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 									}
 								}
 		                     } else {
-		                        fprintf(stderr,"Invalid command arguement: '%s'\n",message);
+		                        if (txcfg == TXALL){
+		                           if(pwr >= 0 &&
+		                                 pwr <= 1) {
+		                                 SetTXAMCarrierLevel(1,pwr);
+									}
+		                           
+		                        }else{
+									fprintf(stderr,"SetTXAMCarrierLevel denied because Invalid command argument : '%s'\n",message);
+							    }
 		                    }
 		                } else {
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
