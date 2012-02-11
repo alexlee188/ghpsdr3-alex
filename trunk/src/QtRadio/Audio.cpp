@@ -31,11 +31,16 @@
 #include "codec2.h"
 
 
-Audio_playback::Audio_playback(QObject *parent)
-    :   QIODevice(parent)
+Audio_playback::Audio_playback()
+    :   QIODevice()
 {
-    p = (Audio*) parent;
     recv_ts = 0;
+    audio_byte_order = QAudioFormat::LittleEndian;
+    audio_encoding = 0;
+    rtpSession = 0;
+    rtp_connected = false;
+    useRTP = false;
+    pdecoded_buffer = &queue;
 }
 
 Audio_playback::~Audio_playback()
@@ -52,6 +57,30 @@ void Audio_playback::stop()
     close();
 }
 
+void Audio_playback::set_decoded_buffer(QQueue<qint16> *pBuffer){
+    pdecoded_buffer = pBuffer;
+}
+
+void Audio_playback::set_audio_byte_order(QAudioFormat::Endian byte_order){
+    audio_byte_order = byte_order;
+}
+
+void Audio_playback::set_audio_encoding(int encoding){
+    audio_encoding = encoding;
+}
+
+void Audio_playback::set_rtpSession(RtpSession *session){
+    rtpSession = session;
+}
+
+void Audio_playback::set_rtp_connected(bool connected){
+    rtp_connected = connected;
+}
+
+void Audio_playback::set_useRTP(bool use){
+    useRTP = use;
+}
+
 qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
    qint64 bytes_read;
@@ -59,7 +88,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
    qint64 bytes_to_read = maxlen > 200 ? 200 : maxlen; // read in small chunks so this does not hog Qthread
    int has_more;                                       // as rtp_session_recv...() is running in blocked mode
 
-   if (p->useRTP && p->rtp_connected){
+   if (useRTP && rtp_connected){
        int i;
        short v;
        int length;
@@ -69,15 +98,15 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
        // aLaw encoded from RTP, but readData is reading in bytes (each sample 2 bytes for PCM)
        buffer = (uint8_t*)malloc(bytes_to_read/2);
 
-       length=rtp_session_recv_with_ts(p->rtpSession,buffer,bytes_to_read/2,recv_ts,&has_more);
+       length=rtp_session_recv_with_ts(rtpSession,buffer,bytes_to_read/2,recv_ts,&has_more);
        if (length>0) {
            recv_ts += length;
-           if (p->audio_encoding == 0) {
+           if (audio_encoding == 0) {
                 #pragma omp parallel for schedule(static) ordered
                 for(i=0;i<length;i++) {
-                    v=p->g711a.decode(buffer[i]);
+                    v=g711a.decode(buffer[i]);
                     #pragma omp ordered
-                    p->decoded_buffer.enqueue(v);
+                    pdecoded_buffer->enqueue(v);
                }
            } else {
                qDebug() << "Audio: rtp_audio only support aLaw";
@@ -97,13 +126,13 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
    // note both TCP and RTP audio enqueue PCM data in decoded_buffer
    bytes_read = 0;
 
-   if (p->decoded_buffer.isEmpty()) {       // probably not connected or late arrival of packets.  Send silence.
+   if (pdecoded_buffer->isEmpty()) {       // probably not connected or late arrival of packets.  Send silence.
        memset(data, 0, bytes_to_read);
        bytes_read = bytes_to_read;
    } else {
-       while ((!p->decoded_buffer.isEmpty()) && (bytes_read < maxlen)){
-           v = p->decoded_buffer.dequeue();
-            switch(p->audio_byte_order) {
+       while ((!pdecoded_buffer->isEmpty()) && (bytes_read < maxlen)){
+           v = pdecoded_buffer->dequeue();
+            switch(audio_byte_order) {
             case QAudioFormat::LittleEndian:
                 data[bytes_read++]=(char)(v&0xFF);
                 data[bytes_read++]=(char)((v>>8)&0xFF);
@@ -126,7 +155,6 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  }
 
 Audio::Audio() {
-    int sr_error;
     audio_output=NULL;
     sampleRate=8000;
     audio_encoding = 0;
@@ -143,38 +171,29 @@ Audio::Audio() {
     audio_format.setSampleSize(16);
     audio_format.setCodec("audio/pcm");
     audio_format.setByteOrder(audio_byte_order);
-    codec2 = codec2_create();
 
-    sr_state = src_new (
-                         //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
-                         //SRC_SINC_MEDIUM_QUALITY,
-                         SRC_SINC_FASTEST,
-                         //SRC_ZERO_ORDER_HOLD,
-                         //SRC_LINEAR,
-                         audio_channels, &sr_error
-                       ) ;
-
-    if (sr_state == 0) {
-        qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
-    }
-    audio_processing = new Audio_processing(this);
+    audio_processing = new Audio_processing;
+    audio_processing->set_audio_channels(audio_channels);
+    audio_processing->set_audio_encoding(audio_encoding);
+    audio_processing->set_queue(&decoded_buffer);
     audio_processing_thread = new QThread;
+    qDebug() << "QThread: audio_processing_thread = " << audio_processing_thread;
     audio_processing->moveToThread(audio_processing_thread);
     connect(this,SIGNAL(audio_processing_process_audio(char*,char*,int)),audio_processing,SLOT(process_audio(char*,char*,int)));
     audio_processing_thread->start(QThread::LowPriority);
     qDebug() << "audio_processing_thread : " << audio_processing_thread;
+
+    audio_output_thread = new QThread;
+    qDebug() << "QThread:  audio_output_thread = " << audio_output_thread;
 }
 
 Audio::~Audio() {
-    src_delete(sr_state);
-    codec2_destroy(codec2);
     disconnect(this,SIGNAL(audio_processing_process_audio(char*,char*,int)),audio_processing,SLOT(process_audio(char*,char*,int)));
     audio_processing->deleteLater();
 }
 
 
 void Audio::get_audio_devices(QComboBox* comboBox) {
-    int sr_error;
     QList<QAudioDeviceInfo> devices=QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
     QAudioDeviceInfo device_info;
 
@@ -244,9 +263,22 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
     qDebug() << "QAudioOutput: error=" << audio_output->error() << " state=" << audio_output->state();
 
     audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
-    audio_out= new Audio_playback(this);
+    audio_out= new Audio_playback;
+    audio_out->moveToThread(audio_output_thread);
+    audio_output_thread->start(QThread::HighestPriority);
+
+    audio_out->set_audio_byte_order(audio_format.byteOrder());
+    audio_out->set_audio_encoding(audio_encoding);
+    audio_out->set_decoded_buffer(&decoded_buffer);
+    audio_out->set_rtpSession(0);
+    audio_out->set_rtp_connected(false);
+    audio_out->set_useRTP(false);
     audio_out->start();
     audio_output->start(audio_out);
+
+    audio_processing->set_audio_channels(audio_format.channels());
+    audio_processing->set_audio_encoding(audio_encoding);
+    audio_processing->set_queue(&decoded_buffer);
 
     if(audio_output->error()!=0) {
         qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << audio_output->state();
@@ -262,23 +294,11 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
         delete audio_out;
         delete audio_output;
     }
-    sr_state = src_new (
-                         //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
-                         //SRC_SINC_MEDIUM_QUALITY,
-                         SRC_SINC_FASTEST,
-                         //SRC_ZERO_ORDER_HOLD,
-                         //SRC_LINEAR,
-                         audio_channels, &sr_error
-                       ) ;
 
-    if (sr_state == 0) {
-        qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
-    }
-    audio_processing->update_sr_state();
+
 }
 
 void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder) {
-    int sr_error;
 
     qDebug() << "selected audio " << info.deviceName() <<  " sampleRate:" << rate << " Channels: " << channels << " Endian:" << (byteOrder==QAudioFormat::BigEndian?"BigEndian":"LittleEndian");
 
@@ -291,8 +311,6 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
         delete audio_out;
         delete audio_output;
     }
-
-    if(sr_state != NULL) src_delete(sr_state);
 
     audio_device=info;
     audio_format.setFrequency(sampleRate+(sampleRate==8000?SAMPLE_RATE_FUDGE:0));
@@ -307,9 +325,19 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
     connect(audio_output,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
 
     audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
-    audio_out= new Audio_playback(this);
+    audio_out= new Audio_playback;
+    audio_out->set_audio_byte_order(audio_format.byteOrder());
+    audio_out->set_audio_encoding(audio_encoding);
+    audio_out->set_decoded_buffer(&decoded_buffer);
+    audio_out->set_rtpSession(0);
+    audio_out->set_rtp_connected(false);
+    audio_out->set_useRTP(false);
     audio_out->start();
     audio_output->start(audio_out);
+
+    audio_processing->set_audio_channels(audio_format.channels());
+    audio_processing->set_audio_encoding(audio_encoding);
+    audio_processing->set_queue(&decoded_buffer);
 
     if(audio_output->error()!=0) {
         qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << audio_output->state();
@@ -326,19 +354,6 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
 
     }
 
-    sr_state = src_new (
-                         //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
-                         //SRC_SINC_MEDIUM_QUALITY,
-                         SRC_SINC_FASTEST,
-                         //SRC_ZERO_ORDER_HOLD,
-                         //SRC_LINEAR,
-                         audio_channels, &sr_error
-                       ) ;
-
-    if (sr_state == 0) {
-        qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
-        }
-    audio_processing->update_sr_state();
 }
 
 void Audio::stateChanged(QAudio::State State){
@@ -359,6 +374,8 @@ void Audio::stateChanged(QAudio::State State){
 
 void Audio::set_audio_encoding(int enc){
     audio_encoding = enc;
+    audio_out->set_audio_encoding(enc);
+    audio_processing->set_audio_encoding(enc);
 }
 
 int Audio::get_audio_encoding() {
@@ -371,6 +388,7 @@ void Audio::process_audio(char* header, char* buffer, int length){
 
 void Audio::set_RTP(bool use){
     useRTP = use;
+    audio_out->set_useRTP(use);
 }
 
 void Audio::rtp_set_connected(void){
@@ -383,40 +401,81 @@ void Audio::rtp_set_connected(void){
     rtp_session_send_with_ts(rtpSession,(uint8_t*)fake,sizeof(fake),1);
 #endif
     rtp_connected = true;
+    audio_out->set_rtp_connected(true);
 }
 
 void Audio::rtp_set_disconnected(void){
     rtp_connected = false;
+    audio_out->set_rtp_connected(false);
 }
 
 void Audio::rtp_set_rtpSession(RtpSession* session){
     qDebug() << "Audio::rtp_set_rtpSession";
     rtpSession = session;
+    audio_out->set_rtpSession(session);
 }
 
-Audio_processing::Audio_processing(QObject *parent){
-    p = (Audio*)parent;
-    codec2 = p->codec2;
-    queue = &p->decoded_buffer;
-    sr_state = p->sr_state;
+Audio_processing::Audio_processing(){
+    int sr_error;
+
+    src_state =  src_new (
+                //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
+                //SRC_SINC_MEDIUM_QUALITY,
+                SRC_SINC_FASTEST,
+                //SRC_ZERO_ORDER_HOLD,
+                //SRC_LINEAR,
+                1, &sr_error
+              ) ;
+
+    if (src_state == 0) {
+        qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
+    }
     init_decodetable();
     src_ratio = 1.0;
+
+    codec2 = codec2_create();
+    pdecoded_buffer = &queue;
 }
 
 Audio_processing::~Audio_processing(){
+     src_delete(src_state);
+     codec2_destroy(codec2);
 }
 
-void Audio_processing::update_sr_state(){
-    sr_state = p->sr_state;
+void Audio_processing::set_queue(QQueue<qint16> *buffer){
+    pdecoded_buffer = buffer;
+}
+
+void Audio_processing::set_audio_channels(int c){
+    audio_channels = c;
+    int sr_error;
+
+    src_delete(src_state);
+    src_state =  src_new (
+                //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
+                //SRC_SINC_MEDIUM_QUALITY,
+                SRC_SINC_FASTEST,
+                //SRC_ZERO_ORDER_HOLD,
+                //SRC_LINEAR,
+                c, &sr_error
+              ) ;
+
+    if (src_state == 0) {
+        qDebug() <<  "Audio: SR INIT ERROR: " << src_strerror(sr_error);
+    }
+}
+
+void Audio_processing::set_audio_encoding(int enc){
+    audio_encoding = enc;
 }
 
 void Audio_processing::process_audio(char* header,char* buffer,int length) {
 
-    if (p->audio_encoding == 0) aLawDecode(buffer,length);
-    else if (p->audio_encoding == 1) pcmDecode(buffer,length);
-    else if (p->audio_encoding == 2) codec2Decode(buffer,length);
+    if (audio_encoding == 0) aLawDecode(buffer,length);
+    else if (audio_encoding == 1) pcmDecode(buffer,length);
+    else if (audio_encoding == 2) codec2Decode(buffer,length);
     else {
-        qDebug() << "Error: Audio::process_audio:  audio_encoding = " << p->audio_encoding;
+        qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
     }
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);
@@ -427,16 +486,16 @@ void Audio_processing::resample(int no_of_samples){
     qint16 v;
     int rc;
 
-    if (queue->length() > 16000) {
+    if (pdecoded_buffer->length() > 16000) {
         src_ratio = 0.9;
     }
-    else if(queue->length() > 4800) {
+    else if(pdecoded_buffer->length() > 4800) {
         src_ratio = 0.95;
     }
-    else if(queue->length() > 3200){
+    else if(pdecoded_buffer->length() > 3200){
         src_ratio = 0.97;
     }
-    else if(queue->length() > 1600){
+    else if(pdecoded_buffer->length() > 1600){
         src_ratio = 0.99;
     }
     else src_ratio = 1.0;
@@ -448,14 +507,14 @@ void Audio_processing::resample(int no_of_samples){
     sr_data.output_frames = RESAMPLING_BUFFER_SIZE/2;
     sr_data.end_of_input = 0;
 
-    rc = src_process(sr_state, &sr_data);
+    rc = src_process(src_state, &sr_data);
     if (rc) qDebug() << "SRATE: error: " << src_strerror (rc) << rc;
     else {
             #pragma omp parallel for schedule(static) ordered
             for (i = 0; i < sr_data.output_frames_gen; i++){
                 v = buffer_out[i]*32767.0;
                 #pragma omp ordered
-                queue->enqueue(v);
+                pdecoded_buffer->enqueue(v);
             }
     }
 }

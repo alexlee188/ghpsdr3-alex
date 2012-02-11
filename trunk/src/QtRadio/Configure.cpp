@@ -585,7 +585,7 @@ int Configure::getEncoding(){
 
 
 bool Configure::getRTP() {
-    widget.rtpCheckBox->checkState();
+    return widget.rtpCheckBox->checkState();
 }
 
 void Configure::setSpectrumLow(int low) {

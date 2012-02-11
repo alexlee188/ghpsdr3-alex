@@ -54,28 +54,43 @@ class Audio_playback : public QIODevice
 {
     Q_OBJECT
 public:
-    Audio_playback(QObject *parent);
+    Audio_playback();
     ~Audio_playback();
     void start();
     void stop();
     qint64 readData(char *data, qint64 maxlen);
     qint64 writeData(const char *data, qint64 len);
+public slots:
+    void set_decoded_buffer(QQueue<qint16>* pBuffer);
+    void set_audio_byte_order(QAudioFormat::Endian byte_order);
+    void set_audio_encoding(int encoding);
+    void set_useRTP(bool use);
+    void set_rtp_connected(bool connected);
+    void set_rtpSession(RtpSession* session);
 private:
-    Audio* p;
     quint32 recv_ts;
+    QQueue <qint16> * pdecoded_buffer;
+    QAudioFormat::Endian audio_byte_order;
+    int audio_encoding;
+    bool useRTP;
+    bool rtp_connected;
+    RtpSession* rtpSession;
+    G711A g711a;
+    QQueue<qint16> queue;
 signals:
 };
 
 class Audio_processing : public QObject {
     Q_OBJECT
 public:
-    Audio_processing(QObject *parent);
+    Audio_processing();
     ~Audio_processing();
 public slots:
     void process_audio(char* header, char* buffer, int length);
-    void update_sr_state(void);
+    void set_queue(QQueue<qint16> *buffer);
+    void set_audio_channels(int c);
+    void set_audio_encoding(int enc);
 private:
-    Audio* p;
     void aLawDecode(char* buffer,int length);
     void pcmDecode(char * buffer,int length);
     void codec2Decode(char* buffer, int length);
@@ -84,11 +99,14 @@ private:
     float buffer_in[RESAMPLING_BUFFER_SIZE];
     float buffer_out[RESAMPLING_BUFFER_SIZE];
     short decodetable[256];
-    SRC_STATE *sr_state;
-    SRC_DATA  sr_data;
+    SRC_STATE *src_state;
     double src_ratio;
-    QQueue<qint16>* queue;
+    SRC_DATA sr_data;
+    QQueue<qint16> queue;
+    QQueue<qint16> *pdecoded_buffer;
     void* codec2;
+    int audio_channels;
+    int audio_encoding;
 };
 
 
@@ -101,13 +119,10 @@ public:
     int get_audio_encoding();
     QQueue <qint16> decoded_buffer;
     QAudioFormat::Endian audio_byte_order;
-    SRC_STATE *sr_state;
     int audio_encoding;
     bool useRTP;
     bool rtp_connected;
     RtpSession* rtpSession;
-    G711A g711a;
-    void* codec2;
 signals:
     void audio_processing_process_audio(char* header,char* buffer,int length);
 public slots:
@@ -123,6 +138,7 @@ public slots:
 private:
     QAudioFormat     audio_format;
     QAudioOutput*    audio_output;
+    QThread* audio_output_thread;
     QAudioDeviceInfo audio_device;
     Audio_playback*  audio_out;
     int sampleRate;

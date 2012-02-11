@@ -72,6 +72,7 @@ UI::UI(const QString server) {
     rtp_thread = new QThread(this);
     rtp->moveToThread(rtp_thread);
     rtp_thread->start(QThread::LowPriority);
+    qDebug() << "QThread:  rtp_thread = " << rtp_thread;
     useRTP=configure.getRTP();
     configure.initAudioDevices(audio);
 
