@@ -85,8 +85,9 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
    qint64 bytes_read;
    qint16 v;
-   qint64 bytes_to_read = maxlen > 200 ? 200 : maxlen; // read in small chunks so this does not hog Qthread
-   int has_more;                                       // as rtp_session_recv...() is running in blocked mode
+   qint64 bytes_to_read = maxlen > 800 ? 800 : maxlen; // read in small chunks so this does not hog QThread
+   int has_more;                                       // Now that Audio_playback is running in its own QThread
+                                                       // and RTP also in its own QThread it is no longer an issue
 
    if (useRTP && rtp_connected){
        int i;
