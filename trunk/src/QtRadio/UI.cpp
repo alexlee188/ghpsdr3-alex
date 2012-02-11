@@ -1978,7 +1978,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - master 09 Feb 2012");
+                   + getversionstring() +  message + "  - master 11 Feb 2012");
     lastmessage = message;
 
 }
