@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "imagecl.h"
 
 
 int fOutputDisabled = 0;
@@ -62,6 +63,10 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
     qDebug() << "QThread: Main GUI thread : " << app.thread()->currentThread();
+
+    if (!QCLDevice::devices(QCLDevice::Default).isEmpty()) {
+        qDebug() << "HasOpenCL";
+    }
 
     //trying to get the arguments into a list    
     QStringList args = app.arguments();

@@ -5,11 +5,35 @@
 #-------------------------------------------------
 
 # Comment line below when using QtSDK, uncomment for  Ubuntu repository ver.
-#QT       += core gui network multimedia mobility
+QT       += core gui network multimedia mobility
 
 # Uncomment 2 lines below when using QtSDK, comment for  Ubuntu repository ver.
 CONFIG	+= mobility
 MOBILITY += multimedia
+
+LIBS += -lQtOpenCLGL -lQtOpenCL -lQtOpenGL
+macx:!opencl_configure {
+    LIBS += -framework OpenCL
+}
+win32 {
+    !isEmpty(QMAKE_INCDIR_OPENCL) {
+        QMAKE_CXXFLAGS += -I$$QMAKE_INCDIR_OPENCL
+    }
+    !isEmpty(QMAKE_LIBDIR_OPENCL) {
+        LIBS += -L$$QMAKE_LIBDIR_OPENCL
+    }
+    !isEmpty(QMAKE_LIBS_OPENCL) {
+        LIBS += $$QMAKE_LIBS_OPENCL
+    } else {
+        LIBS += -lOpenCL
+    }
+}
+QT += opengl
+no_cl_gl {
+    DEFINES += QT_NO_CL_OPENGL
+}
+
+
 
 # Comment 2 lines below when using QtSDK, uncomment for  Ubuntu repository ver.
 INCLUDEPATH += /usr/include/QtMobility
@@ -17,7 +41,6 @@ INCLUDEPATH += /usr/include/QtMultimediaKit
 
 TARGET = QtRadio
 TEMPLATE = app
-
 
 SOURCES += main.cpp\
     Waterfall.cpp \
@@ -113,7 +136,10 @@ HEADERS  += \
     Audioinput.h \
     servers.h \
     G711A.h \
-    RTP.h
+    RTP.h \
+    imagecl.h \
+    cltexture2d.h \
+    image.h
 
 FORMS    += \   
     UI.ui \
