@@ -54,7 +54,7 @@ rigctl.moc.cpp \
 Audioinput.moc.cpp \
 servers.moc.cpp \
 G711A.moc.cpp \
-RTP.moc.cpp 
+RTP.moc.cpp
 
 	
 nodist_QtRadio_SOURCES = \
@@ -96,7 +96,7 @@ ctl.moc.cpp \
 rigctl.moc.cpp \
 servers.moc.cpp \
 G711A.moc.cpp \
-RTP.moc.cpp 
+RTP.moc.cpp
 
 
 QtRadio_SOURCES = \
@@ -164,7 +164,7 @@ aux.moc.cpp			\
 Audioinput.moc.cpp		\
 servers.moc.cpp \
 G711A.moc.cpp \
-RTP.moc.cpp 
+RTP.moc.cpp
 
 #
 # auxiliary services, git string, icons

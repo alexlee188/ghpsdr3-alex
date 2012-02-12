@@ -28,7 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "imagecl.h"
+#include <qcl/qcldevice.h>
 
 
 int fOutputDisabled = 0;

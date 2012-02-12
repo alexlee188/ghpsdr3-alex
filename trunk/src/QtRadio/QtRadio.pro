@@ -136,10 +136,7 @@ HEADERS  += \
     Audioinput.h \
     servers.h \
     G711A.h \
-    RTP.h \
-    imagecl.h \
-    cltexture2d.h \
-    image.h
+    RTP.h
 
 FORMS    += \   
     UI.ui \
