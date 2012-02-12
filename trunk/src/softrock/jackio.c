@@ -182,7 +182,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 {
 	// Start out with current_receiver = 0 (one receiver) fix later.
 	jack_nframes_t i;
-	static int  num_ovfl = 0, num_ovfr = 0, ovfl, ovfr;
+	static int  num_ovfl = 0, num_ovfr = 0;
 	int r;
 	jack_default_audio_sample_t *sample_buffer_left[MAX_RECEIVERS];
 	jack_default_audio_sample_t *sample_buffer_right[MAX_RECEIVERS];
@@ -264,7 +264,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 					if (num_ovfl == 0) {
 						fprintf(stderr, "No space left to read in jack ringbuffers (left).\n");
 					}
-					ovfl++;
+					num_ovfl++;
 				}
 				
 				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
@@ -281,7 +281,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 					if (num_ovfr == 0) {
 						fprintf(stderr, "No space left to read in jack ringbuffers (right).\n");
 					}
-					ovfr++;
+					num_ovfr++;
 				}
 #endif
 				} else { // qi instead of iq
@@ -309,7 +309,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 					if (num_ovfl == 0) {
 						fprintf(stderr, "No space left to read in jack ringbuffers (left).\n");
 					}
-					ovfl++;
+					num_ovfl++;
 				}
 				
 				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
@@ -326,7 +326,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 					if (num_ovfr == 0) {
 						fprintf(stderr, "No space left to read in jack ringbuffers (right).\n");
 					}
-					ovfr++;
+					num_ovfr++;
 				}
 #endif
 				}
