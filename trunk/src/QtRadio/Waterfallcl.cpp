@@ -26,3 +26,18 @@ Waterfallcl::Waterfallcl(){
 Waterfallcl::~Waterfallcl(){
 
 }
+
+void Waterfallcl::setGeometry(QRect rect){
+    data_width = rect.width();
+    data_height = rect.height();
+}
+
+void Waterfallcl::initialize(){
+
+}
+
+void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
+
+}
+
+

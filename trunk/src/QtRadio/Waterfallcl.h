@@ -40,6 +40,16 @@ class Waterfallcl : public QGLWidget {
 public:
     Waterfallcl();
     ~Waterfallcl();
+    void setGeometry(QRect rect);
+    void initialize();
+
+public slots:
+    void updateWaterfall(char* header,char* buffer,int width);
+
+private:
+    QCLVector<float> waterfall_data;
+    int data_width;
+    int data_height;
 };
 
 
