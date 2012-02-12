@@ -182,7 +182,6 @@ Audio::Audio() {
     audio_processing->moveToThread(audio_processing_thread);
     connect(this,SIGNAL(audio_processing_process_audio(char*,char*,int)),audio_processing,SLOT(process_audio(char*,char*,int)));
     audio_processing_thread->start(QThread::LowPriority);
-    qDebug() << "audio_processing_thread : " << audio_processing_thread;
 
     audio_output_thread = new QThread;
     qDebug() << "QThread:  audio_output_thread = " << audio_output_thread;
