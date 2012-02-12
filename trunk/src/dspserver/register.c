@@ -189,15 +189,19 @@ void init_register(){
     
     pthread_t thread1;
     int ret;
-    ret = pthread_create( &thread1, NULL, doReg, (void*) NULL);
-    ret = pthread_detach(thread1);
+    if (toShareOrNotToShare){
+      ret = pthread_create( &thread1, NULL, doReg, (void*) NULL);
+      ret = pthread_detach(thread1);
+    }
 }
 
 void *doUpdate(){
-	int result;
-    char sCmd[255];
-    sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant, dspstatus);
-	result = system(sCmd);
+	if(toShareOrNotToShare){
+	  int result;
+      char sCmd[255];
+      sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant, dspstatus);
+	  result = system(sCmd);
+	}
     return 0;
 }
 

@@ -130,7 +130,7 @@ char* shortOptions="";
 
 int optionIndex;
 
-int toShareOrNotToShare = 0;
+//toShareOrNotToShare = 0;
 
 void signal_shutdown(int signum);
 
@@ -223,13 +223,14 @@ int main(int argc,char* argv[]) {
     home = getenv("HOME");
     strcpy(share_config_file, home );
     strcat(share_config_file, "/dspserver.conf");
+    toShareOrNotToShare = 0;
 	processCommands(argc,argv);
-    // start web registration if set
+   	fprintf(stderr, "Reading conf file %s\n", share_config_file);
+	init_register(); // we now read our conf always
+	 // start web registration if set
     if  (toShareOrNotToShare) {
         fprintf(stderr, "Activating Web register\n");
 	}
-	fprintf(stderr, "Reading conf file %s\n", share_config_file);
-	init_register(); // we now read our conf always
     fprintf(stderr,"gHPSDR rx %d (Version %s)\n",receiver,VERSION);
 
     setSoundcard(getSoundcardId(soundCardName));
