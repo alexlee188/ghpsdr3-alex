@@ -87,7 +87,8 @@ SOURCES += main.cpp\
     Audioinput.cpp\
     servers.cpp \
     G711A.cpp \
-    RTP.cpp
+    RTP.cpp \
+    Waterfallcl.cpp
 
 
 HEADERS  += \ 
@@ -136,7 +137,8 @@ HEADERS  += \
     Audioinput.h \
     servers.h \
     G711A.h \
-    RTP.h
+    RTP.h \
+    Waterfallcl.h
 
 FORMS    += \   
     UI.ui \
