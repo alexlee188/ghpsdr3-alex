@@ -1,6 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <portaudio.h>
+
+#ifdef __linux__
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#endif
+
+#include "client.h"
+#include "receiver.h"
+#include "usrp.h"
 #include "usrp_audio.h"
 
 //#define DECIM_FACT         8 
@@ -9,21 +21,41 @@
 #define CHANNELS           2       /* 1 = mono 2 = stereo */
 #define SAMPLES_PER_BUFFER 1024
 
+#define AUDIO_TO_NOTHING 0
+#define AUDIO_TO_USRP_MODULATION 1
+#define AUDIO_TO_LOCAL_CARD 2
+
 static int SAMPLE_RATE;
 static int DECIM_FACT;
-static int ENABLE_AUDIO = 0;
+static int AUDIO_DESTINATION = 0;
 
 static PaStream* stream;
 
-void usrp_set_server_audio (int setting) {
-	ENABLE_AUDIO = setting;
+void usrp_set_server_audio (char* setting) {
+    if (strcasecmp(setting, "card") == 0) {
+        AUDIO_DESTINATION = AUDIO_TO_LOCAL_CARD;
+        fprintf(stderr,"Sending client generated audio to LOCAL CARD\n");
+    } else
+    if (strcasecmp(setting, "usrp") == 0) {
+        AUDIO_DESTINATION = AUDIO_TO_USRP_MODULATION;
+        fprintf(stderr,"Sending client generated audio to USRP MODULATION\n");
+    }
+    else
+    if (strcasecmp(setting, "none") == 0) {
+        AUDIO_DESTINATION = AUDIO_TO_NOTHING;
+        fprintf(stderr,"DISCARDING client generated audio\n");        
+    }
+    else {
+        fprintf(stderr,"Illegal setting %s for audio-to. Using default: none", setting);
+        AUDIO_DESTINATION = AUDIO_TO_NOTHING;
+    }
 }
 
 int usrp_get_server_audio (void) {
-	return ENABLE_AUDIO;
+	return AUDIO_DESTINATION;
 }
 
-int usrp_audio_open (int core_bandwidth) {
+int usrp_local_audio_open(int core_bandwidth) {
     int rc;
     PaStreamParameters inputParameters;
     PaStreamParameters outputParameters;
@@ -33,7 +65,7 @@ int usrp_audio_open (int core_bandwidth) {
     int i;
     const PaDeviceInfo* deviceInfo;
 
-    fprintf(stderr,"usrp_audio_open: portaudio\n");
+    //fprintf(stderr,"usrp_audio_open: portaudio\n");
 
     //
     // compute the sample rate
@@ -97,9 +129,8 @@ int usrp_audio_open (int core_bandwidth) {
     fprintf (stderr,"input device=%d output device=%d\n",inputParameters.device,outputParameters.device);
     fprintf (stderr, "Audio sample SR: %d\n", SAMPLE_RATE);
     rc=Pa_OpenStream(&stream,&inputParameters,&outputParameters,(double)SAMPLE_RATE,(unsigned long)SAMPLES_PER_BUFFER,paNoFlag,NULL,NULL);
-/*
-    rc=Pa_OpenDefaultStream(&stream,CHANNELS,CHANNELS,paFloat32,SAMPLE_RATE,SAMPLES_PER_BUFFER,NULL, NULL);
-*/
+    //rc=Pa_OpenDefaultStream(&stream,CHANNELS,CHANNELS,paFloat32,SAMPLE_RATE,SAMPLES_PER_BUFFER,NULL, NULL);
+
     if(rc!=paNoError) {
         fprintf(stderr,"Pa_OpenStream failed: %s\n",Pa_GetErrorText(rc));
         exit(1);
@@ -121,7 +152,29 @@ int usrp_audio_open (int core_bandwidth) {
     return 0;
 }
 
-int usrp_audio_close() {
+/*
+ * Setup the audio processing 
+ */
+int usrp_audio_open (int core_bandwidth) {
+    int rc;         
+    switch(AUDIO_DESTINATION) {            
+        
+            case AUDIO_TO_LOCAL_CARD: 
+                rc=usrp_local_audio_open(core_bandwidth);
+                break;
+                                
+            case AUDIO_TO_USRP_MODULATION:
+                rc=0;
+                break;
+                
+            case AUDIO_TO_NOTHING:                
+                break;                           
+        }
+    return rc;
+}
+
+// Used?
+int usrp_local_audio_close() {
     int rc=Pa_Terminate();
     if(rc!=paNoError) {
         fprintf(stderr,"Pa_Terminate failed: %s\n",Pa_GetErrorText(rc));
@@ -130,7 +183,7 @@ int usrp_audio_close() {
     return 0;
 }
 
-int usrp_audio_write(float* left_samples,float* right_samples) {
+int usrp_local_audio_write(float* left_samples,float* right_samples) {
     int rc;
     int i;
     float audio_buffer[SAMPLES_PER_BUFFER*2];
@@ -149,7 +202,7 @@ int usrp_audio_write(float* left_samples,float* right_samples) {
     return rc;
 }
 
-int usrp_audio_write_decim (float* left_samples, float* right_samples)   {
+int usrp_local_audio_write_decim (float* left_samples, float* right_samples)   {
     int rc;
     int i;
     float audio_buffer[SAMPLES_PER_BUFFER*2/DECIM_FACT];
@@ -171,18 +224,21 @@ int usrp_audio_write_decim (float* left_samples, float* right_samples)   {
     return rc;
 }
 
-//Proxy functions for Portaudio consumers
-void usrp_process_output_buffer (float *ch1,  float *ch2, int mox) {
-    int rc; 
-    rc=usrp_audio_write_decim(ch1, ch2);
-    /*
-    for(i=0;i<SAMPLES_PER_BUFFER;i++) {
-
-        if ((i % DECIM_FACT) == 0) {
-            fprintf(stderr,"left sample %d: %f\n",i, ch1[i]);            
-        }
-    }
-     */
-    
+//Proxy functions for audio consumers
+void usrp_process_audio_buffer (float *ch1,  float *ch2, int mox) {
+        
+    switch(AUDIO_DESTINATION) {
+            
+            case AUDIO_TO_LOCAL_CARD: 
+                usrp_local_audio_write_decim(ch1, ch2);
+                break;
+                                
+            case AUDIO_TO_USRP_MODULATION:
+                usrp_process_tx_modulation(ch1, ch2, mox);
+                break;
+                
+            case AUDIO_TO_NOTHING:                
+                break;                           
+        }    
 }
 

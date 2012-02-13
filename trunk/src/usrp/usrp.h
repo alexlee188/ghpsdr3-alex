@@ -31,7 +31,7 @@
  * Initialises the USRP by means of UHD library.
  * Returns 'true' on success.
  */
-bool usrp_init (const char *subdev_par);
+bool usrp_init (const char *rx_subdev_par, const char *tx_subdev_par);
 
 /*!
  * Starts the main receiving thread
@@ -42,14 +42,14 @@ void usrp_deinit (void);
 
 /*!
  * Subdevice configuration setter.
- * Accepts a standard string for subdevice configuration, for both RX (first) and TX (second)
- * The markup is: SUBDEVICE_SPEC ::= "<RX_SPEC> [<TX_SPEC>]"
+ * Accepts standard strings for subdevice configuration, for both RX (first) and TX (second).
+ * The specs must be separated by a space: "RX_SPEC [TX_SPEC]"
  * TX_SPEC is optional
  * A SPEC is a ursp subdevice definition string like A:0 A.AB etc.
  * 
  * Please refer to UHD documentation for other examples.
  */
-void usrp_set_subdev_args(const char *args);
+void usrp_set_subdev_args(const char *subdev_specs);
 
 /*! 
  * Sets the swap iq option.
@@ -57,14 +57,19 @@ void usrp_set_subdev_args(const char *args);
 void usrp_set_swap_iq(int);
 
 /*!
- * Receiver count setter
+ * Receiver max count setter
  */
 void usrp_set_receivers(int);
 
 /*!
- * Receiver count getter
+ * Receiver max count getter
  */
 int  usrp_get_receivers(void);
+
+/*!
+ * Enabled TX function flag
+ */
+bool  usrp_is_tx_enabled(void);
 
 /*!
  * Client side sample rate setter.
@@ -86,5 +91,10 @@ int  usrp_get_client_rx_rate(void);
  * Sets the rf center frequency - in Hz
  */
 void usrp_set_frequency(double freq);
+
+/*!
+ * Process the TX modulation to USRP
+ */ 
+int usrp_process_tx_modulation(float *ch1,  float *ch2, int mox);
 
 #endif
