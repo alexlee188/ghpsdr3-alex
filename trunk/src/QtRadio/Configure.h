@@ -97,6 +97,8 @@ public:
     bool setPasswd(QString ServerName);
     QString thisuser;
     QString thispass;
+    bool getRxIQcheckboxState();
+    double getRxIQspinBoxValue();
 
 signals:
     void hostChanged(QString host);

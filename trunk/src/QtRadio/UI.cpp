@@ -516,6 +516,9 @@ void UI::actionConnect() {
     //widget.spectrumFrame->setHost(configure.getHost()); //deleted by gvj
     widget.spectrumFrame->setReceiver(configure.getReceiver());
     isConnected = true;
+
+    // Initialise RxIQMu. Set RxIQMu to disabled, set value and then enable if checked.
+    RxIQspinChanged(configure.getRxIQspinBoxValue());
 }
 
 
@@ -1890,6 +1893,7 @@ void UI::bookmarkSelected(int entry) {
     if(entry>=0 && entry<bookmarks.count()) {
         Bookmark* bookmark=bookmarks.at(entry);
         FiltersBase* filters;
+//TODO Get rid of message "warning: 'filters' may be used uninitialized in this function"
 
         bookmarksEditDialog->setTitle(bookmark->getTitle());
         bookmarksEditDialog->setBand(band.getStringBand(bookmark->getBand()));
@@ -2086,7 +2090,7 @@ void UI::pttChange(int caller, bool ptt)
             if(caller==1) { //We have clicked the tune button so switch to AM and set carrier level
                workingMode = mode.getMode(); //Save the current mode for restoration when we finish tuning
                // Set the AM carrier level to match the tune power slider value in a scale 0 to 1.0
-                if (dspversion >= 20120201  & canTX & chkTX){
+                if ((dspversion >= 20120201)  & canTX & chkTX){
                   command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100 <<" "<< configure.thisuser <<" " << configure.thispass;;
                 }else{
                   command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100;
@@ -2097,7 +2101,7 @@ void UI::pttChange(int caller, bool ptt)
             //Mute the receiver audio and freeze the spectrum and waterfall display
             connection.setMuted(true);
             //Key the radio
-            if (dspversion >= 20120201  & canTX & chkTX){
+            if ((dspversion >= 20120201)  & canTX & chkTX){
                command.clear(); QTextStream(&command) << "Mox " << "on " << configure.thisuser <<" " << configure.thispass;
             }else{
                command.clear(); QTextStream(&command) << "Mox " << "on";
@@ -2107,7 +2111,7 @@ void UI::pttChange(int caller, bool ptt)
         } else {    // Going from Tx to Rx .................
             if(caller==1) {
                 //Restore AM carrier level to 0.5 the standard carrier level for AM mode.
-                if (dspversion >= 20120201 & canTX & chkTX){
+                if ((dspversion >= 20120201) & canTX & chkTX){
                     command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << 0.5 <<" " << configure.thisuser <<" " << configure.thispass;
                 }else{
                     command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << 0.5;
@@ -2130,7 +2134,7 @@ void UI::pttChange(int caller, bool ptt)
             //Un-mute the receiver audio
             connection.setMuted(false);
             //Send signal to sdr to go to Rx
-            if (dspversion >= 20120201  & canTX & chkTX){
+            if ((dspversion >= 20120201)  & canTX & chkTX){
                 command.clear(); QTextStream(&command) << "Mox " << "off " << configure.thisuser <<" " << configure.thispass;
             }else{
                 command.clear(); QTextStream(&command) << "Mox " << "off";
@@ -2260,25 +2264,32 @@ void UI::RxIQcheckChanged(bool state)
 void UI::RxIQspinChanged(double num)
 {
     QString command;
+    bool temp;
 
+    temp = configure.getRxIQcheckboxState();
+    // Turn off RXIQMu
+    command.clear(); QTextStream(&command) << "SetIQEnable " << "false";
+    connection.sendCommand(command);
+    // Set the value of RxIQMu
     command.clear(); QTextStream(&command) << "RxIQmuVal " << num;
     connection.sendCommand(command);
+    //If checked to be on, then turn it back on
+    if(temp) {
+        command.clear(); QTextStream(&command) << "SetIQEnable " << "true";
+        connection.sendCommand(command);
+    }
 }
 
-//<<<<<<< HEAD
 void UI::setCanTX(bool tx){
     canTX = tx;
     emit HideTX(tx);
-
-
 }
 
 void UI::setChkTX(bool chk){
    chkTX = true;
    infotick2 = 0;
-
 }
-//=======
+
 void UI::testSliderChange(int value)
 {
     QString command;
@@ -2298,8 +2309,6 @@ void UI::testButtonClick(bool state)
 
     qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
 }
-
-//>>>>>>> Connected test controls to main UI
 
  void UI::resetbandedges(double offset)
  {

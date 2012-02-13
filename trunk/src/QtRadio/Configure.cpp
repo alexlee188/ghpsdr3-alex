@@ -118,8 +118,8 @@ Configure::Configure() {
     connect(widget.addPushButton,SIGNAL(clicked()),this,SLOT(slotXVTRAdd()));
     connect(widget.deletePushButton,SIGNAL(clicked()),this,SLOT(slotXVTRDelete()));
 
-    on_RxIQcheckBox_toggled(widget.RxIQcheckBox->checkState()); //Honour the checkbox state
-    on_RxIQspinBox_valueChanged(widget.RxIQspinBox->value());   //Honour the RxIQmu spin box value
+//    on_RxIQcheckBox_toggled(widget.RxIQcheckBox->checkState()); //Honour the checkbox state
+//    on_RxIQspinBox_valueChanged(widget.RxIQspinBox->value());   //Honour the RxIQmu spin box value
 
 
 }
@@ -788,4 +788,14 @@ bool  Configure::setPasswd(QString ServerName){
        }
     }
     return false;
+}
+
+bool Configure::getRxIQcheckboxState()
+{
+    return widget.RxIQcheckBox->isChecked();
+}
+
+double Configure::getRxIQspinBoxValue()
+{
+    return widget.RxIQspinBox->value();
 }
