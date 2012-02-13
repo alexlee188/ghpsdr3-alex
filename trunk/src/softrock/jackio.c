@@ -182,6 +182,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 {
 	// Start out with current_receiver = 0 (one receiver) fix later.
 	jack_nframes_t i;
+	static int  num_ovfl = 0, num_ovfr = 0;
 	int r;
 	jack_default_audio_sample_t *sample_buffer_left[MAX_RECEIVERS];
 	jack_default_audio_sample_t *sample_buffer_right[MAX_RECEIVERS];
@@ -252,19 +253,35 @@ int process(jack_nframes_t number_of_frames, void* arg)
 				if ( jack_ringbuffer_read_space (rb_left[r]) >= size )
 				{
 					jack_ringbuffer_read (rb_left[r], (char *)sample_buffer_left[r], size);
+					if(num_ovfl > 0) 
+					{
+						fprintf (stderr, "Left jack buffer has space for read after %d overflows.\n",num_ovfl);
+						num_ovfl = 0;
+					}
 				}
 				else
 				{
-					fprintf(stderr, "No space left to read in jack ringbuffers (left).\n");
+					if (num_ovfl == 0) {
+						fprintf(stderr, "No space left to read in jack ringbuffers (left).\n");
+					}
+					num_ovfl++;
 				}
 				
 				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
 				{
 					jack_ringbuffer_read (rb_right[r], (char *)sample_buffer_right[r], size); 
+					if(num_ovfr > 0) 
+					{
+						fprintf (stderr, "Left jack buffer has space for read after %d overflows.\n",num_ovfr);
+						num_ovfr = 0;
+					}
 				}
 				else
 				{
-					fprintf(stderr, "No space left to read in jack ringbuffers (right).\n");
+					if (num_ovfr == 0) {
+						fprintf(stderr, "No space left to read in jack ringbuffers (right).\n");
+					}
+					num_ovfr++;
 				}
 #endif
 				} else { // qi instead of iq
@@ -281,19 +298,35 @@ int process(jack_nframes_t number_of_frames, void* arg)
 				if ( jack_ringbuffer_read_space (rb_left[r]) >= size )
 				{
 					jack_ringbuffer_read (rb_left[r], (char *)sample_buffer_right[r], size);
+					if(num_ovfl > 0) 
+					{
+						fprintf (stderr, "Left jack buffer has space for read after %d overflows.\n",num_ovfl);
+						num_ovfl = 0;
+					}
 				}
 				else
 				{
-					fprintf(stderr, "No space left to read in jack ringbuffers (left).\n");
+					if (num_ovfl == 0) {
+						fprintf(stderr, "No space left to read in jack ringbuffers (left).\n");
+					}
+					num_ovfl++;
 				}
 				
 				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
 				{
 					jack_ringbuffer_read (rb_right[r], (char *)sample_buffer_left[r], size); 
+					if(num_ovfr > 0) 
+					{
+						fprintf (stderr, "Left jack buffer has space for read after %d overflows.\n",num_ovfr);
+						num_ovfr = 0;
+					}
 				}
 				else
 				{
-					fprintf(stderr, "No space left to read in jack ringbuffers (right).\n");
+					if (num_ovfr == 0) {
+						fprintf(stderr, "No space left to read in jack ringbuffers (right).\n");
+					}
+					num_ovfr++;
 				}
 #endif
 				}

@@ -194,7 +194,6 @@ void* audio_thread(void* arg) {
 	int bytes_read;
 	int on=1;
 
-	int error_no;
 #ifdef USE_PIPES
 	int  pipe_left = *softrock_get_jack_write_pipe_left(rx->client->receiver);
 	int  pipe_right = *softrock_get_jack_write_pipe_right(rx->client->receiver);
@@ -203,7 +202,7 @@ void* audio_thread(void* arg) {
 	jack_ringbuffer_t *rb_right = softrock_get_jack_rb_right(rx->client->receiver);
 #endif
 	int num_bytes = sizeof(float)*BUFFER_SIZE;
-	int blocked_num = 0;
+	
 	static int second_time = 0;
 
 	BUFFER buffer;
@@ -233,8 +232,6 @@ void* audio_thread(void* arg) {
 		perror("bind socket failed for server audio socket");
 		exit(1);
 	}
-
-
 
 	if (softrock_get_verbose()) fprintf(stderr,"listening for tx %d IQ audio on port %d\n",rx->id,audio_port+(rx->id*2));
 
@@ -317,7 +314,7 @@ void* audio_thread(void* arg) {
 			process_softrock_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
 		}
 	}
-	softrock_set_client_active_rx (rx->client->receiver, DEC_RX); 
+	softrock_set_client_active_rx (rx->client->receiver, DEC_RX); //How do we ever get here?
 }
 
 			
