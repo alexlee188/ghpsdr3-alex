@@ -28,17 +28,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef __linux__
+  #ifdef __linux__
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
-#else
+  #else
 #include "pthread.h"
-#endif
-
+  #endif
 #include <string.h>
 
 #include "client.h"
@@ -77,7 +76,6 @@ void* listener_thread(void* arg) {
         perror("Listener: listening socket failed");
         exit(1);
     }
-
     setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
     // bind to listening port
@@ -94,7 +92,7 @@ void* listener_thread(void* arg) {
 
     while(1) {
 
-        if(listen(s,6)<0) {
+        if(listen(s,1)<0) {
             perror("Listener: command listen failed");
             exit(1);
         }
@@ -103,6 +101,7 @@ void* listener_thread(void* arg) {
         client->address_length=sizeof(client->address);
         client->iq_port=-1;
 
+        //Accept is blocking until someone connects
         if((client->socket=accept(s,(struct sockaddr*)&client->address,(socklen_t*)&client->address_length))<0) {
             perror("Listener: command accept failed");
             exit(1);
