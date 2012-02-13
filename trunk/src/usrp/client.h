@@ -24,12 +24,7 @@
 *
 */
 
-#ifndef __linux__
-#include <winsock.h>
-#include "pthread.h"
-#endif
-
-#define AUDIO_PORT 15000
+#define TX_AUDIO_PORT 15000
 
 typedef enum {
     RECEIVER_DETACHED, RECEIVER_ATTACHED

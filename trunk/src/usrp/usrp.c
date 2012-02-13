@@ -46,10 +46,10 @@
 #include "client.h"
 #include "receiver.h"
 #include "usrp.h"
-//#include "usrp_audio.h" not for now
 
 //RX output sample rate from USRP
 #define USRP_RX_SAMPLERATE 256000
+#define USRP_TX_SAMPLERATE 256000 //TODO: what is the rate here???
 #define DEFAULT_RX_FREQUENCY 7056000
 #define RRESAMPLER_NO_ERROR 0
 
@@ -58,6 +58,7 @@ public:
    uhd::usrp::multi_usrp::sptr sdev;
    uhd::device::sptr            dev;
    int receivers;
+   bool tx_enabled;
 };
 
 static USRP usrp;
@@ -67,7 +68,8 @@ static int INTERP = 3;  //For the rational resampler
 static int real_position = 1;
 static int imag_position = 0;
 
-bool usrp_init (const char *subdev_par)
+//TODO: init both TX and RX, with 2 params into this argument "RX:RX TX:TX"
+bool usrp_init (const char *rx_subdev_par, const char *tx_subdev_par)
 {
     uhd::device_addr_t hint;
     hint["type"] = "usrp1";
@@ -92,11 +94,19 @@ bool usrp_init (const char *subdev_par)
         usrp.sdev = uhd::usrp::multi_usrp::make(device_addrs[i]);
         usrp.dev = usrp.sdev->get_device();
         
-        usrp_set_subdev_args(subdev_par);
+        usrp.tx_enabled = false;        
+        char subdev_specs[12] = "";
+        strcpy(subdev_specs, rx_subdev_par);
+        strcat(subdev_specs, " "); strcat(subdev_specs, tx_subdev_par);
+        //fprintf(stderr, "USRP Subdev specs: %s\n", subdev_specs);
+        usrp_set_subdev_args(subdev_specs);
         
         //set the USRP rx standard sample rate 256000 for minimum bandwidth.
         usrp.sdev->set_rx_rate(USRP_RX_SAMPLERATE);
+        //TODO: set the USRP tx standard sample rate ?????
+        usrp.sdev->set_tx_rate(USRP_TX_SAMPLERATE);
         std::cout << boost::format("USRP RX Rate: %f Msps...") % (usrp.sdev->get_rx_rate()/1e6) << std::endl;        
+        std::cout << boost::format("USRP TX Rate: %f Msps...") % (usrp.sdev->get_tx_rate()/1e6) << std::endl;       
         
         return true;
     }
@@ -105,7 +115,7 @@ bool usrp_init (const char *subdev_par)
 
 void usrp_deinit (void)
 {
-
+  // anything here???
 }
 
 //Configures the RX subdevice
@@ -119,25 +129,32 @@ void usrp_set_rx_subdevice(char *rxspec)
 
 //Configures the TX subdevice
 void usrp_set_tx_subdevice(char *txspec) 
-{
-    //TODO: Implement TX subdevice parsing
+{    
+    std::cout << boost::format("Setting TX subdevice spec %s") % txspec << std::endl;
+    uhd::usrp::subdev_spec_t s(txspec);
+    usrp.sdev->set_tx_subdev_spec(s);
+    std::cerr << boost::format("Current TX subdevice is: %s") % usrp.sdev->get_tx_subdev_name() << std::endl;    
 }
 
-void usrp_set_subdev_args(const char *sargs)
+void usrp_set_subdev_args(const char *subdevs)
 {
     char largs[10];
     char* token;
         
-    strcpy(largs, sargs);    
+    strcpy(largs, subdevs);    
     token=strtok(largs," \r\n");    
     if(token!=NULL) {
         usrp_set_rx_subdevice(token);
         token=strtok(NULL," \r\n");
             if(token!=NULL) {
                 usrp_set_tx_subdevice(token);
+                usrp.tx_enabled = true;
+            } else {
+                std::cerr << "Only RX spec found. TX not configured."<< std::endl;
+                usrp.tx_enabled = false;
             }
     } else {
-        std::cerr << "Missing any USRP RX arg. Exiting."<< std::endl;
+        std::cerr << "Missing any USRP subdev specs. Exiting."<< std::endl;
         exit(1);        
     }        
 }
@@ -162,6 +179,11 @@ void usrp_set_receivers(int n)
 int usrp_get_receivers(void)
 {
     return usrp.receivers;
+}
+
+bool  usrp_is_tx_enabled(void) 
+{
+    return usrp.tx_enabled;
 }
 
 void usrp_set_client_rx_rate (int rate)
@@ -201,7 +223,7 @@ void usrp_set_frequency (double freq)
     std::cout << boost::format("Actual USRP RX Freq: %f Mhz...") % (usrp.sdev->get_rx_freq()/1e6) << std::endl << std::endl;
 }
 
-//
+
 //This is the main sample receiving thread (private)
 void *usrp_receiver_thread (void *param)
 {
@@ -256,6 +278,12 @@ void *usrp_receiver_thread (void *param)
             if (num_acc_samps == 0) continue;
             std::cout << boost::format(
                 "Got timeout before all samples received, possible packet loss, exiting loop..."
+            ) << std::endl;
+            goto done_loop;
+            
+        case uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:
+            std::cout << boost::format(
+                "Internal USRP receiver buffer overflow, exiting loop..."
             ) << std::endl;
             goto done_loop;
 
@@ -314,14 +342,31 @@ void *usrp_receiver_thread (void *param)
     return 0;
 }
 
+//TODO Transmitting audio to modulation: should be a thread....
+int usrp_process_tx_modulation(float *ch1,  float *ch2, int mox) {
+    return 0;
+}
+
 bool usrp_start (RECEIVER *pRec)
 {
+    //Creates the receiving thread
     if (pthread_create(&pRec->client->thread_id,NULL,usrp_receiver_thread,(void *)pRec)!=0) {
         fprintf(stderr,"Failed to create USRP receiver thread for rx %d\n",pRec->client->receiver);
         return false; 
     } else {
         return true;
     }
+    
+    //TODO: Creates the transmitting thread
+    /*
+    if (pthread_create(&pRec->client->thread_id,NULL,usrp_receiver_thread,(void *)pRec)!=0) {
+        fprintf(stderr,"Failed to create USRP receiver thread for rx %d\n",pRec->client->receiver);
+        return false; 
+    } else {
+        return true;
+    }
+     */ 
+    
 }
 
 
