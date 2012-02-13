@@ -83,7 +83,7 @@ int init_jack_audio()
 		rb_left[r] = softrock_get_jack_rb_left(r);
 		rb_right[r] = softrock_get_jack_rb_right(r);
 #endif
-		
+
 		audio_input_port_left[r] = jack_port_register(softrock_client, softrock_rx_port_name_left[r], 
 		                                              JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
 		if (audio_input_port_left[r] == NULL) {
@@ -182,7 +182,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 {
 	// Start out with current_receiver = 0 (one receiver) fix later.
 	jack_nframes_t i;
-	static int  num_ovfl = 0, num_ovfr = 0;
+	static int  num_ovfl = 0, num_ovfr = 0, start_buffer = 0;
 	int r;
 	jack_default_audio_sample_t *sample_buffer_left[MAX_RECEIVERS];
 	jack_default_audio_sample_t *sample_buffer_right[MAX_RECEIVERS];
@@ -219,6 +219,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 		// Now do the tx part (send output IQ data from the dspserver client to
 		// the audio out jacks.
 		if (softrock_get_client_active_rx (r) > 0) {
+			if (start_buffer++ < BUFF_FILL) return 0;
 			int size = sizeof(float)*number_of_frames;
 			//fprintf(stderr,"Made it to read tx\n");
 			sample_buffer_left[r] = 
@@ -266,7 +267,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 					}
 					num_ovfl++;
 				}
-				
+
 				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
 				{
 					jack_ringbuffer_read (rb_right[r], (char *)sample_buffer_right[r], size); 
@@ -284,16 +285,16 @@ int process(jack_nframes_t number_of_frames, void* arg)
 					num_ovfr++;
 				}
 #endif
-				} else { // qi instead of iq
+			} else { // qi instead of iq
 #ifdef USE_PIPES
-					bytes_read = read(*softrock_get_jack_read_pipe_left(r),sample_buffer_right[r],size);
-					if (bytes_read  != size) {
-						fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
-					}
-					bytes_read = read(*softrock_get_jack_read_pipe_right(r),sample_buffer_left[r],size);
-					if (bytes_read != size) {
-						fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
-					}
+				bytes_read = read(*softrock_get_jack_read_pipe_left(r),sample_buffer_right[r],size);
+				if (bytes_read  != size) {
+					fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
+				}
+				bytes_read = read(*softrock_get_jack_read_pipe_right(r),sample_buffer_left[r],size);
+				if (bytes_read != size) {
+					fprintf(stderr,"There was a problem reading from the right pipe.  Read %d bytes.\n", bytes_read);
+				}
 #else  // use ringbuffers
 				if ( jack_ringbuffer_read_space (rb_left[r]) >= size )
 				{
@@ -311,7 +312,7 @@ int process(jack_nframes_t number_of_frames, void* arg)
 					}
 					num_ovfl++;
 				}
-				
+
 				if ( jack_ringbuffer_read_space (rb_right[r]) >= size )
 				{
 					jack_ringbuffer_read (rb_right[r], (char *)sample_buffer_left[r], size); 
@@ -329,14 +330,17 @@ int process(jack_nframes_t number_of_frames, void* arg)
 					num_ovfr++;
 				}
 #endif
-				}
-				stop_print++;
-				} 
+			}
+			stop_print++;
+		} 
+		else
+		{
+			start_buffer = 0;
+		}
 
-				}
-
-				return 0;
-				}
+		return 0;
+	}
+}
 
 #endif
-				
+	
