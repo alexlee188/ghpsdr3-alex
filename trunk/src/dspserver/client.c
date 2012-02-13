@@ -1282,37 +1282,35 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
                        } else if(strncmp(token,"settxamcarrierlevel",19)==0) {
+						fprintf(stderr,"Debug: SetTXAMCarrierLevel: %s  txcfg: %d\n",message,  txcfg);
 		                token=strtok_r(NULL," ",&saveptr);
 		                if(token!=NULL) {
 		                    double pwr=atof(token);
-		                    char *thisuser =strtok_r(NULL," ",&saveptr);
-		                    if(thisuser!=NULL) {
-								char *thispasswd =strtok_r(NULL," ",&saveptr);
-								if(thispasswd!=NULL) {
-									if(chkPasswd(thisuser, thispasswd) == 0){ 
-		                               if(pwr >= 0 &&
-		                                 pwr <= 1) {
-									     fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
-		                                 SetTXAMCarrierLevel(1,pwr);
+		                    if(txcfg == TXPASSWD){
+		                       char *thisuser =strtok_r(NULL," ",&saveptr);
+		                       if(thisuser!=NULL) {
+								   char *thispasswd =strtok_r(NULL," ",&saveptr);
+								   if(thispasswd!=NULL) {
+									   if(chkPasswd(thisuser, thispasswd) == 0){ 
+		                                  if(pwr >= 0 && pwr <= 1) {
+									        //fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
+		                                    SetTXAMCarrierLevel(1,pwr);
+									      }
+									   }else{
+									       fprintf(stderr,"SetTXAMCarrierLevel denied because user %s password check failed!\n",thisuser);
 									   }
-									}else{
-									    fprintf(stderr,"SetTXAMCarrierLevel denied because user %s password check failed!\n",thisuser);
-									}
-								}
-		                     } else {
-		                        if (txcfg == TXALL){
-		                           if(pwr >= 0 &&
-		                                 pwr <= 1) {
-										 fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
-		                                 SetTXAMCarrierLevel(1,pwr);
-									}
-		                           
-		                        }else{
-									fprintf(stderr,"SetTXAMCarrierLevel denied because Invalid command argument : '%s' txcfg = %d\n",message, txcfg);
-							    }
-		                    }
-		                } else {
-		                    fprintf(stderr,"Invalid command: '%s'\n",message);
+								   }
+		                        }
+						   }if (txcfg == TXALL){
+		                              if(pwr >= 0 &&  pwr <= 1) {
+										    fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
+		                                    SetTXAMCarrierLevel(1,pwr);
+									   }else{
+									      fprintf(stderr,"SetTXAMCarrierLevel denied because Invalid command argument : '%s' txcfg = %d\n",message, txcfg);
+							           }
+		                   }
+		                } else{
+		                    fprintf(stderr,"Invalid SetTXAMCarrierLevel command: '%s'\n",message);
 		                }
                        } else if(strncmp(token,"setsquelchval",13)==0) {
 		                token=strtok_r(NULL," ",&saveptr);
@@ -1616,7 +1614,7 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 		 char p[50];
 		 sprintf(p,"%f;",LO_offset);
 		 strcat(answer,p);
-		 fprintf(stderr,"q-loffset: %s\n",answer);
+		 //fprintf(stderr,"q-loffset: %s\n",answer);
 	}else{
 		fprintf(stderr,"Unknown question: %s\n",message);
 		return;
