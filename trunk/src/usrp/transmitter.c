@@ -1,10 +1,6 @@
 /**
 * @file transmitter.c
-<<<<<<< HEAD
 * @brief management of transmitting features - header
-=======
-* @brief management of tramsit features - header
->>>>>>> refactor #1 for tx path
 * @author Alberto Trentadue, IZ0CEZ
 * @version 0.1
 * @date 2012-02-10
