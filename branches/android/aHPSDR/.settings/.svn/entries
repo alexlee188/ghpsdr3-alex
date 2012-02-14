@@ -1,9 +1,9 @@
 10
 
 dir
-2011
-svn://svn.openhpsdr.org/svn/repos_sdr_hpsdr/trunk/N6LYT/ghpsdr3/branches/android/aHPSDR/.settings
-svn://svn.openhpsdr.org/svn/repos_sdr_hpsdr
+2280
+http://svn.tapr.org/repos_sdr_hpsdr/trunk/N6LYT/ghpsdr3/branches/android/aHPSDR/.settings
+http://svn.tapr.org/repos_sdr_hpsdr
 
 
 
@@ -32,7 +32,7 @@ file
 
 
 
-2011-07-15T13:55:04.445445Z
+2012-02-14T13:37:46.922208Z
 a227a04253dc4a021f23222695db00db
 2011-07-30T06:10:03.224974Z
 2011
@@ -66,7 +66,7 @@ file
 
 
 
-2011-07-15T13:55:04.265445Z
+2012-02-14T13:37:46.922208Z
 f07351b485f4999e4e190c627ffbd211
 2011-07-30T06:10:03.224974Z
 2011

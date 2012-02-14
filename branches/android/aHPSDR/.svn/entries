@@ -1,14 +1,14 @@
 10
 
 dir
-2011
-svn://svn.openhpsdr.org/svn/repos_sdr_hpsdr/trunk/N6LYT/ghpsdr3/branches/android/aHPSDR
-svn://svn.openhpsdr.org/svn/repos_sdr_hpsdr
+2280
+http://svn.tapr.org/repos_sdr_hpsdr/trunk/N6LYT/ghpsdr3/branches/android/aHPSDR
+http://svn.tapr.org/repos_sdr_hpsdr
 
 
 
-2011-07-30T06:10:03.224974Z
-2011
+2012-02-13T14:55:28.532418Z
+2280
 jmelton
 
 
@@ -28,11 +28,11 @@ fab57ed4-c20f-0410-8556-bd0ba87add53
 
 default.properties
 file
-2051
 
 
 
-2011-08-18T21:23:25.442422Z
+
+2012-02-14T13:37:46.922208Z
 77055d1fa9eecbddd7b18cbb98735c1b
 2011-08-19T11:38:08.800554Z
 2051
@@ -66,10 +66,10 @@ file
 
 
 
-2011-07-15T13:23:29.765445Z
-20cf7e6f1cd84dd2fc63bde4738a2a5e
-2011-07-30T06:10:03.224974Z
-2011
+2012-02-14T13:37:46.922208Z
+f7c8e30e5c42b06100552af3104fbcd5
+2012-02-13T14:55:28.532418Z
+2280
 jmelton
 
 
@@ -92,7 +92,7 @@ jmelton
 
 
 
-273
+281
 
 proguard.cfg
 file
@@ -100,7 +100,7 @@ file
 
 
 
-2011-07-15T13:23:29.655445Z
+2012-02-14T13:37:46.922208Z
 03ea0fdd0a4aabc43b80216d64438921
 2011-07-30T06:10:03.224974Z
 2011
@@ -137,7 +137,7 @@ file
 
 
 
-2011-07-15T13:23:29.615445Z
+2012-02-14T13:37:46.922208Z
 f1406b1e27bdbeb5e71a47f71191f71e
 2011-07-30T06:10:03.224974Z
 2011
@@ -167,11 +167,11 @@ jmelton
 
 AndroidManifest.xml
 file
-2048
 
 
 
-2011-08-12T12:34:03.443421Z
+
+2012-02-14T13:37:46.922208Z
 56a802471a8d18ac457c8b8c649007ac
 2011-08-17T11:24:12.972555Z
 2048
@@ -203,30 +203,6 @@ src
 dir
 
 bin
-dir
-
-
-
-delete
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-deleted
-
-gen
 dir
 
 res

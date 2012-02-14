@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.InetSocketAddress;
 
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -37,7 +38,8 @@ public class Connection extends Thread {
 	public void connect() {
 		Log.i("Connection","connect: "+server+":"+port);
 		try {
-			socket = new Socket(server, port);
+			socket = new Socket();
+			socket.connect(new InetSocketAddress(server,port),5000);
 			inputStream = socket.getInputStream();
 			outputStream = socket.getOutputStream();
 		
@@ -55,6 +57,7 @@ public class Connection extends Thread {
 			Log.e("Connection", "Error creating socket for " + server + ":"
 					+ port + "'" + e.getMessage() + "'");
 			status=e.toString();
+			socket=null;
 		}
 	}
 	

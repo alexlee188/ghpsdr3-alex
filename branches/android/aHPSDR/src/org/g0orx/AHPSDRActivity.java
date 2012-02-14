@@ -1,6 +1,7 @@
 package org.g0orx;
 
 import android.app.Activity;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -22,6 +23,13 @@ import android.hardware.SensorManager;
 import android.widget.EditText;
 import android.widget.Toast;
 import android.media.AudioManager;
+
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import org.apache.http.util.ByteArrayBuffer;
+import java.util.Vector;
 
 public class AHPSDRActivity extends Activity implements SensorEventListener {
 	/** Called when the activity is first created. */
@@ -50,7 +58,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		gain=prefs.getInt("gain", 80);
 		agc=prefs.getInt("AGC", AGC_LONG);
 		fps=prefs.getInt("Fps", FPS_10);
-		server=prefs.getString("Server", "g0orx.dyndns.org");
+		server=prefs.getString("Server", "192.168.1.6");
 		receiver=prefs.getInt("Receiver", 0);
 		
 		Display display = getWindowManager().getDefaultDisplay(); 
@@ -164,8 +172,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 	public boolean onCreateOptionsMenu(Menu menu) {
 		menu.add(0, MENU_CONNECTION,0, "Connection");
+		menu.add(0, MENU_SERVERS, 0, "Servers");
 		menu.add(0, MENU_RECEIVER,0, "Receiver");
 		menu.add(0, MENU_BAND, 0, "Band");
+		menu.add(0, MENU_FREQUENCY, 0, "Frequency");
 		menu.add(0, MENU_MODE, 0, "Mode");
 		menu.add(0, MENU_FILTER, 0, "FILTER");
 		menu.add(0, MENU_AGC, 0, "AGC");
@@ -224,10 +234,96 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					spectrumView.setConnection(connection);
 					update.setFps(fps);
 					update.start();
+					setTitle("aHPSDR: "+server+" (rx"+receiver+")");
 					dialog.dismiss();
 				}
 			});
 			builder.show();
+			break;
+		case MENU_SERVERS:
+			try { 
+                URL updateURL = new URL("http://qtradio.napan.ca/qtradio/qtradio.pl"); 
+                URLConnection conn = updateURL.openConnection(); 
+                InputStream is = conn.getInputStream(); 
+                BufferedInputStream bis = new BufferedInputStream(is); 
+                ByteArrayBuffer baf = new ByteArrayBuffer(50); 
+                
+                int current = 0; 
+                while((current = bis.read()) != -1){ 
+                    baf.append((byte)current); 
+                } 
+
+                /* Convert the Bytes read to a String. */ 
+                String html = new String(baf.toByteArray()); 
+                
+                // need to extract out the servers addresses
+                // look for <tr><td>
+                Vector<String>temp=new Vector<String>();
+                Vector<String>item=new Vector<String>();
+                String ip;
+                String call;
+                int n=0;
+                int i=0;
+                int j;
+                while((i=html.indexOf("<tr><td>",i))!=-1) {
+                	i+=8;
+                	j=html.indexOf("</td>",i);
+                	if(j!=-1) {
+                		ip=html.substring(i,j);
+                		temp.add(ip);  
+                		i=html.indexOf("<td>",j);
+                		i+=4;
+                		j=html.indexOf("</td>",i);
+                		call=html.substring(i,j);
+                		item.add(ip+" ("+call+")");
+                		i=j; 
+                		n++;
+                	}
+                }
+                
+                Log.i("servers",html);
+                servers=new CharSequence[n];
+                for(i=0;i<n;i++) {
+                	servers[i]=temp.elementAt(i);
+                }
+                
+                String[] t=new String[0];
+                
+                builder = new AlertDialog.Builder(this);
+    			builder.setTitle("Select a Server");
+    			builder.setSingleChoiceItems(item.toArray(t), 0,
+    					new DialogInterface.OnClickListener() {
+    						public void onClick(DialogInterface dialog, int item) {
+    							Log.i("selected",servers[item].toString());
+    							update.close();
+    							mode=connection.getMode();
+    							frequency=connection.getFrequency();
+    							filterLow=connection.getFilterLow();
+    							filterHigh=connection.getFilterHigh();
+    							connection.close();
+    							server=servers[item].toString();	
+    							connection = new Connection(server, BASE_PORT + receiver,width);
+    							connection.setSpectrumView(spectrumView);
+    							connection.connect();
+    							connection.start();
+    							connection.setFrequency(frequency);
+    							connection.setMode(mode);
+    							connection.setFilter(filterLow, filterHigh);
+    							connection.setGain(gain);
+    							connection.setAGC(agc);
+    							update=new Update(connection);					
+    							spectrumView.setConnection(connection);
+    							update.setFps(fps);
+    							update.start();
+    							setTitle("aHPSDR: "+server+" (rx"+receiver+")");
+    							dialog.dismiss();
+    						}
+    			});
+                
+    			dialog = builder.create();
+            } catch (Exception e) {
+            	
+            } 
 			break;
 		case MENU_RECEIVER:
 			builder = new AlertDialog.Builder(this);
@@ -341,6 +437,22 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					});
 			dialog = builder.create();
 			break;
+                case MENU_FREQUENCY:
+                        builder = new AlertDialog.Builder(this);
+                        builder.setTitle("Enter frequency (in Hz):");
+                        final EditText freq = new EditText(this);
+                        builder.setView(freq);
+                        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int whichButton) {
+                                        String value = freq.getText().toString().trim();
+                                        Log.i("Frequency",value);
+                                        connection.setFrequency(Long.parseLong(value));
+                                        dialog.dismiss();
+                                }
+                        });
+                        dialog = builder.create();
+                        //builder.show();
+                        break;
 		case MENU_MODE:
 			builder = new AlertDialog.Builder(this);
 			builder.setTitle("Select a Mode");
@@ -833,6 +945,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	private SpectrumView spectrumView;
 	private Update update;
 	
+	private CharSequence[] servers;
 
 	public static final CharSequence[] receivers = { "0", "1", "2", "3" };
 	
@@ -852,7 +965,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int MENU_GAIN = 6;
 	public static final int MENU_FPS = 7;
 	public static final int MENU_CONNECTION = 8;
-	public static final int MENU_RECEIVER =9;
+	public static final int MENU_RECEIVER = 9;
+	public static final int MENU_FREQUENCY = 10;
+	public static final int MENU_SERVERS = 11;
 
 	public static final CharSequence[] bands = { "160", "80", "60", "40", "30",
 			"20", "17", "15", "12", "10", "6", "GEN", "WWV" };
