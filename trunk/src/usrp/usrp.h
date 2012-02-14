@@ -95,6 +95,6 @@ void usrp_set_frequency(double freq);
 /*!
  * Process the TX modulation to USRP
  */ 
-int usrp_process_tx_modulation(float *ch1,  float *ch2, int mox);
+int usrp_process_tx_modulation(float *outbuf, int mox);
 
 #endif

@@ -20,6 +20,7 @@
 //#define SAMPLE_RATE        (CORE_BANDWIDTH/DECIM_FACT)   /* the sampling rate */
 #define CHANNELS           2       /* 1 = mono 2 = stereo */
 #define SAMPLES_PER_BUFFER 1024
+#define BUFFER_DISCARDED -1
 
 #define AUDIO_TO_NOTHING 0
 #define AUDIO_TO_USRP_MODULATION 1
@@ -225,16 +226,23 @@ int usrp_local_audio_write_decim (float* left_samples, float* right_samples)   {
 }
 
 //Proxy functions for audio consumers
-void usrp_process_audio_buffer (float *ch1,  float *ch2, int mox) {
-        
+        //REMEMBER: the outbuf carries 2 channels: 
+        //outbuf[0..TRANSMIT_BUFFER_SIZE-1] and
+        //outbuf[TRANSMIT_BUFFER_SIZE..TRANSMIT_BUFFER_SIZE-1]
+void usrp_process_audio_buffer (float *outbuf, int mox) {
+    
+    int rc;    
     switch(AUDIO_DESTINATION) {
             
             case AUDIO_TO_LOCAL_CARD: 
-                usrp_local_audio_write_decim(ch1, ch2);
+                usrp_local_audio_write_decim(outbuf, &outbuf[SAMPLES_PER_BUFFER]);
                 break;
                                 
             case AUDIO_TO_USRP_MODULATION:
-                usrp_process_tx_modulation(ch1, ch2, mox);
+                rc=usrp_process_tx_modulation(outbuf, mox);
+                if (rc == BUFFER_DISCARDED) {
+                    fprintf(stderr,"usrp TX AUDIO queue overflow!\n");
+                }
                 break;
                 
             case AUDIO_TO_NOTHING:                
