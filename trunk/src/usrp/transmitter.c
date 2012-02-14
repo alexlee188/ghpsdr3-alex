@@ -161,7 +161,10 @@ void* tx_audio_thread(void* arg) {
             exit(1);
         }
 #endif
-        usrp_process_audio_buffer(tx->output_buffer,&tx->output_buffer[TRANSMIT_BUFFER_SIZE], client->mox);					
+        //REMEMBER: the tx->output_buffer carries 2 channels: 
+        //tx->output_buffer[0..TRANSMIT_BUFFER_SIZE-1] and
+        //tx->output_buffer[TRANSMIT_BUFFER_SIZE..TRANSMIT_BUFFER_SIZE-1]
+        usrp_process_audio_buffer(tx->output_buffer, client->mox);					
     }
 }
 

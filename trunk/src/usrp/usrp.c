@@ -37,6 +37,9 @@
 #include <pthread.h>
 #include <unistd.h>
 #endif
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include <string.h>
 #include <samplerate.h>
@@ -68,7 +71,13 @@ static int INTERP = 3;  //For the rational resampler
 static int real_position = 1;
 static int imag_position = 0;
 
-//TODO: init both TX and RX, with 2 params into this argument "RX:RX TX:TX"
+//Defines and initialises the tx buffer queue
+void setup_tx_queue(void) {
+    
+    //SETUP QUEUE
+}
+
+//USRP initialisation
 bool usrp_init (const char *rx_subdev_par, const char *tx_subdev_par)
 {
     uhd::device_addr_t hint;
@@ -106,7 +115,12 @@ bool usrp_init (const char *rx_subdev_par, const char *tx_subdev_par)
         //TODO: set the USRP tx standard sample rate ?????
         usrp.sdev->set_tx_rate(USRP_TX_SAMPLERATE);
         std::cout << boost::format("USRP RX Rate: %f Msps...") % (usrp.sdev->get_rx_rate()/1e6) << std::endl;        
-        std::cout << boost::format("USRP TX Rate: %f Msps...") % (usrp.sdev->get_tx_rate()/1e6) << std::endl;       
+        std::cout << boost::format("USRP TX Rate: %f Msps...") % (usrp.sdev->get_tx_rate()/1e6) << std::endl; 
+
+        usrp_set_frequency(DEFAULT_RX_FREQUENCY); //TEMPORARY      
+        sleep(1); //allow for some setup time
+        
+        setup_tx_queue();
         
         return true;
     }
@@ -218,9 +232,13 @@ int usrp_get_client_rx_rate(void)
 void usrp_set_frequency (double freq)
 {
     //set the rx center frequency
-    std::cout << boost::format("Setting USRP RX Freq: %f Mhz...") % (freq/1e6) << std::endl;
+    std::cout << boost::format("Setting USRP RX/TX Freq: %f Mhz...") % (freq/1e6) << std::endl;
     usrp.sdev->set_rx_freq(freq);
     std::cout << boost::format("Actual USRP RX Freq: %f Mhz...") % (usrp.sdev->get_rx_freq()/1e6) << std::endl << std::endl;
+    if (usrp.tx_enabled) {
+        usrp.sdev->set_tx_freq(freq);
+        std::cout << boost::format("Actual USRP RX Freq: %f Mhz...") % (usrp.sdev->get_rx_freq()/1e6) << std::endl << std::endl;        
+    }
 }
 
 
@@ -248,10 +266,6 @@ void *usrp_receiver_thread (void *param)
     rresamp_data->data_out = rresamp_buf_out;
     rresamp_data->src_ratio = INTERP*1.0/DECIM;
     pRec->samples = 0;
-
-    usrp_set_frequency(DEFAULT_RX_FREQUENCY); //TEMPORARY
-
-    sleep(1); //allow for some setup time
     
     //Setup the sample streaming
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);    
@@ -302,7 +316,9 @@ void *usrp_receiver_thread (void *param)
         //Here IQ samples are buffered: 
         //Rational resampling is applied at this point
         //1. Interleaving real/imag in the resampler buffer
-        for (unsigned int i=0; i<num_rx_samps; ++i) {                    
+        unsigned int i;
+    #pragma omp parallel for schedule(static) private(i)
+        for (i=0; i<num_rx_samps; ++i) {                    
             
             rresamp_data->data_in[2*i+imag_position] = buff[i].imag();
             rresamp_data->data_in[2*i+real_position] = buff[i].real();            
@@ -311,14 +327,13 @@ void *usrp_receiver_thread (void *param)
         //2.Rational resampling API here
         int rr_retcode = src_simple(rresamp_data, SRC_SINC_FASTEST, 2);
         
-        //fprintf (stderr, "Simple resampling done. Obtained %ld samples.\n", rresamp_data->output_frames_gen);
-        
+        //fprintf (stderr, "Simple resampling done. Obtained %ld samples.\n", rresamp_data->output_frames_gen);        
         if (rr_retcode == RRESAMPLER_NO_ERROR) {
             
-            for (int i=0; i<rresamp_data->output_frames_gen ; ++i) {                    
+            for (int j=0; j<rresamp_data->output_frames_gen ; ++j) {                    
                     
-                pRec->input_buffer[pRec->samples]             = rresamp_data->data_out[2*i];
-                pRec->input_buffer[pRec->samples+BUFFER_SIZE] = rresamp_data->data_out[2*i+1];
+                pRec->input_buffer[pRec->samples]             = rresamp_data->data_out[2*j];
+                pRec->input_buffer[pRec->samples+BUFFER_SIZE] = rresamp_data->data_out[2*j+1];
 
                 pRec->samples++;
 
@@ -342,8 +357,31 @@ void *usrp_receiver_thread (void *param)
     return 0;
 }
 
-//TODO Transmitting audio to modulation: should be a thread....
-int usrp_process_tx_modulation(float *ch1,  float *ch2, int mox) {
+
+//This is the transmitting thread (private)
+void *usrp_transmitter_thread (void *param)
+{
+    
+    size_t num_acc_samps = 0; //number of accumulated tx samples
+    uhd::rx_metadata_t md;
+    
+    const int MAX_USRP_TX_BUFFER = usrp.dev->get_max_send_samps_per_packet();
+    std::vector<std::complex<float> > buff(MAX_USRP_TX_BUFFER);
+    
+    //CRITICAL SECTION on the TX QUEUE
+    while(1) {
+        //If there is buffer pair in the queue                    
+        
+        //Take next buffer pair from the queue
+        
+        //else get container with all zeros
+        
+        //send container to USRP
+        
+        //cleanup container
+        
+    }
+    
     return 0;
 }
 
@@ -353,22 +391,31 @@ bool usrp_start (RECEIVER *pRec)
     if (pthread_create(&pRec->client->thread_id,NULL,usrp_receiver_thread,(void *)pRec)!=0) {
         fprintf(stderr,"Failed to create USRP receiver thread for rx %d\n",pRec->client->receiver);
         return false; 
-    } else {
-        return true;
-    }
-    
-    //TODO: Creates the transmitting thread
-    /*
-    if (pthread_create(&pRec->client->thread_id,NULL,usrp_receiver_thread,(void *)pRec)!=0) {
-        fprintf(stderr,"Failed to create USRP receiver thread for rx %d\n",pRec->client->receiver);
-        return false; 
-    } else {
-        return true;
-    }
-     */ 
-    
+    } else if (usrp.tx_enabled) {
+        //Creates the transmitting thread
+        if (pthread_create(&pRec->client->thread_id,NULL,usrp_transmitter_thread,(void *)NULL)!=0) {
+            fprintf(stderr,"Failed to create USRP transmitter thread for rx %d\n",pRec->client->receiver);
+            return false; 
+        } 
+    }      
+    return true;  
 }
 
 
+/* 
+ * REMEMBER: the outbuf carries 2 channels: 
+ * outbuf[0..TRANSMIT_BUFFER_SIZE-1] and
+ * outbuf[TRANSMIT_BUFFER_SIZE..TRANSMIT_BUFFER_SIZE-1]
+ */
+//TODO Transmitting audio to modulation.
+//CRITICAL SECTION on the TX QUEUE 
+int usrp_process_tx_modulation(float *outbuf, int mox) {
+    
+    //If there is space in queue
+    //Add container to queue
+    //else discard buffer and return -1
+    
+    return 0;
+}
 
 

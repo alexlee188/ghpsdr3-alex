@@ -114,16 +114,9 @@ const char* parse_command(CLIENT* client,char* command) {
 			//COMMAND: 'attach <side>'            
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
-                if(strcmp(token,"tx")==0) {
-					//COMMAND: 'attach tx'
-                    return attach_transmitter(client);
-                } else {
-					//COMMAND: 'attach rx#'
-                    int rx=atoi(token);
-                    return attach_receiver(rx,client);
-                }
-            } else {
-                return INVALID_COMMAND;
+                //COMMAND: 'attach rx#'
+                int rx=atoi(token);
+                return attach_receiver(rx,client);
             }
         } else if(strcmp(token,"detach")==0) {
             //COMMAND: 'detach <side>' 
