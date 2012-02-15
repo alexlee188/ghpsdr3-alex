@@ -187,9 +187,15 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
         if(moved) {
             emit frequencyMoved(move,100);
         } else {
-            float hzPixel = sampleRate/width();  // spectrum resolution: Hz/pixel
+//            float hzPixel = sampleRate/width();  // spectrum resolution: Hz/pixel
+            float hzPixel = (float) sampleRate / width();  // spectrum resolution: Hz/pixel
+            qDebug()<<Q_FUNC_INFO<<": sampleRate = "<<sampleRate<<", and width() = "<<width()<<", and hzPixel = "<< hzPixel;
+
             long freqOffsetPixel;
             long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel)-LO_offset;
+
+            qDebug()<<Q_FUNC_INFO<<": The calculated frequency is "<<f;
+
             if(subRx) {    
                 freqOffsetPixel = (subRxFrequency-f)/hzPixel;
                 if (button == Qt::LeftButton) {
@@ -438,7 +444,7 @@ void Spectrum::setReceiver(int r) {
 
 void Spectrum::setMode(QString m) {
     mode=m;
-//    repaint();
+    qDebug()<<Q_FUNC_INFO<<": Mode changed to "<<m;
     update();
 }
 

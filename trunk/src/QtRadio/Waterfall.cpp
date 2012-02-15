@@ -153,7 +153,8 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
     if(moved) {
         emit frequencyMoved(move,100);
     } else {
-        float hzPixel = sampleRate/width();  // spectrum resolution: Hz/pixel
+//        float hzPixel = sampleRate/width();  // spectrum resolution: Hz/pixel
+        float hzPixel = (float) sampleRate / width();  // spectrum resolution: Hz/pixel
 
         long freqOffsetPixel;
         long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel) - LO_offset;
