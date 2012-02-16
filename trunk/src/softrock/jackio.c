@@ -187,7 +187,8 @@ int process(jack_nframes_t number_of_frames, void* arg)
 	jack_default_audio_sample_t *sample_buffer_left[MAX_RECEIVERS];
 	jack_default_audio_sample_t *sample_buffer_right[MAX_RECEIVERS];
 
-	static int stop_print = 0, num_blocked = 0;
+	static int stop_print = 0;
+	// static int num_blocked = 0;
 
 	softrock_set_rx_frame (frame + 1);
 	softrock_set_input_buffers(buffers +1);
@@ -337,9 +338,8 @@ int process(jack_nframes_t number_of_frames, void* arg)
 		{
 			start_buffer = 0;
 		}
-
-		return 0;
 	}
+	return 0;
 }
 
 #endif
