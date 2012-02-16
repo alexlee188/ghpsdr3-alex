@@ -1148,6 +1148,7 @@ void UI::modeChanged(int previousMode,int newMode) {
     }
     qDebug()<<Q_FUNC_INFO<<":  1043: value of band.getFilter after filters.selectFilters has been called = "<<band.getFilter();
     widget.spectrumFrame->setMode(mode.getStringMode());
+    widget.waterfallFrame->setMode(mode.getStringMode());
     command.clear(); QTextStream(&command) << "setMode " << mode.getMode();
     connection.sendCommand(command);
 }

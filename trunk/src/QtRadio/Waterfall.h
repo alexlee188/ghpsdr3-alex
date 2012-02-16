@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Waterfall.h
  * Author: John Melton, G0ORX/N6LYT
  *
@@ -73,6 +73,7 @@ public:
     void setSubRxFrequency(long long f);
     void setFilter(int low,int high);
     void setSubRxState(bool state);
+    void setMode(QString m);
 
 signals:
     void frequencyMoved(int steps,int step);
@@ -123,6 +124,7 @@ private:
     long long subRxFrequency;
     bool subRx;
     int size;
+    QString mode;
 };
 
 

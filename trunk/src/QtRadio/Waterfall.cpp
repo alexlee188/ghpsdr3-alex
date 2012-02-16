@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Waterfall.cpp
  * Author: John Melton, G0ORX/N6LYT
  * 
@@ -161,25 +161,29 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
         if(subRx) {
             freqOffsetPixel = (subRxFrequency-f)/hzPixel;
             if (button == Qt::LeftButton) {
-                // set frequency to center of filter
-                if(filterLow<0 && filterHigh<0) {
-                    freqOffsetPixel+=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
-                } else if(filterLow>0 && filterHigh>0){
-                    freqOffsetPixel-=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
-                } else {
-                    // no adjustment
+                if((mode!="USB")&&(mode!="LSB")){ // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
+                    // set frequency to center of filter
+                    if(filterLow<0 && filterHigh<0) {
+                        freqOffsetPixel+=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
+                    } else if(filterLow>0 && filterHigh>0){
+                        freqOffsetPixel-=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
+                    } else {
+                        // no adjustment
+                    }
                 }
             }
         } else {
             freqOffsetPixel = (f-frequency)/hzPixel; // compute the offset from the central frequency, in pixel
             if (button == Qt::LeftButton) {
-                // set frequency to center of filter
-                if(filterLow<0 && filterHigh<0) {
+                if((mode!="USB")&&(mode!="LSB")){ // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
+                    // set frequency to center of filter
+                    if(filterLow<0 && filterHigh<0) {
                     freqOffsetPixel-=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
-                } else if(filterLow>0 && filterHigh>0){
-                    freqOffsetPixel+=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
-                } else {
-                    // no adjustment
+                    } else if(filterLow>0 && filterHigh>0){
+                        freqOffsetPixel+=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
+                    } else {
+                    // no adjustment if filter extends each side of carrier frequency
+                    }
                 }
             }
         }
@@ -396,6 +400,11 @@ void Waterfall::setSubRxFrequency(long long f) {
 
 void Waterfall::setSubRxState(bool state) {
     subRx=state;
+}
+
+void Waterfall::setMode(QString m)
+{
+    mode=m;
 }
 
 void Waterfall::setFilter(int low, int high) {
