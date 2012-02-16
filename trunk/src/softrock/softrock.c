@@ -406,6 +406,7 @@ void softrock_record_buffer(char* buffer,int length) {
 
     if(record) {
         bytes=fwrite(buffer,sizeof(char),length,recording);
+	if (bytes != length) fprintf(stderr, "record write failed %d\n", bytes);
     }
 }
 

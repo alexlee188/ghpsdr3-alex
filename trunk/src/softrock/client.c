@@ -262,7 +262,7 @@ void* audio_thread(void* arg) {
 						break;
 					}
 				} else {
-					fprintf(stderr,"missing TX IQ frames expected %d.%ld got %d.%ld\n",sequence,offset,buffer.sequence,buffer.offset);
+					fprintf(stderr,"missing TX IQ frames expected %ld.%d got %ld.%d\n", (long)sequence,(int)offset,(long)buffer.sequence,(int)buffer.offset);
 				}
 			}
 		}
