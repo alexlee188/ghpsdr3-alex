@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Waterfall.cpp
  * Author: John Melton, G0ORX/N6LYT
  * 
@@ -27,6 +27,7 @@
 #include <omp.h>
 #endif
 #include "Waterfall.h"
+#include "Waterfallcl.h"
 
 Waterfall::Waterfall() {
 }
@@ -65,9 +66,13 @@ Waterfall::Waterfall(QWidget*& widget) {
   }
     cy = image.height()/2 - 1;
 
+    waterfallcl = new Waterfallcl;
+    waterfallcl->initialize(width()*2, height());
+
 }
 
 Waterfall::~Waterfall() {
+    delete waterfallcl;
 }
 
 void Waterfall::initialize() {

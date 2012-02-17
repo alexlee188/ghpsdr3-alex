@@ -48,6 +48,7 @@
 #include <QFrame>
 #include <QPainter>
 #include <QMouseEvent>
+#include "Waterfallcl.h"
 
 class Waterfall: public QFrame {
     Q_OBJECT
@@ -123,6 +124,8 @@ private:
     long long subRxFrequency;
     bool subRx;
     int size;
+
+    Waterfallcl *waterfallcl;
 };
 
 

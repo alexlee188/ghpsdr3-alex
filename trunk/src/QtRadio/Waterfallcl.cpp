@@ -33,11 +33,14 @@ void Waterfallcl::setGeometry(QRect rect){
 }
 
 void Waterfallcl::initialize(int wid, int ht){
+
+    data_width = wid;
+    data_height = ht;
+
     if (glContext) {
         waterfall.setGlobalWorkSize(wid, ht);
         return;
     }
-
     glContext = new QCLContextGL();
     if (!glContext->create()) return;
 }
