@@ -18,9 +18,48 @@
 
 #include "Waterfallcl.h"
 
+class ImageCLContext
+{
+public:
+    ImageCLContext() : glContext(0) {}
+    ~ImageCLContext();
+
+    void init(int wid, int ht);
+
+    QCLContextGL *glContext;
+    QCLProgram program;
+    QCLKernel waterfall;
+};
+
+void ImageCLContext::init(int wid, int ht)
+{
+    if (glContext) {
+        waterfall.setGlobalWorkSize(wid, ht);
+        return;
+    }
+
+    glContext = new QCLContextGL();
+    if (!glContext->create())
+        return;
+
+    program = glContext->buildProgramFromSourceFile
+        (QLatin1String(":/waterfall.cl"));
+    waterfall = program.createKernel("waterfall");
+    waterfall.setGlobalWorkSize(wid, ht);
+    waterfall.setLocalWorkSize(waterfall.bestLocalWorkSizeImage2D());
+}
+
+ImageCLContext::~ImageCLContext()
+{
+    delete glContext;
+}
+
+Q_GLOBAL_STATIC(ImageCLContext, image_context)
+
 
 Waterfallcl::Waterfallcl(){
-    glContext = 0;
+    ImageCLContext *ctx = image_context();
+    ctx->init(100,100);
 }
 
 Waterfallcl::~Waterfallcl(){
@@ -37,13 +76,38 @@ void Waterfallcl::initialize(int wid, int ht){
     data_width = wid;
     data_height = ht;
 
-    if (glContext) {
-        waterfall.setGlobalWorkSize(wid, ht);
-        return;
+    glEnable(GL_TEXTURE_2D);
+    glShadeModel(GL_SMOOTH);
+    // Create the texture in the GL context.
+    GLuint textureId;
+    glGenTextures(1, &textureId);
+    glBindTexture(GL_TEXTURE_2D, textureId);
+#ifdef GL_CLAMP_TO_EDGE
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#else
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+#endif
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, wid, ht, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    ImageCLContext *ctx = image_context();
+
+    // If the context supports object sharing, then this is really easy.
+    if (ctx->glContext->supportsObjectSharing()) {
+    waterfall_buffer = ctx->glContext->createTexture2D
+            (GL_TEXTURE_2D, textureId, 0, QCLMemoryObject::ReadWrite);
+    if (waterfall_buffer == 0) qFatal("Unabel to create waterfall_buffer");
     }
-    glContext = new QCLContextGL();
-    if (!glContext->create()) return;
+    else {
+        qFatal("System does not support CL/GL object sharing");
+    }
 }
+
 
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
 

@@ -22,7 +22,9 @@
 #include <QtCore>
 #include <QPainter>
 #include <QMouseEvent>
+#include <QDebug>
 #include <QtOpenGL/QGLWidget>
+#include <QtOpenGL/qglfunctions.h>
 #include <qcl/qclbuffer.h>
 #include <qcl/qclcommandqueue.h>
 #include <qcl/qclcontext.h>
@@ -33,6 +35,7 @@
 #include <qcl/qclprogram.h>
 #include <qcl/qclvector.h>
 #include <qcl/qclcontextgl.h>
+#include <qcl/qclmemoryobject.h>
 
 
 class Waterfallcl : public QGLWidget {
@@ -48,10 +51,8 @@ public slots:
     void updateWaterfall(char* header,char* buffer,int width);
 
 private:
-    QCLContextGL *glContext;
-    QCLProgram program;
-    QCLKernel waterfall;
     QCLVector<float> spectrum_data;
+    QCLImage2D waterfall_buffer;
     int data_width;
     int data_height;
 };
