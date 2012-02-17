@@ -58,6 +58,9 @@ Q_GLOBAL_STATIC(ImageCLContext, image_context)
 
 
 Waterfallcl::Waterfallcl(){
+
+    initializeGL();
+    makeCurrent();
     ImageCLContext *ctx = image_context();
     ctx->init(100,100);
 }
@@ -76,7 +79,11 @@ void Waterfallcl::initialize(int wid, int ht){
     data_width = wid;
     data_height = ht;
 
+
+    initializeGL();
+    makeCurrent();
     ImageCLContext *ctx = image_context();
+
 
     glEnable(GL_TEXTURE_2D);
     glShadeModel(GL_SMOOTH);
