@@ -76,6 +76,8 @@ void Waterfallcl::initialize(int wid, int ht){
     data_width = wid;
     data_height = ht;
 
+    ImageCLContext *ctx = image_context();
+
     glEnable(GL_TEXTURE_2D);
     glShadeModel(GL_SMOOTH);
     // Create the texture in the GL context.
@@ -95,7 +97,6 @@ void Waterfallcl::initialize(int wid, int ht){
                  GL_RGBA, GL_UNSIGNED_BYTE, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    ImageCLContext *ctx = image_context();
 
     // If the context supports object sharing, then this is really easy.
     if (ctx->glContext->supportsObjectSharing()) {
