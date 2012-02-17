@@ -130,8 +130,6 @@ char* shortOptions="";
 
 int optionIndex;
 
-//toShareOrNotToShare = 0;
-
 void signal_shutdown(int signum);
 
 /* --------------------------------------------------------------------------*/
