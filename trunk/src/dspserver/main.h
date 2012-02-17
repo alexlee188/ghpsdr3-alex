@@ -32,5 +32,5 @@ int cwPitch;
 
 
 
-const char *version = "20120212;-master"; //YYYYMMDD; text desc
+const char *version = "20120216;-master"; //YYYYMMDD; text desc
 
