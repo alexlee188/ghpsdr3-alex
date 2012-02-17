@@ -44,9 +44,12 @@ void ImageCLContext::init(int wid, int ht)
 
     program = glContext->buildProgramFromSourceFile
         (QLatin1String(":/waterfall.cl"));
+
+    /*
     waterfall = program.createKernel("waterfall");
     waterfall.setGlobalWorkSize(wid, ht);
     waterfall.setLocalWorkSize(waterfall.bestLocalWorkSizeImage2D());
+    */
 }
 
 ImageCLContext::~ImageCLContext()
