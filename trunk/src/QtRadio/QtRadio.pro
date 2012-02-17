@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-# Comment line below when using QtSDK, uncomment for  Ubuntu repository ver.
+# Uncomment line below when using QtSDK, comment for  Ubuntu repository ver.
 QT       += core gui network multimedia mobility
 
 # Uncomment 2 lines below when using QtSDK, comment for  Ubuntu repository ver.
