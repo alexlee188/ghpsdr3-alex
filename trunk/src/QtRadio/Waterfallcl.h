@@ -32,6 +32,7 @@
 #include <qcl/qclimageformat.h>
 #include <qcl/qclprogram.h>
 #include <qcl/qclvector.h>
+#include <qcl/qclcontextgl.h>
 
 
 class Waterfallcl : public QGLWidget {
@@ -41,13 +42,16 @@ public:
     Waterfallcl();
     ~Waterfallcl();
     void setGeometry(QRect rect);
-    void initialize();
+    void initialize(int wid, int ht);
 
 public slots:
     void updateWaterfall(char* header,char* buffer,int width);
 
 private:
-    QCLVector<float> waterfall_data;
+    QCLContextGL *glContext;
+    QCLProgram program;
+    QCLKernel waterfall;
+    QCLVector<float> spectrum_data;
     int data_width;
     int data_height;
 };

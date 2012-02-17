@@ -20,7 +20,7 @@
 
 
 Waterfallcl::Waterfallcl(){
-
+    glContext = 0;
 }
 
 Waterfallcl::~Waterfallcl(){
@@ -32,8 +32,14 @@ void Waterfallcl::setGeometry(QRect rect){
     data_height = rect.height();
 }
 
-void Waterfallcl::initialize(){
+void Waterfallcl::initialize(int wid, int ht){
+    if (glContext) {
+        waterfall.setGlobalWorkSize(wid, ht);
+        return;
+    }
 
+    glContext = new QCLContextGL();
+    if (!glContext->create()) return;
 }
 
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
