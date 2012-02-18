@@ -36,12 +36,13 @@ void ImageCLContext::init(int wid, int ht)
 {
     QByteArray source = QByteArray(
 
-        "__kernel void waterfall(__global char *src, int cy, int height,  __write_only image2d_t image) {\n"
+        "__kernel void waterfall(__global __read_only char *src, const int cy, const int height,  __write_only image2d_t image) {\n"
         "  int id = get_global_id(0);\n"
-        "  int2 pos = (int2)(id, cy);\n"
-        "  write_imagef(image, pos, (float4)(0.5, 0.25,0, (float)src[id]/256.0f));\n"
+        "  int2 pos;\n"
+        "  pos = (int2)(id, cy);\n"
+                "  write_imagef(image, pos, (float4)(0.5, 0.25, 1.0, (float)src[id]/256.0));\n"
         "  pos = (int2)(id, cy + height);\n"
-        "  write_imagef(image, pos, (float4)(0.5, 0.25,0, (float)src[id]/256.0f));\n"
+                "  write_imagef(image, pos, (float4)(0.5, 0.25, 1.0, (float)src[id]/256.0));\n"
         "}\n");
 
     if (glContext) {
@@ -255,7 +256,7 @@ void Waterfallcl::paintGL()
 
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
 
-    for (int i = 0; i < width; i++) spectrum_data[i]= buffer[i];
+    for (int i = 0; i < width; i++) spectrum_data[i] = buffer[i];
 
     ImageCLContext *ctx = image_context();
     QCLKernel waterfall = ctx->waterfall;
