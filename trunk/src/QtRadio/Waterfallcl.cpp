@@ -33,6 +33,12 @@ public:
 
 void ImageCLContext::init(int wid, int ht)
 {
+    QByteArray source = QByteArray(
+        "__kernel void waterfall(__global float *src, __global float *dest) {\n"
+        "  int id = get_global_id(0);\n"
+        "  dest[id] = sin(src[id]);\n"
+        "}\n");
+
     if (glContext) {
         waterfall.setGlobalWorkSize(wid, ht);
         return;
@@ -42,13 +48,10 @@ void ImageCLContext::init(int wid, int ht)
     if (!glContext->create())
         return;
 
-    program = glContext->buildProgramFromSourceFile
-        (QLatin1String(":/waterfall.cl"));
-    /*
+    program = glContext->createProgramFromSourceCode(source);
     waterfall = program.createKernel("waterfall");
     waterfall.setGlobalWorkSize(wid, ht);
     waterfall.setLocalWorkSize(waterfall.bestLocalWorkSizeImage2D());
-    */
 }
 
 ImageCLContext::~ImageCLContext()
@@ -60,8 +63,6 @@ Q_GLOBAL_STATIC(ImageCLContext, image_context)
 
 
 Waterfallcl::Waterfallcl(){
-
-    initializeGL();
     makeCurrent();
     ImageCLContext *ctx = image_context();
     ctx->init(100,100);
@@ -81,8 +82,6 @@ void Waterfallcl::initialize(int wid, int ht){
     data_width = wid;
     data_height = ht;
 
-
-    initializeGL();
     makeCurrent();
     ImageCLContext *ctx = image_context();
 
