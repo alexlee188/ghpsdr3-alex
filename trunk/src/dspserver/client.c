@@ -1642,3 +1642,6 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	
 }
 
+void printversion(){
+	 fprintf(stderr,"dspserver string: %s\n",version);
+}
