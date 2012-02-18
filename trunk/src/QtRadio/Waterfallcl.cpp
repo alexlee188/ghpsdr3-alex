@@ -39,13 +39,13 @@ void ImageCLContext::init(int wid, int ht)
         "__kernel void waterfall(__global char *src, int cy, int height,  __write_only image2d_t image) {\n"
         "  int id = get_global_id(0);\n"
         "  int2 pos = (int2)(id, cy);\n"
-        "  write_imagef(image, pos, (float4)(0.5, 0,0, (float)src[id]/256.0f));\n"
+        "  write_imagef(image, pos, (float4)(0.5, 0.25,0, (float)src[id]/256.0f));\n"
         "  pos = (int2)(id, cy + height);\n"
-        "  write_imagef(image, pos, (float4)(0.5, 0,0, (float)src[id]/256.0f));\n"
+        "  write_imagef(image, pos, (float4)(0.5, 0.25,0, (float)src[id]/256.0f));\n"
         "}\n");
 
     if (glContext) {
-        waterfall.setGlobalWorkSize(wid, ht);
+        waterfall.setGlobalWorkSize(wid);
         return;
     }
 
@@ -126,6 +126,7 @@ void Waterfallcl::initialize(int wid, int ht){
     else {
         qFatal("System does not support CL/GL object sharing");
     }
+
 }
 
 void Waterfallcl::resizeGL( int width, int height )
