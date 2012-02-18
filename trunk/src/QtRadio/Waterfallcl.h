@@ -52,7 +52,7 @@ public:
 public slots:
     void updateWaterfall(char* header,char* buffer,int width);
 private:
-    QCLVector<float> spectrum_data;
+    QCLVector<char> spectrum_data;
     QCLImage2D waterfall_buffer;
     GLuint textureId;
     int data_width;

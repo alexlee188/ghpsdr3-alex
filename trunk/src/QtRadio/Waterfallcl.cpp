@@ -34,9 +34,10 @@ public:
 void ImageCLContext::init(int wid, int ht)
 {
     QByteArray source = QByteArray(
-        "__kernel void waterfall(__global float *src, __global float *dest) {\n"
+        "__kernel void waterfall(__global char *src, int cy,  __write_only image2d_t image) {\n"
         "  int id = get_global_id(0);\n"
-        "  dest[id] = sin(src[id]);\n"
+        "  int2 pos = (int2)(id, cy);\n"
+        "  image_writef(image, pos, (float4)(0,0,0, src[id]));\n"
         "}\n");
 
     if (glContext) {
@@ -50,8 +51,9 @@ void ImageCLContext::init(int wid, int ht)
 
     program = glContext->createProgramFromSourceCode(source);
     waterfall = program.createKernel("waterfall");
-    waterfall.setGlobalWorkSize(wid, ht);
-    waterfall.setLocalWorkSize(waterfall.bestLocalWorkSizeImage2D());
+    waterfall.setGlobalWorkSize(wid);
+    //waterfall.setLocalWorkSize(waterfall.bestLocalWorkSizeImage2D());
+
 }
 
 ImageCLContext::~ImageCLContext()
@@ -66,6 +68,7 @@ Waterfallcl::Waterfallcl(){
     makeCurrent();
     ImageCLContext *ctx = image_context();
     ctx->init(100,100);
+    spectrum_data = ctx->glContext->createVector<char>(1024);
 }
 
 Waterfallcl::~Waterfallcl(){
@@ -76,7 +79,7 @@ Waterfallcl::~Waterfallcl(){
 void Waterfallcl::initialize(int wid, int ht){
 
     data_width = wid;
-    data_height = ht*2;     // for fast waterfall algorithm without scrolling
+    data_height = ht;
 
     rtri = 0.0f;
     rquad = 0.0f;
@@ -136,7 +139,7 @@ height = height?height:1;
 
 void Waterfallcl::setGeometry(QRect rect){
     data_width = rect.width();
-    data_height = rect.height() * 2;
+    data_height = rect.height();
 
     // change the width and height of textureId
     glEnable(GL_TEXTURE_2D);
@@ -235,6 +238,12 @@ void Waterfallcl::paintGL()
 }
 
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
+    for (int i = 0; i < width; i++) spectrum_data[i]= buffer[i];
+
+    ImageCLContext *ctx = image_context();
+    ctx->glContext->acquire(waterfall_buffer).waitForFinished();
+    ctx->waterfall(spectrum_data, 0, waterfall_buffer);
+    ctx->glContext->release(waterfall_buffer).waitForFinished();
 
 }
 
