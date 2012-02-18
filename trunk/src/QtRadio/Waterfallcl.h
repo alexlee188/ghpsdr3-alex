@@ -35,7 +35,7 @@
 #include <qcl/qclprogram.h>
 #include <qcl/qclvector.h>
 #include <qcl/qclcontextgl.h>
-#include <qcl/qclmemoryobject.h>
+#include "qclmemoryobject.h"
 
 
 class Waterfallcl : public QGLWidget {
