@@ -57,6 +57,7 @@ private:
     GLuint textureId;
     int data_width;
     int data_height;
+    int cy;
     GLfloat rtri, rquad;
 };
 

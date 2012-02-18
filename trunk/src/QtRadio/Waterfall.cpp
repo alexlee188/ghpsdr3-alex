@@ -67,7 +67,7 @@ Waterfall::Waterfall(QWidget*& widget) {
     cy = image.height()/2 - 1;
 
     waterfallcl = new Waterfallcl;
-    waterfallcl->initialize(image.width(), image.height());
+    waterfallcl->initialize(1024, 512);
     waterfallcl->show();
 
 }
@@ -233,6 +233,8 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
 
     //qDebug() << "updateWaterfall: " << width() << ":" << height();
 
+    waterfallcl->updateWaterfall(header, buffer, length);
+
     version=header[1];
     subversion=header[2];
     sampleRate=((header[9]&0xFF)<<24)+((header[10]&0xFF)<<16)+((header[11]&0xFF)<<8)+(header[12]&0xFF);
@@ -289,14 +291,8 @@ void Waterfall::updateWaterfall_2(void){
     QTimer::singleShot(0,this,SLOT(updateWaterfall_3()));
 }
 
+
 void Waterfall::updateWaterfall_3(void){
-    waterfallcl->updateGL();
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
-}
-
-
-
-void Waterfall::updateWaterfall_4(void){
     int x;
     int average=0;
 
@@ -315,9 +311,18 @@ void Waterfall::updateWaterfall_4(void){
         waterfallHigh=waterfallLow+60;
     }
 
-    QTimer::singleShot(0,this,SLOT(repaint()));
+    QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
 
 }
+
+
+void Waterfall::updateWaterfall_4(void){
+    QTimer::singleShot(0,this,SLOT(repaint()));
+    waterfallcl->updateGL();
+}
+
+
+
 
 uint Waterfall::calculatePixel(int sample) {
         // simple gray scale
