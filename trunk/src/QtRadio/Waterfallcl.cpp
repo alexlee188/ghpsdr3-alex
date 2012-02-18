@@ -74,13 +74,30 @@ Waterfallcl::~Waterfallcl(){
 
 void Waterfallcl::setGeometry(QRect rect){
     data_width = rect.width();
-    data_height = rect.height();
+    data_height = rect.height() * 2;
+
+    // change the width and height of textureId
+    glEnable(GL_TEXTURE_2D);
+    glShadeModel(GL_SMOOTH);
+    glBindTexture(GL_TEXTURE_2D, textureId);
+#ifdef GL_CLAMP_TO_EDGE
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#else
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+#endif
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void Waterfallcl::initialize(int wid, int ht){
 
     data_width = wid;
-    data_height = ht;
+    data_height = ht*2;     // for fast waterfall algorithm without scrolling
 
     makeCurrent();
     ImageCLContext *ctx = image_context();
@@ -89,7 +106,6 @@ void Waterfallcl::initialize(int wid, int ht){
     glEnable(GL_TEXTURE_2D);
     glShadeModel(GL_SMOOTH);
     // Create the texture in the GL context.
-    GLuint textureId;
     glGenTextures(1, &textureId);
     glBindTexture(GL_TEXTURE_2D, textureId);
 #ifdef GL_CLAMP_TO_EDGE
@@ -101,7 +117,7 @@ void Waterfallcl::initialize(int wid, int ht){
 #endif
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, wid, ht, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 

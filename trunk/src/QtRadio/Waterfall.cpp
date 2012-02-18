@@ -67,7 +67,7 @@ Waterfall::Waterfall(QWidget*& widget) {
     cy = image.height()/2 - 1;
 
     waterfallcl = new Waterfallcl;
-    waterfallcl->initialize(width()*2, height());
+    waterfallcl->initialize(image.width(), image.height());
 
 }
 

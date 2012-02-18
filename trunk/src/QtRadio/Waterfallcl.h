@@ -53,6 +53,7 @@ public slots:
 private:
     QCLVector<float> spectrum_data;
     QCLImage2D waterfall_buffer;
+    GLuint textureId;
     int data_width;
     int data_height;
 };
