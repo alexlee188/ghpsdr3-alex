@@ -191,8 +191,6 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
             long freqOffsetPixel;
             long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel)-LO_offset;
 
-            qDebug()<<Q_FUNC_INFO<<": f = "<<f<<", frequency = "<<frequency<<", event->pos().x() = "<<event->pos().x()<<", hzPixel = "<<hzPixel<<", LO_offset = "<<LO_offset;
-            qDebug()<<Q_FUNC_INFO<<": SampleRate/2 = "<<sampleRate/2;
             if(subRx) {    
                 freqOffsetPixel = (subRxFrequency-f)/hzPixel;
                 if (button == Qt::LeftButton) {
