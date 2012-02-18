@@ -1559,6 +1559,7 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	unsigned short length;
 	char len[10];
 	memory_entry *item = NULL;
+	char *safeptr;
 
 	if (strcmp(message,"q-version") == 0){
 		 strcat(answer,"q-version:");
@@ -1599,7 +1600,7 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 		 char delims[] = "#";
 		 char *result = NULL;
          result = strtok( message, delims ); //returns q-cantx
-         if ( result != NULL )  result = strtok( NULL, delims ); // this should be call/user
+         if ( result != NULL )  result = strtok_r( NULL, delims, &safeptr ); // this should be call/user
 		 if ( result != NULL ){
 			 if (chkFreq(result,  lastFreq , lastMode) == 0){
 				 strcat(answer,"q-cantx:Y");
