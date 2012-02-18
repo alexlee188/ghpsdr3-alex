@@ -64,7 +64,7 @@ void setprintcountry();
 void printcountrythread();
 void answer_question(char *message, char *clienttype, struct bufferevent *bev);
 char servername[21];
-
+void printversion();
 extern double mic_src_ratio;
 
 #endif

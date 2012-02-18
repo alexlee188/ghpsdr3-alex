@@ -1599,7 +1599,7 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	}else if (strncmp(message,"q-cantx",7) == 0){
 		 char delims[] = "#";
 		 char *result = NULL;
-         result = strtok( message, delims ); //returns q-cantx
+         result = strtok_r( message, delims, &safeptr ); //returns q-cantx
          if ( result != NULL )  result = strtok_r( NULL, delims, &safeptr ); // this should be call/user
 		 if ( result != NULL ){
 			 if (chkFreq(result,  lastFreq , lastMode) == 0){
@@ -1643,3 +1643,6 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	
 }
 
+void printversion(){
+	 fprintf(stderr,"dspserver string: %s\n",version);
+}

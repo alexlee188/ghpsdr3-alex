@@ -230,7 +230,7 @@ int main(int argc,char* argv[]) {
         fprintf(stderr, "Activating Web register\n");
 	}
     fprintf(stderr,"gHPSDR rx %d (Version %s)\n",receiver,VERSION);
-
+    printversion();
     setSoundcard(getSoundcardId(soundCardName));
 
     // initialize DttSP
