@@ -11,7 +11,7 @@ QT       += core gui network multimedia mobility
 CONFIG	+= mobility
 MOBILITY += multimedia
 
-LIBS += -lQtOpenCLGL -lQtOpenCL -lQtOpenGL
+LIBS += -lQtOpenCLGL -lQtOpenCL -lQtOpenGL -lOpenCL -lGLU
 macx:!opencl_configure {
     LIBS += -framework OpenCL
 }

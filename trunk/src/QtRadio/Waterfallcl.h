@@ -23,6 +23,7 @@
 #include <QPainter>
 #include <QMouseEvent>
 #include <QDebug>
+#include <GL/glu.h>
 #include <QtOpenGL/QGLWidget>
 #include <QtOpenGL/qglfunctions.h>
 #include <qcl/qclbuffer.h>
@@ -46,16 +47,17 @@ public:
     ~Waterfallcl();
     void setGeometry(QRect rect);
     void initialize(int wid, int ht);
-
+    void resizeGL( int width, int height );
+    void paintGL();
 public slots:
     void updateWaterfall(char* header,char* buffer,int width);
-
 private:
     QCLVector<float> spectrum_data;
     QCLImage2D waterfall_buffer;
     GLuint textureId;
     int data_width;
     int data_height;
+    GLfloat rtri, rquad;
 };
 
 

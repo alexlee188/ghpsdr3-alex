@@ -72,6 +72,68 @@ Waterfallcl::~Waterfallcl(){
 
 }
 
+
+void Waterfallcl::initialize(int wid, int ht){
+
+    data_width = wid;
+    data_height = ht*2;     // for fast waterfall algorithm without scrolling
+
+    rtri = 0.0f;
+    rquad = 0.0f;
+
+    makeCurrent();
+    ImageCLContext *ctx = image_context();
+
+    glEnable(GL_TEXTURE_2D);
+    glShadeModel(GL_SMOOTH);
+    // Create the texture in the GL context.
+    glGenTextures(1, &textureId);
+    glBindTexture(GL_TEXTURE_2D, textureId);
+#ifdef GL_CLAMP_TO_EDGE
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#else
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+#endif
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearDepth(1.0f);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+    // If the context supports object sharing, then this is really easy.
+    if (ctx->glContext->supportsObjectSharing()) {
+    waterfall_buffer = ctx->glContext->createTexture2D
+            (GL_TEXTURE_2D, textureId, 0, QCLMemoryObject::ReadWrite);
+    if (waterfall_buffer == 0) qFatal("Unabel to create waterfall_buffer");
+    }
+    else {
+        qFatal("System does not support CL/GL object sharing");
+    }
+}
+
+void Waterfallcl::resizeGL( int width, int height )
+{
+height = height?height:1;
+
+    glViewport( 0, 0, (GLint)width, (GLint)height );
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(60.0f,(GLfloat)width/(GLfloat)height,0.5f,100.0f);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
 void Waterfallcl::setGeometry(QRect rect){
     data_width = rect.width();
     data_height = rect.height() * 2;
@@ -94,45 +156,83 @@ void Waterfallcl::setGeometry(QRect rect){
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Waterfallcl::initialize(int wid, int ht){
+void Waterfallcl::paintGL()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
 
-    data_width = wid;
-    data_height = ht*2;     // for fast waterfall algorithm without scrolling
+    glTranslatef(-0.7f,0.0f,-6.0f);
+    glRotatef(rtri,0.0f,1.0f,0.0f);
 
-    makeCurrent();
-    ImageCLContext *ctx = image_context();
+    glBegin(GL_TRIANGLES);
+    glColor3f(1.0f,0.0f,0.0f);
+    glVertex3f( 0.0f, 1.0f, 0.0f);
+    glColor3f(0.0f,1.0f,0.0f);
+    glVertex3f(-1.0f,-1.0f, 1.0f);
+    glColor3f(0.0f,0.0f,1.0f);
+    glVertex3f( 1.0f,-1.0f, 1.0f);
+    glColor3f(1.0f,0.0f,0.0f);
+    glVertex3f( 0.0f, 1.0f, 0.0f);
+    glColor3f(0.0f,0.0f,1.0f);
+    glVertex3f( 1.0f,-1.0f, 1.0f);
+    glColor3f(0.0f,1.0f,0.0f);
+    glVertex3f( 1.0f,-1.0f, -1.0f);
+    glColor3f(1.0f,0.0f,0.0f);
+    glVertex3f( 0.0f, 1.0f, 0.0f);
+    glColor3f(0.0f,1.0f,0.0f);
+    glVertex3f( 1.0f,-1.0f, -1.0f);
+    glColor3f(0.0f,0.0f,1.0f);
+    glVertex3f(-1.0f,-1.0f, -1.0f);
+    glColor3f(1.0f,0.0f,0.0f);
+    glVertex3f( 0.0f, 1.0f, 0.0f);
+    glColor3f(0.0f,0.0f,1.0f);
+    glVertex3f(-1.0f,-1.0f,-1.0f);
+    glColor3f(0.0f,1.0f,0.0f);
+    glVertex3f(-1.0f,-1.0f, 1.0f);
+    glEnd();
 
+    glLoadIdentity();
+    glTranslatef(0.5f,0.0f,-5.5f);
+    glScalef(0.8f, 0.8f, 0.8f);
+    glRotatef(rquad,1.0f,0.0f,0.0f);
 
-    glEnable(GL_TEXTURE_2D);
-    glShadeModel(GL_SMOOTH);
-    // Create the texture in the GL context.
-    glGenTextures(1, &textureId);
-    glBindTexture(GL_TEXTURE_2D, textureId);
-#ifdef GL_CLAMP_TO_EDGE
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#else
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-#endif
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glColor3f(0.5f,0.5f,1.0f);
+    glBegin(GL_QUADS);
+    glColor3f(0.0f,1.0f,0.0f);
+    glVertex3f( 1.0f, 1.0f,-1.0f);
+    glVertex3f(-1.0f, 1.0f,-1.0f);
+    glVertex3f(-1.0f, 1.0f, 1.0f);
+    glVertex3f( 1.0f, 1.0f, 1.0f);
+    glColor3f(1.0f,0.5f,0.0f);
+    glVertex3f( 1.0f,-1.0f, 1.0f);
+    glVertex3f(-1.0f,-1.0f, 1.0f);
+    glVertex3f(-1.0f,-1.0f,-1.0f);
+    glVertex3f( 1.0f,-1.0f,-1.0f);
+    glColor3f(1.0f,0.0f,0.0f);
+    glVertex3f( 1.0f, 1.0f, 1.0f);
+    glVertex3f(-1.0f, 1.0f, 1.0f);
+    glVertex3f(-1.0f,-1.0f, 1.0f);
+    glVertex3f( 1.0f,-1.0f, 1.0f);
+    glColor3f(1.0f,1.0f,0.0f);
+    glVertex3f( 1.0f,-1.0f,-1.0f);
+    glVertex3f(-1.0f,-1.0f,-1.0f);
+    glVertex3f(-1.0f, 1.0f,-1.0f);
+    glVertex3f( 1.0f, 1.0f,-1.0f);
+    glColor3f(0.0f,0.0f,1.0f);
+    glVertex3f(-1.0f, 1.0f, 1.0f);
+    glVertex3f(-1.0f, 1.0f,-1.0f);
+    glVertex3f(-1.0f,-1.0f,-1.0f);
+    glVertex3f(-1.0f,-1.0f, 1.0f);
+    glColor3f(1.0f,0.0f,1.0f);
+    glVertex3f( 1.0f, 1.0f,-1.0f);
+    glVertex3f( 1.0f, 1.0f, 1.0f);
+    glVertex3f( 1.0f,-1.0f, 1.0f);
+    glVertex3f( 1.0f,-1.0f,-1.0f);
+    glEnd();
 
-
-    // If the context supports object sharing, then this is really easy.
-    if (ctx->glContext->supportsObjectSharing()) {
-    waterfall_buffer = ctx->glContext->createTexture2D
-            (GL_TEXTURE_2D, textureId, 0, QCLMemoryObject::ReadWrite);
-    if (waterfall_buffer == 0) qFatal("Unabel to create waterfall_buffer");
-    }
-    else {
-        qFatal("System does not support CL/GL object sharing");
-    }
+    rtri += 0.2f;
+    rquad -= 0.5f;
 }
-
 
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
 

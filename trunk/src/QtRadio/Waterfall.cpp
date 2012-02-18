@@ -68,6 +68,7 @@ Waterfall::Waterfall(QWidget*& widget) {
 
     waterfallcl = new Waterfallcl;
     waterfallcl->initialize(image.width(), image.height());
+    waterfallcl->show();
 
 }
 
@@ -219,6 +220,7 @@ void Waterfall::paintEvent(QPaintEvent*) {
     //painter.fillRect(0, 0, width(), height(), Qt::black);
 
     painter.drawImage(0,0,image,0,cy,image.width(),image.height()/2,Qt::AutoColor);
+
     if (cy <= 0) cy = image.height()/2 - 1;
     else cy--;          // "scroll"
 }
@@ -284,11 +286,12 @@ void Waterfall::updateWaterfall_2(void){
             }
         }
     }
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
+    QTimer::singleShot(0,this,SLOT(updateWaterfall_3()));
 }
 
 void Waterfall::updateWaterfall_3(void){
-
+    waterfallcl->updateGL();
+    QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
 }
 
 
