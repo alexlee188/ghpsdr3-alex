@@ -1467,11 +1467,20 @@ void UI::filterChanged(int previousFilter,int newFilter) {
 
 void UI::frequencyChanged(long long f) {
     QString command;
+    long long freqOffset = f; //Normally no offset (only for CW Rx mode)
 
     frequency=f;
+    if(mode.getStringMode()=="CWU"){
+        //TODO make this the case gor RX only
+        freqOffset-=cwPitch;
+    }
+    if(mode.getStringMode()=="CWL"){
+        //TODO make this the case gor RX only
+        freqOffset+=cwPitch;
+    }
     //Send command to server
     command.clear();
-    QTextStream(&command) << "setFrequency " << frequency;
+    QTextStream(&command) << "setFrequency " << freqOffset;
     connection.sendCommand(command);
     //Adjust all frequency displays & Check for exiting current band
     band.setFrequency(frequency);
