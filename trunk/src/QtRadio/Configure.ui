@@ -39,7 +39,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>5</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="Server">
     <attribute name="title">
@@ -535,14 +535,49 @@
     <widget class="QCheckBox" name="rtpCheckBox">
      <property name="geometry">
       <rect>
-       <x>40</x>
-       <y>240</y>
+       <x>30</x>
+       <y>230</y>
        <width>97</width>
        <height>22</height>
       </rect>
      </property>
      <property name="text">
       <string>Use RTP</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="spinBox_cwPitch">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>220</y>
+       <width>59</width>
+       <height>29</height>
+      </rect>
+     </property>
+     <property name="minimum">
+      <number>400</number>
+     </property>
+     <property name="maximum">
+      <number>1000</number>
+     </property>
+     <property name="singleStep">
+      <number>50</number>
+     </property>
+     <property name="value">
+      <number>600</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_cwPitch">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>230</y>
+       <width>69</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>CW Pitch</string>
      </property>
     </widget>
    </widget>

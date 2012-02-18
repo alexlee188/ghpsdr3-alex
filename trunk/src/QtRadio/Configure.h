@@ -99,6 +99,7 @@ public:
     QString thispass;
     bool getRxIQcheckboxState();
     double getRxIQspinBoxValue();
+    int getCwPitch();
 
 signals:
     void hostChanged(QString host);
@@ -128,6 +129,7 @@ signals:
 
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
+    void spinBox_cwPitchChanged(int pitch);
 
 public slots:
     void slotHostChanged(int selection);
@@ -173,6 +175,8 @@ private slots:
     void on_RxIQspinBox_valueChanged(int spinValue);
 
     void on_userpasssave_clicked();
+
+    void on_spinBox_cwPitch_valueChanged(int arg1);
 
 private:
     Ui::Configure widget;

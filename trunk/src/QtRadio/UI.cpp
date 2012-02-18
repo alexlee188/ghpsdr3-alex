@@ -288,6 +288,7 @@ UI::UI(const QString server) {
     connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
     connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
     connect(&configure,SIGNAL(RxIQspinChanged(double)),this,SLOT(RxIQspinChanged(double)));
+    connect(&configure,SIGNAL(spinBox_cwPitchChanged(int)),this,SLOT(cwPitchChanged(int)));
     connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
     connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
 
@@ -298,7 +299,7 @@ UI::UI(const QString server) {
     subRx=FALSE;
     subRxGain=100;
     agc=AGC_SLOW;
-    cwPitch=600;
+    cwPitch=configure.getCwPitch();
     squelchValue=-100;
     squelch=false;
 
@@ -2288,6 +2289,13 @@ void UI::RxIQspinChanged(double num)
         command.clear(); QTextStream(&command) << "SetIQEnable " << "true";
         connection.sendCommand(command);
     }
+}
+
+void UI::cwPitchChanged(int arg1)
+{
+    cwPitch = arg1;
+    filters.selectFilter(filters.getFilter());
+
 }
 
 void UI::setCanTX(bool tx){
