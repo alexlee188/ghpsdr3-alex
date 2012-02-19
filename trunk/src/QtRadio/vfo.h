@@ -30,6 +30,7 @@ public:
     QString rigctlGetvfo();
     long long getTxFrequency();
     void pttChange(bool pttState);
+    bool getPtt();
 
 public slots:
     void on_pBtnvfoA_clicked();  // moved from private for rigctl

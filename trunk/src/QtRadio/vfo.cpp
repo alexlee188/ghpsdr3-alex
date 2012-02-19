@@ -665,3 +665,8 @@ void vfo::pttChange(bool pttState)
     setVfoBtnColour();
 }
 
+bool vfo::getPtt()
+{
+    return ptt; //returns state of ptt. false = Rx, true =Tx
+}
+
