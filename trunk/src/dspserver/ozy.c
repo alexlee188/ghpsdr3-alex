@@ -592,6 +592,20 @@ int ozySetOpenCollectorOutputs(char* state) {
     return result;
 }
 
+int ozySendStarCommand(char *command) {
+    int result;
+    char buf[256]; 
+
+    result=0;
+    send_command(command+1);  // SKIP the leading '*'
+    fprintf(stderr,"response to STAR message: [%s]\n",response);
+    snprintf (buf, sizeof(buf), "%s %s", command, response ); // insert a leading '*' in answer 
+    strcpy (command, buf);                                    // attach the answer              
+    result=0;
+
+    return result;
+}
+
 
 /* --------------------------------------------------------------------------*/
 /** 

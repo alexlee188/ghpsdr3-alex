@@ -807,6 +807,14 @@ void readcb(struct bufferevent *bev, void *ctx){
 	while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
 
                 message[bytesRead-1]=0;			// for Linux strings terminating in NULL
+
+                if (message[0] == '*') {
+                    fprintf(stderr,"HARDWARE DIRECTED: message: '%s'\n",message);
+                    ozySendStarCommand (message);
+                    answer_question(message,"slave", bev);
+                    continue;
+                }                
+
                 token=strtok_r(message," ",&saveptr);
  		if (token == NULL) continue;
 
@@ -1422,19 +1430,17 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 
 
 			} else if(strncmp(token,"rxiqmuval",9)==0) {
-				token=strtok_r(NULL," ",&saveptr);
-		                if(token!=NULL) {
-				    fprintf(stderr,"The value of mu sent = '%s'\n",token);
-		                    SetCorrectRXIQMu(0, 0, atof(token));
-		                } else {
-		                    fprintf(stderr,"Invalid command: '%s'\n",message);
-		                }
-                        } else {
-		            fprintf(stderr,"Invalid command: token: '%s'\n",token);
+				    token=strtok_r(NULL," ",&saveptr);
+		            if(token!=NULL) {
+				        fprintf(stderr,"The value of mu sent = '%s'\n",token);
+		                SetCorrectRXIQMu(0, 0, atof(token));
+		            } else {
+		                fprintf(stderr,"Invalid command: '%s'\n",message);
 		            }
                 } else {
                     fprintf(stderr,"Invalid command: message: '%s'\n",message);
-                	}
+                }
+            }
 		} // end if (mic)
 	    } // end while
 }
@@ -1616,6 +1622,8 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 		 sprintf(p,"%f;",LO_offset);
 		 strcat(answer,p);
 		 //fprintf(stderr,"q-loffset: %s\n",answer);
+	}else if (strstr(message, "OK")) {
+             strcat (answer, message);
 	}else{
 		fprintf(stderr,"Unknown question: %s\n",message);
 		return;
