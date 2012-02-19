@@ -5,15 +5,15 @@
 #-------------------------------------------------
 
 # Comment line below when using QtSDK, uncomment for  Ubuntu repository ver.
-QT       += core gui network multimedia mobility
+#QT       += core gui network multimedia mobility
 
 # Uncomment 2 lines below when using QtSDK, comment for  Ubuntu repository ver.
 CONFIG	+= mobility
 MOBILITY += multimedia
 
 # Comment 2 lines below when using QtSDK, uncomment for  Ubuntu repository ver.
-#INCLUDEPATH += /usr/include/QtMobility
-#INCLUDEPATH += /usr/include/QtMultimediaKit
+INCLUDEPATH += /usr/include/QtMobility
+INCLUDEPATH += /usr/include/QtMultimediaKit
 
 TARGET = QtRadio
 TEMPLATE = app
