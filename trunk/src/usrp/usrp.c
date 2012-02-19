@@ -441,8 +441,7 @@ void *usrp_transmitter_thread (void *param)
         //2.Rational resampling API here                
         char *rr_msg = NULL;
         int output_frames_gen = 0;
-        int rr_retcode = do_resample(resampler_id, TRANSMIT_BUFFER_SIZE, &output_frames_gen, rr_msg);         
-                
+        int rr_retcode = do_resample(resampler_id, TRANSMIT_BUFFER_SIZE, &output_frames_gen, rr_msg);                         
         //std::cerr << boost::format("output_frames_gen %d.\n") % output_frames_gen << std::endl;  
                         
         if (rr_retcode == RRESAMPLER_NO_ERROR) {                                    
