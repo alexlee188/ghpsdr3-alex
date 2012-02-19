@@ -14,12 +14,12 @@
 #include "receiver.h"
 #include "usrp.h"
 #include "usrp_audio.h"
+#include "transmitter.h"
 
 //#define DECIM_FACT         8 
 
 //#define SAMPLE_RATE        (CORE_BANDWIDTH/DECIM_FACT)   /* the sampling rate */
 #define CHANNELS           2       /* 1 = mono 2 = stereo */
-#define SAMPLES_PER_BUFFER 1024
 #define BUFFER_DISCARDED -1
 
 #define AUDIO_TO_NOTHING 0
@@ -29,6 +29,7 @@
 static int SAMPLE_RATE;
 static int DECIM_FACT;
 static int AUDIO_DESTINATION = 0;
+static int SAMPLES_PER_BUFFER = TRANSMIT_BUFFER_SIZE;
 
 static PaStream* stream;
 
@@ -217,7 +218,7 @@ int usrp_local_audio_write_decim (float* left_samples, float* right_samples)   {
         }
     }
 
-    rc = Pa_WriteStream (stream, audio_buffer, SAMPLES_PER_BUFFER/DECIM_FACT);
+    rc = Pa_WriteStream (stream, audio_buffer, SAMPLES_PER_BUFFER*2/DECIM_FACT);
     if ( rc != 0 ) {
         fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n", Pa_GetErrorText(rc), rc);
     }
@@ -228,7 +229,7 @@ int usrp_local_audio_write_decim (float* left_samples, float* right_samples)   {
 //Proxy functions for audio consumers
         //REMEMBER: the outbuf carries 2 channels: 
         //outbuf[0..TRANSMIT_BUFFER_SIZE-1] and
-        //outbuf[TRANSMIT_BUFFER_SIZE..TRANSMIT_BUFFER_SIZE-1]
+        //outbuf[TRANSMIT_BUFFER_SIZE..2*TRANSMIT_BUFFER_SIZE-1]
 void usrp_process_audio_buffer (float *outbuf, int mox) {
     
     int rc;    
@@ -241,7 +242,7 @@ void usrp_process_audio_buffer (float *outbuf, int mox) {
             case AUDIO_TO_USRP_MODULATION:
                 rc=usrp_process_tx_modulation(outbuf, mox);
                 if (rc == BUFFER_DISCARDED) {
-                    fprintf(stderr,"usrp TX AUDIO queue overflow!\n");
+                    fprintf(stderr,"USRP TX AUDIO queue overflow!\n");
                 }
                 break;
                 
