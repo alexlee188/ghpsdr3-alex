@@ -93,7 +93,6 @@ static int port=BASE_PORT;
 static int serverSocket;
 static int clientSocket;
 static struct sockaddr_in server;
-static struct sockaddr_in client;
 
 #define SAMPLE_BUFFER_SIZE 4096
 static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
@@ -157,8 +156,11 @@ void client_set_samples(float* samples,int size);
 
 char* client_samples;
 int samples;
-int prncountry = -1;
+int prncountry = 0;
 char status_buf[32];
+
+static void *printcountrythread(void *);
+static void printcountry(struct sockaddr_in *);
 
 float getFilterSizeCalibrationOffset() {
     int size=1024; // dspBufferSize
@@ -662,9 +664,8 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
         fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connection from %s:%d\n",
 		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
 		receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
-        if(prncountry == 0){
-	    	memcpy(&client, &ss, sizeof(client));
-                printcountry();
+        if(prncountry){
+            printcountry(&ss);
         }
 
         struct bufferevent *bev;
@@ -1513,35 +1514,42 @@ void client_set_samples(float* samples,int size) {
 
 void setprintcountry()
 {
-	prncountry = 0;
+	prncountry = 1;
 	fprintf(stderr,"Country Lookup is On\n");
 }
 
-void printcountry(){
-	pthread_t lookup_thread;
-	int ret;
+void printcountry(struct sockaddr_in *client){
+    pthread_t lookup_thread;
+    int ret;
 
-    ret = pthread_create( &lookup_thread, NULL, printcountrythread, (void*) NULL);
+    /* This takes advantage of the fact that IPv4 addresses are 32 bits.
+     * If or when this code is aware of other types of sockets, the
+     * argument here will have to be renegotiated. */
+    ret = pthread_create(&lookup_thread, NULL, printcountrythread,
+                         (void*)client->sin_addr.s_addr);
     if (ret == 0) pthread_detach(lookup_thread);
-		
 }
 
-void printcountrythread()
+void *printcountrythread(void *arg)
 {
   // looks for the country for the connecting IP
   FILE *fp;
   char path[1035];
   char sCmd[255];
+  struct in_addr addr;
+
+  addr.s_addr = (in_addr_t)arg;
   /* Open the command for reading. */
-  sprintf(sCmd,"wget -O - --post-data 'ip=%s'  http://www.selfseo.com/ip_to_country.php 2>/dev/null |grep ' is assigned to '|perl -ne 'm/border=1> (.*?)</; print \"$1\\n\" '",inet_ntoa(client.sin_addr));
+  sprintf(sCmd,"wget -q -O - --post-data 'ip=%s' http://www.selfseo.com/ip_to_country.php 2>/dev/null | sed -e '/ is assigned to /!d' -e 's/.*border=1> \\([^<]*\\).*/\\1/'",
+          inet_ntoa(addr));
   fp = popen(sCmd, "r");
   if (fp == NULL) {
     fprintf(stdout,"Failed to run printcountry command\n" );
-    return;
+    return NULL;
   }
 
   /* Read the output a line at a time - output it. */
-  fprintf(stdout,"\nIP %s is from ", inet_ntoa(client.sin_addr));
+  fprintf(stdout,"\nIP %s is from ", inet_ntoa(addr));
   while (fgets(path, sizeof(path)-1, fp) != NULL) {
     fprintf(stdout,"%s",  path);
   }
@@ -1549,7 +1557,7 @@ void printcountrythread()
   /* close */
   pclose(fp);
 
-  return;
+  return NULL;
 }
 
 void answer_question(char *message, char *clienttype, struct bufferevent *bev){
