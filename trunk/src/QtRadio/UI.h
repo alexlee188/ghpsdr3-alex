@@ -263,6 +263,7 @@ public slots:
     void closeServers ();
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
+    void cwPitchChanged(int cwPitch);
     void testSliderChange(int value);
     void testButtonClick(bool state);
     void resetbandedges(double offset);
