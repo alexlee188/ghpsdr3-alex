@@ -1481,12 +1481,10 @@ void UI::frequencyChanged(long long f) {
     long long freqOffset = f; //Normally no offset (only for CW Rx mode)
 
     frequency=f;
-    if(mode.getStringMode()=="CWU"){
-        //TODO make this the case for RX only
+    if((mode.getStringMode()=="CWU")&&(!widget.vfoFrame->getPtt())){
         freqOffset-=cwPitch;
     }
-    if(mode.getStringMode()=="CWL"){
-        //TODO make this the case for RX only
+    if((mode.getStringMode()=="CWL")&&(!widget.vfoFrame->getPtt())){
         freqOffset+=cwPitch;
     }
     //Send command to server
