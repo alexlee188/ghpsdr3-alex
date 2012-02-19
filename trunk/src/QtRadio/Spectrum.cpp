@@ -187,32 +187,39 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
         if(moved) {
             emit frequencyMoved(move,100);
         } else {
-            float hzPixel = sampleRate/width();  // spectrum resolution: Hz/pixel
+            float hzPixel = (float) sampleRate / width();  // spectrum resolution: Hz/pixel
             long freqOffsetPixel;
             long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel)-LO_offset;
+
+            qDebug()<<Q_FUNC_INFO<<": f = "<<f<<", frequency = "<<frequency<<", event->pos().x() = "<<event->pos().x()<<", hzPixel = "<<hzPixel<<", LO_offset = "<<LO_offset;
+            qDebug()<<Q_FUNC_INFO<<": SampleRate/2 = "<<sampleRate/2;
             if(subRx) {    
                 freqOffsetPixel = (subRxFrequency-f)/hzPixel;
                 if (button == Qt::LeftButton) {
-                    // set frequency to center of filter
-                    if(filterLow<0 && filterHigh<0) {
-                        freqOffsetPixel+=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
-                    } else if(filterLow>0 && filterHigh>0){
-                        freqOffsetPixel-=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
-                    } else {
+                    if((mode!="USB")&&(mode!="LSB")){
+                        // set frequency to center of filter
+                        if(filterLow<0 && filterHigh<0) {
+                            freqOffsetPixel+=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
+                        } else if(filterLow>0 && filterHigh>0){
+                            freqOffsetPixel-=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
+                        } else {
                         // no adjustment
-                    }
+                        }
+                    } // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
                 }
             } else {
                 freqOffsetPixel = (f-frequency)/hzPixel; // compute the offset from the central frequency, in pixel
                 if (button == Qt::LeftButton) {
-                    // set frequency to center of filter
-                    if(filterLow<0 && filterHigh<0) {
+                    if((mode!="USB")&&(mode!="LSB")){
+                        // set frequency to center of filter
+                        if(filterLow<0 && filterHigh<0) {
                         freqOffsetPixel-=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
-                    } else if(filterLow>0 && filterHigh>0){
-                        freqOffsetPixel+=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
-                    } else {
-                        // no adjustment
-                    }
+                        } else if(filterLow>0 && filterHigh>0){
+                            freqOffsetPixel+=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
+                        } else {
+                        // no adjustment if filter extends each side of carrier frequency
+                        }
+                    } // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
                 }
             }
             emit frequencyMoved(-(long long)(freqOffsetPixel*hzPixel)/100,100);
@@ -438,7 +445,7 @@ void Spectrum::setReceiver(int r) {
 
 void Spectrum::setMode(QString m) {
     mode=m;
-//    repaint();
+    qDebug()<<Q_FUNC_INFO<<": Mode changed to "<<m;
     update();
 }
 

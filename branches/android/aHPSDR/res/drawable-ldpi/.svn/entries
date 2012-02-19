@@ -1,14 +1,14 @@
 10
 
 dir
-2011
-svn://svn.openhpsdr.org/svn/repos_sdr_hpsdr/trunk/N6LYT/ghpsdr3/branches/android/aHPSDR/res/drawable-ldpi
-svn://svn.openhpsdr.org/svn/repos_sdr_hpsdr
+2280
+http://svn.tapr.org/repos_sdr_hpsdr/trunk/N6LYT/ghpsdr3/branches/android/aHPSDR/res/drawable-ldpi
+http://svn.tapr.org/repos_sdr_hpsdr
 
 
 
-2011-07-30T06:10:03.224974Z
-2011
+2011-08-17T11:24:12.972555Z
+2048
 jmelton
 
 
@@ -28,11 +28,11 @@ fab57ed4-c20f-0410-8556-bd0ba87add53
 
 icon.png
 file
-2048
 
 
 
-2011-08-16T17:19:02.122421Z
+
+2012-02-14T13:37:46.910214Z
 e11d01df51d664f77cd1cdf3df5a84bb
 2011-08-17T11:24:12.972555Z
 2048

@@ -93,7 +93,6 @@ static int port=BASE_PORT;
 static int serverSocket;
 static int clientSocket;
 static struct sockaddr_in server;
-static struct sockaddr_in client;
 
 #define SAMPLE_BUFFER_SIZE 4096
 static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
@@ -157,8 +156,11 @@ void client_set_samples(float* samples,int size);
 
 char* client_samples;
 int samples;
-int prncountry = -1;
+int prncountry = 0;
 char status_buf[32];
+
+static void *printcountrythread(void *);
+static void printcountry(struct sockaddr_in *);
 
 float getFilterSizeCalibrationOffset() {
     int size=1024; // dspBufferSize
@@ -662,9 +664,8 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
         fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connection from %s:%d\n",
 		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
 		receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
-        if(prncountry == 0){
-	    	memcpy(&client, &ss, sizeof(client));
-                printcountry();
+        if(prncountry){
+            printcountry(&ss);
         }
 
         struct bufferevent *bev;
@@ -1282,37 +1283,35 @@ fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
 		                    fprintf(stderr,"Invalid command: '%s'\n",message);
 		                }
                        } else if(strncmp(token,"settxamcarrierlevel",19)==0) {
+						fprintf(stderr,"Debug: SetTXAMCarrierLevel: %s  txcfg: %d\n",message,  txcfg);
 		                token=strtok_r(NULL," ",&saveptr);
 		                if(token!=NULL) {
 		                    double pwr=atof(token);
-		                    char *thisuser =strtok_r(NULL," ",&saveptr);
-		                    if(thisuser!=NULL) {
-								char *thispasswd =strtok_r(NULL," ",&saveptr);
-								if(thispasswd!=NULL) {
-									if(chkPasswd(thisuser, thispasswd) == 0){ 
-		                               if(pwr >= 0 &&
-		                                 pwr <= 1) {
-									     fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
-		                                 SetTXAMCarrierLevel(1,pwr);
+		                    if(txcfg == TXPASSWD){
+		                       char *thisuser =strtok_r(NULL," ",&saveptr);
+		                       if(thisuser!=NULL) {
+								   char *thispasswd =strtok_r(NULL," ",&saveptr);
+								   if(thispasswd!=NULL) {
+									   if(chkPasswd(thisuser, thispasswd) == 0){ 
+		                                  if(pwr >= 0 && pwr <= 1) {
+									        //fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
+		                                    SetTXAMCarrierLevel(1,pwr);
+									      }
+									   }else{
+									       fprintf(stderr,"SetTXAMCarrierLevel denied because user %s password check failed!\n",thisuser);
 									   }
-									}else{
-									    fprintf(stderr,"SetTXAMCarrierLevel denied because user %s password check failed!\n",thisuser);
-									}
-								}
-		                     } else {
-		                        if (txcfg == TXALL){
-		                           if(pwr >= 0 &&
-		                                 pwr <= 1) {
-										 fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
-		                                 SetTXAMCarrierLevel(1,pwr);
-									}
-		                           
-		                        }else{
-									fprintf(stderr,"SetTXAMCarrierLevel denied because Invalid command argument : '%s' txcfg = %d\n",message, txcfg);
-							    }
-		                    }
-		                } else {
-		                    fprintf(stderr,"Invalid command: '%s'\n",message);
+								   }
+		                        }
+						   }if (txcfg == TXALL){
+		                              if(pwr >= 0 &&  pwr <= 1) {
+										    fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
+		                                    SetTXAMCarrierLevel(1,pwr);
+									   }else{
+									      fprintf(stderr,"SetTXAMCarrierLevel denied because Invalid command argument : '%s' txcfg = %d\n",message, txcfg);
+							           }
+		                   }
+		                } else{
+		                    fprintf(stderr,"Invalid SetTXAMCarrierLevel command: '%s'\n",message);
 		                }
                        } else if(strncmp(token,"setsquelchval",13)==0) {
 		                token=strtok_r(NULL," ",&saveptr);
@@ -1515,35 +1514,42 @@ void client_set_samples(float* samples,int size) {
 
 void setprintcountry()
 {
-	prncountry = 0;
+	prncountry = 1;
 	fprintf(stderr,"Country Lookup is On\n");
 }
 
-void printcountry(){
-	pthread_t lookup_thread;
-	int ret;
+void printcountry(struct sockaddr_in *client){
+    pthread_t lookup_thread;
+    int ret;
 
-    ret = pthread_create( &lookup_thread, NULL, printcountrythread, (void*) NULL);
+    /* This takes advantage of the fact that IPv4 addresses are 32 bits.
+     * If or when this code is aware of other types of sockets, the
+     * argument here will have to be renegotiated. */
+    ret = pthread_create(&lookup_thread, NULL, printcountrythread,
+                         (void*)client->sin_addr.s_addr);
     if (ret == 0) pthread_detach(lookup_thread);
-		
 }
 
-void printcountrythread()
+void *printcountrythread(void *arg)
 {
   // looks for the country for the connecting IP
   FILE *fp;
   char path[1035];
   char sCmd[255];
+  struct in_addr addr;
+
+  addr.s_addr = (in_addr_t)arg;
   /* Open the command for reading. */
-  sprintf(sCmd,"wget -O - --post-data 'ip=%s'  http://www.selfseo.com/ip_to_country.php 2>/dev/null |grep ' is assigned to '|perl -ne 'm/border=1> (.*?)</; print \"$1\\n\" '",inet_ntoa(client.sin_addr));
+  sprintf(sCmd,"wget -q -O - --post-data 'ip=%s' http://www.selfseo.com/ip_to_country.php 2>/dev/null | sed -e '/ is assigned to /!d' -e 's/.*border=1> \\([^<]*\\).*/\\1/'",
+          inet_ntoa(addr));
   fp = popen(sCmd, "r");
   if (fp == NULL) {
     fprintf(stdout,"Failed to run printcountry command\n" );
-    return;
+    return NULL;
   }
 
   /* Read the output a line at a time - output it. */
-  fprintf(stdout,"\nIP %s is from ", inet_ntoa(client.sin_addr));
+  fprintf(stdout,"\nIP %s is from ", inet_ntoa(addr));
   while (fgets(path, sizeof(path)-1, fp) != NULL) {
     fprintf(stdout,"%s",  path);
   }
@@ -1551,7 +1557,7 @@ void printcountrythread()
   /* close */
   pclose(fp);
 
-  return;
+  return NULL;
 }
 
 void answer_question(char *message, char *clienttype, struct bufferevent *bev){
@@ -1561,6 +1567,7 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	unsigned short length;
 	char len[10];
 	memory_entry *item = NULL;
+	char *safeptr;
 
 	if (strcmp(message,"q-version") == 0){
 		 strcat(answer,"q-version:");
@@ -1600,8 +1607,8 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	}else if (strncmp(message,"q-cantx",7) == 0){
 		 char delims[] = "#";
 		 char *result = NULL;
-         result = strtok( message, delims ); //returns q-cantx
-         if ( result != NULL )  result = strtok( NULL, delims ); // this should be call/user
+         result = strtok_r( message, delims, &safeptr ); //returns q-cantx
+         if ( result != NULL )  result = strtok_r( NULL, delims, &safeptr ); // this should be call/user
 		 if ( result != NULL ){
 			 if (chkFreq(result,  lastFreq , lastMode) == 0){
 				 strcat(answer,"q-cantx:Y");
@@ -1616,7 +1623,7 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 		 char p[50];
 		 sprintf(p,"%f;",LO_offset);
 		 strcat(answer,p);
-		 fprintf(stderr,"q-loffset: %s\n",answer);
+		 //fprintf(stderr,"q-loffset: %s\n",answer);
 	}else{
 		fprintf(stderr,"Unknown question: %s\n",message);
 		return;
@@ -1644,3 +1651,6 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 	
 }
 
+void printversion(){
+	 fprintf(stderr,"dspserver string: %s\n",version);
+}

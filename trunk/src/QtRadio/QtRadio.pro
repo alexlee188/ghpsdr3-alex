@@ -36,8 +36,8 @@ no_cl_gl {
 
 
 # Comment 2 lines below when using QtSDK, uncomment for  Ubuntu repository ver.
-INCLUDEPATH += /usr/include/QtMobility
-INCLUDEPATH += /usr/include/QtMultimediaKit
+#INCLUDEPATH += /usr/include/QtMobility
+#INCLUDEPATH += /usr/include/QtMultimediaKit
 
 TARGET = QtRadio
 TEMPLATE = app

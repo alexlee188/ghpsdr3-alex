@@ -36,6 +36,7 @@
 #ifdef JACKAUDIO
 #include "receiver.h"
 
+#define BUFF_FILL 10
 
 int init_jack_audio(void);
 void jack_cleanup(void);

@@ -9,6 +9,8 @@
 #include <libconfig.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <semaphore.h>
+
 #include "register.h"
 #include "defs.h"
 #include "client.h"
@@ -19,7 +21,9 @@ char *location = "Unknown";
 char *band = "Unknown";
 char *rig = "Unknown";
 char *ant = "Unknown";
-//config_t cfg;
+
+sem_t cfgsem;
+
 struct config_t cfg;
 
 /* Converts an integer value to its hex character*/
@@ -61,7 +65,8 @@ void *doReg(){
 void init_register(){
       
   // try to open share_config_file for reading
-  // if it fails try writing a default config file    
+  // if it fails try writing a default config file 
+      sem_init(&cfgsem,0,1);   
 	  strcat(servername,"Unknown");
 	  FILE *file;
 	  file = fopen(share_config_file, "r");
@@ -189,15 +194,19 @@ void init_register(){
     
     pthread_t thread1;
     int ret;
-    ret = pthread_create( &thread1, NULL, doReg, (void*) NULL);
-    ret = pthread_detach(thread1);
+    if (toShareOrNotToShare){
+      ret = pthread_create( &thread1, NULL, doReg, (void*) NULL);
+      ret = pthread_detach(thread1);
+    }
 }
 
 void *doUpdate(){
-	int result;
-    char sCmd[255];
-    sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant, dspstatus);
-	result = system(sCmd);
+	if(toShareOrNotToShare){
+	  int result;
+      char sCmd[255];
+      sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant, dspstatus);
+	  result = system(sCmd);
+	}
     return 0;
 }
 
@@ -224,14 +233,17 @@ void close_register(){
 }
 
 int chkPasswd(char *user, char *pass){
+  sem_wait(&cfgsem);
   const char *val;
 	// check and see if this user/pass is valid in conf file
   if(config_lookup_string(&cfg, user, &val)){
          if(strcmp(val,pass) == 0){
 			 //It's good
+			 sem_post(&cfgsem);
 			 return 0;
 		 }
      }
+  sem_post(&cfgsem);
   return 1; //no good
 }
 
@@ -239,7 +251,7 @@ int chkFreq(char *user,  long long freq2chk, int mode){
 	// look through settings in conf file until an OK is found
 	// returns on first matching rule
 	// remove //// for debug fprintf
-	
+	sem_wait(&cfgsem);
 	char grpname[31];
 	char grpmembers[41];
 	int n, n1, n2;
@@ -253,9 +265,11 @@ int chkFreq(char *user,  long long freq2chk, int mode){
 	freq = freq2chk * .000001;
 	////fprintf(stderr,"checkfreq:%lld freq:%f\n",freq2chk, freq);
 	if (txcfg == TXNONE) {
+		sem_post(&cfgsem);
 		return 1;
 	}
 	if (txcfg == TXALL) {
+		sem_post(&cfgsem);
 		return 0;
 	}
 	config_setting_t *groupnames= NULL;
@@ -266,6 +280,7 @@ int chkFreq(char *user,  long long freq2chk, int mode){
 	groupnames = config_lookup(&cfg, "groupnames"); 
 	if (!groupnames){
 	   fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a groupnames= [\"txgroup1\"]setting!!\n TX is disabled" );
+	   sem_post(&cfgsem);
 	   return 2;
 	}	
     groupnamescount = config_setting_length(groupnames);
@@ -296,6 +311,7 @@ int chkFreq(char *user,  long long freq2chk, int mode){
 					rule = config_setting_get_elem (rules,n2);
 					   if (!rule || config_setting_length(rule) != 3){
 						   fprintf(stderr, "Conf File Error - %s%s%s%s%s%d%s",  "Your ",share_config_file, " is misconfigured for rulegroup ",grpname, " Rule Number ",n2," has a problem\n");
+						   sem_post(&cfgsem);
 						   return 4; 
 				       }else{
 					       //Check this rule
@@ -333,6 +349,7 @@ int chkFreq(char *user,  long long freq2chk, int mode){
 						   ////fprintf(stderr,"  %s rule %d 0f %d modeOK:%d myfreq:%f rulestart:%f ruleend:%f ", grpname, n2, rulecount, modeOK, freq,config_setting_get_float_elem(rule,1),config_setting_get_float_elem(rule,2) );
 						   if ( modeOK==0 && config_setting_get_float_elem(rule,1) <= freq && config_setting_get_float_elem(rule,2) >= freq ){
 							   ////fprintf(stderr," Pass\n");
+							   sem_post(&cfgsem);
 							   return 0; // good to TX
 						   }else{
 							   ////fprintf(stderr," Fail\n");
@@ -346,6 +363,7 @@ int chkFreq(char *user,  long long freq2chk, int mode){
         } 
       }
 	}
+	sem_post(&cfgsem);
 	return 1;
 }
 

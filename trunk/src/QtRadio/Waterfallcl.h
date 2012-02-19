@@ -51,10 +51,12 @@ public:
     void paintGL();
 public slots:
     void updateWaterfall(char* header,char* buffer,int width);
+protected:
+    void loadGLTextures(GLuint *textures);
 private:
     QCLVector<char> spectrum_data;
     QCLImage2D waterfall_buffer;
-    GLuint textureId;
+    GLuint textureId[2];        // [0] is for buffer with height * 2, [1] is for display
     int data_width;
     int data_height;
     int cy;

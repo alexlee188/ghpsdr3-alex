@@ -95,9 +95,10 @@ void Waterfallcl::initialize(int wid, int ht){
 
     glEnable(GL_TEXTURE_2D);
     glShadeModel(GL_SMOOTH);
-    // Create the texture in the GL context.
-    glGenTextures(1, &textureId);
-    glBindTexture(GL_TEXTURE_2D, textureId);
+    // Create the textures in the GL context.
+    glGenTextures(2, textureId);
+
+    glBindTexture(GL_TEXTURE_2D, textureId[0]);
 #ifdef GL_CLAMP_TO_EDGE
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -109,8 +110,24 @@ void Waterfallcl::initialize(int wid, int ht){
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height*2, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
 
+/*
+    glBindTexture(GL_TEXTURE_2D, textureId[1]);
+#ifdef GL_CLAMP_TO_EDGE
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#else
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+#endif
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, 0);
+*/
+    loadGLTextures(textureId);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepth(1.0f);
 
@@ -121,13 +138,32 @@ void Waterfallcl::initialize(int wid, int ht){
     // If the context supports object sharing, then this is really easy.
     if (ctx->glContext->supportsObjectSharing()) {
     waterfall_buffer = ctx->glContext->createTexture2D
-            (GL_TEXTURE_2D, textureId, 0, QCLMemoryObject::WriteOnly);
+            (GL_TEXTURE_2D, textureId[0], 0, QCLMemoryObject::ReadWrite);
     if (waterfall_buffer == 0) qFatal("Unabel to create waterfall_buffer");
     }
     else {
         qFatal("System does not support CL/GL object sharing");
     }
 
+}
+
+void Waterfallcl::loadGLTextures(GLuint *textures)
+{
+    QImage t;
+    QImage b;
+
+    if ( !b.load( "./crate.bmp" ) )
+    {
+        b = QImage( 16, 16, QImage::Format_ARGB32_Premultiplied);
+        b.fill( Qt::green);
+    }
+
+    t = QGLWidget::convertToGLFormat( b );
+
+    glBindTexture( GL_TEXTURE_2D, textures[1] );
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexImage2D( GL_TEXTURE_2D, 0, 3, t.width(), t.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, t.bits() );
 }
 
 void Waterfallcl::resizeGL( int width, int height )
@@ -155,7 +191,7 @@ void Waterfallcl::setGeometry(QRect rect){
     // change the width and height of textureId
     glEnable(GL_TEXTURE_2D);
     glShadeModel(GL_SMOOTH);
-    glBindTexture(GL_TEXTURE_2D, textureId);
+    glBindTexture(GL_TEXTURE_2D, textureId[0]);
 #ifdef GL_CLAMP_TO_EDGE
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -167,6 +203,21 @@ void Waterfallcl::setGeometry(QRect rect){
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height*2, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+/*
+    glBindTexture(GL_TEXTURE_2D, textureId[1]);
+#ifdef GL_CLAMP_TO_EDGE
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#else
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+#endif
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, 0);
+*/
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -211,7 +262,7 @@ void Waterfallcl::paintGL()
     glRotatef(rquad,1.0f,0.0f,0.0f);
 
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureId);
+    glBindTexture(GL_TEXTURE_2D, textureId[1]);
 
     glBegin(GL_QUADS);
     // Front Face

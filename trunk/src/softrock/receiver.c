@@ -27,7 +27,7 @@
 * the correct commands to the the usbsoftrock interface in operations.c 
 * or whatever the client requested.
 * 
-* This file contains code to use the code to do various functions that
+* This file contains code to do various functions that
 * the client has asked to happen in the transceiver.  Sometimes the actual
 * operations occur in the si570 control code in operations.c 
 */
@@ -119,7 +119,9 @@ char* detach_receiver(int rx,CLIENT* client) {
 
     client->state=RECEIVER_DETACHED;
     receiver[rx].client=(CLIENT*)NULL;
-
+	softrock_set_client_active_rx (client->receiver, DEC_RX); // Added to try to
+	// fix the Jack problem when an client desconnects, but audio keeps getting
+	// sent.
     return OK;
 }
 

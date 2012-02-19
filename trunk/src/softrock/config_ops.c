@@ -91,7 +91,7 @@ void calibrate(usb_dev_handle *handle)
 	}
 
 	// send message to USB device
-	if (usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN, request, value, index, buffer, 6, 500)) 
+	if (usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN, request, value, index, (char *)buffer, 6, 500)) 
 	{	
 
 		int RFREQ_int = ((buffer[2] & 0xf0) >> 4) + ((buffer[1] & 0x3f) * 16);
