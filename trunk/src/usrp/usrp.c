@@ -41,6 +41,8 @@
 #include <omp.h>
 #endif
 
+#include <semaphore.h>
+#include <signal.h>
 #include <string.h>
 #include <samplerate.h>
 
@@ -48,6 +50,7 @@
 
 #include "client.h"
 #include "receiver.h"
+#include "transmitter.h"
 #include "usrp.h"
 
 //RX output sample rate from USRP
@@ -71,10 +74,21 @@ static int INTERP = 3;  //For the rational resampler
 static int real_position = 1;
 static int imag_position = 0;
 
+// TX audio sample is the HEAD of a queue to be forwarded to USRP
+TAILQ_HEAD(, _buffer_entry) tx_audio_iq_stream;
+#define MAX_QUEUE 50 //Max 50KSAMPLES in queue
+static sem_t tx_audio_semaphore;
+static int queue_length = 0;
+
+
 //Defines and initialises the tx buffer queue
 void setup_tx_queue(void) {
     
-    //SETUP QUEUE
+    TAILQ_INIT(&tx_audio_iq_stream); 
+
+    sem_init(&tx_audio_semaphore,0,1);
+    signal(SIGPIPE, SIG_IGN);
+    sem_post(&tx_audio_semaphore);
 }
 
 //USRP initialisation
@@ -248,7 +262,6 @@ void *usrp_receiver_thread (void *param)
     RECEIVER *pRec = (RECEIVER *)param;    
     //unsigned int total_num_samps = 2E9;
         
-    size_t num_acc_samps = 0; //number of accumulated samples
     uhd::rx_metadata_t md;
 	
     //debug
@@ -288,8 +301,7 @@ void *usrp_receiver_thread (void *param)
         case uhd::rx_metadata_t::ERROR_CODE_NONE:
             break;
 
-        case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
-            if (num_acc_samps == 0) continue;
+        case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:            
             std::cout << boost::format(
                 "Got timeout before all samples received, possible packet loss, exiting loop..."
             ) << std::endl;
@@ -350,7 +362,6 @@ void *usrp_receiver_thread (void *param)
             fprintf (stderr, "Rational resampling error: %s\n", src_strerror (rr_retcode));
         }
         
-        //num_acc_samps += num_rx_samps;        
     } done_loop:
 	std::cerr << "Exiting USRP receiver thread" << std::endl;
 
@@ -360,39 +371,103 @@ void *usrp_receiver_thread (void *param)
 
 //This is the transmitting thread (private)
 void *usrp_transmitter_thread (void *param)
-{
+{    
+    uhd::tx_metadata_t md;
+    uhd::async_metadata_t async_md;
+    float *audio_data;
+    BUFFER_ENTRY *item;
     
-    size_t num_acc_samps = 0; //number of accumulated tx samples
-    uhd::rx_metadata_t md;
-    
-    const int MAX_USRP_TX_BUFFER = usrp.dev->get_max_send_samps_per_packet();
+    const unsigned int MAX_USRP_TX_BUFFER = usrp.dev->get_max_send_samps_per_packet();
     std::vector<std::complex<float> > buff(MAX_USRP_TX_BUFFER);
+    md.start_of_burst = false;
+    md.end_of_burst = false;                
     
     //CRITICAL SECTION on the TX QUEUE
     while(1) {
-        //If there is buffer pair in the queue                    
-        
-        //Take next buffer pair from the queue
-        
-        //else get container with all zeros
-        
-        //send container to USRP
-        
+        //If there is buffer pair in the queue
+        sem_wait(&tx_audio_semaphore);
+        item = TAILQ_FIRST(&tx_audio_iq_stream);        
+        if (item != NULL) {            
+            //Take next buffer pair from the queue
+            audio_data = (float *)item->data;
+            TAILQ_REMOVE(&tx_audio_iq_stream, item, entries);
+            queue_length--;
+                                                           
+        } else {        
+            //else get container with all zeros ???
+        }
+        sem_post(&tx_audio_semaphore);
         //cleanup container
+        free(item->data);
+        free(item);
+                        
+        //send audio data to USRP
+        int acc_tx_samples = 0;        
+        do {
+            size_t num_tx_samples = 0;
+            //Buffer transferred into IQ complex sampled
+            unsigned int i;
+        #pragma omp parallel for schedule(static) private(i)
+            for (i=0; i<MAX_USRP_TX_BUFFER; ++i) {                                    
+                buff[i].imag() = audio_data[i];
+                buff[i].real() = audio_data[TRANSMIT_BUFFER_SIZE+i];
+                num_tx_samples++;
+                if (++acc_tx_samples == TRANSMIT_BUFFER_SIZE) break;
+            }
+            
+            usrp.dev->send(&buff.front(), num_tx_samples, md,
+                uhd::io_type_t::COMPLEX_FLOAT32,
+                uhd::device::SEND_MODE_ONE_PACKET
+                );
+
+            //Check possible messages
+            if (usrp.dev->recv_async_msg(async_md)) {
+                
+                switch(async_md.event_code){
+                case uhd::async_metadata_t::EVENT_CODE_BURST_ACK:
+                    break;
+
+                case uhd::async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET:
+                    std::cout << boost::format(
+                        "Got underflow indication after sending packet. Exiting transmitter thread..."
+                    ) << std::endl;
+                    goto done_tx_loop;
+                    
+                case uhd::async_metadata_t::EVENT_CODE_TIME_ERROR:
+                    std::cout << boost::format(
+                        "Wrong timing in sending packet. Exiting transmitter thread..."
+                    ) << std::endl;
+                    goto done_tx_loop;
+                    
+                case uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR:
+                    std::cout << boost::format(
+                        "Probable packet loss indication after sending packet."
+                    ) << std::endl;
+                    break;
+
+                default:
+                    std::cout << boost::format(
+                        "Got error code 0x%x. Exiting transmitter thread..."
+                        ) % async_md.event_code << std::endl;
+                    goto done_tx_loop;
+                }
+            }            
+            
+        } while (acc_tx_samples < TRANSMIT_BUFFER_SIZE);        
         
-    }
+    } done_tx_loop:
     
     return 0;
 }
 
 bool usrp_start (RECEIVER *pRec)
 {
-    //Creates the receiving thread
+    //Creates the IQ samples receiving thread
     if (pthread_create(&pRec->client->thread_id,NULL,usrp_receiver_thread,(void *)pRec)!=0) {
         fprintf(stderr,"Failed to create USRP receiver thread for rx %d\n",pRec->client->receiver);
         return false; 
     } else if (usrp.tx_enabled) {
-        //Creates the transmitting thread
+        //Creates the IQ samples transmitting thread
         if (pthread_create(&pRec->client->thread_id,NULL,usrp_transmitter_thread,(void *)NULL)!=0) {
             fprintf(stderr,"Failed to create USRP transmitter thread for rx %d\n",pRec->client->receiver);
             return false; 
@@ -410,12 +485,26 @@ bool usrp_start (RECEIVER *pRec)
 //TODO Transmitting audio to modulation.
 //CRITICAL SECTION on the TX QUEUE 
 int usrp_process_tx_modulation(float *outbuf, int mox) {
+
+    unsigned char *audio_data;
+    BUFFER_ENTRY *item;
     
     //If there is space in queue
-    //Add container to queue
-    //else discard buffer and return -1
-    
-    return 0;
+    if (queue_length < MAX_QUEUE) {    
+        //Add container to queue
+        audio_data = (unsigned char *) malloc(TRANSMIT_BUFFER_SIZE*2*4);
+        memcpy(audio_data, &outbuf, TRANSMIT_BUFFER_SIZE*2*4);
+        item = (BUFFER_ENTRY *) malloc(sizeof(*item));
+        item->data = audio_data;    
+        sem_wait(&tx_audio_semaphore);
+        TAILQ_INSERT_TAIL(&tx_audio_iq_stream, item, entries);
+        queue_length++;
+        sem_post(&tx_audio_semaphore);
+        return 0;    
+    } else {
+        //else discard buffer and return -1    
+        return -1;
+    }
 }
 
 

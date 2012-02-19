@@ -147,11 +147,11 @@ const char* parse_command(CLIENT* client,char* command) {
                         client->iq_port=atoi(token);
                     }
 
-                    // starts the thread to acquire USRP samples
+                    // starts the USRP threads
                     usrp_start (&receiver[client->receiver]);
                     fprintf(stderr,"Started USRP for CLIENT %d\n",client->receiver);
 
-                    //Start the tx audio thread 
+                    //Start the server side tx audio stream receiving thread 
                     if(pthread_create(&transmitter.audio_thread_id,NULL,tx_audio_thread,client)!=0) {
                         fprintf(stderr,"Failed to create audio thread for rx %d\n",client->receiver);
                         exit(1);
