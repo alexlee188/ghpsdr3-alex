@@ -401,18 +401,17 @@ void *usrp_transmitter_thread (void *param)
         free(item->data);
         free(item);
                         
-        //send audio data to USRP
+        //Loop: send 1 I/Q Buffer of audio data to USRP
         int acc_tx_samples = 0;        
         do {
             size_t num_tx_samples = 0;
-            //Buffer transferred into IQ complex sampled
+            //Loop 1 packet, or less, sent to USRP
             unsigned int i;
         #pragma omp parallel for schedule(static) private(i)
-            for (i=0; i<MAX_USRP_TX_BUFFER; ++i) {                                    
+            for (i=0; (i<MAX_USRP_TX_BUFFER) && (acc_tx_samples<TRANSMIT_BUFFER_SIZE); ++i) {                                    
                 buff[i].imag() = audio_data[i];
                 buff[i].real() = audio_data[TRANSMIT_BUFFER_SIZE+i];
-                num_tx_samples++;
-                if (++acc_tx_samples == TRANSMIT_BUFFER_SIZE) break;
+                num_tx_samples++; acc_tx_samples++;                
             }
             
             usrp.dev->send(&buff.front(), num_tx_samples, md,
