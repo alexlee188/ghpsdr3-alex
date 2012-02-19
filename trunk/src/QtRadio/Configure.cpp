@@ -799,3 +799,14 @@ double Configure::getRxIQspinBoxValue()
 {
     return widget.RxIQspinBox->value();
 }
+
+int Configure::getCwPitch()
+{
+    return widget.spinBox_cwPitch->value();
+}
+
+void Configure::on_spinBox_cwPitch_valueChanged(int arg1)
+{
+    qDebug()<<Q_FUNC_INFO<<": The cw pitch is now "<<widget.spinBox_cwPitch->value()<<" Hz and arg1 = "<< arg1;
+    emit spinBox_cwPitchChanged(arg1);
+}
