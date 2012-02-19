@@ -54,7 +54,8 @@ rigctl.moc.cpp \
 Audioinput.moc.cpp \
 servers.moc.cpp \
 G711A.moc.cpp \
-RTP.moc.cpp 
+RTP.moc.cpp \
+hardware.cpp
 
 	
 nodist_QtRadio_SOURCES = \
@@ -96,7 +97,8 @@ ctl.moc.cpp \
 rigctl.moc.cpp \
 servers.moc.cpp \
 G711A.moc.cpp \
-RTP.moc.cpp 
+RTP.moc.cpp \
+hardware.moc.cpp
 
 
 QtRadio_SOURCES = \
@@ -109,7 +111,7 @@ Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.
 ctl.cpp rigctl.cpp\
 Audioinput.cpp \
 servers.cpp\
-G711A.cpp RTP.cpp \
+G711A.cpp RTP.cpp hardware.cpp \
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  Waterfall.h  \
 Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Spectrum.h    XvtrEntry.h  \
@@ -118,7 +120,7 @@ BandLimit.h  BookmarksDialog.h  Configure.h            DIGUFilters.h  FMNFilters
 ctl.h rigctl.h\
 Audioinput.h \
 servers.h \
-G711A.h RTP.h \
+G711A.h RTP.h hardware.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui servers.ui
 
@@ -164,7 +166,8 @@ aux.moc.cpp			\
 Audioinput.moc.cpp		\
 servers.moc.cpp \
 G711A.moc.cpp \
-RTP.moc.cpp 
+RTP.moc.cpp \
+hardware.moc.cpp
 
 #
 # auxiliary services, git string, icons
