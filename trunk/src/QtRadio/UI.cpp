@@ -2302,8 +2302,10 @@ void UI::RxIQspinChanged(double num)
 void UI::cwPitchChanged(int arg1)
 {
     cwPitch = arg1;
-    filters.selectFilter(filters.getFilter()); //Dummy call to centre filter on tone
-    frequencyChanged(frequency); //Dummy call to set freq into correct place in filter
+    if(isConnected){
+        filters.selectFilter(filters.getFilter()); //Dummy call to centre filter on tone
+        frequencyChanged(frequency); //Dummy call to set freq into correct place in filter
+    }
 }
 
 void UI::setCanTX(bool tx){
