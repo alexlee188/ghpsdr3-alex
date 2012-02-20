@@ -85,8 +85,6 @@ void init_receivers (SDR_IQ_CONFIG *pCfg)
 
 const char* attach_receiver(int rx, CLIENT* client) 
 {
-    int rc;
-
     if(client->state==RECEIVER_ATTACHED) {
         return CLIENT_ATTACHED;
     }
@@ -95,8 +93,8 @@ const char* attach_receiver(int rx, CLIENT* client)
     //    return RECEIVER_INVALID;
     //}
 
-    gain_sdriq (0, 0);
-    gain_sdriq (1, 1);
+    gain_sdriq (0, -20);
+    //gain_sdriq (1, 1);
 
     freq_sdriq (7050000);
     set_bandwidth (CORE_BANDWIDTH);
@@ -208,7 +206,18 @@ const char* set_random (CLIENT* client, bool fRand)
 
 const char* set_attenuator (CLIENT* client, int new_level_in_db)
 {
-    return NOT_IMPLEMENTED_COMMAND;
+    switch (new_level_in_db) {
+    case 0:
+    case 10:
+    case 20:
+    case 30:
+    case 40:
+        fprintf (stderr, "%s: new attenuator level: %d\n", __FUNCTION__, -(new_level_in_db));
+        gain_sdriq (0, -(new_level_in_db));
+        break;
+    default:
+        return INVALID_COMMAND;
+    }
     return OK;
 }
 
@@ -280,7 +289,7 @@ void *send_IQ_buffer_from_queue (void *pArg)
     fprintf (stderr, "%s: %s\n", __FUNCTION__, pRec->cfg.start);
     if(pRec->client != (CLIENT*)NULL) {
         
-        fprintf (stderr, "%s: IIIIIIIIIIIIIIIIIIIIIII\n", __FUNCTION__);
+        //fprintf (stderr, "%s: IIIIIIIIIIIIIIIIIIIIIII\n", __FUNCTION__);
         while (  1 ) {
 
              item = TAILQ_FIRST(&(pRec->iq_tailq_head));
@@ -291,7 +300,7 @@ void *send_IQ_buffer_from_queue (void *pArg)
 
              TAILQ_REMOVE(&(pRec->iq_tailq_head), item, entries);
 
-             fprintf (stderr, "%s: QQQQQQQQQQQQQQQQQQQ\n", __FUNCTION__);
+             //fprintf (stderr, "%s: QQQQQQQQQQQQQQQQQQQ\n", __FUNCTION__);
 
              if(pRec->client->iq_port != -1) {
                  // send the IQ buffer

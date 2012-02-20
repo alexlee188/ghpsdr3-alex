@@ -375,6 +375,8 @@ const char* parse_command(CLIENT* client,char* command) {
             }
         } else if(strcmp(token,"quit")==0) {
             return QUIT_ASAP;
+        } else if(strcmp(token,"hardware?")==0) {
+            return "OK SDR-IQ";
         } else {
             // invalid command string
             return INVALID_COMMAND;
