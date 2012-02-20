@@ -90,6 +90,14 @@ void Waterfallcl::initialize(int wid, int ht){
     rtri = 0.0f;
     rquad = 0.0f;
 
+    QImage t;
+    QImage b;
+
+    b = QImage( 1024, 512*2, QImage::Format_ARGB32_Premultiplied);
+    b.fill( Qt::green);
+
+    t = QGLWidget::convertToGLFormat( b );
+
     makeCurrent();
     ImageCLContext *ctx = image_context();
 
@@ -108,24 +116,11 @@ void Waterfallcl::initialize(int wid, int ht){
 #endif
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height*2, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1024, 512*2, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, t.bits());
 
-/*
-    glBindTexture(GL_TEXTURE_2D, textureId[1]);
-#ifdef GL_CLAMP_TO_EDGE
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#else
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-#endif
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, 0);
-*/
-    loadGLTextures(textureId);
+
+    loadGLTextures(textureId[1]);
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -147,7 +142,7 @@ void Waterfallcl::initialize(int wid, int ht){
 
 }
 
-void Waterfallcl::loadGLTextures(GLuint *textures)
+void Waterfallcl::loadGLTextures(GLuint textureId)
 {
     QImage t;
     QImage b;
@@ -160,7 +155,7 @@ void Waterfallcl::loadGLTextures(GLuint *textures)
 
     t = QGLWidget::convertToGLFormat( b );
 
-    glBindTexture( GL_TEXTURE_2D, textures[1] );
+    glBindTexture( GL_TEXTURE_2D, textureId );
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
     glTexImage2D( GL_TEXTURE_2D, 0, 3, t.width(), t.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, t.bits() );
@@ -184,41 +179,6 @@ void Waterfallcl::setGeometry(QRect rect){
     data_width = rect.width();
     data_height = rect.height();
     cy = data_height - 1;
-
-    ImageCLContext *ctx = image_context();
-    ctx->waterfall.setGlobalWorkSize(data_width);
-
-    // change the width and height of textureId
-    glEnable(GL_TEXTURE_2D);
-    glShadeModel(GL_SMOOTH);
-    glBindTexture(GL_TEXTURE_2D, textureId[0]);
-#ifdef GL_CLAMP_TO_EDGE
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#else
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-#endif
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height*2, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, 0);
-
-/*
-    glBindTexture(GL_TEXTURE_2D, textureId[1]);
-#ifdef GL_CLAMP_TO_EDGE
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#else
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-#endif
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data_width, data_height, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, 0);
-*/
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void Waterfallcl::paintGL()
