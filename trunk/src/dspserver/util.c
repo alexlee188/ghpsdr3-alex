@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "util.h"
+
 /**
  * @brief Log a message to stderr with timestamp.
  *
@@ -22,17 +24,16 @@
 void dspserver_log(enum DSPServerLogLevel level, char *fmt, ...)
 {
     va_list args;
-    char *timestamp;
     time_t now;
     struct tm tm;
     char ts[24];
     
-    now = time();
+    now = time(NULL);
     localtime_r(&now, &tm);
     strftime(ts, sizeof(ts), "[%Y-%m-%d %H:%M:%S] ", &tm);
 
     /* Ideally we'd do this in one write, but for now two will do. */
-    fprintf(stderr, ts);
+    fprintf(stderr, "%s", ts);
     va_start(args, fmt);
     vfprintf(stderr, fmt, args);
     va_end(args);
