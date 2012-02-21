@@ -723,7 +723,7 @@ void readcb(struct bufferevent *bev, void *ctx){
     int i;
     int bytesRead = 0;
     char message[MSG_SIZE];
-    client_entry *item, *current_item, *tmp_item;
+    client_entry *item, *current_item = NULL, *tmp_item;
     char *role = "master";
     int slave = 0;
     struct evbuffer *inbuf;
