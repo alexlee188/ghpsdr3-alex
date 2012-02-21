@@ -735,75 +735,75 @@ void readcb(struct bufferevent *bev, void *ctx){
         while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
             message[bytesRead-1]=0;					// for Linux strings terminating in NULL
             token=strtok_r(message," ",&saveptr);
-            if(token!=NULL) {
-                i=0;
-                while(token[i]!=0) {
-                    token[i]=tolower(token[i]);
-                    i++;
-                }
-                if(strncmp(token,"q",1)==0){	
-                    answer_question(message,"slave", bev);
-                }else if(strncmp(token,"getspectrum",11)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        samples=atoi(token);
-                        if(mox) {
-                            Process_Panadapter(1,spectrumBuffer);
-                            meter=CalculateTXMeter(1,5); // MIC
-                            subrx_meter=-121;
-                        } else {
-                            Process_Panadapter(0,spectrumBuffer);
-                            meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-                            subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-                        }
-                        client_samples=malloc(BUFFER_HEADER_SIZE+samples);
-                        client_set_samples(spectrumBuffer,samples);
-                        bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
-                        free(client_samples);
+            if (token == NULL)
+                continue;
+            i=0;
+            while(token[i]!=0) {
+                token[i]=tolower(token[i]);
+                i++;
+            }
+            if(strncmp(token,"q",1)==0){	
+                answer_question(message,"slave", bev);
+            }else if(strncmp(token,"getspectrum",11)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    samples=atoi(token);
+                    if(mox) {
+                        Process_Panadapter(1,spectrumBuffer);
+                        meter=CalculateTXMeter(1,5); // MIC
+                        subrx_meter=-121;
                     } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
+                        Process_Panadapter(0,spectrumBuffer);
+                        meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+                        subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
                     }
-                } else if(strncmp(token,"setclient",9)==0) {
+                    client_samples=malloc(BUFFER_HEADER_SIZE+samples);
+                    client_set_samples(spectrumBuffer,samples);
+                    bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
+                    free(client_samples);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setclient",9)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    dspserver_log(DSP_LOG_INFO, "RX%d: client is %s\n",
+                                  receiver, token);
+                }
+            } else if(strncmp(token,"startaudiostream",16)==0) {
+                current_item->rtp = connection_tcp;
+            } else if(strncmp(token,"startrtpstream",14)==0) {
+                current_item->rtp = connection_rtp;
+    			    
+                // startrtpstream port encoding samplerate channels				
+                int error=1;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    int rtpport=atoi(token);
                     token=strtok_r(NULL," ",&saveptr);
                     if(token!=NULL) {
-                        dspserver_log(DSP_LOG_INFO, "RX%d: client is %s\n",
-                                      receiver, token);
-                    }
-                } else if(strncmp(token,"startaudiostream",16)==0) {
-                    current_item->rtp = connection_tcp;
-                } else if(strncmp(token,"startrtpstream",14)==0) {
-                    current_item->rtp = connection_rtp;
-				    
-                    // startrtpstream port encoding samplerate channels				
-                    int error=1;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        int rtpport=atoi(token);
+                        encoding=atoi(token);
                         token=strtok_r(NULL," ",&saveptr);
                         if(token!=NULL) {
-                            encoding=atoi(token);
+                            audio_sample_rate=atoi(token);
                             token=strtok_r(NULL," ",&saveptr);
                             if(token!=NULL) {
-                                audio_sample_rate=atoi(token);
-                                token=strtok_r(NULL," ",&saveptr);
-                                if(token!=NULL) {
-                                    audio_channels=atoi(token);
-                                    fprintf(stdout,"%s: %d: startrtpstream: listening on RTP socket\n", __FILE__, __LINE__);
-                                    current_item->session=rtp_listen(inet_ntoa(current_item->client.sin_addr),rtpport);
-                                    answer_question("q-rtpport","slave", bev); // this answers the LOCAL_RTP_PORT
-                                    audio_stream_reset();
-                                    error=0;
-                                    send_audio=1;
-                                    rtp_tx_init();
-                                }
+                                audio_channels=atoi(token);
+                                fprintf(stdout,"%s: %d: startrtpstream: listening on RTP socket\n", __FILE__, __LINE__);
+                                current_item->session=rtp_listen(inet_ntoa(current_item->client.sin_addr),rtpport);
+                                answer_question("q-rtpport","slave", bev); // this answers the LOCAL_RTP_PORT
+                                audio_stream_reset();
+                                error=0;
+                                send_audio=1;
+                                rtp_tx_init();
                             }
                         }
                     }
-                    if(error) {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } // end startrtpstream
-            } // end if !=NULL
+                }
+                if(error) {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } // end startrtpstream
         }; // end while
         return;
     }; // end if item->bev != bev
@@ -820,624 +820,622 @@ void readcb(struct bufferevent *bev, void *ctx){
             Mic_stream_queue_add();
         }
         else {	// not mic data, process other commands which are ascii
-            if(token!=NULL) {
-                i=0;
-                while(token[i]!=0) {
-                    token[i]=tolower(token[i]);
-                    i++;
+            if (token == NULL)
+                continue;
+            i=0;
+            while(token[i]!=0) {
+                token[i]=tolower(token[i]);
+                i++;
+            }
+            if(strncmp(token,"q",1)==0){	
+                answer_question(message,"master", bev);
+            }else if(strncmp(token,"getspectrum",11)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    samples=atoi(token);
+                    if(mox) {
+                        Process_Panadapter(1,spectrumBuffer);
+                        meter=CalculateTXMeter(1,5); // MIC
+                        subrx_meter=-121;
+                    } else {
+                        Process_Panadapter(0,spectrumBuffer);
+                        meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+                        subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+                    }
+                    client_samples=malloc(BUFFER_HEADER_SIZE+samples);
+                    client_set_samples(spectrumBuffer,samples);
+                    bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
+                    free(client_samples);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
                 }
-                if(strncmp(token,"q",1)==0){	
-                    answer_question(message,"master", bev);
-                }else if(strncmp(token,"getspectrum",11)==0) {
+            } else if(strncmp(token,"setfrequency",12)==0) {
+                long long frequency;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    frequency=atoll(token);
+                    ozySetFrequency(frequency);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setpreamp",9)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    ozySetPreamp(token);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setmode",7)==0) {
+                int mode;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    mode=atoi(token);
+                    SetMode(0,0,mode);
+                    SetMode(0,1,mode);
+                    SetMode(1,0,mode);
+                    lastMode=mode;
+    			    
+                    switch (mode){
+                    case USB: SetTXFilter(1,150, 2850); break;
+                    case LSB: SetTXFilter(1,-2850, -150); break;
+                    case AM:
+                    case SAM: SetTXFilter(1, -2850, 2850); break;
+                    case FMN: SetTXFilter(1, -4800, 4800); break;
+                    default: SetTXFilter(1, -4800, 4800);
+                    }
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setfilter",9)==0) {
+                int low,high;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    low=atoi(token);
                     token=strtok_r(NULL," ",&saveptr);
                     if(token!=NULL) {
-                        samples=atoi(token);
-                        if(mox) {
-                            Process_Panadapter(1,spectrumBuffer);
-                            meter=CalculateTXMeter(1,5); // MIC
-                            subrx_meter=-121;
-                        } else {
-                            Process_Panadapter(0,spectrumBuffer);
-                            meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-                            subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-                        }
-                        client_samples=malloc(BUFFER_HEADER_SIZE+samples);
-                        client_set_samples(spectrumBuffer,samples);
-                        bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
-                        free(client_samples);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setfrequency",12)==0) {
-                    long long frequency;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        frequency=atoll(token);
-                        ozySetFrequency(frequency);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setpreamp",9)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        ozySetPreamp(token);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setmode",7)==0) {
-                    int mode;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        mode=atoi(token);
-                        SetMode(0,0,mode);
-                        SetMode(0,1,mode);
-                        SetMode(1,0,mode);
-                        lastMode=mode;
-				    
-                        switch (mode){
-                        case USB: SetTXFilter(1,150, 2850); break;
-                        case LSB: SetTXFilter(1,-2850, -150); break;
-                        case AM:
-                        case SAM: SetTXFilter(1, -2850, 2850); break;
-                        case FMN: SetTXFilter(1, -4800, 4800); break;
-                        default: SetTXFilter(1, -4800, 4800);
-                        }
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setfilter",9)==0) {
-                    int low,high;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        low=atoi(token);
-                        token=strtok_r(NULL," ",&saveptr);
-                        if(token!=NULL) {
-                            high=atoi(token);
-                            SetRXFilter(0,0,(double)low,(double)high);
-                            SetRXFilter(0,1,(double)low,(double)high);
-                        } else {
-                            fprintf(stderr,"Invalid command: '%s'\n",message);
-                        }
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setagc",6)==0) {
-                    int agc;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        agc=atoi(token);
-                        SetRXAGC(0,0,agc);
-                        SetRXAGC(0,1,agc);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setnr",5)==0) {
-                    int nr;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        if(strcmp(token,"true")==0) {
-                            nr=1;
-                        } else {
-                            nr=0;
-                        }
-                        SetNR(0,0,nr);
-                        SetNR(0,1,nr);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setnb",5)==0) {
-                    int nb;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        if(strcmp(token,"true")==0) {
-                            nb=1;
-                        } else {
-                            nb=0;
-                        }
-                        SetNB(0,0,nb);
-                        SetNB(0,1,nb);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setsdrom",8)==0) {
-                    int state;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        if(strcmp(token,"true")==0) {
-                            state=1;
-                        } else {
-                            state=0;
-                        }
-                        SetSDROM(0,0,state);
-                        SetSDROM(0,1,state);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setanf",6)==0) {
-                    int anf;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        if(strcmp(token,"true")==0) {
-                            anf=1;
-                        } else {
-                            anf=0;
-                        }
-                        SetANF(0,0,anf);
-                        SetANF(0,1,anf);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setrxoutputgain",15)==0) {
-                    int gain;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        gain=atoi(token);
-                        SetRXOutputGain(0,0,(double)gain/100.0);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setsubrxoutputgain",18)==0) {
-                    int gain;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        gain=atoi(token);
-                        SetRXOutputGain(0,1,(double)gain/100.0);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"startaudiostream",16)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token==NULL) {
-                        audio_buffer_size= AUDIO_BUFFER_SIZE;
-                    } else {
-                        audio_buffer_size=atoi(token);
-                    }
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token==NULL) {
-                        audio_sample_rate=8000;
-                    } else {
-                        audio_sample_rate=atoi(token);
-                        if(audio_sample_rate!=8000 &&
-                           audio_sample_rate!=48000) {
-                            fprintf(stderr,"Invalid audio sample rate: %d\n",audio_sample_rate);
-                            audio_sample_rate=8000;
-                        }
-                    }
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token==NULL) {
-                        audio_channels=1;
-                    } else {
-                        audio_channels=atoi(token);
-                        if(audio_channels!=1 &&
-                           audio_channels!=2) {
-                            fprintf(stderr,"Invalid audio channels: %d\n",audio_channels);
-                            audio_channels=1;
-                        }
-                    }
-                        
-                    fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
-                    fprintf(stderr,"and with encoding method %d\n", encoding);
-                    item->rtp=connection_tcp;
-                    audio_stream_reset();
-                    send_audio=1;
-                } else if(strncmp(token,"startrtpstream",14)==0) {
-                    // startrtpstream port encoding samplerate channels
-                    int error=1;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        int rtpport=atoi(token);
-                        token=strtok_r(NULL," ",&saveptr);
-                        if(token!=NULL) {
-                            encoding=atoi(token);
-                            token=strtok_r(NULL," ",&saveptr);
-                            if(token!=NULL) {
-                                audio_sample_rate=atoi(token);
-                                token=strtok_r(NULL," ",&saveptr);
-                                if(token!=NULL) {
-                                    audio_channels=atoi(token);
-
-                                    fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
-                                            inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
-                                    fprintf(stdout,"client.c: startrtpstream port encoding samplerate channels: listening on RTP socket\n");
-                                    item->session=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
-                                    item->rtp=connection_rtp;
-                                    answer_question("q-rtpport","master",bev);
-                                    audio_stream_reset();
-                                    error=0;
-                                    send_audio=1;
-                                    rtp_tx_init();
-                                }
-                            }
-                        }
-                    }
-                    if(error) {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"stopaudiostream",15)==0) {
-                    send_audio=0;
-                } else if(strncmp(token,"setencoding",11)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        encoding=atoi(token);
-                        if (encoding < 0 || encoding > 2) encoding = 0;
-                        fprintf(stderr,"encoding changed to %d\n", encoding);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setsubrx",17)==0) {
-                    int state;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        state=atoi(token);
-                        SetSubRXSt(0,1,state);
-                        // fprintf(stderr, "setsubrx %d\n", state);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setsubrxfrequency",17)==0) {
-                    int offset;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        offset=atoi(token);
-                        SetRXOsc(0,1,offset - LO_offset);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setpan",6)==0) {
-                    float pan;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        pan=atof(token);
-                        SetRXPan(0,0,pan);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setsubrxpan",11)==0) {
-                    float pan;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        pan=atof(token);
-                        SetRXPan(0,1,pan);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"record",6)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        ozySetRecord(token);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setanfvals",10)==0) {
-                    int taps;
-                    int delay;
-                    double gain;
-                    double leakage;
-                    int error;
-
-                    error=0;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        taps=atoi(token);
-                    } else {
-                        error=1;
-                    }
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        delay=atoi(token);
-                    } else {
-                        error=1;
-                    }
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        gain=atof(token);
-                    } else {
-                        error=1;
-                    }
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        leakage=atof(token);
-                    } else {
-                        error=1;
-                    }
-                    if(error) {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    } else {
-                        SetANFvals(0,0,taps,delay,gain,leakage);
-                        SetANFvals(0,1,taps,delay,gain,leakage);
-                    }
-                } else if(strncmp(token,"setnrvals",9)==0) {
-                    int taps;
-                    int delay;
-                    double gain;
-                    double leakage;
-                    int error;
-
-                    error=0;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        taps=atoi(token);
-                    } else {
-                        error=1;
-                    }
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        delay=atoi(token);
-                    } else {
-                        error=1;
-                    }
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        gain=atof(token);
-                    } else {
-                        error=1;
-                    }
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        leakage=atof(token);
-                    } else {
-                        error=1;
-                    }
-                    if(error) {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    } else {
-                        SetNRvals(0,0,taps,delay,gain,leakage);
-                        SetNRvals(0,1,taps,delay,gain,leakage);
-                    }
-                } else if(strncmp(token,"setnbvals",9)==0) {
-                    double threshold;
-                    int error;
-
-                    error=0;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        threshold=atof(token);
-                    } else {
-                        error=1;
-                    }
-                    if(error) {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    } else {
-                        SetNBvals(0,0,threshold);
-                        SetNBvals(0,1,threshold);
-                    }
-                } else if(strncmp(token,"setsdromvals",12)==0) {
-                    double threshold;
-                    int error;
-
-                    error=0;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        threshold=atof(token);
-                    } else {
-                        error=1;
-                    }
-                    if(error) {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    } else {
-                        SetSDROMvals(0,0,threshold);
-                        SetSDROMvals(0,1,threshold);
-                    }
-                } else if(strncmp(token,"setdcblock",10)==0) {
-                    int state;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        state=atoi(token);
-                        SetRXDCBlock(0,0,state);
-                        SetRXDCBlock(0,1,state);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"mox",3)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        if(strcmp(token,"on")==0) {
-                            if (txcfg == TXALL){
-                                ozySetMox(1);
-                            }else if(txcfg == TXPASSWD){
-                                char *thisuser =strtok_r(NULL," ",&saveptr);
-                                if(thisuser!=NULL) {
-                                    //got user
-                                    char *thispasswd =strtok_r(NULL," ",&saveptr);
-                                    if(thispasswd!=NULL) {
-                                        //got passwd
-                                        //check password
-                                        if(chkPasswd(thisuser, thispasswd) == 0){
-                                            // password OK check freq
-                                            if (chkFreq(thisuser,  lastFreq , lastMode) == 0){
-                                                //freqchk passwd good to tx
-                                                fprintf(stderr,"Mox on from User:%s\n",thisuser);
-                                                ozySetMox(1);
-                                            }else{
-                                                fprintf(stderr,"Mox denied because user %s has no rule for mode %d on %lld! hz\n",thisuser, lastMode,lastFreq);
-                                            }
-                                        }else{
-                                            fprintf(stderr,"Mox on denied because user %s password check failed!\n",thisuser);
-                                        }
-                                    }
-                                }   
-									
-                            }else{
-                                fprintf(stderr,"mox denied because tx = \"no\"\n");
-                            }	
-                        } else if(strcmp(token,"off")==0) {
-                            if (txcfg == TXALL){
-                                ozySetMox(0);
-                            }else if(txcfg == TXPASSWD){
-                                char *thisuser =strtok_r(NULL," ",&saveptr);
-                                if(thisuser!=NULL) {
-                                    // got user
-                                    char *thispasswd =strtok_r(NULL," ",&saveptr);
-                                    if(thispasswd!=NULL) {
-                                        //got passwd
-                                        //check password
-                                        if(chkPasswd(thisuser, thispasswd) == 0){
-                                            fprintf(stderr,"Mox off from User:%s\n",thisuser);
-                                            ozySetMox(0);
-                                        }else{
-                                            fprintf(stderr,"Mox off denied because user %s password check failed!\n",thisuser);
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            fprintf(stderr,"Invalid command: '%s'\n",message);
-                        }
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"settxamcarrierlevel",19)==0) {
-                    fprintf(stderr,"Debug: SetTXAMCarrierLevel: %s  txcfg: %d\n",message,  txcfg);
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        double pwr=atof(token);
-                        if(txcfg == TXPASSWD){
-                            char *thisuser =strtok_r(NULL," ",&saveptr);
-                            if(thisuser!=NULL) {
-                                char *thispasswd =strtok_r(NULL," ",&saveptr);
-                                if(thispasswd!=NULL) {
-                                    if(chkPasswd(thisuser, thispasswd) == 0){ 
-                                        if(pwr >= 0 && pwr <= 1) {
-                                            //fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
-                                            SetTXAMCarrierLevel(1,pwr);
-                                        }
-                                    }else{
-                                        fprintf(stderr,"SetTXAMCarrierLevel denied because user %s password check failed!\n",thisuser);
-                                    }
-                                }
-                            }
-                        }if (txcfg == TXALL){
-                            if(pwr >= 0 &&  pwr <= 1) {
-                                fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
-                                SetTXAMCarrierLevel(1,pwr);
-                            }else{
-                                fprintf(stderr,"SetTXAMCarrierLevel denied because Invalid command argument : '%s' txcfg = %d\n",message, txcfg);
-                            }
-                        }
-                    } else{
-                        fprintf(stderr,"Invalid SetTXAMCarrierLevel command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setsquelchval",13)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        float value=atof(token);
-                        SetSquelchVal(0,0,value);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setsubrxquelchval",17)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        float value=atof(token);
-                        SetSquelchVal(0,1,value);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setsquelchstate",15)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        if(strcmp(token,"on")==0) {
-                            SetSquelchState(0,0,1);
-                        } else if(strcmp(token,"off")==0) {
-                            SetSquelchState(0,0,0);
-                        } else {
-                            fprintf(stderr,"Invalid command: '%s'\n",message);
-                        }
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setsubrxquelchstate",19)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        if(strcmp(token,"on")==0) {
-                            SetSquelchState(0,1,1);
-                        } else if(strcmp(token,"off")==0) {
-                            SetSquelchState(0,1,0);
-                        } else {
-                            fprintf(stderr,"Invalid command: '%s'\n",message);
-                        }
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setspectrumpolyphase",20)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        if(strcmp(token,"true")==0) {
-                            SetSpectrumPolyphase(0,1);
-                        } else if(strcmp(token,"false")==0) {
-                            SetSpectrumPolyphase(0,0);
-                        } else {
-                            fprintf(stderr,"Invalid command: '%s'\n",message);
-                        }
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setocoutputs",12)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        ozySetOpenCollectorOutputs(token);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"setclient",9)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        dspserver_log(DSP_LOG_INFO, "RX%d: client is %s\n",
-                                      receiver, token);
-                    }
-                } else if(strncmp(token,"setiqenable",11)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        if(strcmp(token,"true")==0) {
-                            SetCorrectIQEnable(1);
-                            fprintf(stderr,"SetCorrectIQEnable(1)\n"); 
-                        } else if(strcmp(token,"false")==0) {
-                            SetCorrectIQEnable(0);
-                            fprintf(stderr,"SetCorrectIQEnable(0)\n");
-                        } else {	
-                            fprintf(stderr,"Invalid command: '%s'\n",message);
-                        }
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-                } else if(strncmp(token,"testbutton",10)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        if(strcmp(token,"true")==0) {
-                            fprintf(stdout,"The button is pressed: '%s'\n",message);
-                        } else if(strcmp(token,"false")==0) {
-                            fprintf(stdout,"The button is released: '%s'\n",message);
-                        } else {	
-                            fprintf(stderr,"Invalid command: '%s'\n",message);
-                        }
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-
-                } else if(strncmp(token,"testslider",10)==0) {
-                    int value;
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        value=atoi(token);
-                        fprintf(stdout,"The slider value is '%d'\n",value);
-                    } else {
-                        fprintf(stderr,"Invalid command: '%s'\n",message);
-                    }
-
-
-                } else if(strncmp(token,"rxiqmuval",9)==0) {
-                    token=strtok_r(NULL," ",&saveptr);
-                    if(token!=NULL) {
-                        fprintf(stderr,"The value of mu sent = '%s'\n",token);
-                        SetCorrectRXIQMu(0, 0, atof(token));
+                        high=atoi(token);
+                        SetRXFilter(0,0,(double)low,(double)high);
+                        SetRXFilter(0,1,(double)low,(double)high);
                     } else {
                         fprintf(stderr,"Invalid command: '%s'\n",message);
                     }
                 } else {
-                    fprintf(stderr,"Invalid command: token: '%s'\n",token);
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setagc",6)==0) {
+                int agc;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    agc=atoi(token);
+                    SetRXAGC(0,0,agc);
+                    SetRXAGC(0,1,agc);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setnr",5)==0) {
+                int nr;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    if(strcmp(token,"true")==0) {
+                        nr=1;
+                    } else {
+                        nr=0;
+                    }
+                    SetNR(0,0,nr);
+                    SetNR(0,1,nr);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setnb",5)==0) {
+                int nb;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    if(strcmp(token,"true")==0) {
+                        nb=1;
+                    } else {
+                        nb=0;
+                    }
+                    SetNB(0,0,nb);
+                    SetNB(0,1,nb);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setsdrom",8)==0) {
+                int state;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    if(strcmp(token,"true")==0) {
+                        state=1;
+                    } else {
+                        state=0;
+                    }
+                    SetSDROM(0,0,state);
+                    SetSDROM(0,1,state);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setanf",6)==0) {
+                int anf;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    if(strcmp(token,"true")==0) {
+                        anf=1;
+                    } else {
+                        anf=0;
+                    }
+                    SetANF(0,0,anf);
+                    SetANF(0,1,anf);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setrxoutputgain",15)==0) {
+                int gain;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    gain=atoi(token);
+                    SetRXOutputGain(0,0,(double)gain/100.0);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setsubrxoutputgain",18)==0) {
+                int gain;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    gain=atoi(token);
+                    SetRXOutputGain(0,1,(double)gain/100.0);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"startaudiostream",16)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token==NULL) {
+                    audio_buffer_size= AUDIO_BUFFER_SIZE;
+                } else {
+                    audio_buffer_size=atoi(token);
+                }
+                token=strtok_r(NULL," ",&saveptr);
+                if(token==NULL) {
+                    audio_sample_rate=8000;
+                } else {
+                    audio_sample_rate=atoi(token);
+                    if(audio_sample_rate!=8000 &&
+                       audio_sample_rate!=48000) {
+                        fprintf(stderr,"Invalid audio sample rate: %d\n",audio_sample_rate);
+                        audio_sample_rate=8000;
+                    }
+                }
+                token=strtok_r(NULL," ",&saveptr);
+                if(token==NULL) {
+                    audio_channels=1;
+                } else {
+                    audio_channels=atoi(token);
+                    if(audio_channels!=1 &&
+                       audio_channels!=2) {
+                        fprintf(stderr,"Invalid audio channels: %d\n",audio_channels);
+                        audio_channels=1;
+                    }
+                }
+                    
+                fprintf(stderr,"starting audio stream at %d with %d channels and buffer size %d\n",audio_sample_rate,audio_channels,audio_buffer_size);
+                fprintf(stderr,"and with encoding method %d\n", encoding);
+                item->rtp=connection_tcp;
+                audio_stream_reset();
+                send_audio=1;
+            } else if(strncmp(token,"startrtpstream",14)==0) {
+                // startrtpstream port encoding samplerate channels
+                int error=1;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    int rtpport=atoi(token);
+                    token=strtok_r(NULL," ",&saveptr);
+                    if(token!=NULL) {
+                        encoding=atoi(token);
+                        token=strtok_r(NULL," ",&saveptr);
+                        if(token!=NULL) {
+                            audio_sample_rate=atoi(token);
+                            token=strtok_r(NULL," ",&saveptr);
+                            if(token!=NULL) {
+                                audio_channels=atoi(token);
+
+                                fprintf(stderr,"starting rtp: to %s:%d encoding:%d samplerate:%d channels:%d\n",
+                                        inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
+                                fprintf(stdout,"client.c: startrtpstream port encoding samplerate channels: listening on RTP socket\n");
+                                item->session=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
+                                item->rtp=connection_rtp;
+                                answer_question("q-rtpport","master",bev);
+                                audio_stream_reset();
+                                error=0;
+                                send_audio=1;
+                                rtp_tx_init();
+                            }
+                        }
+                    }
+                }
+                if(error) {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"stopaudiostream",15)==0) {
+                send_audio=0;
+            } else if(strncmp(token,"setencoding",11)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    encoding=atoi(token);
+                    if (encoding < 0 || encoding > 2) encoding = 0;
+                    fprintf(stderr,"encoding changed to %d\n", encoding);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setsubrx",17)==0) {
+                int state;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    state=atoi(token);
+                    SetSubRXSt(0,1,state);
+                    // fprintf(stderr, "setsubrx %d\n", state);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setsubrxfrequency",17)==0) {
+                int offset;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    offset=atoi(token);
+                    SetRXOsc(0,1,offset - LO_offset);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setpan",6)==0) {
+                float pan;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    pan=atof(token);
+                    SetRXPan(0,0,pan);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setsubrxpan",11)==0) {
+                float pan;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    pan=atof(token);
+                    SetRXPan(0,1,pan);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"record",6)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    ozySetRecord(token);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setanfvals",10)==0) {
+                int taps;
+                int delay;
+                double gain;
+                double leakage;
+                int error;
+
+                error=0;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    taps=atoi(token);
+                } else {
+                    error=1;
+                }
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    delay=atoi(token);
+                } else {
+                    error=1;
+                }
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    gain=atof(token);
+                } else {
+                    error=1;
+                }
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    leakage=atof(token);
+                } else {
+                    error=1;
+                }
+                if(error) {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                } else {
+                    SetANFvals(0,0,taps,delay,gain,leakage);
+                    SetANFvals(0,1,taps,delay,gain,leakage);
+                }
+            } else if(strncmp(token,"setnrvals",9)==0) {
+                int taps;
+                int delay;
+                double gain;
+                double leakage;
+                int error;
+
+                error=0;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    taps=atoi(token);
+                } else {
+                    error=1;
+                }
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    delay=atoi(token);
+                } else {
+                    error=1;
+                }
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    gain=atof(token);
+                } else {
+                    error=1;
+                }
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    leakage=atof(token);
+                } else {
+                    error=1;
+                }
+                if(error) {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                } else {
+                    SetNRvals(0,0,taps,delay,gain,leakage);
+                    SetNRvals(0,1,taps,delay,gain,leakage);
+                }
+            } else if(strncmp(token,"setnbvals",9)==0) {
+                double threshold;
+                int error;
+
+                error=0;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    threshold=atof(token);
+                } else {
+                    error=1;
+                }
+                if(error) {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                } else {
+                    SetNBvals(0,0,threshold);
+                    SetNBvals(0,1,threshold);
+                }
+            } else if(strncmp(token,"setsdromvals",12)==0) {
+                double threshold;
+                int error;
+
+                error=0;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    threshold=atof(token);
+                } else {
+                    error=1;
+                }
+                if(error) {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                } else {
+                    SetSDROMvals(0,0,threshold);
+                    SetSDROMvals(0,1,threshold);
+                }
+            } else if(strncmp(token,"setdcblock",10)==0) {
+                int state;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    state=atoi(token);
+                    SetRXDCBlock(0,0,state);
+                    SetRXDCBlock(0,1,state);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"mox",3)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    if(strcmp(token,"on")==0) {
+                        if (txcfg == TXALL){
+                            ozySetMox(1);
+                        }else if(txcfg == TXPASSWD){
+                            char *thisuser =strtok_r(NULL," ",&saveptr);
+                            if(thisuser!=NULL) {
+                                //got user
+                                char *thispasswd =strtok_r(NULL," ",&saveptr);
+                                if(thispasswd!=NULL) {
+                                    //got passwd
+                                    //check password
+                                    if(chkPasswd(thisuser, thispasswd) == 0){
+                                        // password OK check freq
+                                        if (chkFreq(thisuser,  lastFreq , lastMode) == 0){
+                                            //freqchk passwd good to tx
+                                            fprintf(stderr,"Mox on from User:%s\n",thisuser);
+                                            ozySetMox(1);
+                                        }else{
+                                            fprintf(stderr,"Mox denied because user %s has no rule for mode %d on %lld! hz\n",thisuser, lastMode,lastFreq);
+                                        }
+                                    }else{
+                                        fprintf(stderr,"Mox on denied because user %s password check failed!\n",thisuser);
+                                    }
+                                }
+                            }   
+    								
+                        }else{
+                            fprintf(stderr,"mox denied because tx = \"no\"\n");
+                        }	
+                    } else if(strcmp(token,"off")==0) {
+                        if (txcfg == TXALL){
+                            ozySetMox(0);
+                        }else if(txcfg == TXPASSWD){
+                            char *thisuser =strtok_r(NULL," ",&saveptr);
+                            if(thisuser!=NULL) {
+                                // got user
+                                char *thispasswd =strtok_r(NULL," ",&saveptr);
+                                if(thispasswd!=NULL) {
+                                    //got passwd
+                                    //check password
+                                    if(chkPasswd(thisuser, thispasswd) == 0){
+                                        fprintf(stderr,"Mox off from User:%s\n",thisuser);
+                                        ozySetMox(0);
+                                    }else{
+                                        fprintf(stderr,"Mox off denied because user %s password check failed!\n",thisuser);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        fprintf(stderr,"Invalid command: '%s'\n",message);
+                    }
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"settxamcarrierlevel",19)==0) {
+                fprintf(stderr,"Debug: SetTXAMCarrierLevel: %s  txcfg: %d\n",message,  txcfg);
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    double pwr=atof(token);
+                    if(txcfg == TXPASSWD){
+                        char *thisuser =strtok_r(NULL," ",&saveptr);
+                        if(thisuser!=NULL) {
+                            char *thispasswd =strtok_r(NULL," ",&saveptr);
+                            if(thispasswd!=NULL) {
+                                if(chkPasswd(thisuser, thispasswd) == 0){ 
+                                    if(pwr >= 0 && pwr <= 1) {
+                                        //fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
+                                        SetTXAMCarrierLevel(1,pwr);
+                                    }
+                                }else{
+                                    fprintf(stderr,"SetTXAMCarrierLevel denied because user %s password check failed!\n",thisuser);
+                                }
+                            }
+                        }
+                    }if (txcfg == TXALL){
+                        if(pwr >= 0 &&  pwr <= 1) {
+                            fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
+                            SetTXAMCarrierLevel(1,pwr);
+                        }else{
+                            fprintf(stderr,"SetTXAMCarrierLevel denied because Invalid command argument : '%s' txcfg = %d\n",message, txcfg);
+                        }
+                    }
+                } else{
+                    fprintf(stderr,"Invalid SetTXAMCarrierLevel command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setsquelchval",13)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    float value=atof(token);
+                    SetSquelchVal(0,0,value);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setsubrxquelchval",17)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    float value=atof(token);
+                    SetSquelchVal(0,1,value);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setsquelchstate",15)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    if(strcmp(token,"on")==0) {
+                        SetSquelchState(0,0,1);
+                    } else if(strcmp(token,"off")==0) {
+                        SetSquelchState(0,0,0);
+                    } else {
+                        fprintf(stderr,"Invalid command: '%s'\n",message);
+                    }
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setsubrxquelchstate",19)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    if(strcmp(token,"on")==0) {
+                        SetSquelchState(0,1,1);
+                    } else if(strcmp(token,"off")==0) {
+                        SetSquelchState(0,1,0);
+                    } else {
+                        fprintf(stderr,"Invalid command: '%s'\n",message);
+                    }
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setspectrumpolyphase",20)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    if(strcmp(token,"true")==0) {
+                        SetSpectrumPolyphase(0,1);
+                    } else if(strcmp(token,"false")==0) {
+                        SetSpectrumPolyphase(0,0);
+                    } else {
+                        fprintf(stderr,"Invalid command: '%s'\n",message);
+                    }
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setocoutputs",12)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    ozySetOpenCollectorOutputs(token);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"setclient",9)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    dspserver_log(DSP_LOG_INFO, "RX%d: client is %s\n",
+                                  receiver, token);
+                }
+            } else if(strncmp(token,"setiqenable",11)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    if(strcmp(token,"true")==0) {
+                        SetCorrectIQEnable(1);
+                        fprintf(stderr,"SetCorrectIQEnable(1)\n"); 
+                    } else if(strcmp(token,"false")==0) {
+                        SetCorrectIQEnable(0);
+                        fprintf(stderr,"SetCorrectIQEnable(0)\n");
+                    } else {	
+                        fprintf(stderr,"Invalid command: '%s'\n",message);
+                    }
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+            } else if(strncmp(token,"testbutton",10)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    if(strcmp(token,"true")==0) {
+                        fprintf(stdout,"The button is pressed: '%s'\n",message);
+                    } else if(strcmp(token,"false")==0) {
+                        fprintf(stdout,"The button is released: '%s'\n",message);
+                    } else {	
+                        fprintf(stderr,"Invalid command: '%s'\n",message);
+                    }
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+
+            } else if(strncmp(token,"testslider",10)==0) {
+                int value;
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    value=atoi(token);
+                    fprintf(stdout,"The slider value is '%d'\n",value);
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
+                }
+
+
+            } else if(strncmp(token,"rxiqmuval",9)==0) {
+                token=strtok_r(NULL," ",&saveptr);
+                if(token!=NULL) {
+                    fprintf(stderr,"The value of mu sent = '%s'\n",token);
+                    SetCorrectRXIQMu(0, 0, atof(token));
+                } else {
+                    fprintf(stderr,"Invalid command: '%s'\n",message);
                 }
             } else {
-                fprintf(stderr,"Invalid command: message: '%s'\n",message);
+                fprintf(stderr,"Invalid command: token: '%s'\n",token);
             }
         } // end if (mic)
     } // end while
