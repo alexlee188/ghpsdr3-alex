@@ -102,6 +102,7 @@ public:
     void rigctlSetFreq(long long f);
     void rigctlSetMode(int newmode);
     void setHwDlg(DlgHardware *);
+    DlgHardware * getHwDlg() { return pHwDlg; }
     void rmHwDlg();
 
 signals:

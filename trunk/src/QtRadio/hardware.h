@@ -22,6 +22,9 @@ public:
     DlgHardware (Connection *pC, QWidget *parent);
     virtual ~DlgHardware ();
 
+public slots:
+    virtual void processAnswer (QStringList) {}
+
 private:
     QWidget    *pParent;
 protected:
@@ -42,8 +45,10 @@ private:
    QSignalMapper *attMapper;
 private slots:
    void attClicked(int state);
-   void ditherClicked(bool);
-   void preampClicked(bool);
+   void ditherChanged(int);
+   void preampChanged(int);
+
+   void processAnswer (QStringList);
 };
 
 class HardwareSdriq: public DlgHardware

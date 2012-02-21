@@ -64,22 +64,32 @@ HardwarePerseus :: HardwarePerseus (Connection *pC, QWidget *pW): DlgHardware (p
 
     // interconnects
     attMapper = new QSignalMapper(this);
-    connect(att0Db, SIGNAL(clicked(bool)), attMapper, SLOT(map()));
+    connect(att0Db, SIGNAL(toggled(bool)), attMapper, SLOT(map()));
     attMapper->setMapping(att0Db, 0);
 
-    connect(att10Db, SIGNAL(clicked(bool)), attMapper, SLOT(map()));
+    connect(att10Db, SIGNAL(toggled(bool)), attMapper, SLOT(map()));
     attMapper->setMapping(att10Db, 10);
 
-    connect(att20Db, SIGNAL(clicked(bool)), attMapper, SLOT(map()));
+    connect(att20Db, SIGNAL(toggled(bool)), attMapper, SLOT(map()));
     attMapper->setMapping(att20Db, 20);
 
-    connect(att30Db, SIGNAL(clicked(bool)), attMapper, SLOT(map()));
+    connect(att30Db, SIGNAL(toggled(bool)), attMapper, SLOT(map()));
     attMapper->setMapping(att30Db, 30);
 
     connect(attMapper, SIGNAL(mapped(int)), this, SLOT(attClicked(int)));
 
-    connect(ditherCB, SIGNAL(clicked(bool)), this, SLOT(ditherClicked(bool)));
-    connect(preampCB, SIGNAL(clicked(bool)), this, SLOT(preampClicked(bool)));
+    connect(ditherCB, SIGNAL(stateChanged(int)),  this, SLOT(ditherChanged(int)));
+    connect(preampCB, SIGNAL(stateChanged(int)),  this, SLOT(preampChanged(int)));
+
+    // update the serial number in title bar
+    QString command;
+    command.clear(); QTextStream(&command) << "*getserial?";
+    pConn->sendCommand (command);
+
+    // defaults
+    ditherCB->setCheckState(Qt::Checked);  // dither ON
+    preampCB->setCheckState(Qt::Checked);  // preamp ON
+    att0Db->setChecked(true);              // attenuator 0 dB
 }
 
 void HardwarePerseus :: attClicked(int state)
@@ -90,19 +100,35 @@ void HardwarePerseus :: attClicked(int state)
    pConn->sendCommand (command);
 }
 
-void HardwarePerseus :: ditherClicked(bool state)
+void HardwarePerseus :: ditherChanged(int state)
 {
    qDebug() << "Dither: " << state;
    QString command;
-   command.clear(); QTextStream(&command) << "*dither " << ((state==true) ? "on" : "off") ;
+   command.clear(); QTextStream(&command) << "*dither " << ((state==Qt::Checked) ? "on" : "off") ;
    pConn->sendCommand (command);
 }
-void HardwarePerseus :: preampClicked(bool state)
+void HardwarePerseus :: preampChanged(int state)
 {   
    qDebug() << "Preamp: " << state;
    QString command;
-   command.clear(); QTextStream(&command) << "*preamp " << ((state==true) ? "on" : "off") ;
+   command.clear(); QTextStream(&command) << "*preamp " << ((state==Qt::Checked) ? "on" : "off") ;
    pConn->sendCommand (command);
+}
+
+
+void HardwarePerseus :: processAnswer (QStringList list)
+{
+    if (list[0] == "*getserial?") {
+       // try to set the serial
+       qDebug() << Q_FUNC_INFO<<list[2];
+       // change the title bar
+       QString x;
+       x.clear(); 
+       QTextStream(&x) << windowTitle() << " - SN: " << list[2];
+
+       setWindowTitle(x) ;
+    }
+
 }
 
 HardwarePerseus :: ~HardwarePerseus ()
@@ -225,6 +251,12 @@ void HardwareFactory :: processAnswer (QString a, Connection *pConn, UI *pUI )
            qDebug() << Q_FUNC_INFO<<list[2];
            pHwDlg->show();
            pUI->setHwDlg(pHwDlg);
+        }
+     } else {
+        DlgHardware *pHwDlg = pUI->getHwDlg();
+        if (pHwDlg) {
+           qDebug() << Q_FUNC_INFO<<list[2];
+           emit pHwDlg->processAnswer(list);
         }
      }
      break;

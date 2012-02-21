@@ -340,10 +340,20 @@ const char* parse_command(CLIENT* client,char* command) {
                 // invalid command string
                 return INVALID_COMMAND;
             }
+
         } else if(strcmp(token,"quit")==0) {
             return QUIT_ASAP;
+
         } else if(strcmp(token,"hardware?")==0) {
             return "OK Perseus";
+
+        } else if(strcmp(token,"getserial?")==0) {
+            eeprom_prodid eep;
+            static char buf[50];
+            perseus_get_product_id((receiver[client->receiver]).pPd, &eep);
+            snprintf (buf, sizeof(buf), "OK %d", eep.sn);
+            return buf;
+
         } else {
             // invalid command string
             return INVALID_COMMAND;
