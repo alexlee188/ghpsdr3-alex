@@ -795,7 +795,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         if(strncmp(token,"q",1)==0){	
             answer_question(message,role, bev);
         }else if(strncmp(token,"getspectrum",11)==0) {
-            char *token=strtok_r(NULL," ",&saveptr);
+            token=strtok_r(NULL," ",&saveptr);
             if (token == NULL) {
                 fprintf(stderr, "Invalid command: '%s'\n", message);
                 continue;
