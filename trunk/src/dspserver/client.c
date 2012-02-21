@@ -726,6 +726,7 @@ void readcb(struct bufferevent *bev, void *ctx){
     client_entry *item, *current_item, *tmp_item;
     char *role = "master";
     int slave = 0;
+    struct evbuffer *inbuf;
 
     if ((item = TAILQ_FIRST(&Client_list)) == NULL) {
         dspserver_log(DSP_LOG_ERROR, "readcb called with no clients");
@@ -753,8 +754,18 @@ void readcb(struct bufferevent *bev, void *ctx){
         slave = 1;
     }
 
-    while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
-
+    /* The documentation for evbuffer_get_length is somewhat unclear as
+     * to the actual definition of "length".  It appears to be the
+     * amount of space *available* in the buffer, not occupied by data;
+     * However, the code for reading from an evbuffer will read as many
+     * bytes as it would return, so this behavior is not different from
+     * what was here before. */
+    inbuf = bufferevent_get_input(bev);
+    while (evbuffer_get_length(inbuf) >= MSG_SIZE) {
+        if ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) != MSG_SIZE) {
+            dspserver_log(DSP_LOG_ERROR, "Short read from client; shouldn't happen\n");
+            return;
+        }
         message[bytesRead-1]=0;			// for Linux strings terminating in NULL
 
         token=strtok_r(message," ",&saveptr);
