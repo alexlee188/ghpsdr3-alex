@@ -80,6 +80,7 @@
 #include "register.h"
 #include "rtp.h"
 #include "G711A.h"
+#include "util.h"
 
 static int timing=0;
 
@@ -713,10 +714,11 @@ void readcb(struct bufferevent *bev, void *ctx){
     int bytesRead = 0;
     char message[MSG_SIZE];
     client_entry *item, *current_item, *tmp_item;
-    time_t tt;
-    struct tm *tod;
 
-    if ((item = TAILQ_FIRST(&Client_list)) == NULL) return;	// should not happen.  No clients !!!
+    if ((item = TAILQ_FIRST(&Client_list)) == NULL) {
+        dspserver_log(DSP_LOG_ERROR, "readcb called with no clients");
+        return;
+    }
     if (item->bev != bev){					// only allow the first client on Client_list to command dspserver as master
 	// locate the current_item for this slave client
         for (current_item = TAILQ_FIRST(&Client_list); current_item != NULL; current_item = tmp_item){
@@ -725,7 +727,10 @@ void readcb(struct bufferevent *bev, void *ctx){
                 break;
             }
         }
-        if (current_item == NULL) return; // should not happen.
+        if (current_item == NULL) {
+            dspserver_log(DSP_LOG_ERROR, "No current item");
+            return;
+        }
 
         while ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) > 3){
             message[bytesRead-1]=0;					// for Linux strings terminating in NULL
@@ -761,9 +766,8 @@ void readcb(struct bufferevent *bev, void *ctx){
                 } else if(strncmp(token,"setclient",9)==0) {
                     token=strtok_r(NULL," ",&saveptr);
                     if(token!=NULL) {
-                        time(&tt);
-                        tod=localtime(&tt);
-                        fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
+                        dspserver_log(DSP_LOG_INFO, "RX%d: client is %s\n",
+                                      receiver, token);
                     }
                 } else if(strncmp(token,"startaudiostream",16)==0) {
                     current_item->rtp = connection_tcp;
@@ -1378,9 +1382,8 @@ void readcb(struct bufferevent *bev, void *ctx){
                 } else if(strncmp(token,"setclient",9)==0) {
                     token=strtok_r(NULL," ",&saveptr);
                     if(token!=NULL) {
-                        time(&tt);
-                        tod=localtime(&tt);
-                        fprintf(stdout,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client is %s\n",tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,receiver,token);
+                        dspserver_log(DSP_LOG_INFO, "RX%d: client is %s\n",
+                                      receiver, token);
                     }
                 } else if(strncmp(token,"setiqenable",11)==0) {
                     token=strtok_r(NULL," ",&saveptr);
