@@ -117,11 +117,6 @@ Configure::Configure() {
 
     connect(widget.addPushButton,SIGNAL(clicked()),this,SLOT(slotXVTRAdd()));
     connect(widget.deletePushButton,SIGNAL(clicked()),this,SLOT(slotXVTRDelete()));
-
-//    on_RxIQcheckBox_toggled(widget.RxIQcheckBox->checkState()); //Honour the checkbox state
-//    on_RxIQspinBox_valueChanged(widget.RxIQspinBox->value());   //Honour the RxIQmu spin box value
-
-
 }
 
 Configure::~Configure() {
@@ -238,6 +233,7 @@ void Configure::loadSettings(QSettings* settings) {
     if(settings->contains("byteorder")) widget.byteOrderComboBox->setCurrentIndex(settings->value("byteorder").toInt());
 //    if(settings->contains("mic")) widget.MicComboBox->setCurrentIndex(settings->value("mic").toInt());
     if(settings->contains("rtp")) widget.rtpCheckBox->setChecked(settings->value("rtp").toBool());
+    widget.spinBox_cwPitch->setValue(settings->value("cwPitch",600).toInt());
     settings->endGroup();
 
 
@@ -324,6 +320,7 @@ void Configure::saveSettings(QSettings* settings) {
     settings->setValue("byteorder",widget.byteOrderComboBox->currentIndex());
     settings->setValue("mic",widget.MicComboBox->currentIndex());
     settings->setValue("rtp",widget.rtpCheckBox->checkState());
+    settings->setValue("cwPitch",widget.spinBox_cwPitch->value());
     settings->endGroup();
     settings->beginGroup("NR");
     settings->setValue("taps",widget.nrTapsSpinBox->value());
@@ -798,4 +795,15 @@ bool Configure::getRxIQcheckboxState()
 double Configure::getRxIQspinBoxValue()
 {
     return widget.RxIQspinBox->value();
+}
+
+int Configure::getCwPitch()
+{
+    return widget.spinBox_cwPitch->value();
+}
+
+void Configure::on_spinBox_cwPitch_valueChanged(int arg1)
+{
+    qDebug()<<Q_FUNC_INFO<<": The cw pitch is now "<<widget.spinBox_cwPitch->value()<<" Hz and arg1 = "<< arg1;
+    emit spinBox_cwPitchChanged(arg1);
 }

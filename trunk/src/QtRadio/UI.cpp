@@ -288,6 +288,7 @@ UI::UI(const QString server) {
     connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
     connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
     connect(&configure,SIGNAL(RxIQspinChanged(double)),this,SLOT(RxIQspinChanged(double)));
+    connect(&configure,SIGNAL(spinBox_cwPitchChanged(int)),this,SLOT(cwPitchChanged(int)));
     connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
     connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
 
@@ -298,7 +299,7 @@ UI::UI(const QString server) {
     subRx=FALSE;
     subRxGain=100;
     agc=AGC_SLOW;
-    cwPitch=600;
+    cwPitch=configure.getCwPitch();
     squelchValue=-100;
     squelch=false;
 
@@ -686,6 +687,7 @@ void UI::connected() {
     spectrumTimer->start(1000/fps);
     printWindowTitle("Remote connected");
     connection_valid = TRUE;
+    if((mode.getStringMode()=="CWU")||(mode.getStringMode()=="CWL")) frequencyChanged(frequency); //gvj dummy call to set Rx offset for cw
 }
 
 void UI::disconnected(QString message) {
@@ -1059,7 +1061,7 @@ void UI::bandChanged(int previousBand,int newBand) {
 //    widget.spectrumFrame->setBand(band.getStringBand()); //gvj obsolete code as spectrum no longer paints text data
     BandLimit limits=band.getBandLimits(band.getFrequency()-(samplerate/2),band.getFrequency()+(samplerate/2));
     widget.spectrumFrame->setBandLimits(limits.min() + loffset,limits.max()+loffset);
-
+    if((mode.getStringMode()=="CWU")||(mode.getStringMode()=="CWL")) frequencyChanged(frequency); //gvj dummy call to set Rx offset for cw
 }
 
 void UI::modeChanged(int previousMode,int newMode) {
@@ -1259,6 +1261,7 @@ void UI::actionCWL() {
     mode.setMode(MODE_CWL);
     filters.selectFilters(&cwlFilters);
     band.setMode(MODE_CWL);
+    frequencyChanged(frequency);  //force a recalculation of frequency offset for CW receive
     modeFlag = false;
 }
 
@@ -1267,6 +1270,7 @@ void UI::actionCWU() {
     mode.setMode(MODE_CWU);
     filters.selectFilters(&cwuFilters);
     band.setMode(MODE_CWU);
+    frequencyChanged(frequency);
     modeFlag = false;
 }
 
@@ -1275,6 +1279,7 @@ void UI::actionLSB() {
     mode.setMode(MODE_LSB);
     filters.selectFilters(&lsbFilters);
     band.setMode(MODE_LSB);
+    frequencyChanged(frequency);
     modeFlag = false;
 }
 
@@ -1283,6 +1288,7 @@ void UI::actionUSB() {
     mode.setMode(MODE_USB);
     filters.selectFilters(&usbFilters);
     band.setMode(MODE_USB);
+    frequencyChanged(frequency);
     modeFlag = false;
 }
 
@@ -1291,6 +1297,7 @@ void UI::actionDSB() {
     mode.setMode(MODE_DSB);
     filters.selectFilters(&dsbFilters);
     band.setMode(MODE_DSB);
+    frequencyChanged(frequency);
     modeFlag = false;
 }
 
@@ -1299,6 +1306,7 @@ void UI::actionAM() {
     mode.setMode(MODE_AM);
     filters.selectFilters(&amFilters);
     band.setMode(MODE_AM);
+    frequencyChanged(frequency);
     modeFlag = false;
 }
 
@@ -1307,6 +1315,7 @@ void UI::actionSAM() {
     mode.setMode(MODE_SAM);
     filters.selectFilters(&samFilters);
     band.setMode(MODE_SAM);
+    frequencyChanged(frequency);
     modeFlag = false;
 }
 
@@ -1315,6 +1324,7 @@ void UI::actionFMN() {
     mode.setMode(MODE_FMN);
     filters.selectFilters(&fmnFilters);
     band.setMode(MODE_FMN);
+    frequencyChanged(frequency);
     modeFlag = false;
 }
 
@@ -1323,6 +1333,7 @@ void UI::actionDIGL() {
     mode.setMode(MODE_DIGL);
     filters.selectFilters(&diglFilters);
     band.setMode(MODE_DIGL);
+    frequencyChanged(frequency);
     modeFlag = false;
 }
 
@@ -1331,6 +1342,7 @@ void UI::actionDIGU() {
     mode.setMode(MODE_DIGU);
     filters.selectFilters(&diguFilters);
     band.setMode(MODE_DIGU);
+    frequencyChanged(frequency);
     modeFlag = false;
 }
 
@@ -1467,11 +1479,18 @@ void UI::filterChanged(int previousFilter,int newFilter) {
 
 void UI::frequencyChanged(long long f) {
     QString command;
+    long long freqOffset = f; //Normally no offset (only for CW Rx mode)
 
     frequency=f;
+    if((mode.getStringMode()=="CWU")&&(!widget.vfoFrame->getPtt())){
+        freqOffset-=cwPitch;
+    }
+    if((mode.getStringMode()=="CWL")&&(!widget.vfoFrame->getPtt())){
+        freqOffset+=cwPitch;
+    }
     //Send command to server
     command.clear();
-    QTextStream(&command) << "setFrequency " << frequency;
+    QTextStream(&command) << "setFrequency " << freqOffset;
     connection.sendCommand(command);
     //Adjust all frequency displays & Check for exiting current band
     band.setFrequency(frequency);
@@ -2279,6 +2298,15 @@ void UI::RxIQspinChanged(double num)
     if(temp) {
         command.clear(); QTextStream(&command) << "SetIQEnable " << "true";
         connection.sendCommand(command);
+    }
+}
+
+void UI::cwPitchChanged(int arg1)
+{
+    cwPitch = arg1;
+    if(isConnected){
+        filters.selectFilter(filters.getFilter()); //Dummy call to centre filter on tone
+        frequencyChanged(frequency); //Dummy call to set freq into correct place in filter
     }
 }
 
