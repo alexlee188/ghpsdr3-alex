@@ -73,7 +73,7 @@ Q_GLOBAL_STATIC(ImageCLContext, image_context)
 Waterfallcl::Waterfallcl(){
     makeCurrent();
     ImageCLContext *ctx = image_context();
-    ctx->init(100,100);
+    ctx->init(512,256);
     spectrum_data = ctx->glContext->createVector<char>(1024);
 }
 
@@ -116,7 +116,7 @@ void Waterfallcl::initialize(int wid, int ht){
 #endif
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1024, 512*2, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 512, 256*2, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, t.bits());
 
 
@@ -141,7 +141,7 @@ void Waterfallcl::initialize(int wid, int ht){
         waterfall_buffer = ctx->glContext->createImage2DDevice
             (QCLImageFormat(QCLImageFormat::Order_RGBA,
                         QCLImageFormat::Type_Normalized_UInt8),
-                        QSize(1024, 512*2), QCLMemoryObject::WriteOnly);
+                        QSize(512, 256*2), QCLMemoryObject::WriteOnly);
 
     }
 
@@ -155,7 +155,7 @@ void Waterfallcl::loadGLTextures(GLuint textureId)
     if ( !b.load( "./crate.bmp" ) )
     {
         b = QImage( 16, 16, QImage::Format_ARGB32_Premultiplied);
-        b.fill( Qt::green);
+        b.fill( Qt::red);
     }
 
     t = QGLWidget::convertToGLFormat( b );
@@ -168,7 +168,7 @@ void Waterfallcl::loadGLTextures(GLuint textureId)
 
 void Waterfallcl::resizeGL( int width, int height )
 {
-height = height?height:1;
+    height = height?height:1;
 
     glViewport( 0, 0, (GLint)width, (GLint)height );
 
@@ -227,7 +227,19 @@ void Waterfallcl::paintGL()
     glRotatef(rquad,1.0f,0.0f,0.0f);
 
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureId[1]);
+    //glBindTexture(GL_TEXTURE_2D, textureId[1]);
+
+/*
+    ImageCLContext *ctx = image_context();
+    ctx->glContext->marker().waitForFinished();
+
+    void *ptr = waterfall_buffer.map(QRect(QPoint(0, 0), QPoint(256,128)), QCLMemoryObject::ReadOnly);
+    glBindTexture(GL_TEXTURE_2D, textureId[0]);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                    256,128,
+                    GL_RGBA, GL_UNSIGNED_BYTE, ptr);
+    waterfall_buffer.unmap(ptr);
+*/
 
     glBegin(GL_QUADS);
     // Front Face
