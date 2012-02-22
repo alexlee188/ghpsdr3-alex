@@ -1551,7 +1551,7 @@ void *printcountrythread(void *arg)
   }
 
   /* Read the output a line at a time - output it. */
-  fprintf(stdout,"\nIP %s is from ", inet_ntoa(addr));
+  fprintf(stdout,"\nIP %s is from ", ipstr);
   while (fgets(path, sizeof(path)-1, fp) != NULL) {
     fprintf(stdout,"%s",  path);
   }
