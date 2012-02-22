@@ -111,24 +111,36 @@
 
 char propertyPath[128];
 
+enum {
+    OPT_SOUNDCARD = 1,
+    OPT_RECEIVER,
+    OPT_SERVER,
+    OPT_OFFSET,
+    OPT_TIMING,
+    OPT_LOOKUPCOUNTRY,
+    OPT_SHARE,
+    OPT_SHARECONFIG,
+    OPT_LO,
+    OPT_HPSDR,
+    OPT_DEBUG
+};
+
 struct option longOptions[] = {
-    {"soundcard",required_argument, 0, 0},
-    {"receiver",required_argument, 0, 1},
-    {"server",required_argument, 0, 2},
-    {"offset",required_argument, 0, 3},
-    {"timing",no_argument, 0, 4},
-    {"lookupcountry",no_argument, 0, 5},
-    {"share",no_argument, 0, 6},
-    {"shareconfig",required_argument, 0, 7},
-    {"lo",required_argument, 0, 8},
-    {"hpsdr",no_argument, 0, 9},
-    {"debug",no_argument, 0, 10},
+    {"soundcard",required_argument, NULL, OPT_SOUNDCARD},
+    {"receiver",required_argument, NULL, OPT_RECEIVER},
+    {"server",required_argument, NULL, OPT_SERVER},
+    {"offset",required_argument, NULL, OPT_OFFSET},
+    {"timing",no_argument, NULL, OPT_TIMING},
+    {"lookupcountry",no_argument, NULL, OPT_LOOKUPCOUNTRY},
+    {"share",no_argument, NULL, OPT_SHARE},
+    {"shareconfig",required_argument, NULL, OPT_SHARECONFIG},
+    {"lo",required_argument, NULL, OPT_LO},
+    {"hpsdr",no_argument, NULL, OPT_HPSDR},
+    {"debug",no_argument, NULL, OPT_DEBUG},
     {0,0,0,0}
 };
 
 char* shortOptions="";
-
-int optionIndex;
 
 void signal_shutdown(int signum);
 
@@ -142,42 +154,43 @@ void signal_shutdown(int signum);
 /* ----------------------------------------------------------------------------*/
 void processCommands(int argc,char** argv) {
     int c;
-    while((c=getopt_long(argc,argv,shortOptions,longOptions,&optionIndex)!=EOF)) {
-        switch(optionIndex) {
-            case 0:
+    while((c=getopt_long(argc,argv,shortOptions,longOptions,NULL))!=-1) {
+        printf("%d\n", c);
+        switch(c) {
+            case OPT_SOUNDCARD:
                 strcpy(soundCardName,optarg);
                 break;
-            case 1:
+            case OPT_RECEIVER:
                 receiver=atoi(optarg);
                 break;
-            case 2:
+            case OPT_SERVER:
                 strcpy(server_address,optarg);
                 break;
-            case 3:
+            case OPT_OFFSET:
                 offset=atoi(optarg);
                 break;
-            case 4:
+            case OPT_TIMING:
                 client_set_timing();
                 break;
-            case 5:
+            case OPT_LOOKUPCOUNTRY:
                 setprintcountry();
                 break;
-            case 6:
+            case OPT_SHARE:
                 home = getenv("HOME");
                 strcpy(share_config_file, home );
                 strcat(share_config_file, "/dspserver.conf");
 		        toShareOrNotToShare = 1;
                 break;
-            case 7:
+            case OPT_SHARECONFIG:
                 strcpy(share_config_file,optarg);
                 break;
-            case 8:
+            case OPT_LO:
                 LO_offset=atoi(optarg);
                 break;
-            case 9:
+            case OPT_HPSDR:
                 ozy_set_hpsdr();
                 break;
-            case 10:
+            case OPT_DEBUG:
                 ozy_set_debug(1);
                 break;
 
