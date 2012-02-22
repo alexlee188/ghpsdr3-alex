@@ -719,7 +719,7 @@ void readcb(struct bufferevent *bev, void *ctx){
     int i;
     int bytesRead = 0;
     char message[MSG_SIZE];
-    client_entry *item, *current_item = NULL, *tmp_item;
+    client_entry *item, *current_item = NULL;
     char *role = "master";
     int slave = 0;
     struct evbuffer *inbuf;
@@ -729,6 +729,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         return;
     }
     if (item->bev != bev){
+        client_entry *tmp_item;
         /* Only allow the first client on Client_list to command
          * dspserver as master.  If this client is not the master, we
          * will first determine whether it is allowed to execute the
