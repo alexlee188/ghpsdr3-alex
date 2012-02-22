@@ -154,7 +154,6 @@ void client_set_samples(float* samples,int size);
 char* client_samples;
 int samples;
 int prncountry = 0;
-char status_buf[32];
 
 static void *printcountrythread(void *);
 static void printcountry(struct sockaddr_in *);
@@ -533,6 +532,7 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
     int client_count = 0;
     int rtp_client_count = 0;
     int is_rtp_client = 0;
+    char status_buf[32];
 
     if (error & BEV_EVENT_EOF) {
         /* connection has been closed, do any clean up here */
@@ -639,42 +639,47 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     struct event_base *base = arg;
     struct sockaddr_in ss;
     socklen_t slen = sizeof(ss);
-    int client_count = 0;
 
     int fd = accept(listener, (struct sockaddr*)&ss, &slen);
     if (fd < 0) {
-        fprintf(stderr,"accept failed\n");
-    } else {
-	// add newly connected client to Client_list
-	item = malloc(sizeof(*item));
-	memcpy(&item->client, &ss, sizeof(ss));
+        dspserver_log(DSP_LOG_WARNING, "accept failed\n");
+        return;
+    }
+    char ipstr[16];
+    // add newly connected client to Client_list
+    item = malloc(sizeof(*item));
+    memset(item, 0, sizeof(*item));
+    memcpy(&item->client, &ss, sizeof(ss));
 
-        time_t tt;
-        struct tm *tod;
-        time(&tt);
-        tod=localtime(&tt);
-        fprintf(stderr,"%02d/%02d/%02d %02d:%02d:%02d RX%d: client connection from %s:%d\n",
-		tod->tm_mday,tod->tm_mon+1,tod->tm_year+1900,tod->tm_hour,tod->tm_min,tod->tm_sec,
-		receiver,inet_ntoa(item->client.sin_addr),ntohs(item->client.sin_port));
-        if(prncountry){
-            printcountry(&ss);
+    inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
+    dspserver_log(DSP_LOG_INFO, "RX%d: client connection from %s:%d\n",
+                  receiver, ipstr, ntohs(item->client.sin_port));
+
+    if(prncountry){
+        printcountry(&ss);
+    }
+
+    struct bufferevent *bev;
+    evutil_make_socket_nonblocking(fd);
+    bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
+    bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
+    bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
+    bufferevent_setwatermark(bev, EV_WRITE, 4096, 0);
+    bufferevent_enable(bev, EV_READ|EV_WRITE);
+    item->bev = bev;
+    item->rtp = connection_unknown;
+    TAILQ_INSERT_TAIL(&Client_list, item, entries);
+
+    if (toShareOrNotToShare) {
+        int client_count = 0;
+        char status_buf[32];
+
+        /* NB: Clobbers item */
+        TAILQ_FOREACH(item, &Client_list, entries){
+    	client_count++;
         }
-
-        struct bufferevent *bev;
-        evutil_make_socket_nonblocking(fd);
-        bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
-        bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
-        bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
-	bufferevent_setwatermark(bev, EV_WRITE, 4096, 0);
-        bufferevent_enable(bev, EV_READ|EV_WRITE);
-	item->bev = bev;
-	item->rtp = connection_unknown;
-	TAILQ_INSERT_TAIL(&Client_list, item, entries);
-	TAILQ_FOREACH(item, &Client_list, entries){
-		client_count++;
-	}
-	sprintf(status_buf,"%d client(s)", client_count);
-        if (toShareOrNotToShare) updateStatus(status_buf);
+        sprintf(status_buf,"%d client(s)", client_count);
+        updateStatus(status_buf);
     }
 }
 
