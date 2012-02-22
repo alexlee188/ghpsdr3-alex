@@ -91,10 +91,6 @@ static pthread_t client_thread_id, tx_thread_id, rtp_tx_thread_id, memory_thread
 #define BASE_PORT 8000
 static int port=BASE_PORT;
 
-static int serverSocket;
-static int clientSocket;
-static struct sockaddr_in server;
-
 #define SAMPLE_BUFFER_SIZE 4096
 static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 
@@ -257,7 +253,6 @@ void client_init(int receiver) {
     rtp_init();
 
     port=BASE_PORT+receiver;
-    clientSocket=-1;
     rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
 
     if(rc != 0) {
@@ -595,6 +590,8 @@ void* client_thread(void* arg) {
     int on=1;
     struct event_base *base;
     struct event *listener_event;
+    struct sockaddr_in server;
+    int serverSocket;
 
     fprintf(stderr,"client_thread\n");
 
@@ -603,12 +600,6 @@ void* client_thread(void* arg) {
         perror("client socket");
         return NULL;
     }
-
-    // set timeout on receive
-    struct timeval tv;
-    tv.tv_sec=10;		// changed from 3 sec to 10 sec for remote connection
-    tv.tv_usec=0;
-    setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,(char *)&tv,sizeof tv);
 
     evutil_make_socket_nonblocking(serverSocket);
 
@@ -627,7 +618,7 @@ void* client_thread(void* arg) {
         return NULL;
     }
 
-    fprintf(stderr,"client_thread: listening on port %d\n",port);
+    dspserver_log(DSP_LOG_INFO, "client_thread: listening on port %d\n", port);
 
     if (listen(serverSocket, 5) == -1) {
 	perror("client listen");
