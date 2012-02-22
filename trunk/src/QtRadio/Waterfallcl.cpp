@@ -133,11 +133,16 @@ void Waterfallcl::initialize(int wid, int ht){
     // If the context supports object sharing, then this is really easy.
     if (ctx->glContext->supportsObjectSharing()) {
     waterfall_buffer = ctx->glContext->createTexture2D
-            (GL_TEXTURE_2D, textureId[0], 0, QCLMemoryObject::ReadWrite);
+            (GL_TEXTURE_2D, textureId[0], 0, QCLMemoryObject::WriteOnly);
     if (waterfall_buffer == 0) qFatal("Unabel to create waterfall_buffer");
     }
     else {
-        qFatal("System does not support CL/GL object sharing");
+        qDebug() << "System does not support CL/GL object sharing";
+        waterfall_buffer = ctx->glContext->createImage2DDevice
+            (QCLImageFormat(QCLImageFormat::Order_RGBA,
+                        QCLImageFormat::Type_Normalized_UInt8),
+                        QSize(1024, 512*2), QCLMemoryObject::WriteOnly);
+
     }
 
 }
@@ -272,9 +277,9 @@ void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
     ImageCLContext *ctx = image_context();
     QCLKernel waterfall = ctx->waterfall;
 
-    ctx->glContext->acquire(waterfall_buffer).waitForFinished();
+    //ctx->glContext->acquire(waterfall_buffer).waitForFinished();
     waterfall(spectrum_data, cy, data_height, waterfall_buffer);
-    ctx->glContext->release(waterfall_buffer).waitForFinished();
+    //ctx->glContext->release(waterfall_buffer).waitForFinished();
 
 }
 
