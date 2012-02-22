@@ -142,8 +142,6 @@ struct option longOptions[] = {
 
 char* shortOptions="";
 
-int optionIndex;
-
 void signal_shutdown(int signum);
 
 /* --------------------------------------------------------------------------*/
@@ -156,8 +154,9 @@ void signal_shutdown(int signum);
 /* ----------------------------------------------------------------------------*/
 void processCommands(int argc,char** argv) {
     int c;
-    while((c=getopt_long(argc,argv,shortOptions,longOptions,&optionIndex)!=EOF)) {
-        switch(optionIndex) {
+    while((c=getopt_long(argc,argv,shortOptions,longOptions,NULL))!=-1) {
+        printf("%d\n", c);
+        switch(c) {
             case OPT_SOUNDCARD:
                 strcpy(soundCardName,optarg);
                 break;
