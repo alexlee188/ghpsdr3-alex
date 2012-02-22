@@ -687,6 +687,7 @@ void UI::connected() {
     spectrumTimer->start(1000/fps);
     printWindowTitle("Remote connected");
     connection_valid = TRUE;
+    if((mode.getStringMode()=="CWU")||(mode.getStringMode()=="CWL")) frequencyChanged(frequency); //gvj dummy call to set Rx offset for cw
 }
 
 void UI::disconnected(QString message) {
@@ -1060,7 +1061,7 @@ void UI::bandChanged(int previousBand,int newBand) {
 //    widget.spectrumFrame->setBand(band.getStringBand()); //gvj obsolete code as spectrum no longer paints text data
     BandLimit limits=band.getBandLimits(band.getFrequency()-(samplerate/2),band.getFrequency()+(samplerate/2));
     widget.spectrumFrame->setBandLimits(limits.min() + loffset,limits.max()+loffset);
-
+    if((mode.getStringMode()=="CWU")||(mode.getStringMode()=="CWL")) frequencyChanged(frequency); //gvj dummy call to set Rx offset for cw
 }
 
 void UI::modeChanged(int previousMode,int newMode) {
@@ -2302,8 +2303,10 @@ void UI::RxIQspinChanged(double num)
 void UI::cwPitchChanged(int arg1)
 {
     cwPitch = arg1;
-    filters.selectFilter(filters.getFilter()); //Dummy call to centre filter on tone
-    frequencyChanged(frequency); //Dummy call to set freq into correct place in filter
+    if(isConnected){
+        filters.selectFilter(filters.getFilter()); //Dummy call to centre filter on tone
+        frequencyChanged(frequency); //Dummy call to set freq into correct place in filter
+    }
 }
 
 void UI::setCanTX(bool tx){
