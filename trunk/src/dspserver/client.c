@@ -270,7 +270,7 @@ void tx_init(void){
         if (mic_sr_state == 0) { 
             fprintf (stderr, "tx_init: SR INIT ERROR: %s\n", src_strerror (sr_error)); 
         } else {
-            fprintf (stderr, "tx_init: sample rate init successful with ratio of : %f\n", mic_src_ratio);
+            dspserver_log(DSP_LOG_INFO, "tx_init: sample rate init successful with ratio of : %f\n", mic_src_ratio);
 	}
 
         rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
