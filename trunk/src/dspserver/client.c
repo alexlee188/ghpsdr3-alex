@@ -787,8 +787,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                 invalid = 0;
             } else {
                 for (i = 0; slave_commands[i]; i++) {
-                    if (!strncmp(token, slave_commands[i],
-                                 strlen(slave_commands[i]))) {
+                    if (!strcmp(token, slave_commands[i])) {
                         invalid = 0;
                         break;
                     }
