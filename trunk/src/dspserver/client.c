@@ -962,17 +962,19 @@ void readcb(struct bufferevent *bev, void *ctx){
                         audio_sample_rate=atoi(token);
                         token=strtok_r(NULL," ",&saveptr);
                         if(token!=NULL) {
+                            char ipstr[16];
                             audio_channels=atoi(token);
 
-                            /* FIXME: race (inet_ntoa)*/
                             if (slave) {
                                 dspserver_log(DSP_LOG_INFO, "startrtpstream: listening on RTP socket\n");
-                                current_item->session=rtp_listen(inet_ntoa(current_item->client.sin_addr),rtpport);
+                                inet_ntop(AF_INET, (void *)&current_item->client.sin_addr, ipstr, sizeof(ipstr));
+                                current_item->session=rtp_listen(ipstr,rtpport);
                                 current_item->rtp = connection_rtp;
                             } else {
+                                inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
                                 dspserver_log(DSP_LOG_INFO, "starting rtp: to %s:%d encoding %d samplerate %d channels:%d\n",
-                                              inet_ntoa(item->client.sin_addr),rtpport,encoding,audio_sample_rate,audio_channels);
-                                item->session=rtp_listen(inet_ntoa(item->client.sin_addr),rtpport);
+                                              ipstr,rtpport,encoding,audio_sample_rate,audio_channels);
+                                item->session=rtp_listen(ipstr,rtpport);
                                 item->rtp=connection_rtp;
                             }
                             answer_question("q-rtpport",role,bev);
