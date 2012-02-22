@@ -1537,11 +1537,13 @@ void *printcountrythread(void *arg)
   char path[1035];
   char sCmd[255];
   struct in_addr addr;
+  char ipstr[16];
 
   addr.s_addr = (in_addr_t)arg;
+  inet_ntop(AF_INET, (void *)&addr, ipstr, sizeof(ipstr));
   /* Open the command for reading. */
   sprintf(sCmd,"wget -q -O - --post-data 'ip=%s' http://www.selfseo.com/ip_to_country.php 2>/dev/null | sed -e '/ is assigned to /!d' -e 's/.*border=1> \\([^<]*\\).*/\\1/'",
-          inet_ntoa(addr));
+          ipstr);
   fp = popen(sCmd, "r");
   if (fp == NULL) {
     fprintf(stdout,"Failed to run printcountry command\n" );
