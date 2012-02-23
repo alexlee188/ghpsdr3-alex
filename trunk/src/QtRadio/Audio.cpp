@@ -183,8 +183,8 @@ Audio::Audio() {
     connect(this,SIGNAL(audio_processing_process_audio(char*,char*,int)),audio_processing,SLOT(process_audio(char*,char*,int)));
     audio_processing_thread->start(QThread::LowPriority);
 
-    audio_output_thread = new QThread;
-    qDebug() << "QThread:  audio_output_thread = " << audio_output_thread;
+    //audio_output_thread = new QThread;
+    //qDebug() << "QThread:  audio_output_thread = " << audio_output_thread;
 }
 
 Audio::~Audio() {
@@ -264,8 +264,8 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
 
     audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
     audio_out= new Audio_playback;
-    audio_out->moveToThread(audio_output_thread);
-    audio_output_thread->start(QThread::HighestPriority);
+    //audio_out->moveToThread(audio_output_thread);
+    //audio_output_thread->start(QThread::HighestPriority);
 
     audio_out->set_audio_byte_order(audio_format.byteOrder());
     audio_out->set_audio_encoding(audio_encoding);
