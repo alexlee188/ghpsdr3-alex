@@ -647,6 +647,7 @@ void writecb(struct bufferevent *bev, void *ctx){
 	sem_wait(&bufferevent_semaphore);
 	while ((item = audio_stream_queue_remove()) != NULL){
 		TAILQ_FOREACH(client_item, &Client_list, entries){
+                    sem_post(&bufferevent_semaphore);
                         if(client_item->rtp == connection_tcp) {
 			    bufferevent_write(client_item->bev, item->buf, item->length);
                             }
@@ -657,6 +658,7 @@ void writecb(struct bufferevent *bev, void *ctx){
 		send_ts += item->length - AUDIO_BUFFER_HEADER_SIZE; // update send_ts for all rtp sessions
 		free(item->buf);
 		free(item);
+                sem_wait(&bufferevent_semaphore);
 	}
 	sem_post(&bufferevent_semaphore);
 }
