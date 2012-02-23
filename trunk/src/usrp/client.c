@@ -50,7 +50,6 @@
 #include "transmitter.h"
 
 const char* parse_command(CLIENT* client,char* command);
-void* tx_audio_thread(void* arg);
 
 //Client thread for RX IQ stream
 void* client_thread(void* arg) {
@@ -61,7 +60,7 @@ void* client_thread(void* arg) {
 
     client->receiver_state=RECEIVER_DETACHED;
     client->transmitter_state=TRANSMITTER_DETACHED;
-    client->receiver=-1;
+    client->receiver_num=-1;
     client->mox=0;
 
     while(1) {	
@@ -73,12 +72,12 @@ void* client_thread(void* arg) {
         response=parse_command(client,command);
         send(client->socket,response,strlen(response),0);
 
-        fprintf(stderr,"Response to DSP client (Rx%d): '%s'\n",client->receiver,response);		
+        fprintf(stderr,"Response to DSP client (Rx%d): '%s'\n",client->receiver_num,response);		
     }
-	fprintf(stderr,"Exiting DSP client thread loop (Rx%d)...\n",client->receiver);
+	fprintf(stderr,"Exiting DSP client thread loop (Rx%d)...\n",client->receiver_num);
 
     if(client->receiver_state==RECEIVER_ATTACHED) {
-        receiver[client->receiver].client=(CLIENT*)NULL;
+        receiver[client->receiver_num].client=(CLIENT*)NULL;
         client->receiver_state=RECEIVER_DETACHED;
     }
 
@@ -106,7 +105,7 @@ const char* parse_command(CLIENT* client,char* command) {
     
     char* token;
 
-    fprintf(stderr,"parse_command(Rx%d): '%s'\n",client->receiver,command);
+    fprintf(stderr,"parse_command(Rx%d): '%s'\n",client->receiver_num,command);
 
     token=strtok(command," \r\n");
     if(token!=NULL) {
@@ -116,7 +115,9 @@ const char* parse_command(CLIENT* client,char* command) {
             if(token!=NULL) {
                 //COMMAND: 'attach rx#'
                 int rx=atoi(token);
-                return attach_receiver(rx,client);
+                const char *resp=attach_receiver(rx,client);
+                if (strncmp(resp, "Error", 5)) return resp;
+                else return attach_transmitter(client, resp);                    
             }
         } else if(strcmp(token,"detach")==0) {
             //COMMAND: 'detach <side>' 
@@ -146,16 +147,20 @@ const char* parse_command(CLIENT* client,char* command) {
                     if(token!=NULL) {
                         client->iq_port=atoi(token);
                     }
-
+                    //NOTE:as it is now, only receiver 0's client will issue 'start' command.
                     // starts the USRP threads
-                    usrp_start (&receiver[client->receiver]);
-                    fprintf(stderr,"Started USRP for CLIENT %d\n",client->receiver);
-
-                    //Start the server side tx audio stream receiving thread 
-                    if(pthread_create(&transmitter.audio_thread_id,NULL,tx_audio_thread,client)!=0) {
-                        fprintf(stderr,"Failed to create audio thread for rx %d\n",client->receiver);
+                    if (usrp_start (&receiver[client->receiver_num]))
+                        fprintf(stderr,"Started USRP for Client %d\n",client->receiver_num);
+                    else {
+                        fprintf(stderr,"USRP threads start FAILED for rx %d\n",client->receiver_num);
                         exit(1);
                     }
+                    sleep(1); //some settling time
+                    //Start the server side tx audio stream receiving thread 
+                    if(pthread_create(&client->tx_thread_id,NULL,tx_audio_thread,client)!=0) {
+                        fprintf(stderr,"Failed to create audio thread for rx %d\n",client->receiver_num);
+                        exit(1);
+                    }                    
                     
                     return OK;
                 } else if(strcmp(token,"bandscope")==0) {

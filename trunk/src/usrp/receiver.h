@@ -35,6 +35,7 @@ typedef struct _receiver {
     CLIENT* client;
     int frequency_changed;
     long frequency;
+    pthread_t rx_thread_id;
     float input_buffer[BUFFER_SIZE*2];
     int samples;
 } RECEIVER;
