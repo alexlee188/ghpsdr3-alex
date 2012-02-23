@@ -1,6 +1,6 @@
 /**
 * @file transmitter.c
-* @brief management of tramsit features - header
+* @brief management of transmitting features - header
 * @author Alberto Trentadue, IZ0CEZ
 * @version 0.1
 * @date 2012-02-10
@@ -32,7 +32,6 @@
 #define SMALL_PACKETS
 
 unsigned long tx_sequence=0L;
-static char response[80];
 short tx_audio_port=TX_AUDIO_PORT; // = 15000 as constant
 
 TRANSMITTER transmitter;
@@ -62,14 +61,13 @@ void init_transmitter(void) {
     audio.sin_port=htons(tx_audio_port);
 
     if(bind(transmitter.tx_audio_socket,(struct sockaddr*)&audio,audio_length)<0) {
-        perror("Client Handler: bind socket failed for tx server audio socket");
+        perror("Transmitter: bind socket failed for tx server audio socket");
         exit(1);
-    } 
-
-    fprintf(stderr,"Listening for tx audio on port %d\n", tx_audio_port);   
+    }
+    fprintf(stderr,"Tx audio on port %d\n", tx_audio_port);        
 }
 
-const char* attach_transmitter(CLIENT* client) {
+const char* attach_transmitter(CLIENT* client, const char *rx_attach_message) {
 
     //TX allowed only if there is a receiver
     if(client->receiver_state!=RECEIVER_ATTACHED) {
@@ -77,16 +75,14 @@ const char* attach_transmitter(CLIENT* client) {
     }
 
     //This allows only RX#0 to TX
-    if(client->receiver!=0) {
+    if(client->receiver_num!=0) {
         return RECEIVER_NOT_ZERO;
     }
 
     client->transmitter_state=TRANSMITTER_ATTACHED;
     transmitter.client = client;
 
-    sprintf(response,"%s",OK);
-
-    return response;
+    return rx_attach_message;
 }
 
 const char* detach_transmitter(CLIENT* client) {
@@ -110,7 +106,7 @@ const char* detach_transmitter(CLIENT* client) {
  */ 
 void* tx_audio_thread(void* arg) {
     CLIENT *client=(CLIENT*)arg;
-    RECEIVER *rx=&receiver[client->receiver];
+    RECEIVER *rx=&receiver[client->receiver_num];
     TRANSMITTER *tx=&transmitter;
     struct sockaddr audio;
     int audio_length;
@@ -119,7 +115,7 @@ void* tx_audio_thread(void* arg) {
     BUFFER buffer;
     int offset;
 
-    fprintf(stderr,"tx_audio_thread for client %d\n",rx->id);
+    fprintf(stderr,"Starting tx_audio_thread for client %d\n",rx->id);
 
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);
@@ -131,11 +127,9 @@ void* tx_audio_thread(void* arg) {
             if(bytes_read<0) {
                 perror("recvfrom socket failed for TX audio");
                 exit(1);
-            }
+            }                   
 
-            //fprintf(stderr,"rcvd UDP packet: sequence=%lld offset=%d length=%d\n",
-
-           if(buffer.offset==0) {
+            if(buffer.offset==0) {
                 offset=0;
                 tx_sequence=buffer.sequence;
                 // start of a frame

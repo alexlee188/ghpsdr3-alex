@@ -39,9 +39,10 @@ typedef struct _client {
     int address_length;
     struct sockaddr_in address;
     pthread_t thread_id;
+    pthread_t tx_thread_id;
     RECEIVER_STATE receiver_state;
     TRANSMITTER_STATE transmitter_state;
-    int receiver;
+    int receiver_num;
     int iq_port;
     int bs_port;
     int mox;

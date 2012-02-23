@@ -10,7 +10,7 @@
 
 typedef struct _transmitter {    
     int tx_audio_socket;
-    pthread_t audio_thread_id;
+    pthread_t thread_id;
     CLIENT* client;
     float output_buffer[TRANSMIT_BUFFER_SIZE*2];
     int   samples;
@@ -26,7 +26,7 @@ void init_transmitter(void);
 /*!
  * Activates the transmitter to a client
  */
-const char* attach_transmitter(CLIENT* client);
+const char* attach_transmitter(CLIENT* client, const char * rx_attach_message);
 
 /*!
  * Dectivates the transmitter from a client
