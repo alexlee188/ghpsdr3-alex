@@ -219,7 +219,7 @@ void updateStatus(char *status){
 
     if (toShareOrNotToShare) {
         str = strdup(status);
-        ret = pthread_create( &thread2, NULL, doUpdate, (void *)status);
+        ret = pthread_create( &thread2, NULL, doUpdate, (void *)str);
         ret = pthread_detach(thread2);
     }
 }
