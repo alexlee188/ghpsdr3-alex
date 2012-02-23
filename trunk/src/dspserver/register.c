@@ -200,23 +200,28 @@ void init_register(){
     }
 }
 
-void *doUpdate(){
-	if(toShareOrNotToShare){
-	  int result;
-      char sCmd[255];
-      sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant, dspstatus);
-	  result = system(sCmd);
-	}
+void *doUpdate(void *arg){
+    if(toShareOrNotToShare){
+        int result;
+        char sCmd[255];
+        sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant,(char *)arg);
+        result = system(sCmd);
+        free(arg);
+    }
     return 0;
 }
 
 
 void updateStatus(char *status){
-	dspstatus = status;
-	pthread_t thread2;
+    pthread_t thread2;
     int ret;
-    ret = pthread_create( &thread2, NULL, doUpdate, (void*) NULL );
-    ret = pthread_detach(thread2);
+    char *str;
+
+    if (toShareOrNotToShare) {
+        str = strdup(status);
+        ret = pthread_create( &thread2, NULL, doUpdate, (void *)status);
+        ret = pthread_detach(thread2);
+    }
 }
 
 void doRemove(){
