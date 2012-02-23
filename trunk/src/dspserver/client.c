@@ -553,6 +553,7 @@ void* client_thread(void* arg) {
     }
 
     evutil_make_socket_nonblocking(serverSocket);
+    evutil_make_socket_closeonexec(serverSocket);
 
 #ifndef WIN32
     setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
@@ -612,6 +613,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 
     struct bufferevent *bev;
     evutil_make_socket_nonblocking(fd);
+    evutil_make_socket_closeonexec(fd);
     bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
     bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
     bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
