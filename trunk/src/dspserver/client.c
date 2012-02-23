@@ -66,6 +66,7 @@
 #include <fcntl.h>
 
 #include <event2/event.h>
+#include <event2/thread.h>
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 
@@ -233,6 +234,8 @@ void Mic_stream_queue_free(){
 
 void client_init(int receiver) {
     int rc;
+
+    evthread_use_pthreads();
 
     TAILQ_INIT(&Client_list);
 
@@ -614,7 +617,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     struct bufferevent *bev;
     evutil_make_socket_nonblocking(fd);
     evutil_make_socket_closeonexec(fd);
-    bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
+    bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE|BEV_OPT_THREADSAFE);
     bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
     bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
     bufferevent_setwatermark(bev, EV_WRITE, 4096, 0);
