@@ -41,7 +41,6 @@
 #include "messages.h"
 #include "usrp.h"
 #include "usrp_audio.h"
-#include "util.h"
 
 #define SMALL_PACKETS
 
@@ -100,7 +99,7 @@ const char* attach_receiver(int rx,CLIENT* client) {
     
     //Client data update
     client->receiver_state=RECEIVER_ATTACHED;    
-    client->receiver=rx;
+    client->receiver_num=rx;
     
     //receiver data update
     receiver[rx].client=client;
@@ -137,14 +136,14 @@ const char* set_frequency(CLIENT* client,long frequency) {
         return CLIENT_DETACHED;
     }
 
-    if(client->receiver<0) {
+    if(client->receiver_num<0) {
         return RECEIVER_INVALID;
     }
 
-    receiver[client->receiver].frequency=frequency;
+    receiver[client->receiver_num].frequency=frequency;
     //fprintf(stderr, "Frequency to be set in USRP=%ld", receiver[client->receiver].frequency);
     usrp_set_frequency(frequency);
-    receiver[client->receiver].frequency_changed=1;
+    receiver[client->receiver_num].frequency_changed=1;
 
     return OK;
 }
