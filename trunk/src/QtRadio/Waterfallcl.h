@@ -58,7 +58,8 @@ protected:
 
 private:
     QCLImage2D waterfall_buffer;
-    GLuint textureId[2];        // [0] is for buffer with height * 2, [1] is for display
+    GLuint textureId[2];        // [0] is for buffer width x height*2
+    QCLBuffer spectrum_buffer;
     int data_width;
     int data_height;
     int cy;

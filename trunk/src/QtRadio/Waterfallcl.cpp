@@ -40,9 +40,9 @@ void ImageCLContext::init(int wid, int ht)
         "  int id = get_global_id(0);\n"
         "  int2 pos;\n"
         "  pos = (int2)(id, cy);\n"
-                "  write_imagef(image, pos, (float4)(0.25, 0.25, 0.25, (float)src[id]/256.0));\n"
+        "  write_imageui(image, pos, (uint4)(128, 64, 32, src[id]));\n"
         "  pos = (int2)(id, cy + height);\n"
-                "  write_imagef(image, pos, (float4)(0.25, 0.25, 0.25, (float)src[id]/256.0));\n"
+        "  write_imageui(image, pos, (uint4)(128, 64, 32, src[id]));\n"
         "}\n");
 
     if (glContext) {
@@ -58,7 +58,6 @@ void ImageCLContext::init(int wid, int ht)
     qDebug() << program.sourceCode();
     waterfall = program.createKernel("waterfall");
     waterfall.setGlobalWorkSize(wid);
-    //waterfall.setLocalWorkSize(waterfall.bestLocalWorkSizeImage2D());
 
 }
 
@@ -93,7 +92,7 @@ void Waterfallcl::initialize(int wid, int ht){
     QImage t;
     QImage b;
 
-    b = QImage( 512, 256*2, QImage::Format_ARGB32_Premultiplied);
+    b = QImage( 512, 512, QImage::Format_ARGB32_Premultiplied);
     b.fill( Qt::green);
 
     t = QGLWidget::convertToGLFormat( b );
@@ -116,7 +115,7 @@ void Waterfallcl::initialize(int wid, int ht){
 #endif
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 512, 256*2, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 512, 512, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, t.bits());
 
 
@@ -133,17 +132,19 @@ void Waterfallcl::initialize(int wid, int ht){
     // If the context supports object sharing, then this is really easy.
     if (ctx->glContext->supportsObjectSharing()) {
     waterfall_buffer = ctx->glContext->createTexture2D
-            (GL_TEXTURE_2D, textureId[0], 0, QCLMemoryObject::WriteOnly);
+            (GL_TEXTURE_2D, textureId[0], 0, QCLMemoryObject::ReadWrite);
     if (waterfall_buffer == 0) qFatal("Unabel to create waterfall_buffer");
     }
     else {
         qDebug() << "System does not support CL/GL object sharing";
         waterfall_buffer = ctx->glContext->createImage2DDevice
             (QCLImageFormat(QCLImageFormat::Order_RGBA,
-                        QCLImageFormat::Type_Normalized_UInt8),
-                        QSize(512, 256*2), QCLMemoryObject::WriteOnly);
+                        QCLImageFormat::Type_Unnormalized_UInt8),
+                        QSize(512, 512), QCLMemoryObject::ReadWrite);
 
     }
+
+    spectrum_buffer = ctx->glContext->createBufferDevice(1024, QCLMemoryObject::ReadWrite);
 
 }
 
@@ -183,7 +184,7 @@ void Waterfallcl::resizeGL( int width, int height )
 void Waterfallcl::setGeometry(QRect rect){
     data_width = rect.width();
     data_height = rect.height();
-    cy = data_height - 1;
+    cy = 255;
 }
 
 void Waterfallcl::updateWaterfallgl(){
@@ -193,45 +194,21 @@ void Waterfallcl::updateWaterfallgl(){
 void Waterfallcl::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
-
-    glTranslatef(-0.7f,0.0f,-6.0f);
-    glRotatef(rtri,0.0f,1.0f,0.0f);
-
-    glBegin(GL_TRIANGLES);
-    glColor3f(1.0f,0.0f,0.0f);
-    glVertex3f( 0.0f, 1.0f, 0.0f);
-    glColor3f(0.0f,1.0f,0.0f);
-    glVertex3f(-1.0f,-1.0f, 1.0f);
-    glColor3f(0.0f,0.0f,1.0f);
-    glVertex3f( 1.0f,-1.0f, 1.0f);
-    glColor3f(1.0f,0.0f,0.0f);
-    glVertex3f( 0.0f, 1.0f, 0.0f);
-    glColor3f(0.0f,0.0f,1.0f);
-    glVertex3f( 1.0f,-1.0f, 1.0f);
-    glColor3f(0.0f,1.0f,0.0f);
-    glVertex3f( 1.0f,-1.0f, -1.0f);
-    glColor3f(1.0f,0.0f,0.0f);
-    glVertex3f( 0.0f, 1.0f, 0.0f);
-    glColor3f(0.0f,1.0f,0.0f);
-    glVertex3f( 1.0f,-1.0f, -1.0f);
-    glColor3f(0.0f,0.0f,1.0f);
-    glVertex3f(-1.0f,-1.0f, -1.0f);
-    glColor3f(1.0f,0.0f,0.0f);
-    glVertex3f( 0.0f, 1.0f, 0.0f);
-    glColor3f(0.0f,0.0f,1.0f);
-    glVertex3f(-1.0f,-1.0f,-1.0f);
-    glColor3f(0.0f,1.0f,0.0f);
-    glVertex3f(-1.0f,-1.0f, 1.0f);
-    glEnd();
 
     glLoadIdentity();
-    glTranslatef(0.5f,0.0f,-5.5f);
-    glScalef(0.8f, 0.8f, 0.8f);
+    glTranslatef(0.0f,0.0f,-5.5f);
+    glScalef(1.5f, 1.5f, 1.5f);
     glRotatef(rquad,1.0f,0.0f,0.0f);
 
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureId[1]);
+    glBindTexture(GL_TEXTURE_2D, textureId[0]);
+
+    void *ptr = malloc(waterfall_buffer.width()*waterfall_buffer.height()*waterfall_buffer.bytesPerElement());
+    waterfall_buffer.read(ptr, QRect(QPoint(0,0), QPoint(511,511)));
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+                    512, 512 ,
+                    GL_RGBA, GL_UNSIGNED_BYTE, ptr);
+    free(ptr);
 
     glBegin(GL_QUADS);
     // Front Face
@@ -271,16 +248,20 @@ void Waterfallcl::paintGL()
 
     rtri += 0.2f;
     rquad -= 0.5f;
-    if (cy-- <= 0) cy = data_height - 1;
+
+    if (cy-- <= 0) cy = 255;
 }
 
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
 
-    //ImageCLContext *ctx = image_context();
-    //QCLKernel waterfall = ctx->waterfall;
+    ImageCLContext *ctx = image_context();
+    QCLKernel waterfall = ctx->waterfall;
+
+    spectrum_buffer.write(0, buffer, 512);
+    waterfall.setGlobalWorkSize(512);
 
     //ctx->glContext->acquire(waterfall_buffer).waitForFinished();
-    //waterfall(spectrum_data, cy, data_height, waterfall_buffer);
+    waterfall(spectrum_buffer, cy, 256, waterfall_buffer);
     //ctx->glContext->release(waterfall_buffer).waitForFinished();
 
 }

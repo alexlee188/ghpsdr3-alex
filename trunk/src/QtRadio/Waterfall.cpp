@@ -70,6 +70,7 @@ Waterfall::Waterfall(QWidget*& widget) {
     waterfallcl_thread = new QThread;
     waterfallcl->moveToThread(waterfallcl_thread);
     waterfallcl_thread->start(QThread::LowestPriority);
+    waterfallcl->setGeometry(QRect(QPoint(0,0),QPoint(511,255)));
     waterfallcl->initialize(512,256);
     waterfallcl->show();
 
