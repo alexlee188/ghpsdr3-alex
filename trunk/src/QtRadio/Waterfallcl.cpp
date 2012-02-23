@@ -40,9 +40,9 @@ void ImageCLContext::init(int wid, int ht)
         "  int id = get_global_id(0);\n"
         "  int2 pos;\n"
         "  pos = (int2)(id, cy);\n"
-                "  write_imagef(image, pos, (float4)(0.5, 0.25, 1.0, (float)src[id]/256.0));\n"
+                "  write_imagef(image, pos, (float4)(0.25, 0.25, 0.25, (float)src[id]/256.0));\n"
         "  pos = (int2)(id, cy + height);\n"
-                "  write_imagef(image, pos, (float4)(0.5, 0.25, 1.0, (float)src[id]/256.0));\n"
+                "  write_imagef(image, pos, (float4)(0.25, 0.25, 0.25, (float)src[id]/256.0));\n"
         "}\n");
 
     if (glContext) {
@@ -74,7 +74,6 @@ Waterfallcl::Waterfallcl(){
     makeCurrent();
     ImageCLContext *ctx = image_context();
     ctx->init(512,256);
-    spectrum_data = ctx->glContext->createVector<char>(1024);
 }
 
 Waterfallcl::~Waterfallcl(){
@@ -86,6 +85,7 @@ void Waterfallcl::initialize(int wid, int ht){
 
     data_width = wid;
     data_height = ht;
+    cy = data_height - 1;
 
     rtri = 0.0f;
     rquad = 0.0f;
@@ -93,7 +93,7 @@ void Waterfallcl::initialize(int wid, int ht){
     QImage t;
     QImage b;
 
-    b = QImage( 1024, 512*2, QImage::Format_ARGB32_Premultiplied);
+    b = QImage( 512, 256*2, QImage::Format_ARGB32_Premultiplied);
     b.fill( Qt::green);
 
     t = QGLWidget::convertToGLFormat( b );
@@ -186,6 +186,10 @@ void Waterfallcl::setGeometry(QRect rect){
     cy = data_height - 1;
 }
 
+void Waterfallcl::updateWaterfallgl(){
+    updateGL();
+}
+
 void Waterfallcl::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -227,19 +231,7 @@ void Waterfallcl::paintGL()
     glRotatef(rquad,1.0f,0.0f,0.0f);
 
     glEnable(GL_TEXTURE_2D);
-    //glBindTexture(GL_TEXTURE_2D, textureId[1]);
-
-/*
-    ImageCLContext *ctx = image_context();
-    ctx->glContext->marker().waitForFinished();
-
-    void *ptr = waterfall_buffer.map(QRect(QPoint(0, 0), QPoint(256,128)), QCLMemoryObject::ReadOnly);
-    glBindTexture(GL_TEXTURE_2D, textureId[0]);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-                    256,128,
-                    GL_RGBA, GL_UNSIGNED_BYTE, ptr);
-    waterfall_buffer.unmap(ptr);
-*/
+    glBindTexture(GL_TEXTURE_2D, textureId[1]);
 
     glBegin(GL_QUADS);
     // Front Face
@@ -284,13 +276,11 @@ void Waterfallcl::paintGL()
 
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
 
-    for (int i = 0; i < width; i++) spectrum_data[i] = buffer[i];
-
-    ImageCLContext *ctx = image_context();
-    QCLKernel waterfall = ctx->waterfall;
+    //ImageCLContext *ctx = image_context();
+    //QCLKernel waterfall = ctx->waterfall;
 
     //ctx->glContext->acquire(waterfall_buffer).waitForFinished();
-    waterfall(spectrum_data, cy, data_height, waterfall_buffer);
+    //waterfall(spectrum_data, cy, data_height, waterfall_buffer);
     //ctx->glContext->release(waterfall_buffer).waitForFinished();
 
 }

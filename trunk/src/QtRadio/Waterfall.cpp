@@ -67,7 +67,10 @@ Waterfall::Waterfall(QWidget*& widget) {
     cy = image.height()/2 - 1;
 
     waterfallcl = new Waterfallcl;
-    waterfallcl->initialize(1024, 512);
+    waterfallcl_thread = new QThread;
+    waterfallcl->moveToThread(waterfallcl_thread);
+    waterfallcl_thread->start(QThread::LowestPriority);
+    waterfallcl->initialize(512,256);
     waterfallcl->show();
 
 }
@@ -236,8 +239,6 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     int version,subversion;
     int offset;
 
-    //qDebug() << "updateWaterfall: " << width() << ":" << height();
-
     waterfallcl->updateWaterfall(header, buffer, length);
 
     version=header[1];
@@ -323,7 +324,7 @@ void Waterfall::updateWaterfall_3(void){
 
 void Waterfall::updateWaterfall_4(void){
     QTimer::singleShot(0,this,SLOT(repaint()));
-    waterfallcl->updateGL();
+    QTimer::singleShot(0, waterfallcl, SLOT(updateWaterfallgl()));
 }
 
 

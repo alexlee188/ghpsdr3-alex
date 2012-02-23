@@ -126,6 +126,7 @@ private:
     bool subRx;
     int size;
     Waterfallcl *waterfallcl;
+    QThread *waterfallcl_thread;
     QString mode;
 
 };

@@ -47,14 +47,16 @@ public:
     ~Waterfallcl();
     void setGeometry(QRect rect);
     void initialize(int wid, int ht);
-    void resizeGL( int width, int height );
-    void paintGL();
+
 public slots:
     void updateWaterfall(char* header,char* buffer,int width);
+    void updateWaterfallgl(void);
 protected:
     void loadGLTextures(GLuint textureId);
+    void resizeGL( int width, int height );
+    void paintGL();
+
 private:
-    QCLVector<char> spectrum_data;
     QCLImage2D waterfall_buffer;
     GLuint textureId[2];        // [0] is for buffer with height * 2, [1] is for display
     int data_width;

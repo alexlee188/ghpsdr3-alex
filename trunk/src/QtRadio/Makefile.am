@@ -55,7 +55,7 @@ Audioinput.moc.cpp \
 servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
-Waterfallcl.cpp
+Waterfallcl.moc.cpp
 
 	
 nodist_QtRadio_SOURCES = \
