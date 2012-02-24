@@ -63,8 +63,6 @@ int receiver;
 //int penelope_software_version=0;
 //int ozy_software_version=0;
 
-int forwardPower=0;
-
 static pthread_t iq_thread_id;
 //static pthread_t keepalive_thread_id;
 
@@ -75,7 +73,7 @@ static pthread_t iq_thread_id;
 
 static int ozy_debug=0;
 
-int output_sample_increment=1; // 1=48000 2=96000 4=192000
+static int output_sample_increment=1; // 1=48000 2=96000 4=192000
 
 #define BUFFER_SIZE 1024
 int buffer_size=BUFFER_SIZE;
@@ -164,9 +162,6 @@ int hpsdr=0;
 static int local_audio=0;
 static int port_audio=0;
 
-unsigned long tx_sequence=0L;
-unsigned long rx_sequence=0L;
-
 #include <samplerate.h>
 //
 // samplerate library data structures
@@ -181,7 +176,6 @@ double src_ratio;
 void dump_udp_buffer(unsigned char* buffer);
 
 void* iq_thread(void* arg) {
-    int bytes_written;
     int iq_socket;
     struct sockaddr_in iq_addr;
     int iq_length = sizeof(iq_addr);
@@ -217,6 +211,7 @@ fprintf(stderr,"iq_thread\n");
     while(1) {
         int bytes_read;
         int offset = 0;
+        unsigned long rx_sequence = 0;
 #ifdef SMALL_PACKETS
         while(1) {
             bytes_read=recvfrom(iq_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&iq_addr,(socklen_t *)&iq_length);
@@ -324,6 +319,7 @@ fprintf(stderr,"iq_thread\n");
 }
 
 void ozy_send(unsigned char* data,int length,char* who) {
+    static unsigned long tx_sequence = 0;
     BUFFER buffer;
     unsigned short offset=0;
     int rc;
@@ -679,7 +675,6 @@ int ozy_init() {
     int rc;
     struct hostent *h;
     int on=1;
-    int audio_on=1;
 
     rc=sem_init(&ozy_send_semaphore,0,1);
     if(rc<0) {
