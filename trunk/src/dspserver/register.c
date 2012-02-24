@@ -30,6 +30,7 @@ struct config_t cfg;
 static char *share_config_file;
 
 int toShareOrNotToShare;
+int txcfg;
 
 /* Converts an integer value to its hex character*/
 char to_hex(char code) {

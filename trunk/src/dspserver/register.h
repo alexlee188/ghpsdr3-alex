@@ -17,8 +17,6 @@ extern int toShareOrNotToShare;
 #define TXPASSWD  1
 #define TXNONE  2
 
-char user[21];
-char passwd[21];
-int  txcfg;
+extern int  txcfg;
 
 #endif
