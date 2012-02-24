@@ -56,6 +56,8 @@ static sem_t ozy_send_semaphore;
 // Added by Alex lee 18 Aug 2010
 double LO_offset = 9000;  // LO offset 9khz
 
+int receiver;
+
 //static char ozy_firmware_version[9];
 //int mercury_software_version=0;
 //int penelope_software_version=0;
@@ -214,7 +216,7 @@ fprintf(stderr,"iq_thread\n");
     
     while(1) {
         int bytes_read;
-        int offset;
+        int offset = 0;
 #ifdef SMALL_PACKETS
         while(1) {
             bytes_read=recvfrom(iq_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&iq_addr,(socklen_t *)&iq_length);

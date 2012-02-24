@@ -84,23 +84,11 @@ typedef struct _buffer {
 
 #define SPECTRUM_BUFFER_SIZE 8192
 
-int speed;
-int class;
-int lt2208Dither;
-int lt2208Random;
-int alexAttenuation;
-int micSource;
-int clock10MHz;
-int clock122_88MHz;
-int preamp;
+extern int sampleRate;
 
-int sampleRate;
+extern int mox;
 
-int mox;
-
-int forwardPower;
-
-int receiver;
+extern int receiver;
 
 extern double LO_offset;
 
