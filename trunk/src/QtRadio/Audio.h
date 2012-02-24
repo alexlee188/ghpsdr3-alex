@@ -34,10 +34,10 @@
 #include <QMutex>
 #include <samplerate.h>
 #include <QThread>
-#include <QQueue>
 #include <ortp/rtp.h>
 #include <ortp/rtpsession.h>
 #include "G711A.h"
+#include "cusdr_queue.h"
 
 #define AUDIO_BUFFER_SIZE 800
 #define AUDIO_OUTPUT_BUFFER_SIZE (1024*2)
@@ -61,7 +61,7 @@ public:
     qint64 readData(char *data, qint64 maxlen);
     qint64 writeData(const char *data, qint64 len);
 public slots:
-    void set_decoded_buffer(QQueue<qint16>* pBuffer);
+    void set_decoded_buffer(QHQueue<qint16>* pBuffer);
     void set_audio_byte_order(QAudioFormat::Endian byte_order);
     void set_audio_encoding(int encoding);
     void set_useRTP(bool use);
@@ -69,14 +69,14 @@ public slots:
     void set_rtpSession(RtpSession* session);
 private:
     quint32 recv_ts;
-    QQueue <qint16> * pdecoded_buffer;
+    QHQueue <qint16> * pdecoded_buffer;
     QAudioFormat::Endian audio_byte_order;
     int audio_encoding;
     bool useRTP;
     bool rtp_connected;
     RtpSession* rtpSession;
     G711A g711a;
-    QQueue<qint16> queue;
+    QHQueue<qint16> queue;
 signals:
 };
 
@@ -87,7 +87,7 @@ public:
     ~Audio_processing();
 public slots:
     void process_audio(char* header, char* buffer, int length);
-    void set_queue(QQueue<qint16> *buffer);
+    void set_queue(QHQueue<qint16> *buffer);
     void set_audio_channels(int c);
     void set_audio_encoding(int enc);
 private:
@@ -102,8 +102,8 @@ private:
     SRC_STATE *src_state;
     double src_ratio;
     SRC_DATA sr_data;
-    QQueue<qint16> queue;
-    QQueue<qint16> *pdecoded_buffer;
+    QHQueue<qint16> queue;
+    QHQueue<qint16> *pdecoded_buffer;
     void* codec2;
     int audio_channels;
     int audio_encoding;
@@ -117,7 +117,7 @@ public:
 //    Audio(const Audio& orig);
     virtual ~Audio();
     int get_audio_encoding();
-    QQueue <qint16> decoded_buffer;
+    QHQueue <qint16> decoded_buffer;
     QAudioFormat::Endian audio_byte_order;
     int audio_encoding;
     bool useRTP;

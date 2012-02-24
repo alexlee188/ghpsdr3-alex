@@ -113,7 +113,8 @@ HEADERS  += \
     Audioinput.h \
     servers.h \
     G711A.h \
-    RTP.h
+    RTP.h \
+    cusdr_queue.h
 
 FORMS    += \   
     UI.ui \

@@ -57,7 +57,7 @@ void Audio_playback::stop()
     close();
 }
 
-void Audio_playback::set_decoded_buffer(QQueue<qint16> *pBuffer){
+void Audio_playback::set_decoded_buffer(QHQueue<qint16> *pBuffer){
     pdecoded_buffer = pBuffer;
 }
 
@@ -183,8 +183,8 @@ Audio::Audio() {
     connect(this,SIGNAL(audio_processing_process_audio(char*,char*,int)),audio_processing,SLOT(process_audio(char*,char*,int)));
     audio_processing_thread->start(QThread::LowPriority);
 
-    //audio_output_thread = new QThread;
-    //qDebug() << "QThread:  audio_output_thread = " << audio_output_thread;
+    audio_output_thread = new QThread;
+    qDebug() << "QThread:  audio_output_thread = " << audio_output_thread;
 }
 
 Audio::~Audio() {
@@ -264,8 +264,8 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
 
     audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
     audio_out= new Audio_playback;
-    //audio_out->moveToThread(audio_output_thread);
-    //audio_output_thread->start(QThread::HighestPriority);
+    audio_out->moveToThread(audio_output_thread);
+    audio_output_thread->start(QThread::HighestPriority);
 
     audio_out->set_audio_byte_order(audio_format.byteOrder());
     audio_out->set_audio_encoding(audio_encoding);
@@ -326,6 +326,10 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
 
     audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
     audio_out= new Audio_playback;
+
+    audio_out->moveToThread(audio_output_thread);
+    audio_output_thread->start(QThread::HighestPriority);
+
     audio_out->set_audio_byte_order(audio_format.byteOrder());
     audio_out->set_audio_encoding(audio_encoding);
     audio_out->set_decoded_buffer(&decoded_buffer);
@@ -442,7 +446,7 @@ Audio_processing::~Audio_processing(){
      codec2_destroy(codec2);
 }
 
-void Audio_processing::set_queue(QQueue<qint16> *buffer){
+void Audio_processing::set_queue(QHQueue<qint16> *buffer){
     pdecoded_buffer = buffer;
 }
 
@@ -486,16 +490,16 @@ void Audio_processing::resample(int no_of_samples){
     qint16 v;
     int rc;
 
-    if (pdecoded_buffer->length() > 16000) {
+    if (pdecoded_buffer->isFull()) {
         src_ratio = 0.9;
     }
-    else if(pdecoded_buffer->length() > 4800) {
+    else if(pdecoded_buffer->count() > 4800) {
         src_ratio = 0.95;
     }
-    else if(pdecoded_buffer->length() > 3200){
+    else if(pdecoded_buffer->count() > 3200){
         src_ratio = 0.97;
     }
-    else if(pdecoded_buffer->length() > 1600){
+    else if(pdecoded_buffer->count() > 1600){
         src_ratio = 0.99;
     }
     else src_ratio = 1.0;
