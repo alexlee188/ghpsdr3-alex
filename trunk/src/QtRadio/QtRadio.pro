@@ -139,6 +139,7 @@ HEADERS  += \
     G711A.h \
     RTP.h \
     Waterfallcl.h
+    cusdr_queue.h
 
 FORMS    += \   
     UI.ui \
