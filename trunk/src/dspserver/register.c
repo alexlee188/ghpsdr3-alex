@@ -26,6 +26,12 @@ sem_t cfgsem;
 
 struct config_t cfg;
 
+/* Allocated at init time, never destroyed. */
+static char *share_config_file;
+
+int toShareOrNotToShare;
+int txcfg;
+
 /* Converts an integer value to its hex character*/
 char to_hex(char code) {
   static char hex[] = "0123456789abcdef";
@@ -62,7 +68,8 @@ void *doReg(){
 }
 
 
-void init_register(){
+void init_register(const char *scfile){
+    share_config_file = strdup(scfile);
       
   // try to open share_config_file for reading
   // if it fails try writing a default config file 
