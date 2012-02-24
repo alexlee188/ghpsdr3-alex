@@ -214,6 +214,7 @@ fprintf(stderr,"iq_thread\n");
     
     while(1) {
         int bytes_read;
+        int offset;
 #ifdef SMALL_PACKETS
         while(1) {
             bytes_read=recvfrom(iq_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&iq_addr,(socklen_t *)&iq_length);

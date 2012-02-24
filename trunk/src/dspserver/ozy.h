@@ -102,8 +102,6 @@ int forwardPower;
 
 int receiver;
 
-int offset;
-
 extern double LO_offset;
 
 char server_address[64];
