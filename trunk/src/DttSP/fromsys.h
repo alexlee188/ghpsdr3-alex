@@ -63,13 +63,6 @@ Bridgewater, NJ 08807
 #define MAXPATHLEN (2048)
 #endif
 
-#include <iosdr.h>
-struct timezone
-{
-  int tz_minuteswest;		/* minutes W of Greenwich */
-  int tz_dsttime;		/* type of dst correction */
-};
-
 #ifdef DONT_INCLUDE
 __inline int
 gettimeofday (struct timeval *tv, struct timezone *tz)
