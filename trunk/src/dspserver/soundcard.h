@@ -38,8 +38,6 @@
 #define UNSUPPORTED_CARD 7
 #define HPSDR 8
 
-char soundCardName[80];
-
 int soundcard;
 int sampleRate;
 

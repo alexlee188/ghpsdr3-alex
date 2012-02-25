@@ -95,6 +95,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
+#include <sys/param.h>
 
 #include "client.h"
 #include "dttsp.h"
@@ -142,6 +143,12 @@ struct option longOptions[] = {
 
 char* shortOptions="";
 
+struct dspserver_config {
+    char soundCardName[80];
+    int offset;
+    char share_config_file[MAXPATHLEN];
+};
+
 void signal_shutdown(int signum);
 
 /* --------------------------------------------------------------------------*/
@@ -152,22 +159,27 @@ void signal_shutdown(int signum);
 * @param argv
 */
 /* ----------------------------------------------------------------------------*/
-void processCommands(int argc,char** argv) {
+void processCommands(int argc,char** argv,struct dspserver_config *config) {
     int c;
     while((c=getopt_long(argc,argv,shortOptions,longOptions,NULL))!=-1) {
         printf("%d\n", c);
         switch(c) {
             case OPT_SOUNDCARD:
-                strcpy(soundCardName,optarg);
+                if (strlen(optarg) > sizeof(config->soundCardName) - 1) {
+                    fprintf(stderr, "Warning: Sound card name will be truncated\n");
+                }
+                strncpy(config->soundCardName,optarg,sizeof(config->soundCardName));
                 break;
             case OPT_RECEIVER:
+                /* FIXME: global */
                 receiver=atoi(optarg);
                 break;
             case OPT_SERVER:
+                /* FIXME: global */
                 strcpy(server_address,optarg);
                 break;
             case OPT_OFFSET:
-                offset=atoi(optarg);
+                config->offset=atoi(optarg);
                 break;
             case OPT_TIMING:
                 client_set_timing();
@@ -176,15 +188,16 @@ void processCommands(int argc,char** argv) {
                 setprintcountry();
                 break;
             case OPT_SHARE:
-                home = getenv("HOME");
-                strcpy(share_config_file, home );
-                strcat(share_config_file, "/dspserver.conf");
-		        toShareOrNotToShare = 1;
+                toShareOrNotToShare = 1;
                 break;
             case OPT_SHARECONFIG:
-                strcpy(share_config_file,optarg);
+                if (strlen(optarg) > sizeof(config->share_config_file) - 1) {
+                    fprintf(stderr, "Warning: share config file path is too long for this system\n");
+                }
+                strncpy(config->share_config_file,optarg, sizeof(config->share_config_file));
                 break;
             case OPT_LO:
+                /* global */
                 LO_offset=atoi(optarg);
                 break;
             case OPT_HPSDR:
@@ -225,37 +238,36 @@ void processCommands(int argc,char** argv) {
 
 
 int main(int argc,char* argv[]) {
+    struct dspserver_config config;
+    memset(&config, 0, sizeof(config));
     // Register signal and signal handler
     signal(SIGINT, signal_shutdown);    
-    char directory[1024];
-    strcpy(soundCardName,"HPSDR");
+    char directory[MAXPATHLEN];
+    strcpy(config.soundCardName,"HPSDR");
     strcpy(server_address,"127.0.0.1"); // localhost
-    strcpy(share_config_file, "");
-    home = getenv("HOME");
-    strcpy(share_config_file, home );
-    strcat(share_config_file, "/dspserver.conf");
-    toShareOrNotToShare = 0;
-	processCommands(argc,argv);
-   	fprintf(stderr, "Reading conf file %s\n", share_config_file);
-	init_register(); // we now read our conf always
+    strcpy(config.share_config_file, getenv("HOME"));
+    strcat(config.share_config_file, "/dspserver.conf");
+    processCommands(argc,argv,&config);
+    fprintf(stderr, "Reading conf file %s\n", config.share_config_file);
+    init_register(config.share_config_file); // we now read our conf always
 	 // start web registration if set
     if  (toShareOrNotToShare) {
         fprintf(stderr, "Activating Web register\n");
-	}
+    }
     fprintf(stderr,"gHPSDR rx %d (Version %s)\n",receiver,VERSION);
     printversion();
-    setSoundcard(getSoundcardId(soundCardName));
+    setSoundcard(getSoundcardId(config.soundCardName));
 
     // initialize DttSP
     if(getcwd(directory, sizeof(directory))==NULL) {
-        fprintf(stderr,"current working directory path is > 1024 bytes!");
+        fprintf(stderr,"current working directory path is > MAXPATHLEN");
         exit(1);
     }
     Setup_SDR(directory);
     Release_Update();
     SetTRX(0,0); // thread 0 is for receive
     SetTRX(1,1);  // thread 1 is for transmit
-    SetRingBufferOffset(0,offset);
+    SetRingBufferOffset(0,config.offset);
     SetThreadProcessingMode(0,RUN_PLAY);
     SetThreadProcessingMode(1,RUN_PLAY);
     SetSubRXSt(0,1,1);
