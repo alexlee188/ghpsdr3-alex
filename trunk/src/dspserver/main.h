@@ -24,11 +24,5 @@
 * 
 */
 
-char propertiesPath[128];
-
-int cwPitch;
-
-
-
 const char *version = "20120217;-master"; //YYYYMMDD; text desc
 
