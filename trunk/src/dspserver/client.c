@@ -306,7 +306,6 @@ void *memory_thread(void *arg) {
 void tx_init(void){
     int rc;
 
-	mic_src_ratio = (double) sampleRate / 8000.0;
        // create sample rate subobject
         int sr_error;
         mic_sr_state = src_new (
