@@ -149,7 +149,6 @@ static socklen_t server_length=sizeof(server_addr);
 
 #define BUFFER_SIZE 1024
 
-char server_address[64];
 short server_port;
 char command[64];
 char response[64];
@@ -671,7 +670,7 @@ fprintf(stderr,"LO_offset %f\n",LO_offset);
 * 
 * @return 
 */
-int ozy_init() {
+int ozy_init(const char *server_address) {
     int rc;
     struct hostent *h;
     int on=1;
