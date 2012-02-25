@@ -62,6 +62,22 @@ private:
    QSignalMapper *attMapper;
 private slots:
    void attClicked(int state);
+   void processAnswer (QStringList);
+};
+
+
+class HardwareHiqsdr: public DlgHardware
+{ 
+   Q_OBJECT
+
+public:
+   HardwareHiqsdr (Connection *pC, QWidget *p);
+   ~HardwareHiqsdr ();
+private:
+   QSignalMapper *attMapper;
+private slots:
+   void attClicked(int state);
+   void processAnswer (QStringList);
 };
 
 

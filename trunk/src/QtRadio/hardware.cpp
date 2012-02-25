@@ -40,6 +40,12 @@ HardwarePerseus :: HardwarePerseus (Connection *pC, QWidget *pW): DlgHardware (p
 
     attGroupBox->setLayout(vbox);
 
+    // att slider
+    QSlider *pAttSlider = new QSlider(this);
+    pAttSlider->setMaximum ( 0 );
+    pAttSlider->setMinimum ( -40 );
+    pAttSlider->setPageStep( 10 );
+
     // Dither
     QCheckBox *ditherCB = new QCheckBox(tr("Di&ther"));
 
@@ -51,6 +57,7 @@ HardwarePerseus :: HardwarePerseus (Connection *pC, QWidget *pW): DlgHardware (p
 
     // add objects
     grid->addWidget (attGroupBox);
+    grid->addWidget (pAttSlider);
     grid->addWidget (ditherCB);
     grid->addWidget (preampCB);
 
@@ -78,6 +85,8 @@ HardwarePerseus :: HardwarePerseus (Connection *pC, QWidget *pW): DlgHardware (p
 
     connect(attMapper, SIGNAL(mapped(int)), this, SLOT(attClicked(int)));
 
+    connect(pAttSlider, SIGNAL(valueChanged(int)), this, SLOT(attClicked(int)));
+
     connect(ditherCB, SIGNAL(stateChanged(int)),  this, SLOT(ditherChanged(int)));
     connect(preampCB, SIGNAL(stateChanged(int)),  this, SLOT(preampChanged(int)));
 
@@ -94,6 +103,7 @@ HardwarePerseus :: HardwarePerseus (Connection *pC, QWidget *pW): DlgHardware (p
 
 void HardwarePerseus :: attClicked(int state)
 {
+   if (state < 0) state = -state;
    qDebug() << "Attenuator: " << state << "dB";
    QString command;
    command.clear(); QTextStream(&command) << "*setattenuator " << state;
@@ -174,19 +184,27 @@ HardwareSdriq :: HardwareSdriq (Connection *pC, QWidget *pW): DlgHardware (pC, p
 
     // interconnects
     attMapper = new QSignalMapper(this);
-    connect(att0Db, SIGNAL(clicked(bool)), attMapper, SLOT(map()));
+    connect(att0Db,  SIGNAL(toggled(bool)), attMapper, SLOT(map()));
     attMapper->setMapping(att0Db, 0);
 
-    connect(att10Db, SIGNAL(clicked(bool)), attMapper, SLOT(map()));
+    connect(att10Db, SIGNAL(toggled(bool)), attMapper, SLOT(map()));
     attMapper->setMapping(att10Db, 10);
 
-    connect(att20Db, SIGNAL(clicked(bool)), attMapper, SLOT(map()));
+    connect(att20Db, SIGNAL(toggled(bool)), attMapper, SLOT(map()));
     attMapper->setMapping(att20Db, 20);
 
-    connect(att30Db, SIGNAL(clicked(bool)), attMapper, SLOT(map()));
+    connect(att30Db, SIGNAL(toggled(bool)), attMapper, SLOT(map()));
     attMapper->setMapping(att30Db, 30);
 
     connect(attMapper, SIGNAL(mapped(int)), this, SLOT(attClicked(int)));
+
+    // update the serial number in title bar
+    QString command;
+    command.clear(); QTextStream(&command) << "*getserial?";
+    pConn->sendCommand (command);
+
+    // defaults
+    att0Db->setChecked(true);              // attenuator 0 dB
 }
 
 void HardwareSdriq :: attClicked(int state)
@@ -197,8 +215,115 @@ void HardwareSdriq :: attClicked(int state)
    pConn->sendCommand (command);
 }
 
+void HardwareSdriq :: processAnswer (QStringList list)
+{
+    if (list[0] == "*getserial?") {
+       // try to set the serial
+       qDebug() << Q_FUNC_INFO<<list[2];
+       // change the title bar
+       QString x;
+       x.clear(); 
+       QTextStream(&x) << windowTitle() << " - SN: " << list[2];
+
+       setWindowTitle(x) ;
+    }
+
+}
 
 HardwareSdriq :: ~HardwareSdriq ()
+{
+
+}
+
+
+HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC, pW)
+{
+    // Attenuator
+    QGroupBox *attGroupBox = new QGroupBox(tr("Attenuator"));
+    attGroupBox->setFlat ( true );
+
+    QRadioButton *att0Db  = new QRadioButton(tr("&0 dB"));
+    QRadioButton *att10Db = new QRadioButton(tr("-&10 dB"));
+    QRadioButton *att20Db = new QRadioButton(tr("-&20 dB"));
+    QRadioButton *att30Db = new QRadioButton(tr("-&30 dB"));
+    QRadioButton *att40Db = new QRadioButton(tr("-&40 dB"));
+    
+    QVBoxLayout *vbox = new QVBoxLayout;
+
+    vbox->addWidget(att0Db);
+    vbox->addWidget(att10Db);
+    vbox->addWidget(att20Db);
+    vbox->addWidget(att30Db);
+    vbox->addWidget(att40Db);
+    vbox->addStretch(1);
+
+    attGroupBox->setLayout(vbox);
+
+    // Main layout of dialog
+    QHBoxLayout *grid = new QHBoxLayout;
+
+    // add objects
+    grid->addWidget (attGroupBox);
+
+    // use grid obecjt as main dialog's layout 
+    setLayout(grid);
+
+    // general features
+    setWindowTitle(tr("HiQSDR"));
+    resize(240, 200);
+
+    // interconnects
+    attMapper = new QSignalMapper(this);
+    connect(att0Db,  SIGNAL(toggled(bool)), attMapper, SLOT(map()));
+    attMapper->setMapping(att0Db, 0);
+
+    connect(att10Db, SIGNAL(toggled(bool)), attMapper, SLOT(map()));
+    attMapper->setMapping(att10Db, 10);
+
+    connect(att20Db, SIGNAL(toggled(bool)), attMapper, SLOT(map()));
+    attMapper->setMapping(att20Db, 20);
+
+    connect(att30Db, SIGNAL(toggled(bool)), attMapper, SLOT(map()));
+    attMapper->setMapping(att30Db, 30);
+
+    connect(att40Db, SIGNAL(toggled(bool)), attMapper, SLOT(map()));
+    attMapper->setMapping(att40Db, 40);
+
+    connect(attMapper, SIGNAL(mapped(int)), this, SLOT(attClicked(int)));
+
+    // update the serial number in title bar
+    QString command;
+    command.clear(); QTextStream(&command) << "*getserial?";
+    pConn->sendCommand (command);
+
+    // defaults
+    att0Db->setChecked(true);              // attenuator 0 dB
+}
+
+void HardwareHiqsdr :: attClicked(int state)
+{
+   qDebug() << "Attenuator: " << state << "dB";
+   QString command;
+   command.clear(); QTextStream(&command) << "*setattenuator " << state;
+   pConn->sendCommand (command);
+}
+
+void HardwareHiqsdr :: processAnswer (QStringList list)
+{
+    if (list[0] == "*getserial?") {
+       // try to set the serial
+       qDebug() << Q_FUNC_INFO<<list[2];
+       // change the title bar
+       QString x;
+       x.clear(); 
+       QTextStream(&x) << windowTitle() << " - SN: " << list[2];
+
+       setWindowTitle(x) ;
+    }
+
+}
+
+HardwareHiqsdr :: ~HardwareHiqsdr ()
 {
 
 }
@@ -215,6 +340,9 @@ DlgHardware * HardwareFactory::Clone(Connection *pConn, const char *pName, QWidg
    }
    if (strcmp(pName, "SDR-IQ")==0) {
       return new HardwareSdriq(pConn, 0);
+   }
+   if (strcmp(pName, "HiQSDR")==0) {
+      return new HardwareHiqsdr(pConn, 0);
    }
    return 0;
 }

@@ -38,8 +38,11 @@ int hiqsdr_connect (void);
 int hiqsdr_disconnect (void);
 int hiqsdr_set_frequency (long long f);
 int hiqsdr_set_bandwidth (long long b);
+int hiqsdr_set_attenuator (int attDb);
 int hiqsdr_start_asynch_input (HIQSDR_CB cb, void *pud);
 int hiqsdr_stop_asynch_input ();
 int hiqsdr_deinit (void);
+
+char *hiqsdr_get_ip_address ();
 
 #endif

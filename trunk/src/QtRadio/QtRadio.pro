@@ -64,7 +64,8 @@ SOURCES += main.cpp\
     Audioinput.cpp\
     servers.cpp \
     G711A.cpp \
-    RTP.cpp
+    RTP.cpp \
+    hardware.cpp
 
 
 HEADERS  += \ 
@@ -113,7 +114,8 @@ HEADERS  += \
     Audioinput.h \
     servers.h \
     G711A.h \
-    RTP.h
+    RTP.h \
+    hardware.h
 
 FORMS    += \   
     UI.ui \

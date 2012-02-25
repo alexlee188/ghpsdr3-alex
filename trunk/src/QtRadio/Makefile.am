@@ -55,7 +55,7 @@ Audioinput.moc.cpp \
 servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
-hardware.cpp
+hardware.moc.cpp
 
 	
 nodist_QtRadio_SOURCES = \

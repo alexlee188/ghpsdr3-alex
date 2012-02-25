@@ -105,7 +105,7 @@ int user_data_callback (SAMPLE_T *pi, SAMPLE_T *pq, int nSamples, void *extra)
         #if 1
         if ((counter++ % 204800) == 0) {
             long double diff_s ;
-            QUISK_SOUND_STATE *pss = get_state ();
+            const QUISK_SOUND_STATE *pss = get_state ();
 
             if (nSamples >0) { 
                 pRec->cfg.ns -= nSamples;
@@ -377,6 +377,12 @@ const char* parse_command(CLIENT* client,char* command) {
             return QUIT_ASAP;
         } else if(strcmp(token,"hardware?")==0) {
             return "OK SDR-IQ";
+
+        } else if(strcmp(token,"getserial?")==0) {
+            static char buf[50];
+            snprintf (buf, sizeof(buf), "OK %s", get_serial ());
+            return buf;
+
         } else {
             // invalid command string
             return INVALID_COMMAND;
