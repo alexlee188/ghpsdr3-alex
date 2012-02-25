@@ -147,6 +147,7 @@ struct dspserver_config {
     char soundCardName[80];
     int offset;
     char share_config_file[MAXPATHLEN];
+    char server_address[256];
 };
 
 void signal_shutdown(int signum);
@@ -176,7 +177,10 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
                 break;
             case OPT_SERVER:
                 /* FIXME: global */
-                strcpy(server_address,optarg);
+                if (strlen(optarg) > sizeof(config->server_address) - 1) {
+                    fprintf(stderr, "Warning: server address will be truncated\n");
+                }
+                strncpy(config->server_address, optarg, sizeof(config->server_address));
                 break;
             case OPT_OFFSET:
                 config->offset=atoi(optarg);
@@ -244,7 +248,7 @@ int main(int argc,char* argv[]) {
     signal(SIGINT, signal_shutdown);    
     char directory[MAXPATHLEN];
     strcpy(config.soundCardName,"HPSDR");
-    strcpy(server_address,"127.0.0.1"); // localhost
+    strcpy(config.server_address,"127.0.0.1"); // localhost
     strcpy(config.share_config_file, getenv("HOME"));
     strcat(config.share_config_file, "/dspserver.conf");
     processCommands(argc,argv,&config);
@@ -283,7 +287,7 @@ int main(int argc,char* argv[]) {
 
     codec2 = codec2_create();
     G711A_init();
-    ozy_init();
+    ozy_init(config.server_address);
 
     SetMode(1, 0, USB);
     SetTXFilter(1, 150, 2850);
