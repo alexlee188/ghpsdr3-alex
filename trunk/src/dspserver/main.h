@@ -26,8 +26,6 @@
 
 char propertiesPath[128];
 
-float preampOffset;
-
 int cwPitch;
 
 

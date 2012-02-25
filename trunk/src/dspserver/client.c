@@ -1,4 +1,4 @@
-/** 
+/* 
 * @file client.c
 * @brief client network interface
 * @author John Melton, G0ORX/N6LYT, Doxygen Comments Dave Larsen, KV0S
@@ -1493,7 +1493,7 @@ void client_set_samples(float* samples,int size) {
     if(mox) {
         extras=-82.62103F;
     } else {
-        extras=displayCalibrationOffset+preampOffset;
+        extras=displayCalibrationOffset;
     }
 #pragma omp parallel shared(size, slope, samples, client_samples) private(max, i, lindex, rindex, j)
   {
