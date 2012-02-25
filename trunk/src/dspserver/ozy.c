@@ -49,6 +49,7 @@
 #define SMALL_PACKETS
 
 static sem_t ozy_send_semaphore;
+static sem_t ozy_cmd_semaphore;
 
 #define USB_TIMEOUT -7
 //static struct OzyHandle* ozy;
@@ -74,6 +75,9 @@ static pthread_t iq_thread_id;
 static int ozy_debug=0;
 
 static int output_sample_increment=1; // 1=48000 2=96000 4=192000
+
+/** Response buffers passed to ozy_send must be this size */
+#define OZY_RESPONSE_SIZE 64
 
 #define BUFFER_SIZE 1024
 int buffer_size=BUFFER_SIZE;
@@ -147,11 +151,7 @@ socklen_t server_audio_length=sizeof(server_audio_addr);
 static struct sockaddr_in server_addr;
 static socklen_t server_length=sizeof(server_addr);
 
-#define BUFFER_SIZE 1024
-
 short server_port;
-char command[64];
-char response[64];
 
 int session;
 
@@ -369,44 +369,55 @@ sem_post(&ozy_send_semaphore);
 * @brief send a command
 * 
 * @param command
+* @param response buffer allocated by caller, MUST be OZY_RESPONSE_SIZE bytes
 */
-void send_command(char* command) {
+void send_command(char* command, char *response) {
     int rc;
 
 //fprintf(stderr,"send_command: command='%s'\n",command);
 
+    sem_wait(&ozy_cmd_semaphore);
     rc=send(command_socket,command,strlen(command),0);
     if(rc<0) {
+        sem_post(&ozy_cmd_semaphore);
         fprintf(stderr,"send command failed: %d: %s\n",rc,command);
         exit(1);
     }
 
-    rc=recv(command_socket,response,sizeof(response),0);
+    /* FIXME: This is broken.  It will probably work as long as
+     * responses are very small and everything proceeds in lockstep. */
+    rc=recv(command_socket,response,OZY_RESPONSE_SIZE,0);
+    sem_post(&ozy_cmd_semaphore);
     if(rc<0) {
         fprintf(stderr,"read response failed: %d\n",rc);
     }
+    /* FIXME: This is broken, too.  If the response is exactly
+     * OZY_RESPONSE_SIZE, we have to truncate it by one byte. */
+    if (rc == OZY_RESPONSE_SIZE)
+        rc--;
     response[rc]=0;
 
 //fprintf(stderr,"send_command: response='%s'\n",response);
 }
 
 void* keepalive_thread(void* arg) {
-    char command[128];
+    char command[128], response[OZY_RESPONSE_SIZE];
     sprintf(command,"keepalive %d",receiver);
     while(1) {
         sleep(5);
-        send_command(command);
+        send_command(command, response);
     }
 }
 
 int make_connection() {
     char *token, *saveptr;
+    char command[64], response[OZY_RESPONSE_SIZE];
     int result;
 
     result=0;
     sprintf(command,"attach %d",receiver);
     //sprintf(command,"connect %d %d",receiver,SPECTRUM_PORT+(receiver*2));
-    send_command(command);
+    send_command(command, response);
 
     token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
@@ -463,15 +474,15 @@ int make_connection() {
     }
 
     sprintf(command,"start iq %d",SPECTRUM_PORT+(receiver*2));
-    send_command(command);
+    send_command(command, response);
 
     return result;
 }
 
 void ozyDisconnect() {
-    char command[128];
+    char command[128], response[OZY_RESPONSE_SIZE];
     sprintf(command,"detach %d",receiver);
-    send_command(command);
+    send_command(command, response);
 
     close(command_socket);
     close(audio_socket);
@@ -479,12 +490,13 @@ void ozyDisconnect() {
 
 int ozySetFrequency(long long ddsAFrequency) {
     char *token;
+    char command[64], response[OZY_RESPONSE_SIZE];
     int result;
     char *saveptr;
 
     result=0;
     sprintf(command,"frequency %lld", (ddsAFrequency - (long long)LO_offset));
-    send_command(command);
+    send_command(command, response);
     token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
@@ -503,11 +515,12 @@ int ozySetFrequency(long long ddsAFrequency) {
 
 int ozySetPreamp(char* state) {
     char *token, *saveptr;
+    char command[64], response[OZY_RESPONSE_SIZE];
     int result;
 
     result=0;
     sprintf(command,"preamp %s",state);
-    send_command(command);
+    send_command(command, response);
     token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
@@ -525,11 +538,12 @@ int ozySetPreamp(char* state) {
 
 int ozySetRecord(char* state) {
     char *token, *saveptr;
+    char command[64], response[OZY_RESPONSE_SIZE];
     int result;
 
     result=0;
     sprintf(command,"record %s",state);
-    send_command(command);
+    send_command(command, response);
     token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
@@ -547,12 +561,13 @@ int ozySetRecord(char* state) {
 
 int ozySetMox(int state) {
     char *token, *saveptr;
+    char command[64], response[OZY_RESPONSE_SIZE];
     int result;
 
     result=0;
     mox=state;
     sprintf(command,"mox %d",state);
-    send_command(command);
+    send_command(command, response);
     token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
@@ -570,11 +585,12 @@ int ozySetMox(int state) {
 
 int ozySetOpenCollectorOutputs(char* state) {
     char *token, *saveptr;
+    char command[64], response[OZY_RESPONSE_SIZE];
     int result;
 
     result=0;
     sprintf(command,"setocoutputs %s",state);
-    send_command(command);
+    send_command(command, response);
     token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {
         if(strcmp(token,"OK")==0) {
@@ -683,6 +699,12 @@ int ozy_init(const char *server_address) {
     if(rc<0) {
         perror("sem_post failed");
     }
+
+    rc = sem_init(&ozy_cmd_semaphore, 0, 1);
+    if (rc < 0) {
+        perror("ozy command semaphore init failed");
+    }
+    sem_post(&ozy_cmd_semaphore);
 
     h=gethostbyname(server_address);
     if(h==NULL) {
