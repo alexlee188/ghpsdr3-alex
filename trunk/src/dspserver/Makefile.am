@@ -40,5 +40,7 @@ register.c     \
 rtp.h          \
 rtp.c          \
 G711A.h        \
-G711A.c
+G711A.c        \
+util.h         \
+util.c
 
