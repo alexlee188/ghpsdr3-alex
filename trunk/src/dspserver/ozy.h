@@ -92,8 +92,6 @@ extern int receiver;
 
 extern double LO_offset;
 
-char server_address[64];
-
 int hpsdr;
 
 // values saved from last change to send to slaves
@@ -107,7 +105,7 @@ int lastMode;
 * 
 * @return 
 */
-extern int ozy_init();
+extern int ozy_init(const char *server_address);
 
 
 /* --------------------------------------------------------------------------*/
