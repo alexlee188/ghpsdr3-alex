@@ -233,8 +233,6 @@ void Waterfall::paintEvent(QPaintEvent*) {
 
     painter.drawImage(0,0,image,0,cy,image.width(),image.height()/2,Qt::AutoColor);
 
-    if (cy <= 0) cy = image.height()/2 - 1;
-    else cy--;          // "scroll"
 }
 
 
@@ -243,7 +241,8 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     int version,subversion;
     int offset;
 
-    waterfallcl->updateWaterfall(header, buffer, length);
+    if (cy <= 0) cy = image.height()/2 - 1;
+    else cy--;          // "scroll"
 
     version=header[1];
     subversion=header[2];
@@ -267,9 +266,13 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
         for(i=0;i<width();i++) {
             samples[i] = -(buffer[i] & 0xFF);
         }
+
+        waterfallcl->setLO_offset(0);
     } else {
         float step=(float)sampleRate/(float)width();
         offset=(int)((float)LO_offset/step);
+        waterfallcl->setLO_offset(offset);
+
         #pragma omp parallel for schedule(static) private(i,j)
         for(i=0;i<width();i++) {
             j=i-offset;
@@ -279,6 +282,8 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
         }
     }
     size = length;
+
+    waterfallcl->updateWaterfall(header, buffer, length);
     QTimer::singleShot(0,this,SLOT(updateWaterfall_2()));
 }
 
@@ -298,6 +303,7 @@ void Waterfall::updateWaterfall_2(void){
             }
         }
     }
+
     QTimer::singleShot(0,this,SLOT(updateWaterfall_3()));
 }
 

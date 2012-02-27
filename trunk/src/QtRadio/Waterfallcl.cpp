@@ -36,12 +36,17 @@ void ImageCLContext::init(int wid, int ht)
 {
     QByteArray source = QByteArray(
 
-        "__kernel void waterfall(__global __read_only char *src, const int cy, const int height,  __write_only image2d_t image) {\n"
+        "__kernel void waterfall(__global __read_only char *src, const int cy, const int width,\n"
+                "const int height, const int offset, const int waterfallLow,\n"
+                "const int waterfallHigh, __write_only image2d_t image) {\n"
         "  int id = get_global_id(0);\n"
+        "  int j = id - offset;\n"
+        "  if (j < 0) j += width;\n"
+        "  if (j >= width) j %= width;\n"
         "  int2 pos;\n"
         "  pos = (int2)(id, cy);\n"
-        "  float sample = 0.0f - (float)src[id];\n"
-        "  float percent = (sample + 125.0f)/ 65.0f;\n"
+        "  float sample = 0.0f - (float)src[j];\n"
+        "  float percent = (sample - (float)waterfallLow)/ (float)(waterfallHigh - waterfallLow);\n"
         "  percent = (percent > 0.0f) ? percent : 0.0f;"
         "  if (percent < (2.0f/9.0f)){\n"
         "    uint value = 255.0f * percent / (2.0f/9.0f);\n"
@@ -205,6 +210,9 @@ void Waterfallcl::setAutomatic(bool state) {
     waterfallAutomatic=state;
 }
 
+void Waterfallcl::setLO_offset(short offset){
+    LO_offset = offset;
+}
 
 void Waterfallcl::loadGLTextures(GLuint textureId)
 {
@@ -315,12 +323,14 @@ void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
     ImageCLContext *ctx = image_context();
     QCLKernel waterfall = ctx->waterfall;
 
-    spectrum_buffer.write(0, buffer, 1024);
-    waterfall.setGlobalWorkSize(1024);
+    data_width = (width < 1024) ? width : 1024;
+
+    spectrum_buffer.write(0, buffer, data_width);
+    waterfall.setGlobalWorkSize(data_width);
 
     if (cy-- <= 0) cy = 255;
     //ctx->glContext->acquire(waterfall_buffer).waitForFinished();
-    waterfall(spectrum_buffer, cy, 256, waterfall_buffer);
+    waterfall(spectrum_buffer, cy, data_width, 256, LO_offset, waterfallLow, waterfallHigh, waterfall_buffer);
     //ctx->glContext->release(waterfall_buffer).waitForFinished();
 
 }

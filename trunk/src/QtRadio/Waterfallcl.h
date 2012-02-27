@@ -50,6 +50,7 @@ public:
     void setLow(int low);
     void setHigh(int high);
     void setAutomatic(bool state);
+    void setLO_offset(short offset);
 
 public slots:
     void updateWaterfall(char* header,char* buffer,int width);
@@ -69,6 +70,7 @@ private:
     int waterfallLow;
     bool waterfallAutomatic;
     int cy;
+    int LO_offset;
     GLfloat rquad;
 };
 
