@@ -141,6 +141,7 @@ void Waterfallcl::initialize(int wid, int ht){
             (QCLImageFormat(QCLImageFormat::Order_RGBA,
                         QCLImageFormat::Type_Unnormalized_UInt8),
                         QSize(512, 512), QCLMemoryObject::ReadWrite);
+        waterfall_buffer.write(t);
 
     }
 
