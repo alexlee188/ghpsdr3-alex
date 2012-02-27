@@ -47,6 +47,9 @@ public:
     ~Waterfallcl();
     void setGeometry(QRect rect);
     void initialize(int wid, int ht);
+    void setLow(int low);
+    void setHigh(int high);
+    void setAutomatic(bool state);
 
 public slots:
     void updateWaterfall(char* header,char* buffer,int width);
@@ -62,6 +65,9 @@ private:
     QCLBuffer spectrum_buffer;
     int data_width;
     int data_height;
+    int waterfallHigh;
+    int waterfallLow;
+    bool waterfallAutomatic;
     int cy;
     GLfloat rquad;
 };

@@ -116,7 +116,7 @@ Q_GLOBAL_STATIC(ImageCLContext, image_context)
 Waterfallcl::Waterfallcl(){
     makeCurrent();
     ImageCLContext *ctx = image_context();
-    ctx->init(512,256);
+    ctx->init(1024,256);
 }
 
 Waterfallcl::~Waterfallcl(){
@@ -134,7 +134,7 @@ void Waterfallcl::initialize(int wid, int ht){
     QImage t;
     QImage b;
 
-    b = QImage( 512, 512, QImage::Format_ARGB32_Premultiplied);
+    b = QImage( 1024, 512, QImage::Format_ARGB32_Premultiplied);
     //b.fill(Qt::green);
 
 
@@ -158,7 +158,7 @@ void Waterfallcl::initialize(int wid, int ht){
 #endif
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 512, 512, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1024, 512, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, t.bits());
 
 
@@ -185,13 +185,26 @@ void Waterfallcl::initialize(int wid, int ht){
         waterfall_buffer = ctx->glContext->createImage2DDevice
             (QCLImageFormat(QCLImageFormat::Order_RGBA,
                         QCLImageFormat::Type_Unnormalized_UInt8),
-                        QSize(512, 512), QCLMemoryObject::ReadWrite);
+                        QSize(1024, 512), QCLMemoryObject::ReadWrite);
         waterfall_buffer.write(t);
     //}
 
     spectrum_buffer = ctx->glContext->createBufferDevice(1024, QCLMemoryObject::ReadWrite);
 
 }
+
+void Waterfallcl::setHigh(int high) {
+    waterfallHigh=high;
+}
+
+void Waterfallcl::setLow(int low) {
+    waterfallLow=low;
+}
+
+void Waterfallcl::setAutomatic(bool state) {
+    waterfallAutomatic=state;
+}
+
 
 void Waterfallcl::loadGLTextures(GLuint textureId)
 {
@@ -242,16 +255,16 @@ void Waterfallcl::paintGL()
 
     glLoadIdentity();
     glTranslatef(0.0f,0.0f,-5.5f);
-    glScalef(1.5f, 1.5f, 1.5f);
+    glScalef(1.7f, 1.7f, 1.7f);
     glRotatef(rquad,1.0f,0.0f,0.0f);
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, textureId[0]);
 
     void *ptr = malloc(waterfall_buffer.width()*waterfall_buffer.height()*waterfall_buffer.bytesPerElement());
-    waterfall_buffer.read(ptr, QRect(QPoint(0,0), QPoint(511,511)));
+    waterfall_buffer.read(ptr, QRect(QPoint(0,0), QPoint(1023,511)));
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-                    512, 512 ,
+                    1024, 512 ,
                     GL_RGBA, GL_UNSIGNED_BYTE, ptr);
     free(ptr);
 
@@ -302,8 +315,8 @@ void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
     ImageCLContext *ctx = image_context();
     QCLKernel waterfall = ctx->waterfall;
 
-    spectrum_buffer.write(0, buffer, 512);
-    waterfall.setGlobalWorkSize(512);
+    spectrum_buffer.write(0, buffer, 1024);
+    waterfall.setGlobalWorkSize(1024);
 
     if (cy-- <= 0) cy = 255;
     //ctx->glContext->acquire(waterfall_buffer).waitForFinished();

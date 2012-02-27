@@ -71,7 +71,7 @@ Waterfall::Waterfall(QWidget*& widget) {
     //waterfallcl->moveToThread(waterfallcl_thread);
     //waterfallcl_thread->start(QThread::LowestPriority);
     waterfallcl->setGeometry(QRect(QPoint(0,0),QPoint(511,255)));
-    waterfallcl->initialize(512,256);
+    waterfallcl->initialize(1024,256);
     waterfallcl->show();
 
 }
@@ -94,14 +94,17 @@ int Waterfall::getLow() {
 
 void Waterfall::setHigh(int high) {
     waterfallHigh=high;
+    waterfallcl->setHigh(high);
 }
 
 void Waterfall::setLow(int low) {
     waterfallLow=low;
+    waterfallcl->setLow(low);
 }
 
 void Waterfall::setAutomatic(bool state) {
     waterfallAutomatic=state;
+    waterfallcl->setAutomatic(state);
 }
 
 bool Waterfall::getAutomatic() {
