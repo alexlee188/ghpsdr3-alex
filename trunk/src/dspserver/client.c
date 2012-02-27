@@ -650,14 +650,14 @@ void writecb(struct bufferevent *bev, void *ctx){
             }
             else if (client_item->rtp == connection_rtp)
                 rtp_send(client_item->session,&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
+            sem_wait(&bufferevent_semaphore);
         }
+        sem_post(&bufferevent_semaphore);
 
         send_ts += item->length - AUDIO_BUFFER_HEADER_SIZE; // update send_ts for all rtp sessions
         free(item->buf);
         free(item);
-        sem_wait(&bufferevent_semaphore);
     }
-    sem_post(&bufferevent_semaphore);
 }
 
 /* Commands allowed to slave connections.  The q-* commands are
