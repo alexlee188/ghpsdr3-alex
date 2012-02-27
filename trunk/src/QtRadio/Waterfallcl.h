@@ -63,7 +63,7 @@ private:
     int data_width;
     int data_height;
     int cy;
-    GLfloat rtri, rquad;
+    GLfloat rquad;
 };
 
 

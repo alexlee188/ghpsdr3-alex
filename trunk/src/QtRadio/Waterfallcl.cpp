@@ -40,9 +40,53 @@ void ImageCLContext::init(int wid, int ht)
         "  int id = get_global_id(0);\n"
         "  int2 pos;\n"
         "  pos = (int2)(id, cy);\n"
-        "  write_imageui(image, pos, (uint4)(128, 64, 32, src[id]));\n"
-        "  pos = (int2)(id, cy + height);\n"
-        "  write_imageui(image, pos, (uint4)(128, 64, 32, src[id]));\n"
+        "  float sample = 0.0f - (float)src[id];\n"
+        "  float percent = (sample + 125.0f)/ 65.0f;\n"
+        "  percent = (percent > 0.0f) ? percent : 0.0f;"
+        "  if (percent < (2.0f/9.0f)){\n"
+        "    uint value = 255.0f * percent / (2.0f/9.0f);\n"
+        "    write_imageui(image, pos, (uint4)(0, 0, value, 255));\n"
+        "    pos = (int2)(id, cy + height);\n"
+        "    write_imageui(image, pos, (uint4)(0, 0, value, 255));\n"
+        "    }\n"
+        "  else if (percent < (3.0f/9.0f)){\n"
+        "    uint value = 255.0f * (percent - (2.0f/9.0f)) / (1.0f/9.0f);\n"
+        "    write_imageui(image, pos, (uint4)(0, value, 255, 255));\n"
+        "    pos = (int2)(id, cy + height);\n"
+        "    write_imageui(image, pos, (uint4)(0, value, 255, 255));\n"
+        "    }\n"
+        "  else if (percent < (4.0f/9.0f)){\n"
+        "    uint value = 255* (1.0f - ((percent - (3.0f/9.0f)) / (1.0f/9.0f)));\n"
+        "    write_imageui(image, pos, (uint4)(0, value, 255, 255));\n"
+        "    pos = (int2)(id, cy + height);\n"
+        "    write_imageui(image, pos, (uint4)(0, value, 255, 255));\n"
+        "    }\n"
+        "  else if (percent < (5.0f/9.0f)){\n"
+        "    uint value = 255*((percent - (4.0f/9.0f)) / (1.0f/9.0f));\n"
+        "    write_imageui(image, pos, (uint4)(value, 255, 0, 255));\n"
+        "    pos = (int2)(id, cy + height);\n"
+        "    write_imageui(image, pos, (uint4)(value, 255, 0, 255));\n"
+        "    }\n"
+        "  else if (percent < (7.0f/9.0f)){\n"
+        "    uint value = 255*(1.0f - ((percent - (5.0f/9.0f)) / (2.0f/9.0f)));\n"
+        "    write_imageui(image, pos, (uint4)(255, value, 0, 255));\n"
+        "    pos = (int2)(id, cy + height);\n"
+        "    write_imageui(image, pos, (uint4)(255, value, 0, 255));\n"
+        "    }\n"
+        "  else if (percent < (8.0f/9.0f)){\n"
+        "    uint value = 255*((percent - (7.0f/9.0f)) / (1.0f/9.0f));\n"
+        "    write_imageui(image, pos, (uint4)(255, 0, value, 255));\n"
+        "    pos = (int2)(id, cy + height);\n"
+        "    write_imageui(image, pos, (uint4)(255, 0, value, 255));\n"
+        "    }\n"
+        "  else {\n"
+        "    float local_percent = (percent - (8.0f/9.0f)) / (1.0f/9.0f);\n"
+        "    int R = (0.75f + 0.25f * (1.0f - local_percent))*255.0f;\n"
+        "    int G = 0.5f * local_percent * 255.0f;\n"
+        "    write_imageui(image, pos, (uint4)(R, G, 255, 255));\n"
+        "    pos = (int2)(id, cy + height);\n"
+        "    write_imageui(image, pos, (uint4)(R, G, 255, 255));\n"
+        "    }\n"
         "}\n");
 
     if (glContext) {
@@ -85,15 +129,14 @@ void Waterfallcl::initialize(int wid, int ht){
     data_width = wid;
     data_height = ht;
     cy = data_height - 1;
-
-    rtri = 0.0f;
     rquad = 0.0f;
 
     QImage t;
     QImage b;
 
     b = QImage( 512, 512, QImage::Format_ARGB32_Premultiplied);
-    //b.fill( Qt::green);
+    //b.fill(Qt::green);
+
 
     t = QGLWidget::convertToGLFormat( b );
 
@@ -119,7 +162,7 @@ void Waterfallcl::initialize(int wid, int ht){
                  GL_RGBA, GL_UNSIGNED_BYTE, t.bits());
 
 
-    loadGLTextures(textureId[1]);
+    //loadGLTextures(textureId[1]);
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -129,21 +172,22 @@ void Waterfallcl::initialize(int wid, int ht){
     glDepthFunc(GL_LEQUAL);
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
+    /*
     // If the context supports object sharing, then this is really easy.
     if (ctx->glContext->supportsObjectSharing()) {
     waterfall_buffer = ctx->glContext->createTexture2D
             (GL_TEXTURE_2D, textureId[0], 0, QCLMemoryObject::ReadWrite);
     if (waterfall_buffer == 0) qFatal("Unabel to create waterfall_buffer");
     }
-    else {
-        qDebug() << "System does not support CL/GL object sharing";
+    */
+    //else {
+    //    qDebug() << "System does not support CL/GL object sharing";
         waterfall_buffer = ctx->glContext->createImage2DDevice
             (QCLImageFormat(QCLImageFormat::Order_RGBA,
                         QCLImageFormat::Type_Unnormalized_UInt8),
                         QSize(512, 512), QCLMemoryObject::ReadWrite);
         waterfall_buffer.write(t);
-
-    }
+    //}
 
     spectrum_buffer = ctx->glContext->createBufferDevice(1024, QCLMemoryObject::ReadWrite);
 
@@ -211,12 +255,14 @@ void Waterfallcl::paintGL()
                     GL_RGBA, GL_UNSIGNED_BYTE, ptr);
     free(ptr);
 
+    GLfloat h = (float)cy / 511.0f;
+
     glBegin(GL_QUADS);
     // Front Face
-    glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
-    glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
+    glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f, -1.0f,  1.0f);
+    glTexCoord2f(1.0f, h + 0.5f); glVertex3f( 1.0f, -1.0f,  1.0f);
+    glTexCoord2f(1.0f, h); glVertex3f( 1.0f,  1.0f,  1.0f);
+    glTexCoord2f(0.0f, h); glVertex3f(-1.0f,  1.0f,  1.0f);
     // Back Face
     glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
     glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
@@ -247,10 +293,8 @@ void Waterfallcl::paintGL()
     glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_TEXTURE_2D);
 
-    rtri += 0.2f;
-    rquad -= 0.5f;
+    //rquad -= 0.5f;
 
-    if (cy-- <= 0) cy = 255;
 }
 
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
@@ -261,6 +305,7 @@ void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
     spectrum_buffer.write(0, buffer, 512);
     waterfall.setGlobalWorkSize(512);
 
+    if (cy-- <= 0) cy = 255;
     //ctx->glContext->acquire(waterfall_buffer).waitForFinished();
     waterfall(spectrum_buffer, cy, 256, waterfall_buffer);
     //ctx->glContext->release(waterfall_buffer).waitForFinished();
