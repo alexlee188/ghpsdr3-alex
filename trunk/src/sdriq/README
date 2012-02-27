@@ -68,11 +68,11 @@ For the SDR-IQ, here are the instructions (I will put into README):
 
 5) when you see that the server is listening on tcp port 13000, open another window and run
 
-     dspserver --lo 0
+     dspserver --lo 0  --soundcard SDR-IQ
 
    if you want that your server is listed on the public gHPSDR3-alex server
 
-     dspserver --lo 0 --share
+     dspserver --lo 0 --share  --soundcard SDR-IQ
 
    if you see a message complaining of a missing config file, stop the dspserver and
    edit the /home/$USER/dspserver.conf (I already did in my directory filling your data) 
