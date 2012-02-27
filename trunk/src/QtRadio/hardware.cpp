@@ -259,11 +259,25 @@ HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC,
 
     attGroupBox->setLayout(vbox);
 
+    // Antenna selector
+    QGroupBox *antGroupBox = new QGroupBox(tr("Antenna"));
+
+    QRadioButton *ant0  = new QRadioButton(tr("Antenna input # &0"));
+    QRadioButton *ant1  = new QRadioButton(tr("Antenna input # &1"));
+
+    QVBoxLayout *vabox = new QVBoxLayout;
+
+    vabox->addWidget(ant0);
+    vabox->addWidget(ant1);
+    antGroupBox->setLayout(vabox);
+
+
     // Main layout of dialog
     QHBoxLayout *grid = new QHBoxLayout;
 
     // add objects
     grid->addWidget (attGroupBox);
+    grid->addWidget (antGroupBox);
 
     // use grid obecjt as main dialog's layout 
     setLayout(grid);
@@ -291,21 +305,49 @@ HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC,
 
     connect(attMapper, SIGNAL(mapped(int)), this, SLOT(attClicked(int)));
 
+    // antenna mapper
+    antMapper = new QSignalMapper(this);
+    connect(ant0,  SIGNAL(toggled(bool)), antMapper, SLOT(map()));
+    antMapper->setMapping(ant0, 0);
+
+    connect(ant1, SIGNAL(toggled(bool)), antMapper, SLOT(map()));
+    antMapper->setMapping(ant1, 1);
+
+    connect(antMapper, SIGNAL(mapped(int)), this, SLOT(antClicked(int)));
+
     // update the serial number in title bar
     QString command;
     command.clear(); QTextStream(&command) << "*getserial?";
     pConn->sendCommand (command);
 
     // defaults
+    attenuatorVal = -1;
+    antennaVal = -1;
+
     att0Db->setChecked(true);              // attenuator 0 dB
+    ant0->setChecked(true);
 }
 
-void HardwareHiqsdr :: attClicked(int state)
+void HardwareHiqsdr :: attClicked(int newVal)
 {
-   qDebug() << "Attenuator: " << state << "dB";
-   QString command;
-   command.clear(); QTextStream(&command) << "*setattenuator " << state;
-   pConn->sendCommand (command);
+   qDebug() << "Attenuator: " << newVal << "dB";
+   if (attenuatorVal != newVal) {
+      QString command;
+      command.clear(); QTextStream(&command) << "*setattenuator " << newVal;
+      pConn->sendCommand (command);
+      attenuatorVal = newVal;
+   } 
+}
+
+void HardwareHiqsdr :: antClicked(int n)
+{
+   qDebug() << "Antenna: " << n ;
+   if (antennaVal != n) {
+      QString command;
+      command.clear(); QTextStream(&command) << "*selectantenna " << n;
+      pConn->sendCommand (command);
+      antennaVal = n;
+   }
 }
 
 void HardwareHiqsdr :: processAnswer (QStringList list)

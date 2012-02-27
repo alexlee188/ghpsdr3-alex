@@ -203,6 +203,17 @@ const char* set_attenuator (CLIENT* client, int new_level_in_db)
     return OK;
 }
 
+const char* select_antenna (CLIENT* client, int antenna)
+{
+    if (antenna == 0 || antenna == 1) {
+        fprintf (stderr, "%s: new antenna: %d\n", __FUNCTION__, antenna);
+        hiqsdr_set_antenna_input (antenna);
+        return OK;
+    } else
+        return INVALID_COMMAND;
+}
+
+
 void send_IQ_buffer (RECEIVER *pRec) {
     struct sockaddr_in client;
     int client_length;

@@ -59,6 +59,7 @@ struct Hiqsdr {
     long long freq;
     long long bw;
     int  attDb;
+    int  antSel;
 
     // asynch thread for receiving data from hardware
     pthread_t      thread_id;
@@ -91,7 +92,8 @@ int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
    strcpy (hq.ip_addr, hiqsdr_ip);
    hq.freq = hiqsdr_f;
    hq.bw = hiqsdr_bw;
-   hq.attDb = 0;
+   hq.attDb  = 0;
+   hq.antSel = 0;
    hq.rx_data_port = 48247;
    hq.ctrl_port    = hq.rx_data_port+1;   
    hq.tx_data_port = hq.rx_data_port+2;
@@ -262,9 +264,17 @@ int convert_attenuator (int attDb)
 int hiqsdr_set_attenuator (int attDb)
 {
    hq.attDb = convert_attenuator (attDb);
-   fprintf (stderr, "%s: requested value: %d comouted value: %02X\n", __FUNCTION__, attDb, hq.attDb);
+   fprintf (stderr, "%s: requested value: %d computed value: %02X\n", __FUNCTION__, attDb, hq.attDb);
    send_command (&hq);
    return 0;
+}
+
+int hiqsdr_set_antenna_input (int n)
+{
+    hq.antSel = n == 0 ? 0x00 : 0x01;
+    fprintf (stderr, "%s: antenna: %02X\n", __FUNCTION__, hq.antSel);
+    send_command (&hq);
+    return 0;
 }
 
 int hiqsdr_deinit (void)
@@ -563,13 +573,17 @@ static int send_command (struct Hiqsdr *hiq) {
 
     m.txl = 0;    //Tx output level 0 to 255
 
-    m.txc = 0x02; // = all other operation (e.g. SSB)
+    m.txc = 0x02  //   all other operation (e.g. SSB)
+          | 0x04  //   use the HiQSDR extended IO pins (from FPGA version 1.1 on)
+    ;
     m.rxc = get_decimation(hiq->bw) - 1;
 
-    m.fwv = 1;  // FPGA firmware version
+    m.fwv = 3;  // FPGA firmware version
 
     m.x1  = 0;  // preselector et al.
-    m.att = hiq->attDb;  // input attenuator
+    m.att = hiq->attDb;   // input attenuator
+
+    m.msc = hiq->antSel;  // select antenna 
 
     m.rfu1 = 0; // not currently used
     m.rfu2 = 0; // not currently used

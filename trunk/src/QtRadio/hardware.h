@@ -73,10 +73,16 @@ class HardwareHiqsdr: public DlgHardware
 public:
    HardwareHiqsdr (Connection *pC, QWidget *p);
    ~HardwareHiqsdr ();
+
 private:
    QSignalMapper *attMapper;
+   int attenuatorVal;
+   QSignalMapper *antMapper;
+   int antennaVal;
+
 private slots:
    void attClicked(int state);
+   void antClicked(int n);
    void processAnswer (QStringList);
 };
 
