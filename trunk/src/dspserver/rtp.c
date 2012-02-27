@@ -66,7 +66,6 @@ static sem_t rtp_semaphore;
 
 void rtp_init() {
     sem_init(&rtp_semaphore,0,1);
-    sem_post(&rtp_semaphore);
 
     ortp_init();
     ortp_scheduler_init();
