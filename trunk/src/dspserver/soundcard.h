@@ -37,6 +37,7 @@
 #define EDIROL_FA_66 6
 #define UNSUPPORTED_CARD 7
 #define HPSDR 8
+#define SDR_IQ 9
 
 char soundCardName[80];
 
