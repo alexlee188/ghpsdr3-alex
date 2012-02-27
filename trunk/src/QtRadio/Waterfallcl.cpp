@@ -93,7 +93,7 @@ void Waterfallcl::initialize(int wid, int ht){
     QImage b;
 
     b = QImage( 512, 512, QImage::Format_ARGB32_Premultiplied);
-    b.fill( Qt::green);
+    //b.fill( Qt::green);
 
     t = QGLWidget::convertToGLFormat( b );
 
@@ -157,7 +157,7 @@ void Waterfallcl::loadGLTextures(GLuint textureId)
     if ( !b.load( "./crate.bmp" ) )
     {
         b = QImage( 16, 16, QImage::Format_ARGB32_Premultiplied);
-        b.fill( Qt::red);
+        //b.fill( Qt::red);
     }
 
     t = QGLWidget::convertToGLFormat( b );
