@@ -243,8 +243,6 @@ void client_init(int receiver) {
     sem_init(&bufferevent_semaphore,0,1);
     sem_init(&mic_semaphore,0,1);
     signal(SIGPIPE, SIG_IGN);
-    sem_post(&bufferevent_semaphore);
-    sem_post(&mic_semaphore);
     rtp_init();
 
     port=BASE_PORT+receiver;
@@ -643,8 +641,8 @@ void writecb(struct bufferevent *bev, void *ctx){
     struct audio_entry *item;
     client_entry *client_item;
 
-    sem_wait(&bufferevent_semaphore);
     while ((item = audio_stream_queue_remove()) != NULL){
+        sem_wait(&bufferevent_semaphore);
         TAILQ_FOREACH(client_item, &Client_list, entries){
             sem_post(&bufferevent_semaphore);
             if(client_item->rtp == connection_tcp) {
