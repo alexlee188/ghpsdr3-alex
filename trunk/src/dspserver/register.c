@@ -15,7 +15,7 @@
 #include "defs.h"
 #include "client.h"
 
-char *dspstatus = "0 Client(s)";
+char *dspstatus;
 char *call = "Unknown";
 char *location = "Unknown";
 char *band = "Unknown";
@@ -23,6 +23,7 @@ char *rig = "Unknown";
 char *ant = "Unknown";
 
 sem_t cfgsem;
+sem_t status_sem;
 
 struct config_t cfg;
 
@@ -58,19 +59,24 @@ char *url_encode(char *str) {
 
 
 void *doReg(){
-  int result;
-  char sCmd[255];
-  while(1){
-	  sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant, dspstatus);
-	  result = system(sCmd);
-	  sleep(300);  //seconds between web updates
-	}
+    int result;
+    char sCmd[255];
+    while(1){
+        sem_wait(&status_sem);
+        sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant, dspstatus);
+        sem_post(&status_sem);
+        result = system(sCmd);
+        sleep(300);  //seconds between web updates
+    }
 }
 
 
 void init_register(const char *scfile){
     share_config_file = strdup(scfile);
-      
+
+    sem_init(&status_sem, 0, 1);
+    dspstatus = strdup("0 client(s)");
+
     // try to open share_config_file for reading
     // if it fails try writing a default config file 
     sem_init(&cfgsem,0,1);   
@@ -206,7 +212,10 @@ void *doUpdate(void *arg){
         char sCmd[255];
         sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant,(char *)arg);
         result = system(sCmd);
-        free(arg);
+        sem_wait(&status_sem);
+        free(dspstatus);
+        dspstatus = arg;
+        sem_post(&status_sem);
     }
     return 0;
 }
