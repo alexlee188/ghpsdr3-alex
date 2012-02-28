@@ -57,6 +57,19 @@ AC_ARG_ENABLE([usrp],
 )
 
 #
+# Check for compilation options which affect debugging
+#
+AC_ARG_ENABLE([debug-threads],
+              AC_HELP_STRING([--enable-debug-threads],
+                             [Enable thread debugging facilities in dspserver]),
+              [threaddebug=$enableval], [threaddebug=no])
+THREAD_DEBUG_CFLAGS=""
+if test "x$threaddebug" = "xyes"; then
+    THREAD_DEBUG_CFLAGS="-DTHREAD_DEBUG"
+fi
+AC_SUBST([THREAD_DEBUG_CFLAGS])
+
+#
 # Checks for libraries.
 # Check both libraries binary and header files
 #
