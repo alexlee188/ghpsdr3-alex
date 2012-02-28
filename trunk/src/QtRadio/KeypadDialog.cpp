@@ -27,6 +27,8 @@ KeypadDialog::KeypadDialog(QWidget *parent) :
 
     connect(ui->buttonBox,SIGNAL(clicked(QAbstractButton*)),this,SLOT(clicked(QAbstractButton*)));
 
+    ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
+
     frequency="";
     showFrequency();
 }
@@ -45,12 +47,15 @@ void KeypadDialog::clear() {
     showFrequency();
 }
 
+void KeypadDialog::commitFrequency() {
+    if ((long long)(frequency.toDouble() * 1000000.0)!=0)
+        emit setKeypadFrequency((long long)(frequency.toDouble() * 1000000.0));
+}
+
 void KeypadDialog::clicked(QAbstractButton* button) {
     qDebug()<<"KeypadDialog::clicked "<<button->text();
     if(button->text()=="&OK") {
-        if((long long)(frequency.toDouble()*1000000.0)!=0) {
-            emit setKeypadFrequency((long long)(frequency.toDouble()*1000000.0));
-        }
+        commitFrequency();
     } else if(button->text()=="Reset") {
         frequency="";
         showFrequency();
@@ -123,6 +128,67 @@ void KeypadDialog::key_period() {
     if(frequency.count(".")==0) {
         frequency.append(".");
         showFrequency();
+    }
+}
+
+void KeypadDialog::keyPressEvent(QKeyEvent *event) {
+    switch (event->key()) {
+        case Qt::Key_0:
+            frequency.append("0");
+            showFrequency();
+            break;
+        case Qt::Key_1:
+            frequency.append("1");
+            showFrequency();
+            break;
+        case Qt::Key_2:
+            frequency.append("2");
+            showFrequency();
+            break;
+        case Qt::Key_3:
+            frequency.append("3");
+            showFrequency();
+            break;
+        case Qt::Key_4:
+            frequency.append("4");
+            showFrequency();
+            break;
+        case Qt::Key_5:
+            frequency.append("5");
+            showFrequency();
+            break;
+        case Qt::Key_6:
+            frequency.append("6");
+            showFrequency();
+            break;
+        case Qt::Key_7:
+            frequency.append("7");
+            showFrequency();
+            break;
+        case Qt::Key_8:
+            frequency.append("8");
+            showFrequency();
+            break;
+        case Qt::Key_9:
+            frequency.append("9");
+            showFrequency();
+            break;
+        case Qt::Key_Period:
+            if (frequency.count(".") == 0) {
+                frequency.append(".");
+                showFrequency();
+            }
+            break;
+
+        case Qt::Key_Backspace:
+            if (frequency.length() > 0) {
+                frequency.remove(frequency.length()-1, 1);
+                showFrequency();
+            }
+            break;
+
+        default:
+            QDialog::keyPressEvent(event);
     }
 }
 
