@@ -243,8 +243,6 @@ void client_init(int receiver) {
     sem_init(&bufferevent_semaphore,0,1);
     sem_init(&mic_semaphore,0,1);
     signal(SIGPIPE, SIG_IGN);
-    sem_post(&bufferevent_semaphore);
-    sem_post(&mic_semaphore);
     rtp_init();
 
     port=BASE_PORT+receiver;
@@ -361,6 +359,8 @@ void* rtp_tx_thread(void *arg){
     int rc;
     struct audio_entry *item;
 
+    dspserver_thread_register("rtp_tx_thread");
+
     while (1){
 	sem_wait(&mic_semaphore);
 	item = TAILQ_FIRST(&Mic_rtp_stream);
@@ -418,6 +418,8 @@ void *tx_thread(void *arg){
    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
    SRC_DATA data;
    void *mic_codec2 = codec2_create();
+
+   dspserver_thread_register("tx_thread");
 
     while (1){
 	sem_wait(&mic_semaphore);
@@ -547,6 +549,8 @@ void* client_thread(void* arg) {
     struct sockaddr_in server;
     int serverSocket;
 
+    dspserver_thread_register("client_thread");
+
     fprintf(stderr,"client_thread\n");
 
     serverSocket=socket(AF_INET,SOCK_STREAM,0);
@@ -640,26 +644,26 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 }
 
 void writecb(struct bufferevent *bev, void *ctx){
-	struct audio_entry *item;
-	client_entry *client_item;
+    struct audio_entry *item;
+    client_entry *client_item;
 
-	sem_wait(&bufferevent_semaphore);
-	while ((item = audio_stream_queue_remove()) != NULL){
-		TAILQ_FOREACH(client_item, &Client_list, entries){
-                    sem_post(&bufferevent_semaphore);
-                        if(client_item->rtp == connection_tcp) {
-			    bufferevent_write(client_item->bev, item->buf, item->length);
-                            }
-			else if (client_item->rtp == connection_rtp)
-				rtp_send(client_item->session,&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
-		}
- 
-		send_ts += item->length - AUDIO_BUFFER_HEADER_SIZE; // update send_ts for all rtp sessions
-		free(item->buf);
-		free(item);
-                sem_wait(&bufferevent_semaphore);
-	}
-	sem_post(&bufferevent_semaphore);
+    while ((item = audio_stream_queue_remove()) != NULL){
+        sem_wait(&bufferevent_semaphore);
+        TAILQ_FOREACH(client_item, &Client_list, entries){
+            sem_post(&bufferevent_semaphore);
+            if(client_item->rtp == connection_tcp) {
+                bufferevent_write(client_item->bev, item->buf, item->length);
+            }
+            else if (client_item->rtp == connection_rtp)
+                rtp_send(client_item->session,&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
+            sem_wait(&bufferevent_semaphore);
+        }
+        sem_post(&bufferevent_semaphore);
+
+        send_ts += item->length - AUDIO_BUFFER_HEADER_SIZE; // update send_ts for all rtp sessions
+        free(item->buf);
+        free(item);
+    }
 }
 
 /* Commands allowed to slave connections.  The q-* commands are

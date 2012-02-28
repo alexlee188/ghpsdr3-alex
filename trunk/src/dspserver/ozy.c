@@ -40,6 +40,7 @@
 #include "dttsp.h"
 #include "audiostream.h"
 #include "client.h"
+#include "util.h"
 
 
 /*
@@ -182,6 +183,7 @@ void* iq_thread(void* arg) {
     BUFFER buffer;
     int on=1;
 
+    dspserver_thread_register("iq_thread");
 fprintf(stderr,"iq_thread\n");
 
     // create a socket to receive iq from the server
@@ -695,16 +697,11 @@ int ozy_init(const char *server_address) {
     if(rc<0) {
         perror("sem_init failed");
     }
-    rc=sem_post(&ozy_send_semaphore);
-    if(rc<0) {
-        perror("sem_post failed");
-    }
 
     rc = sem_init(&ozy_cmd_semaphore, 0, 1);
     if (rc < 0) {
         perror("ozy command semaphore init failed");
     }
-    sem_post(&ozy_cmd_semaphore);
 
     h=gethostbyname(server_address);
     if(h==NULL) {

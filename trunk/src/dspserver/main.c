@@ -108,6 +108,7 @@
 #include "sdrexport.h"
 #include "G711A.h"
 #include "rtp.h"
+#include "util.h"
 
 
 char propertyPath[128];
@@ -123,7 +124,8 @@ enum {
     OPT_SHARECONFIG,
     OPT_LO,
     OPT_HPSDR,
-    OPT_DEBUG
+    OPT_DEBUG,
+    OPT_THREAD_DEBUG
 };
 
 struct option longOptions[] = {
@@ -138,6 +140,9 @@ struct option longOptions[] = {
     {"lo",required_argument, NULL, OPT_LO},
     {"hpsdr",no_argument, NULL, OPT_HPSDR},
     {"debug",no_argument, NULL, OPT_DEBUG},
+#ifdef THREAD_DEBUG
+    {"debug-threads",no_argument, NULL, OPT_THREAD_DEBUG},
+#endif /* THREAD_DEBUG */
     {0,0,0,0}
 };
 
@@ -148,6 +153,7 @@ struct dspserver_config {
     int offset;
     char share_config_file[MAXPATHLEN];
     char server_address[256];
+    int thread_debug;
 };
 
 void signal_shutdown(int signum);
@@ -163,7 +169,6 @@ void signal_shutdown(int signum);
 void processCommands(int argc,char** argv,struct dspserver_config *config) {
     int c;
     while((c=getopt_long(argc,argv,shortOptions,longOptions,NULL))!=-1) {
-        printf("%d\n", c);
         switch(c) {
             case OPT_SOUNDCARD:
                 if (strlen(optarg) > sizeof(config->soundCardName) - 1) {
@@ -210,6 +215,9 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
             case OPT_DEBUG:
                 ozy_set_debug(1);
                 break;
+            case OPT_THREAD_DEBUG:
+                config->thread_debug = 1;
+                break;
 
        default:
                 fprintf(stderr,"Usage: \n");
@@ -221,6 +229,9 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
                 fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
 		fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
 		fprintf(stderr,"            --hpsdr (if using hpsdr hardware)\n");
+#ifdef THREAD_DEBUG
+                fprintf(stderr,"            --debug-threads (enable threading assertions)\n");
+#endif /* THREAD_DEBUG */
                 exit(1);
 
         }
@@ -252,6 +263,11 @@ int main(int argc,char* argv[]) {
     strcpy(config.share_config_file, getenv("HOME"));
     strcat(config.share_config_file, "/dspserver.conf");
     processCommands(argc,argv,&config);
+
+#ifdef THREAD_DEBUG
+    dspserver_threads_init();
+#endif /* THREAD_DEBUG */
+
     fprintf(stderr, "Reading conf file %s\n", config.share_config_file);
     init_register(config.share_config_file); // we now read our conf always
 	 // start web registration if set
@@ -295,6 +311,16 @@ int main(int argc,char* argv[]) {
     SetTXAMCarrierLevel(1, 0.5);
 
     tx_init();	// starts the tx_thread
+
+#ifdef THREAD_DEBUG
+    /* Note that some thread interactions will be lost at startup due to
+     * the fact that the subsystem threads are all started.  We can't
+     * init this until late, though, or we'll catch initializations
+     * performed at boot time as errors. */
+    if (config.thread_debug) {
+        dspserver_threads_debug(TRUE);
+    }
+#endif /* THREAD_DEBUG */
 
     while(1) {
         sleep(10000);
