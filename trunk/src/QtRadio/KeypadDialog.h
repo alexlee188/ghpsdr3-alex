@@ -3,6 +3,8 @@
 
 #include <QDialog>
 #include <QAbstractButton>
+#include <QKeyEvent>
+#include <QDialogButtonBox>
 
 namespace Ui {
     class KeypadDialog;
@@ -17,6 +19,7 @@ public:
     ~KeypadDialog();
     long long getFrequency();
     void clear();
+	void commitFrequency();
 
 public slots:
     void key_0();
@@ -35,6 +38,9 @@ public slots:
 
 signals:
     void setKeypadFrequency(long long);
+
+protected:
+	void keyPressEvent(QKeyEvent *event);
 
 private:
     Ui::KeypadDialog *ui;
