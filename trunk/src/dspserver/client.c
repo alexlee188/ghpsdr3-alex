@@ -359,6 +359,8 @@ void* rtp_tx_thread(void *arg){
     int rc;
     struct audio_entry *item;
 
+    dspserver_thread_register("rtp_tx_thread");
+
     while (1){
 	sem_wait(&mic_semaphore);
 	item = TAILQ_FIRST(&Mic_rtp_stream);
@@ -416,6 +418,8 @@ void *tx_thread(void *arg){
    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
    SRC_DATA data;
    void *mic_codec2 = codec2_create();
+
+   dspserver_thread_register("tx_thread");
 
     while (1){
 	sem_wait(&mic_semaphore);
@@ -544,6 +548,8 @@ void* client_thread(void* arg) {
     struct event *listener_event;
     struct sockaddr_in server;
     int serverSocket;
+
+    dspserver_thread_register("client_thread");
 
     fprintf(stderr,"client_thread\n");
 
