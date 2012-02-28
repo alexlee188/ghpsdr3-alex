@@ -135,6 +135,7 @@ void Waterfallcl::initialize(int wid, int ht){
     data_height = ht;
     cy = data_height - 1;
     rquad = 0.0f;
+    zoom = 2.0f;
 
     QImage t;
     QImage b;
@@ -214,24 +215,6 @@ void Waterfallcl::setLO_offset(short offset){
     LO_offset = offset;
 }
 
-void Waterfallcl::loadGLTextures(GLuint textureId)
-{
-    QImage t;
-    QImage b;
-
-    if ( !b.load( "./crate.bmp" ) )
-    {
-        b = QImage( 16, 16, QImage::Format_ARGB32_Premultiplied);
-        //b.fill( Qt::red);
-    }
-
-    t = QGLWidget::convertToGLFormat( b );
-
-    glBindTexture( GL_TEXTURE_2D, textureId );
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-    glTexImage2D( GL_TEXTURE_2D, 0, 3, t.width(), t.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, t.bits() );
-}
 
 void Waterfallcl::resizeGL( int width, int height )
 {
@@ -253,6 +236,18 @@ void Waterfallcl::setGeometry(QRect rect){
     cy = 255;
 }
 
+void Waterfallcl::mouseMoveEvent(QMouseEvent* event){
+    int move=event->pos().x()-lastX;
+    lastX=event->pos().x();
+    zoom += (float)move / 300.0f;
+    if (zoom < 0.5f) zoom = 0.5f;
+    else if (zoom > 10.0f) zoom = 10.0f;
+}
+
+void Waterfallcl::mousePressEvent(QMouseEvent *event){
+    lastX = event->pos().x();
+}
+
 void Waterfallcl::updateWaterfallgl(){
     updateGL();
 }
@@ -262,8 +257,8 @@ void Waterfallcl::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glLoadIdentity();
-    glTranslatef(0.0f,0.0f,-5.5f);
-    glScalef(1.7f, 1.7f, 1.7f);
+    glTranslatef(0.0f,0.0f,-6.0f);
+    glScalef(zoom, 2.0f, 2.0f);
     glRotatef(rquad,1.0f,0.0f,0.0f);
 
     glEnable(GL_TEXTURE_2D);

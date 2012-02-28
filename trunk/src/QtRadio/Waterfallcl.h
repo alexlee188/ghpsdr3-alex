@@ -56,10 +56,10 @@ public slots:
     void updateWaterfall(char* header,char* buffer,int width);
     void updateWaterfallgl(void);
 protected:
-    void loadGLTextures(GLuint textureId);
     void resizeGL( int width, int height );
     void paintGL();
-
+    void mouseMoveEvent(QMouseEvent* event);
+    void mousePressEvent(QMouseEvent* event);
 private:
     QCLImage2D waterfall_buffer;
     GLuint textureId[2];        // [0] is for buffer width x height*2
@@ -72,6 +72,8 @@ private:
     int cy;
     int LO_offset;
     GLfloat rquad;
+    int lastX, lastY;
+    GLfloat zoom;
 };
 
 
