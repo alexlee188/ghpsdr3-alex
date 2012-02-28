@@ -71,139 +71,132 @@ void *doReg(){
 void init_register(const char *scfile){
     share_config_file = strdup(scfile);
       
-  // try to open share_config_file for reading
-  // if it fails try writing a default config file 
-      sem_init(&cfgsem,0,1);   
-	  strcat(servername,"Unknown");
-	  FILE *file;
-	  file = fopen(share_config_file, "r");
-	  if (file) { 
-		  fclose(file);
-	  }else{
-		  file = fopen(share_config_file,"w");
-		  if (file) {
-			fprintf(file,"%s\n","# Simple config file for ghpsdr3's dspserver.");
-			fprintf(file,"%s\n","# default file is located at ~/dspserver.conf when dsp server is started with --share");
-			fprintf(file,"%s\n","# The information below will be supplied to a web database which will aid QtRadio");
-			fprintf(file,"%s\n","# users find active dspservers to connect to.  You may also see the current list at");
-			fprintf(file,"%s\n","# http://napan.ca/qtradio/qtradio.pl");
-			fprintf(file,"%s\n","# valid fields are call, location, band, rig and ant");
-			fprintf(file,"%s\n","# lines must end with ; and any characters after a # is a comment and ignored");
-			fprintf(file,"%s\n","# field values must be enclosed with \" ie: \"xxxx\"");
-			fprintf(file,"%s\n","# This default file will be created if dspserver is started with the --share option and ~/dspserver.cfg does not exist");
-			fprintf(file,"%s\n","# You may also start dspserver with an alternate config file by starting dspserver with --shareconfig /home/alternate_filename.conf");
-			fprintf(file,"%s\n","# Note field names are all lowercase!");
+    // try to open share_config_file for reading
+    // if it fails try writing a default config file 
+    sem_init(&cfgsem,0,1);   
+    strcat(servername,"Unknown");
+    FILE *file;
+    file = fopen(share_config_file, "r");
+    if (file) { 
+        fclose(file);
+    }else{
+        file = fopen(share_config_file,"w");
+        if (file) {
+            fprintf(file,"%s\n","# Simple config file for ghpsdr3's dspserver.");
+            fprintf(file,"%s\n","# default file is located at ~/dspserver.conf when dsp server is started with --share");
+            fprintf(file,"%s\n","# The information below will be supplied to a web database which will aid QtRadio");
+            fprintf(file,"%s\n","# users find active dspservers to connect to.  You may also see the current list at");
+            fprintf(file,"%s\n","# http://napan.ca/qtradio/qtradio.pl");
+            fprintf(file,"%s\n","# valid fields are call, location, band, rig and ant");
+            fprintf(file,"%s\n","# lines must end with ; and any characters after a # is a comment and ignored");
+            fprintf(file,"%s\n","# field values must be enclosed with \" ie: \"xxxx\"");
+            fprintf(file,"%s\n","# This default file will be created if dspserver is started with the --share option and ~/dspserver.cfg does not exist");
+            fprintf(file,"%s\n","# You may also start dspserver with an alternate config file by starting dspserver with --shareconfig /home/alternate_filename.conf");
+            fprintf(file,"%s\n","# Note field names are all lowercase!");
+            
+            fprintf(file,"\n%s\n","call = \"Unknown\";");
+            fprintf(file,"%s\n","location = \"Unknown\";");
+            fprintf(file,"%s\n","band = \"Unknown\";");
+            fprintf(file,"%s\n","rig = \"Unknown\";");
+            fprintf(file,"%s\n","ant = \"Unknown\";");
+            fprintf(file,"%s\n","share = \"yes\"; # Can be yes, no");
+            fprintf(file,"%s\n","lookupcountry = \"no\"; # Can be yes, no");
+            fprintf(file,"\n%s\n","#### Following are new TX options #####");
+            fprintf(file,"\n%s\n","tx = \"no\";  #Can be: no, yes, password");
+            fprintf(file,"\n%s\n","#ve9gj = \"secretpassword\";  #add users/passwords one per line (Remove leading # ! max 20 characters each");
+            fprintf(file,"\n%s\n","groupnames = [\"txrules1\"];  #add group or rulesset names in [\"name1\", \"name2\"]; format (max 20 characters each");
+            fprintf(file,"\n%s\n", "# Add user names in [\"call1\", \"call2\"]; format to list members for each groupname above with an suffix of \"_members\" ");
+            fprintf(file,"%s\n","txrules1_members = [\"ve9gj\", \"call2\"]; ");
+            fprintf(file,"\n%s\n","# Rule sets are defined as group or rulesset name =( (\"mode\", StartFreq in Mhz, End Freq in Mhz),(\"mode\", StartFreq in Mhz, End Freq in Mhz) );");
+            fprintf(file,"%s\n","#  Valid modes are  * SSB, CW, AM, DIG, FM, DRM ,SAM, SPEC Where * means any mode is OK");
+            fprintf(file,"%s\n","#  The two rules below allow any mode on 20M and CW only on the bottom 100Khz of 80M");
+            fprintf(file,"%s\n","#  You can make as many rules and rulesets as you wish. The first matching rule will allow TX");
+            fprintf(file,"\n%s\n","txrules1 = (\n     (\"*\",14.0,14.350), # mode, StartFreq Mhz, EndFreq Mhz");
+            fprintf(file,"%s\n","     (\"CW\",3.5,3.6)");
+            fprintf(file,"%s\n","          );");
+            
+            fclose(file);
+            fprintf(stderr,"%s\n", "**********************************************************");
+            fprintf(stderr,"%s\n", "  A new  dspserver config file template has been created at: ");
+            fprintf(stderr,"  %s\n", share_config_file);
+            fprintf(stderr,"%s\n", "  Please edit this file and fill in your station details!");
+            fprintf(stderr,"%s\n", "***********************************************************");
+        } else{
+            fprintf(stderr, "Error Can't create config file %s\n", share_config_file);
+        }
+    }
 
-			fprintf(file,"\n%s\n","call = \"Unknown\";");
-			fprintf(file,"%s\n","location = \"Unknown\";");
-			fprintf(file,"%s\n","band = \"Unknown\";");
-			fprintf(file,"%s\n","rig = \"Unknown\";");
-			fprintf(file,"%s\n","ant = \"Unknown\";");
-			fprintf(file,"%s\n","share = \"yes\"; # Can be yes, no");
-			fprintf(file,"%s\n","lookupcountry = \"no\"; # Can be yes, no");
-			fprintf(file,"\n%s\n","#### Following are new TX options #####");
-			fprintf(file,"\n%s\n","tx = \"no\";  #Can be: no, yes, password");
-			fprintf(file,"\n%s\n","#ve9gj = \"secretpassword\";  #add users/passwords one per line (Remove leading # ! max 20 characters each");
-			fprintf(file,"\n%s\n","groupnames = [\"txrules1\"];  #add group or rulesset names in [\"name1\", \"name2\"]; format (max 20 characters each");
-			fprintf(file,"\n%s\n", "# Add user names in [\"call1\", \"call2\"]; format to list members for each groupname above with an suffix of \"_members\" ");
-			fprintf(file,"%s\n","txrules1_members = [\"ve9gj\", \"call2\"]; ");
-			fprintf(file,"\n%s\n","# Rule sets are defined as group or rulesset name =( (\"mode\", StartFreq in Mhz, End Freq in Mhz),(\"mode\", StartFreq in Mhz, End Freq in Mhz) );");
-			fprintf(file,"%s\n","#  Valid modes are  * SSB, CW, AM, DIG, FM, DRM ,SAM, SPEC Where * means any mode is OK");
-			fprintf(file,"%s\n","#  The two rules below allow any mode on 20M and CW only on the bottom 100Khz of 80M");
-			fprintf(file,"%s\n","#  You can make as many rules and rulesets as you wish. The first matching rule will allow TX");
-			fprintf(file,"\n%s\n","txrules1 = (\n     (\"*\",14.0,14.350), # mode, StartFreq Mhz, EndFreq Mhz");
-			fprintf(file,"%s\n","     (\"CW\",3.5,3.6)");
-			fprintf(file,"%s\n","          );");
-			
-			fclose(file);
-			fprintf(stderr,"%s\n", "**********************************************************");
-			fprintf(stderr,"%s\n", "  A new  dspserver config file template has been created at: ");
-			fprintf(stderr,"  %s\n", share_config_file);
-			fprintf(stderr,"%s\n", "  Please edit this file and fill in your station details!");
-			fprintf(stderr,"%s\n", "***********************************************************");
-		  } else{
-			  fprintf(stderr, "Error Can't create config file %s\n", share_config_file);
-		  }
-		  
-	  }           
-  
-  
-  
-  
-  const char *str;
-  config_init(&cfg);
-  if(! config_read_file(&cfg, share_config_file))
-  {
-    fprintf(stderr, "Error - %s\n",  config_error_text(&cfg));
-    config_destroy(&cfg);
-    
-  }else{
-	 if(config_lookup_string(&cfg, "call", &str)){
-         call = str;
-         strncpy(servername,str, 20);
-     }
-     if(config_lookup_string(&cfg, "location", &str)){
-         location = str;
-     }
-     if(config_lookup_string(&cfg, "band", &str)){
-         band = str;
-     }
-	 if(config_lookup_string(&cfg, "rig", &str)){
-         rig = str;
-     }
-     if(config_lookup_string(&cfg, "ant", &str)){
-         ant = str;
-     }
-     if(config_lookup_string(&cfg, "share", &str)){
-         if (strcmp(str, "yes") == 0){
-			 toShareOrNotToShare = 1;
-         }else{
-             toShareOrNotToShare = 0;
-         }
-     }else{
-		fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a share= setting!!" );
-	 } 
-     if(config_lookup_string(&cfg, "lookupcountry", &str)){
-         if (strcmp(str, "yes") == 0){
-			 setprintcountry();
-         }
-     }else{
-		fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a lookupcountry= setting!!" );
-	 } 
-     if(config_lookup_string(&cfg, "tx", &str)){
-         if (strcmp(str, "yes") == 0){
-			 txcfg = TXALL;
-         }else if(strcmp(str, "password") == 0){
-             txcfg = TXPASSWD;
-         }else{
-			 txcfg = TXNONE;
-		 }
-     }else{
-		fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a tx= setting!!\n TX is now disabled" );
-		txcfg = TXNONE;
-	 } 
-     
-  }	    
-  
+    const char *str;
+    config_init(&cfg);
+    if(! config_read_file(&cfg, share_config_file)) {
+        fprintf(stderr, "Error - %s\n",  config_error_text(&cfg));
+        config_destroy(&cfg);
+    }else{
+        if(config_lookup_string(&cfg, "call", &str)){
+            call = str;
+            strncpy(servername,str, 20);
+        }
+        if(config_lookup_string(&cfg, "location", &str)){
+            location = str;
+        }
+        if(config_lookup_string(&cfg, "band", &str)){
+            band = str;
+        }
+        if(config_lookup_string(&cfg, "rig", &str)){
+            rig = str;
+        }
+        if(config_lookup_string(&cfg, "ant", &str)){
+            ant = str;
+        }
+        if(config_lookup_string(&cfg, "share", &str)){
+            if (strcmp(str, "yes") == 0){
+                toShareOrNotToShare = 1;
+            }else{
+                toShareOrNotToShare = 0;
+            }
+        }else{
+            fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a share= setting!!" );
+        } 
+        if(config_lookup_string(&cfg, "lookupcountry", &str)){
+            if (strcmp(str, "yes") == 0){
+                setprintcountry();
+            }
+        }else{
+            fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a lookupcountry= setting!!" );
+        } 
+        if(config_lookup_string(&cfg, "tx", &str)){
+            if (strcmp(str, "yes") == 0){
+                txcfg = TXALL;
+            }else if(strcmp(str, "password") == 0){
+                txcfg = TXPASSWD;
+            }else{
+                txcfg = TXNONE;
+            }
+        }else{
+            fprintf(stderr, "Conf File Error - %s%s%s\n",  "Your ",share_config_file, " is missing a tx= setting!!\n TX is now disabled" );
+            txcfg = TXNONE;
+        } 
+    }	    
+
     if (strcmp(call, "Unknown") == 0){
-		fprintf(stderr,"%s\n", "**********************************************************");
-		fprintf(stderr,"%s\n", "  Your config file located at: ");
-		fprintf(stderr,"  %s\n", share_config_file);
-		fprintf(stderr,"%s\n", "  Contains Unknown for a Call");
-		fprintf(stderr,"%s\n", "  Please edit this file and fill in your station details!");
-		fprintf(stderr,"%s\n", "***********************************************************");
-	}
+        fprintf(stderr,"%s\n", "**********************************************************");
+        fprintf(stderr,"%s\n", "  Your config file located at: ");
+        fprintf(stderr,"  %s\n", share_config_file);
+        fprintf(stderr,"%s\n", "  Contains Unknown for a Call");
+        fprintf(stderr,"%s\n", "  Please edit this file and fill in your station details!");
+        fprintf(stderr,"%s\n", "***********************************************************");
+    }
     call = url_encode(call);
     location = url_encode(location);
     band = url_encode(band);
     rig = url_encode(rig);
     ant = url_encode(ant); 
-    
+
     pthread_t thread1;
     int ret;
     if (toShareOrNotToShare){
-      ret = pthread_create( &thread1, NULL, doReg, (void*) NULL);
-      ret = pthread_detach(thread1);
+        ret = pthread_create( &thread1, NULL, doReg, (void*) NULL);
+        ret = pthread_detach(thread1);
     }
 }
 
