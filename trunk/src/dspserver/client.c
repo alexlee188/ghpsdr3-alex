@@ -271,7 +271,7 @@ void tx_init(void){
         if (mic_sr_state == 0) { 
             fprintf (stderr, "tx_init: SR INIT ERROR: %s\n", src_strerror (sr_error)); 
         } else {
-            dspserver_log(DSP_LOG_INFO, "tx_init: sample rate init successful with ratio of : %f\n", mic_src_ratio);
+            sdr_log(SDR_LOG_INFO, "tx_init: sample rate init successful with ratio of : %f\n", mic_src_ratio);
 	}
 
         rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
@@ -359,6 +359,8 @@ void* rtp_tx_thread(void *arg){
     int rc;
     struct audio_entry *item;
 
+    sdr_thread_register("rtp_tx_thread");
+
     while (1){
 	sem_wait(&mic_semaphore);
 	item = TAILQ_FIRST(&Mic_rtp_stream);
@@ -416,6 +418,8 @@ void *tx_thread(void *arg){
    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
    SRC_DATA data;
    void *mic_codec2 = codec2_create();
+
+   sdr_thread_register("tx_thread");
 
     while (1){
 	sem_wait(&mic_semaphore);
@@ -503,8 +507,8 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 	if (item->bev == bev){
             char ipstr[16];
             inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
-            dspserver_log(DSP_LOG_INFO, "RX%d: client disconnection from %s:%d\n",
-                          receiver, ipstr, ntohs(item->client.sin_port));
+            sdr_log(SDR_LOG_INFO, "RX%d: client disconnection from %s:%d\n",
+                    receiver, ipstr, ntohs(item->client.sin_port));
             if (item->rtp == connection_rtp) {
                 rtp_disconnect(item->session);
                 is_rtp_client = 1;
@@ -545,6 +549,8 @@ void* client_thread(void* arg) {
     struct sockaddr_in server;
     int serverSocket;
 
+    sdr_thread_register("client_thread");
+
     fprintf(stderr,"client_thread\n");
 
     serverSocket=socket(AF_INET,SOCK_STREAM,0);
@@ -571,7 +577,7 @@ void* client_thread(void* arg) {
         return NULL;
     }
 
-    dspserver_log(DSP_LOG_INFO, "client_thread: listening on port %d\n", port);
+    sdr_log(SDR_LOG_INFO, "client_thread: listening on port %d\n", port);
 
     if (listen(serverSocket, 5) == -1) {
 	perror("client listen");
@@ -595,7 +601,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
 
     int fd = accept(listener, (struct sockaddr*)&ss, &slen);
     if (fd < 0) {
-        dspserver_log(DSP_LOG_WARNING, "accept failed\n");
+        sdr_log(SDR_LOG_WARNING, "accept failed\n");
         return;
     }
     char ipstr[16];
@@ -605,8 +611,8 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     memcpy(&item->client, &ss, sizeof(ss));
 
     inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
-    dspserver_log(DSP_LOG_INFO, "RX%d: client connection from %s:%d\n",
-                  receiver, ipstr, ntohs(item->client.sin_port));
+    sdr_log(SDR_LOG_INFO, "RX%d: client connection from %s:%d\n",
+            receiver, ipstr, ntohs(item->client.sin_port));
 
     if(prncountry){
         printcountry(&ss);
@@ -681,7 +687,7 @@ void readcb(struct bufferevent *bev, void *ctx){
     struct evbuffer *inbuf;
 
     if ((item = TAILQ_FIRST(&Client_list)) == NULL) {
-        dspserver_log(DSP_LOG_ERROR, "readcb called with no clients");
+        sdr_log(SDR_LOG_ERROR, "readcb called with no clients");
         return;
     }
     if (item->bev != bev){
@@ -699,7 +705,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             }
         }
         if (current_item == NULL) {
-            dspserver_log(DSP_LOG_ERROR, "This slave was not located");
+            sdr_log(SDR_LOG_ERROR, "This slave was not located");
             return;
         }
 
@@ -716,7 +722,7 @@ void readcb(struct bufferevent *bev, void *ctx){
     inbuf = bufferevent_get_input(bev);
     while (evbuffer_get_length(inbuf) >= MSG_SIZE) {
         if ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) != MSG_SIZE) {
-            dspserver_log(DSP_LOG_ERROR, "Short read from client; shouldn't happen\n");
+            sdr_log(SDR_LOG_ERROR, "Short read from client; shouldn't happen\n");
             return;
         }
         message[bytesRead-1]=0;			// for Linux strings terminating in NULL
@@ -750,7 +756,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                 }
             }
             if (invalid) {
-                dspserver_log(DSP_LOG_INFO, "Slave client attempted master command %s\n", token);
+                sdr_log(SDR_LOG_INFO, "Slave client attempted master command %s\n", token);
                 continue;
             }
         }
@@ -971,14 +977,14 @@ void readcb(struct bufferevent *bev, void *ctx){
                             audio_channels=atoi(token);
 
                             if (slave) {
-                                dspserver_log(DSP_LOG_INFO, "startrtpstream: listening on RTP socket\n");
+                                sdr_log(SDR_LOG_INFO, "startrtpstream: listening on RTP socket\n");
                                 inet_ntop(AF_INET, (void *)&current_item->client.sin_addr, ipstr, sizeof(ipstr));
                                 current_item->session=rtp_listen(ipstr,rtpport);
                                 current_item->rtp = connection_rtp;
                             } else {
                                 inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
-                                dspserver_log(DSP_LOG_INFO, "starting rtp: to %s:%d encoding %d samplerate %d channels:%d\n",
-                                              ipstr,rtpport,encoding,audio_sample_rate,audio_channels);
+                                sdr_log(SDR_LOG_INFO, "starting rtp: to %s:%d encoding %d samplerate %d channels:%d\n",
+                                        ipstr,rtpport,encoding,audio_sample_rate,audio_channels);
                                 item->session=rtp_listen(ipstr,rtpport);
                                 item->rtp=connection_rtp;
                             }
@@ -1323,8 +1329,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(token,"setclient",9)==0) {
             token=strtok_r(NULL," ",&saveptr);
             if(token!=NULL) {
-                dspserver_log(DSP_LOG_INFO, "RX%d: client is %s\n",
-                              receiver, token);
+                sdr_log(SDR_LOG_INFO, "RX%d: client is %s\n", receiver, token);
             }
         } else if(strncmp(token,"setiqenable",11)==0) {
             token=strtok_r(NULL," ",&saveptr);

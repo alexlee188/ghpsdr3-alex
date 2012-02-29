@@ -40,6 +40,7 @@
 #include "dttsp.h"
 #include "audiostream.h"
 #include "client.h"
+#include "util.h"
 
 
 /*
@@ -182,6 +183,7 @@ void* iq_thread(void* arg) {
     BUFFER buffer;
     int on=1;
 
+    sdr_thread_register("iq_thread");
 fprintf(stderr,"iq_thread\n");
 
     // create a socket to receive iq from the server
