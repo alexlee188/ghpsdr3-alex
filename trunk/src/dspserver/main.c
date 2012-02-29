@@ -265,7 +265,7 @@ int main(int argc,char* argv[]) {
     processCommands(argc,argv,&config);
 
 #ifdef THREAD_DEBUG
-    dspserver_threads_init();
+    sdr_threads_init();
 #endif /* THREAD_DEBUG */
 
     fprintf(stderr, "Reading conf file %s\n", config.share_config_file);
@@ -318,7 +318,7 @@ int main(int argc,char* argv[]) {
      * init this until late, though, or we'll catch initializations
      * performed at boot time as errors. */
     if (config.thread_debug) {
-        dspserver_threads_debug(TRUE);
+        sdr_threads_debug(TRUE);
     }
 #endif /* THREAD_DEBUG */
 

@@ -80,7 +80,7 @@ static int audio_stream_buffer_insert=0;
 
 static unsigned char encodetable[65536];
 
-static struct dspserver_thread_id audiostream_tid = DSPSERVER_THREAD_ID;
+static struct sdr_thread_id audiostream_tid = SDR_THREAD_ID;
 
 unsigned char alaw(short sample);
 
@@ -96,7 +96,7 @@ void init_alaw_tables();
 
 
 void allocate_audio_buffer(){
-    dspserver_thread_assert_id(&audiostream_tid);
+    sdr_thread_assert_id(&audiostream_tid);
     if (encoding == ENCODING_ALAW) {
 	audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
 	}
@@ -111,7 +111,7 @@ void allocate_audio_buffer(){
 }
 
 void audio_stream_reset() {
-    dspserver_thread_assert_id(&audiostream_tid);
+    sdr_thread_assert_id(&audiostream_tid);
     audio_stream_buffer_insert=0;
     audio_stream_queue_free();
     Mic_stream_queue_free();
@@ -124,7 +124,7 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 	int audio_buffer_length;
 	struct audio_entry * item;
 
-    dspserver_thread_assert_id(&audiostream_tid);
+    sdr_thread_assert_id(&audiostream_tid);
 
     // samples are delivered at 48K
     // output to stream at 8K (1 in 6) or 48K (1 in 1)

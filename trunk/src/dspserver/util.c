@@ -19,9 +19,9 @@
 /**
  * @brief Structure for list of thread ID -> name mappings, for debugging.
  *
- * @see dspserver_threads_init() 
- * @see dspserver_thread_register()
- * @see dspserver_thread_unregister()
+ * @see sdr_threads_init() 
+ * @see sdr_thread_register()
+ * @see sdr_thread_unregister()
  */
 struct threadlist {
     pthread_t id;               /**< Thread ID for this mapping       */
@@ -40,9 +40,9 @@ static sem_t threadlist_sem;
  * @brief Enable (costly) thread debugging if true
  *
  * This variable should not by modified or used by anything but the
- * dspserver_thread_* functions and macros.
+ * sdr_thread_* functions and macros.
  */
-volatile int dspserver__threads_debug;
+volatile int sdr__threads_debug;
 #endif /* THREAD_DEBUG */
 
 /**
@@ -55,7 +55,7 @@ volatile int dspserver__threads_debug;
  * @param level severity of the message
  * @param fmt printf-style format string
  */
-void dspserver_log(enum DSPServerLogLevel level, char *fmt, ...)
+void sdr_log(enum SDRLogLevel level, char *fmt, ...)
 {
     va_list args;
     time_t now;
@@ -75,7 +75,7 @@ void dspserver_log(enum DSPServerLogLevel level, char *fmt, ...)
 
 
 /**
- * @brief Initialize the dspserver thread debugging facilities
+ * @brief Initialize the sdr thread debugging facilities
  * @ingroup threads
  *
  * This function must be called before calling any of the other thread
@@ -83,11 +83,11 @@ void dspserver_log(enum DSPServerLogLevel level, char *fmt, ...)
  * are created, and MUST COMPLETE before any thread debugging functions
  * are called.
  */
-void dspserver_threads_init()
+void sdr_threads_init()
 {
 #ifdef THREAD_DEBUG
     sem_init(&threadlist_sem, 0, 1);
-    dspserver_log(DSP_LOG_INFO, "dspserver thread debugging initialized\n");
+    sdr_log(SDR_LOG_INFO, "sdr thread debugging initialized\n");
 #endif /* THREAD_DEBUG */
 }
 
@@ -97,18 +97,18 @@ void dspserver_threads_init()
  *
  * @param name The name of this thread 
  */
-void dspserver_thread_register(const char *name)
+void sdr_thread_register(const char *name)
 {
 #ifdef THREAD_DEBUG
     struct threadlist *newentry, *cur;
     pthread_t self = pthread_self();
 
-    dspserver_log(DSP_LOG_INFO, "Registering thread '%s'\n", name);
+    sdr_log(SDR_LOG_INFO, "Registering thread '%s'\n", name);
 
     sem_wait(&threadlist_sem);
     for (cur = threadlist; cur; cur = cur->next) {
         if (pthread_equal(cur->id, self)) {
-            dspserver_log(DSP_LOG_ERROR, "Thread ID being registered already exists!");
+            sdr_log(SDR_LOG_ERROR, "Thread ID being registered already exists!");
             sem_post(&threadlist_sem);
             return; /* Not clear what to do here */
         }
@@ -127,10 +127,10 @@ void dspserver_thread_register(const char *name)
 }
 
 /**
- * @brief Unregister a thread from the dspserver thread debugging facility.
+ * @brief Unregister a thread from the sdr thread debugging facility.
  * @ingroup threads
  */
-void dspserver_thread_unregister()
+void sdr_thread_unregister()
 {
 #ifdef THREAD_DEBUG
     struct threadlist *cur, *prev;
@@ -140,8 +140,8 @@ void dspserver_thread_unregister()
     prev = cur = NULL;
     for (cur = threadlist; cur; cur = cur->next) {
         if (pthread_equal(cur->id, pthread_self())) {
-            dspserver_log(DSP_LOG_INFO, "Unregistering thread '%s'\n",
-                          cur->name);
+            sdr_log(SDR_LOG_INFO, "Unregistering thread '%s'\n",
+                    cur->name);
             free(cur->name);
             if (prev) {
                 prev->next = cur->next;
@@ -157,7 +157,7 @@ void dspserver_thread_unregister()
     sem_post(&threadlist_sem);
 
     if (cur == NULL) {
-        dspserver_log(DSP_LOG_ERROR, "Thread was not found to unregister!\n");
+        sdr_log(SDR_LOG_ERROR, "Thread was not found to unregister!\n");
     }
 #endif /* THREAD_DEBUG */
 }
@@ -172,16 +172,16 @@ void dspserver_thread_unregister()
  *
  * @param enabled TRUE to enable debugging, FALSE to disable
  */
-void dspserver_threads_debug(int enabled)
+void sdr_threads_debug(int enabled)
 {
 #ifdef THREAD_DEBUG
-    dspserver__threads_debug = !!enabled;
+    sdr__threads_debug = !!enabled;
 #endif /* THREAD_DEBUG */
 }
 
 
-void dspserver__thread_assert_id(struct dspserver_thread_id *tid,
-                                 char *file, int line)
+void sdr__thread_assert_id(struct sdr_thread_id *tid,
+                           char *file, int line)
 {
 #ifdef THREAD_DEBUG
     pthread_t self = pthread_self();
@@ -213,9 +213,9 @@ void dspserver__thread_assert_id(struct dspserver_thread_id *tid,
             }
         }
         sem_post(&threadlist_sem);
-        dspserver_log(DSP_LOG_ERROR, "thread '%s' attempted to manipulate state owned by thread '%s' at %s:%d\n",
-                      me ? me : "unknown", other ? other : "unknown",
-                      file, line);
+        sdr_log(SDR_LOG_ERROR, "thread '%s' attempted to manipulate state owned by thread '%s' at %s:%d\n",
+                me ? me : "unknown", other ? other : "unknown",
+                file, line);
     }
 #endif /* THREAD_DEBUG */
 }

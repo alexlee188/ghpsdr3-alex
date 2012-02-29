@@ -17,17 +17,17 @@
  * When verbosity is implemented, more severe levels will be logged at
  * lower verbosity levels.
  */
-enum DSPServerLogLevel {
-    DSP_LOG_INFO,
-    DSP_LOG_WARNING,
-    DSP_LOG_ERROR
+enum SDRLogLevel {
+    SDR_LOG_INFO,
+    SDR_LOG_WARNING,
+    SDR_LOG_ERROR
 };
 
 /**
  * @defgroup threads Thread debugging facilities
  *
  * This group contains structures and functions useful for debugging
- * thread interactions in dspserver.
+ * thread interactions.
  */
 
 /**
@@ -37,53 +37,52 @@ enum DSPServerLogLevel {
  * This structure is used to ensure that synchronization-less global
  * data is always accessed by the same thread.  To use the
  * synchronization assertions, globally allocate an instance of this
- * structure with a static initializer of DSPSERVER_THREAD_ID, like:
+ * structure with a static initializer of SDR_THREAD_ID, like:
  *
- * struct dspserver_thread_id tid = DSPSERVER_THREAD_ID;
+ * struct sdr_thread_id tid = SDR_THREAD_ID;
  *
  * The members of this structure should not be modified by any code
- * other than the dspserver thread debugging code.
+ * other than the sdr thread debugging code.
  *
- * @see DSPSERVER_THREAD_ID
- * @see dspserver_thread_assert_id()
+ * @see SDR_THREAD_ID
+ * @see sdr_thread_assert_id()
  */
-struct dspserver_thread_id {
+struct sdr_thread_id {
     volatile int initialized;
     pthread_mutex_t lock;
     pthread_t id;
 };
 
 /**
- * @brief Static initializer for dspserver_thread_id
+ * @brief Static initializer for sdr_thread_id
  * @ingroup threads
  *
- * @see struct dspserver_thread_id
+ * @see struct sdr_thread_id
  */
-#define DSPSERVER_THREAD_ID { 0, PTHREAD_MUTEX_INITIALIZER }
+#define SDR_THREAD_ID { 0, PTHREAD_MUTEX_INITIALIZER }
 
-volatile int dspserver__threads_debug;
+volatile int sdr__threads_debug;
 
-void dspserver_log(enum DSPServerLogLevel level, char *fmt, ...);
+void sdr_log(enum SDRLogLevel level, char *fmt, ...);
 
-void dspserver_threads_init();
-void dspserver_thread_register(const char *name);
-void dspserver_thread_unregister();
-void dspserver_threads_debug(int enabled);
+void sdr_threads_init();
+void sdr_thread_register(const char *name);
+void sdr_thread_unregister();
+void sdr_threads_debug(int enabled);
 
-void dspserver__thread_assert_id(struct dspserver_thread_id *tid,
-                                 char *file, int line);
+void sdr__thread_assert_id(struct sdr_thread_id *tid, char *file, int line);
 
 #ifdef THREAD_DEBUG
 /**
  * @brief Assert that the current thread is the only thread which has
- *        yet accessed the associated struct dspserver_thread_id.
+ *        yet accessed the associated struct sdr_thread_id.
  */
-#define dspserver_thread_assert_id(tid) do {                            \
-    if (dspserver__threads_debug)                                       \
-        dspserver__thread_assert_id(tid, __FILE__, __LINE__);           \
+#define sdr_thread_assert_id(tid) do {                            \
+    if (sdr__threads_debug)                                       \
+        sdr__thread_assert_id(tid, __FILE__, __LINE__);           \
     } while (0)
 #else /* THREAD_DEBUG */
-#define dspserver_thread_assert_id(tid)
+#define sdr_thread_assert_id(tid)
 #endif /* THREAD_DEBUG */
 
 #endif /* _UTIL_H_ */
