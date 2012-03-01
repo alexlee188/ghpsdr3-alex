@@ -1000,7 +1000,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             SetSubRXSt(0,1,state);
         } else if(strncmp(cmd,"setsubrxfrequency",17)==0) {
             int offset;
-            if (tokenize_cmd(&saveptr, tokens, 1))
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             /* FIXME: validate! */
             offset=atoi(tokens[0]);
