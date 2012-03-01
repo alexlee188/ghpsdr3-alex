@@ -31,11 +31,13 @@
 extern "C" {
 #endif
 
+void dump_ozy_buffer(const char* prefix,int frame,unsigned char* buffer);
+void dump_ozy_header(char* prefix,int frame,unsigned char* buffer);
+void dump_iq_buffer(unsigned char* buffer);
+void dump_udp_buffer(unsigned char* buffer);
+void dump_float_buffer(float* buffer);
+void dump_float_buffer_heads(float* buffer);
 
-extern void dump_ozy_buffer(const char* prefix,int frame,unsigned char* buffer);
-extern void dump_ozy_header(char* prefix,int frame,unsigned char* buffer);
-extern void dump_iq_buffer(unsigned char* buffer);
-extern void dump_udp_buffer(unsigned char* buffer);
 #ifdef	__cplusplus
 }
 #endif

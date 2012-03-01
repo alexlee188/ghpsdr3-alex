@@ -59,10 +59,21 @@ int resampler_setup_new(int max_frames, int decim, int interp) {
     return r_id;
 }
 
-void resampler_load_input(int r_id, int idx, float ch1, float ch2) {
-                      
+void resampler_load_channels(int r_id, float *ch1, float *ch2) {
+
+    unsigned int i=0;
+ #pragma omp parallel for schedule(static) private(i)    
+    for (i=0; i<resampler_info[r_id].max_frames; ++i) {
+        src_data_objs[r_id]->data_in[CHANNELS*i] = ch1[i];
+        src_data_objs[r_id]->data_in[CHANNELS*i+1] = ch2[i];        
+    }
+}
+
+void resampler_load_data(int r_id, int idx, float ch1, float ch2) {
+
     src_data_objs[r_id]->data_in[CHANNELS*idx] = ch1;
-    src_data_objs[r_id]->data_in[CHANNELS*idx+1] = ch2;
+    src_data_objs[r_id]->data_in[CHANNELS*idx+1] = ch2;        
+
 }
 
 int do_resample(int r_id, int frames, int *out_frames_gen, const char *message) {
@@ -80,7 +91,7 @@ int do_resample(int r_id, int frames, int *out_frames_gen, const char *message) 
     return rr_retcode;
 }
 
-void resampler_fetch_output(int r_id, int idx, float *ch1, float *ch2) {
+void resampler_fetch_data(int r_id, int idx, float *ch1, float *ch2) {
     
     *ch1 = src_data_objs[r_id]->data_out[CHANNELS*idx];
     *ch2 = src_data_objs[r_id]->data_out[CHANNELS*idx+1];
