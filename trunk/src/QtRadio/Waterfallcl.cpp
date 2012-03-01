@@ -40,9 +40,10 @@ void ImageCLContext::init(int wid, int ht)
                 "const int height, const int offset, const int waterfallLow,\n"
                 "const int waterfallHigh, __write_only image2d_t image) {\n"
         "  int id = get_global_id(0);\n"
-        "  int j = id - offset;\n"
-        "  if (j < 0) j += width;\n"
-        "  if (j >= width) j %= width;\n"
+        "  //int j = id - offset;\n"
+        "  //if (j < 0) j += width;\n"
+        "  //if (j >= width) j %= width;\n"
+        "  int j = id;\n"
         "  int2 pos;\n"
         "  pos = (int2)(id, cy);\n"
         "  float sample = 0.0f - (float)src[j];\n"
@@ -271,9 +272,9 @@ void Waterfallcl::paintGL()
     glBindTexture(GL_TEXTURE_2D, textureId[0]);
 
     void *ptr = malloc(waterfall_buffer.width()*waterfall_buffer.height()*waterfall_buffer.bytesPerElement());
-    waterfall_buffer.read(ptr, QRect(QPoint(0,0), QPoint(1023,511)));
+    waterfall_buffer.read(ptr, QRect(QPoint(0,0), QPoint((data_width-1),511)));
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-                    1024, 512 ,
+                    data_width, 512 ,
                     GL_RGBA, GL_UNSIGNED_BYTE, ptr);
     free(ptr);
 
