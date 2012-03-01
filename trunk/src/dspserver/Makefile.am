@@ -2,11 +2,13 @@
 
 bin_PROGRAMS = dspserver
 
+noinst_LIBRARIES = libsdrutil.a
+
 dspserver_CFLAGS = -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function -msse -msse3 -ffast-math $(THREAD_DEBUG_CFLAGS)
 #dspserver_CFLAGS = -g -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function -msse -msse3 -ffast-math -march=core2 
 
 
-dspserver_LDADD = ../DttSP/libDttSP.a -lrt
+dspserver_LDADD = ../DttSP/libDttSP.a libsdrutil.a -lrt
 
 
 
@@ -40,7 +42,8 @@ register.c     \
 rtp.h          \
 rtp.c          \
 G711A.h        \
-G711A.c        \
-util.h         \
-util.c
+G711A.c
+
+libsdrutil_a_SOURCES = util.h         \
+                       util.c
 

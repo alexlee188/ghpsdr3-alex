@@ -183,7 +183,7 @@ void* iq_thread(void* arg) {
     BUFFER buffer;
     int on=1;
 
-    dspserver_thread_register("iq_thread");
+    sdr_thread_register("iq_thread");
 fprintf(stderr,"iq_thread\n");
 
     // create a socket to receive iq from the server
