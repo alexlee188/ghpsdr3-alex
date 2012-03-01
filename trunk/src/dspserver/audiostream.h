@@ -43,8 +43,6 @@
 int audio_buffer_size;
 int audio_sample_rate;
 int audio_channels;
-unsigned char* audio_buffer;
-int send_audio;
 
 struct audio_entry {
 	unsigned char *buf;
@@ -58,7 +56,7 @@ void audio_stream_put_samples(short left_sample,short right_sample);
 void audio_stream_init(int port);
 void allocate_audio_buffer(void);
 void init_alaw_tables(void);
-void audio_stream_queue_add(int length);
+void audio_stream_queue_add(unsigned char *buffer, int length);
 struct audio_entry  *audio_stream_queue_remove(void);
 void audio_stream_queue_free(void);
 void Mic_stream_queue_free(void);
