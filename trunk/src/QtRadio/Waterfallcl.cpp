@@ -19,6 +19,8 @@
 #include <QDebug>
 #include "Waterfallcl.h"
 
+#define MAX_CL_WIDTH 2048
+
 class ImageCLContext
 {
 public:
@@ -40,10 +42,9 @@ void ImageCLContext::init(int wid, int ht)
                 "const int height, const int offset, const int waterfallLow,\n"
                 "const int waterfallHigh, __write_only image2d_t image) {\n"
         "  int id = get_global_id(0);\n"
-        "  //int j = id - offset;\n"
-        "  //if (j < 0) j += width;\n"
-        "  //if (j >= width) j %= width;\n"
-        "  int j = id;\n"
+        "  int j = id - offset;\n"
+        "  if (j < 0) j += width;\n"
+        "  if (j >= width) j %= width;\n"
         "  int2 pos;\n"
         "  pos = (int2)(id, cy);\n"
         "  float sample = 0.0f - (float)src[j];\n"
@@ -122,7 +123,7 @@ Q_GLOBAL_STATIC(ImageCLContext, image_context)
 Waterfallcl::Waterfallcl(){
     makeCurrent();
     ImageCLContext *ctx = image_context();
-    ctx->init(1024,256);
+    ctx->init(MAX_CL_WIDTH,256);
 }
 
 Waterfallcl::~Waterfallcl(){
@@ -142,7 +143,7 @@ void Waterfallcl::initialize(int wid, int ht){
     QImage t;
     QImage b;
 
-    b = QImage( 1024, 512, QImage::Format_ARGB32_Premultiplied);
+    b = QImage( MAX_CL_WIDTH, 512, QImage::Format_ARGB32_Premultiplied);
     //b.fill(Qt::green);
 
 
@@ -166,7 +167,7 @@ void Waterfallcl::initialize(int wid, int ht){
 #endif
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1024, 512, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, MAX_CL_WIDTH, 512, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, t.bits());
 
 
@@ -193,11 +194,11 @@ void Waterfallcl::initialize(int wid, int ht){
         waterfall_buffer = ctx->glContext->createImage2DDevice
             (QCLImageFormat(QCLImageFormat::Order_RGBA,
                         QCLImageFormat::Type_Unnormalized_UInt8),
-                        QSize(1024, 512), QCLMemoryObject::ReadWrite);
+                        QSize(MAX_CL_WIDTH, 512), QCLMemoryObject::ReadWrite);
         waterfall_buffer.write(t);
     //}
 
-    spectrum_buffer = ctx->glContext->createBufferDevice(1024, QCLMemoryObject::ReadWrite);
+    spectrum_buffer = ctx->glContext->createBufferDevice(MAX_CL_WIDTH, QCLMemoryObject::ReadWrite);
 
 }
 
@@ -247,7 +248,7 @@ void Waterfallcl::mouseMoveEvent(QMouseEvent* event){
 
     int movex=event->pos().x()-lastX;
     lastX=event->pos().x();
-    pan += (float)movex /zoom/45.0f;
+    pan += (float)movex / 100.0f;
 }
 
 void Waterfallcl::mousePressEvent(QMouseEvent *event){
@@ -279,37 +280,38 @@ void Waterfallcl::paintGL()
     free(ptr);
 
     GLfloat h = (float)cy / 511.0f;
+    GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
 
     glBegin(GL_QUADS);
     // Front Face
     glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f, -1.0f,  1.0f);
-    glTexCoord2f(1.0f, h + 0.5f); glVertex3f( 1.0f, -1.0f,  1.0f);
-    glTexCoord2f(1.0f, h); glVertex3f( 1.0f,  1.0f,  1.0f);
+    glTexCoord2f(tex_width, h + 0.5f); glVertex3f( 1.0f, -1.0f,  1.0f);
+    glTexCoord2f(tex_width, h); glVertex3f( 1.0f,  1.0f,  1.0f);
     glTexCoord2f(0.0f, h); glVertex3f(-1.0f,  1.0f,  1.0f);
     // Back Face
     glTexCoord2f(0.0f, h); glVertex3f(-1.0f, -1.0f, -1.0f);
     glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f,  1.0f, -1.0f);
-    glTexCoord2f(1.0f, h + 0.5f); glVertex3f( 1.0f,  1.0f, -1.0f);
-    glTexCoord2f(1.0f, h); glVertex3f( 1.0f, -1.0f, -1.0f);
+    glTexCoord2f(tex_width, h + 0.5f); glVertex3f( 1.0f,  1.0f, -1.0f);
+    glTexCoord2f(tex_width, h); glVertex3f( 1.0f, -1.0f, -1.0f);
     // Top Face
     glTexCoord2f(0.0f, h); glVertex3f(-1.0f,  1.0f, -1.0f);
     glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f,  1.0f,  1.0f);
-    glTexCoord2f(1.0f, h + 0.5f); glVertex3f( 1.0f,  1.0f,  1.0f);
-    glTexCoord2f(1.0f, h); glVertex3f( 1.0f,  1.0f, -1.0f);
+    glTexCoord2f(tex_width, h + 0.5f); glVertex3f( 1.0f,  1.0f,  1.0f);
+    glTexCoord2f(tex_width, h); glVertex3f( 1.0f,  1.0f, -1.0f);
     // Bottom Face
     glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f, -1.0f, -1.0f);
-    glTexCoord2f(1.0f, h + 0.5f); glVertex3f( 1.0f, -1.0f, -1.0f);
-    glTexCoord2f(1.0f, h); glVertex3f( 1.0f, -1.0f,  1.0f);
+    glTexCoord2f(tex_width, h + 0.5f); glVertex3f( 1.0f, -1.0f, -1.0f);
+    glTexCoord2f(tex_width, h); glVertex3f( 1.0f, -1.0f,  1.0f);
     glTexCoord2f(0.0f, h); glVertex3f(-1.0f, -1.0f,  1.0f);
     // Right face
-    glTexCoord2f(1.0f, h + 0.5f); glVertex3f( 1.0f, -1.0f, -1.0f);
-    glTexCoord2f(1.0f, h); glVertex3f( 1.0f,  1.0f, -1.0f);
+    glTexCoord2f(tex_width, h + 0.5f); glVertex3f( 1.0f, -1.0f, -1.0f);
+    glTexCoord2f(tex_width, h); glVertex3f( 1.0f,  1.0f, -1.0f);
     glTexCoord2f(0.0f, h); glVertex3f( 1.0f,  1.0f,  1.0f);
     glTexCoord2f(0.0f, h + 0.5f); glVertex3f( 1.0f, -1.0f,  1.0f);
     // Left Face
     glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f, -1.0f, -1.0f);
-    glTexCoord2f(1.0f, h + 0.5f); glVertex3f(-1.0f, -1.0f,  1.0f);
-    glTexCoord2f(1.0f, h); glVertex3f(-1.0f,  1.0f,  1.0f);
+    glTexCoord2f(tex_width, h + 0.5f); glVertex3f(-1.0f, -1.0f,  1.0f);
+    glTexCoord2f(tex_width, h); glVertex3f(-1.0f,  1.0f,  1.0f);
     glTexCoord2f(0.0f, h); glVertex3f(-1.0f,  1.0f, -1.0f);
     glEnd();
 
@@ -325,7 +327,7 @@ void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
     ImageCLContext *ctx = image_context();
     QCLKernel waterfall = ctx->waterfall;
 
-    data_width = (width < 1024) ? width : 1024;
+    data_width = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
 
     spectrum_buffer.write(0, buffer, data_width);
     waterfall.setGlobalWorkSize(data_width);
