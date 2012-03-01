@@ -136,6 +136,7 @@ void Waterfallcl::initialize(int wid, int ht){
     cy = data_height - 1;
     rquad = 0.0f;
     zoom = 2.0f;
+    pan = 0.0f;
 
     QImage t;
     QImage b;
@@ -237,15 +238,20 @@ void Waterfallcl::setGeometry(QRect rect){
 }
 
 void Waterfallcl::mouseMoveEvent(QMouseEvent* event){
-    int move=event->pos().x()-lastX;
-    lastX=event->pos().x();
-    zoom += (float)move / 300.0f;
+    int movey=event->pos().y()-lastY;
+    lastY=event->pos().y();
+    zoom += (float)movey / 300.0f;
     if (zoom < 0.5f) zoom = 0.5f;
     else if (zoom > 10.0f) zoom = 10.0f;
+
+    int movex=event->pos().x()-lastX;
+    lastX=event->pos().x();
+    pan += (float)movex /zoom/45.0f;
 }
 
 void Waterfallcl::mousePressEvent(QMouseEvent *event){
     lastX = event->pos().x();
+    lastY = event->pos().y();
 }
 
 void Waterfallcl::updateWaterfallgl(){
@@ -257,7 +263,7 @@ void Waterfallcl::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glLoadIdentity();
-    glTranslatef(0.0f,0.0f,-6.0f);
+    glTranslatef(pan,0.0f,-6.0f);
     glScalef(zoom, 2.0f, 2.0f);
     glRotatef(rquad,1.0f,0.0f,0.0f);
 
@@ -300,16 +306,16 @@ void Waterfallcl::paintGL()
     glTexCoord2f(0.0f, h); glVertex3f( 1.0f,  1.0f,  1.0f);
     glTexCoord2f(0.0f, h + 0.5f); glVertex3f( 1.0f, -1.0f,  1.0f);
     // Left Face
-    glTexCoord2f(1.0f, h); glVertex3f(-1.0f, -1.0f, -1.0f);
-    glTexCoord2f(0.0f, h); glVertex3f(-1.0f, -1.0f,  1.0f);
-    glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f,  1.0f,  1.0f);
-    glTexCoord2f(1.0f, h + 0.5f); glVertex3f(-1.0f,  1.0f, -1.0f);
+    glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f, -1.0f, -1.0f);
+    glTexCoord2f(1.0f, h + 0.5f); glVertex3f(-1.0f, -1.0f,  1.0f);
+    glTexCoord2f(1.0f, h); glVertex3f(-1.0f,  1.0f,  1.0f);
+    glTexCoord2f(0.0f, h); glVertex3f(-1.0f,  1.0f, -1.0f);
     glEnd();
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_TEXTURE_2D);
 
-    rquad -= 0.2f;
+    //rquad -= 0.2f;
 
 }
 

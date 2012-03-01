@@ -73,7 +73,7 @@ private:
     int LO_offset;
     GLfloat rquad;
     int lastX, lastY;
-    GLfloat zoom;
+    GLfloat zoom, pan;
 };
 
 
