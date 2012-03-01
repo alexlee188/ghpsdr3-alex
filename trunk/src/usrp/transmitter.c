@@ -113,7 +113,6 @@ void* tx_audio_thread(void* arg) {
     int old_state, old_type;
     int bytes_read;
     BUFFER buffer;
-    int offset;
 
     fprintf(stderr,"Starting tx_audio_thread for client %d\n",rx->id);
 
@@ -121,8 +120,9 @@ void* tx_audio_thread(void* arg) {
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);
     
     while(1) {
+        int offset = 0;
 #ifdef SMALL_PACKETS
-        while(1) {
+        while(1) {            
             bytes_read=recvfrom(tx->tx_audio_socket,(char*)&buffer,sizeof(buffer),0,&audio,(socklen_t*)&audio_length);
             if(bytes_read<0) {
                 perror("recvfrom socket failed for TX audio");
@@ -139,17 +139,18 @@ void* tx_audio_thread(void* arg) {
                 if((tx_sequence==buffer.sequence) && (offset==buffer.offset)) {
                     memcpy((char *)&tx->output_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
                     offset+=buffer.length;
-                    if (offset==(TRANSMIT_BUFFER_SIZE*2*4)) {
+                    if (offset==(TRANSMIT_BUFFER_SIZE*2*sizeof(float))) {
                         offset=0;
                         break;
                     }
                 } else {
-                    fprintf(stderr,"missing tx audio frames\n");
+                    fprintf(stderr,"Missing tx audio frames\n");
                 }
             }
         }
 #else
-        bytes_read=recvfrom(tx->tx_audio_socket,(char*)tx->output_buffer,TRANSMIT_BUFFER_SIZE*2*4,0,(struct sockaddr*)&audio,(socklen_t*)&audio_length);
+        bytes_read=recvfrom(tx->tx_audio_socket,(char*)tx->output_buffer,
+            TRANSMIT_BUFFER_SIZE*2*sizeof(float),0,(struct sockaddr*)&audio,(socklen_t*)&audio_length);
         if(bytes_read<0) {
             perror("recvfrom socket failed for tx audio");
             exit(1);
@@ -157,10 +158,8 @@ void* tx_audio_thread(void* arg) {
 #endif
         //REMEMBER: the tx->output_buffer carries 2 channels: 
         //tx->output_buffer[0..TRANSMIT_BUFFER_SIZE-1] and
-        //tx->output_buffer[TRANSMIT_BUFFER_SIZE..2*TRANSMIT_BUFFER_SIZE-1]
-        /* Test Phase 1
-        usrp_process_audio_buffer(tx->output_buffer, client->mox);					
-         */
+        //tx->output_buffer[TRANSMIT_BUFFER_SIZE..2*TRANSMIT_BUFFER_SIZE-1]        
+        usrp_process_audio_buffer(tx->output_buffer, client->mox);					                
     }
 }
 

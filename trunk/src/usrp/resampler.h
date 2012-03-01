@@ -31,14 +31,21 @@ void resampler_init(void);
  * Returns the resampler unique id in a int.
  */
 int resampler_setup_new(int max_frames, int decim, int interp);
-//int resampler_setup_new(float *buf_in, float *buf_out, int decim, int interp);
 
 /*!
  * Loads the input data (2 channels), up to the defined size
  * in the identified resampler.
  * Size limit check is CALLER responsibility
  */
-void resampler_load_input(int r_id, int idx, float ch1, float ch2);
+void resampler_load_channels(int r_id, float *ch1, float *ch2);
+
+
+/*!
+ * Loads the individual input data (2 channels), up to the defined size
+ * in the identified resampler.
+ * Size limit check is CALLER responsibility
+ */
+void resampler_load_data(int r_id, int idx, float ch1, float ch2);
 
 /*!
  * Executes the resampling on a given set of data
@@ -51,7 +58,7 @@ int do_resample(int r_id, int frames, int *out_frames_gen, const char *message);
  * one element by one.
  * Size limit check is CALLER responsibility
  */
-void resampler_fetch_output(int r_id, int idx, float * ch1, float * ch2);
+void resampler_fetch_data(int r_id, int idx, float * ch1, float * ch2);
 
 /*    
 void resampler_copy_data_in(int r_id, int frames, float *copy);

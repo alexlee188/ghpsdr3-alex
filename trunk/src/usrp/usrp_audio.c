@@ -15,6 +15,7 @@
 #include "usrp.h"
 #include "usrp_audio.h"
 #include "transmitter.h"
+#include "util.h"
 
 //#define DECIM_FACT         8 
 
@@ -30,26 +31,34 @@ static int SAMPLE_RATE;
 static int DECIM_FACT;
 static int AUDIO_DESTINATION = 0;
 static int SAMPLES_PER_BUFFER = TRANSMIT_BUFFER_SIZE;
+static int (*audio_processor)(float*, int) = NULL;
 
 static PaStream* stream;
+
+int usrp_local_audio_write_decim (float* left_samples, int mox);
+int usrp_drop_audio_buffer(float *outbuf, int mox);
 
 void usrp_set_server_audio (char* setting) {
     if (strcasecmp(setting, "card") == 0) {
         AUDIO_DESTINATION = AUDIO_TO_LOCAL_CARD;
+        audio_processor = usrp_local_audio_write_decim;
         fprintf(stderr,"Sending client generated audio to LOCAL CARD\n");
     } else
     if (strcasecmp(setting, "usrp") == 0) {
         AUDIO_DESTINATION = AUDIO_TO_USRP_MODULATION;
+        audio_processor = usrp_process_tx_modulation;
         fprintf(stderr,"Sending client generated audio to USRP MODULATION\n");
     }
     else
     if (strcasecmp(setting, "none") == 0) {
         AUDIO_DESTINATION = AUDIO_TO_NOTHING;
+        audio_processor = usrp_drop_audio_buffer;
         fprintf(stderr,"DISCARDING client generated audio\n");        
     }
     else {
-        fprintf(stderr,"Illegal setting %s for audio-to. Using default: none", setting);
+        fprintf(stderr,"Illegal setting %s for audio-to. Using default: none", setting);        
         AUDIO_DESTINATION = AUDIO_TO_NOTHING;
+        audio_processor = usrp_drop_audio_buffer;        
     }
 }
 
@@ -158,7 +167,7 @@ int usrp_local_audio_open(int core_bandwidth) {
  * Setup the audio processing 
  */
 int usrp_audio_open (int core_bandwidth) {
-    int rc;         
+    int rc=0;         
     switch(AUDIO_DESTINATION) {            
         
             case AUDIO_TO_LOCAL_CARD: 
@@ -204,9 +213,11 @@ int usrp_local_audio_write(float* left_samples,float* right_samples) {
     return rc;
 }
 
-int usrp_local_audio_write_decim (float* left_samples, float* right_samples)   {
-    int rc;
-    int i;
+//implements pointer audio_processor
+int usrp_local_audio_write_decim (float* samples, int mox) {
+    int rc, i;
+    float *left_samples = samples;    
+    float *right_samples = &left_samples[SAMPLES_PER_BUFFER];
     float audio_buffer[SAMPLES_PER_BUFFER*2/DECIM_FACT];
 
     // interleave samples
@@ -226,28 +237,26 @@ int usrp_local_audio_write_decim (float* left_samples, float* right_samples)   {
     return rc;
 }
 
-//Proxy functions for audio consumers
+//implements pointer audio_processor
+int usrp_drop_audio_buffer(float *outbuf, int mox) {
+    
+    //Do nothing stub to drop - or inspect, buffers
+    dump_float_buffer(outbuf);
+    return 0;
+}
+
+//Proxy function for audio consumers
         //REMEMBER: the outbuf carries 2 channels: 
         //outbuf[0..TRANSMIT_BUFFER_SIZE-1] and
         //outbuf[TRANSMIT_BUFFER_SIZE..2*TRANSMIT_BUFFER_SIZE-1]
 void usrp_process_audio_buffer (float *outbuf, int mox) {
     
-    int rc;    
-    switch(AUDIO_DESTINATION) {
-            
-            case AUDIO_TO_LOCAL_CARD: 
-                usrp_local_audio_write_decim(outbuf, &outbuf[SAMPLES_PER_BUFFER]);
-                break;
-                                
-            case AUDIO_TO_USRP_MODULATION:
-                rc=usrp_process_tx_modulation(outbuf, mox);
-                if (rc == BUFFER_DISCARDED) {
-                    fprintf(stderr,"USRP TX AUDIO queue overflow!\n");
-                }
-                break;
-                
-            case AUDIO_TO_NOTHING:                
-                break;                           
-        }    
+    //audio_processor interface function pointer
+    int rc=audio_processor(outbuf, mox);    
+    if (rc != 0) {
+        fprintf(stderr,"USRP Audio buffer processing returns non-zero: %d (AUDIO DESTINATION: %d)\n",
+            rc, AUDIO_DESTINATION);
+        exit(1);
+    }
 }
 
