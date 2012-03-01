@@ -47,6 +47,7 @@
 static int counter = 0;
 
 
+
 struct timespec diff(struct timespec start, struct timespec end)
 {
         struct timespec temp;
@@ -59,7 +60,6 @@ struct timespec diff(struct timespec start, struct timespec end)
         }
         return temp;
 }
-
 
 
 #define SCALE_FACTOR_24B 8388607.0         // 2^24 / 2 - 1 = 8388607.0
@@ -136,8 +136,8 @@ int user_data_callback (SAMPLE_T *pi, SAMPLE_T *pq, int nSamples, void *extra)
         #endif
 
         // copy into the output buffer, converting to float
-        pRec->input_buffer[pRec->samples]             = *pq ;
-        pRec->input_buffer[pRec->samples+BUFFER_SIZE] = *pi ;
+        pRec->input_buffer[pRec->samples]             = *pq - pRec->m_NCOSpurOffsetQ;
+        pRec->input_buffer[pRec->samples+BUFFER_SIZE] = *pi - pRec->m_NCOSpurOffsetI;
 
         pq++, pi++;      // next input sample
         nSamples--;      // one less
@@ -146,6 +146,9 @@ int user_data_callback (SAMPLE_T *pi, SAMPLE_T *pq, int nSamples, void *extra)
         #if 1
         // when we have enough samples, send them to the client
         if(pRec->samples==BUFFER_SIZE) {
+
+            if (pRec->m_NcoSpurCalActive != false) NcoSpurCalibrate (pRec);
+
             // send I/Q data to clients
             //fprintf (stderr, "%s: sending data.\n", __FUNCTION__);
             send_IQ_buffer(pRec);
