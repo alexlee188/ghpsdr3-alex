@@ -170,15 +170,15 @@ void audio_stream_init(int receiver) {
 void audio_stream_queue_add(int length) {
     struct audio_entry *item;
 
-        if(send_audio) {
- 	    item = malloc(sizeof(*item));
-	    item->buf = audio_buffer;
-	    item->length = length;
-	    sem_wait(&bufferevent_semaphore);
-	    TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
-	    sem_post(&bufferevent_semaphore);
-            allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
-        }
+    if(send_audio) {
+        item = malloc(sizeof(*item));
+        item->buf = audio_buffer;
+        item->length = length;
+        sem_wait(&bufferevent_semaphore);
+        TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
+        sem_post(&bufferevent_semaphore);
+        allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
+    }
 }
 
 struct audio_entry *audio_stream_queue_remove(){
