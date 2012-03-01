@@ -65,9 +65,8 @@
 int audio_buffer_size = AUDIO_BUFFER_SIZE;
 int audio_sample_rate=8000;
 int audio_channels=1;
-unsigned char* audio_buffer=NULL;
-int send_audio=0;
 
+static unsigned char* audio_buffer=NULL;
 
 void * codec2 = NULL;
 unsigned char bits[BITS_SIZE];
@@ -168,7 +167,6 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 		codec2_encode(codec2, bits, codec2_buffer);
 		memcpy(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE+BITS_SIZE*codec2_count], bits, BITS_SIZE);
 		codec2_count++;
-		audio_stream_buffer_insert = 0;
 		if (codec2_count >= NO_CODEC2_FRAMES){
 		    audio_buffer[0]=AUDIO_BUFFER;
 
@@ -178,8 +176,10 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
                 audio_buffer[2]=HEADER_SUBVERSION;
                 audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
                 audio_buffer[4]=audio_buffer_length&0xFF;
-		audio_stream_queue_add(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+		audio_stream_queue_add(audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
 		codec2_count = 0;
+		audio_stream_buffer_insert = 0;
+                allocate_audio_buffer();
 		}
 
 	    }
@@ -194,8 +194,9 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
                 audio_buffer[2]=HEADER_SUBVERSION;
                 audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
                 audio_buffer[4]=audio_buffer_length&0xFF;
-		audio_stream_queue_add(audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+		audio_stream_queue_add(audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
 	    	audio_stream_buffer_insert=0;
+                allocate_audio_buffer();
         }
     }
     sample_count++;

@@ -138,6 +138,8 @@ static float meter;
 static float subrx_meter;
 int encoding = 0;
 
+static int send_audio = 0;
+
 static sem_t bufferevent_semaphore, mic_semaphore;
 
 void* client_thread(void* arg);
@@ -167,18 +169,17 @@ void audio_stream_init(int receiver) {
     TAILQ_INIT(&Mic_audio_stream);
 }
 
-void audio_stream_queue_add(int length) {
+void audio_stream_queue_add(unsigned char *buffer, int length) {
     struct audio_entry *item;
 
+    sem_wait(&bufferevent_semaphore);
     if(send_audio) {
         item = malloc(sizeof(*item));
-        item->buf = audio_buffer;
+        item->buf = buffer;
         item->length = length;
-        sem_wait(&bufferevent_semaphore);
         TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
-        sem_post(&bufferevent_semaphore);
-        allocate_audio_buffer();		// audio_buffer passed on to IQ_audio_stream.  Need new ones.
     }
+    sem_post(&bufferevent_semaphore);
 }
 
 struct audio_entry *audio_stream_queue_remove(){
@@ -535,7 +536,11 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
         updateStatus(status_buf);
     }
 
-    if (client_count <= 0) send_audio = 0;
+    if (client_count <= 0) {
+        sem_wait(&bufferevent_semaphore);
+        send_audio = 0;
+        sem_post(&bufferevent_semaphore);
+    }
     bufferevent_free(bev);
 }
 
@@ -958,7 +963,9 @@ void readcb(struct bufferevent *bev, void *ctx){
             fprintf(stderr,"and with encoding method %d\n", encoding);
             item->rtp=connection_tcp;
             audio_stream_reset();
+            sem_wait(&bufferevent_semaphore);
             send_audio=1;
+            sem_post(&bufferevent_semaphore);
         } else if(strncmp(token,"startrtpstream",14)==0) {
             // startrtpstream port encoding samplerate channels
             int error=1;
@@ -991,7 +998,9 @@ void readcb(struct bufferevent *bev, void *ctx){
                             answer_question("q-rtpport",role,bev);
                             audio_stream_reset();
                             error=0;
+                            sem_wait(&bufferevent_semaphore);
                             send_audio=1;
+                            sem_post(&bufferevent_semaphore);
                             rtp_tx_init();
                         }
                     }
@@ -1001,7 +1010,9 @@ void readcb(struct bufferevent *bev, void *ctx){
                 fprintf(stderr,"Invalid command: '%s'\n",message);
             }
         } else if(strncmp(token,"stopaudiostream",15)==0) {
+            sem_wait(&bufferevent_semaphore);
             send_audio=0;
+            sem_post(&bufferevent_semaphore);
         } else if(strncmp(token,"setencoding",11)==0) {
             token=strtok_r(NULL," ",&saveptr);
             if(token!=NULL) {
