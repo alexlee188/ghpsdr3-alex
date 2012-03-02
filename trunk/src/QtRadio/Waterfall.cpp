@@ -325,6 +325,8 @@ void Waterfall::updateWaterfall_3(void){
     if(waterfallAutomatic) {
         waterfallLow=(average/size)-10;
         waterfallHigh=waterfallLow+60;
+        waterfallcl->setLow(waterfallLow);
+        waterfallcl->setHigh(waterfallHigh);
     }
 
     QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
