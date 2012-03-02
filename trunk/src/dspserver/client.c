@@ -164,6 +164,7 @@ float getFilterSizeCalibrationOffset() {
 }
 
 void audio_stream_init(int receiver) {
+    sem_init(&audiostream_sem, 0, 1);
     init_alaw_tables();
     TAILQ_INIT(&IQ_audio_stream);
     TAILQ_INIT(&Mic_audio_stream);
@@ -937,12 +938,15 @@ void readcb(struct bufferevent *bev, void *ctx){
                 }
             }
 
-            audio_buffer_size = bufsize;
-            audio_sample_rate = rate;
-            audio_channels = channels;
+            sem_wait(&audiostream_sem);
+            audiostream_conf.bufsize = bufsize;
+            audiostream_conf.samplerate = rate;
+            audiostream_conf.channels = channels;
+            audiostream_conf.age++;
+            sem_post(&audiostream_sem);
 
             sdr_log(SDR_LOG_INFO, "starting audio stream at rate %d channels %d bufsize %d encoding %d\n",
-                    audio_sample_rate, audio_channels, audio_buffer_size, encoding);
+                    rate, channels, bufsize, encoding);
             item->rtp=connection_tcp;
             audio_stream_reset();
             sem_wait(&bufferevent_semaphore);
@@ -951,16 +955,25 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(cmd,"startrtpstream",14)==0) {
             int rtpport;
             char ipstr[16];
+            int encoding, samplerate, channels;
 
             // startrtpstream port encoding samplerate channels
             if (tokenize_cmd(&saveptr, tokens, 4) != 4)
                 goto badcommand;
-            /* FIXME: racy */
+
+            /* FIXME: validate! */
             rtpport = atoi(tokens[0]);
             encoding = atoi(tokens[1]);
-            audio_sample_rate = atoi(tokens[2]);
-            audio_channels = atoi(tokens[3]);
-            
+            samplerate = atoi(tokens[2]);
+            channels = atoi(tokens[3]);
+
+            sem_wait(&audiostream_sem);
+            audiostream_conf.encoding = encoding;
+            audiostream_conf.samplerate = samplerate;
+            audiostream_conf.channels = channels;
+            audiostream_conf.age++;
+            sem_post(&audiostream_sem);
+
             if (slave) {
                 sdr_log(SDR_LOG_INFO, "startrtpstream: listening on RTP socket\n");
                 inet_ntop(AF_INET, (void *)&current_item->client.sin_addr, ipstr, sizeof(ipstr));
@@ -969,7 +982,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             } else {
                 inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
                 sdr_log(SDR_LOG_INFO, "starting rtp: to %s:%d encoding %d samplerate %d channels:%d\n",
-                        ipstr,rtpport,encoding,audio_sample_rate,audio_channels);
+                        ipstr,rtpport,encoding,samplerate,channels);
                 item->session=rtp_listen(ipstr,rtpport);
                 item->rtp=connection_rtp;
             }
@@ -989,8 +1002,13 @@ void readcb(struct bufferevent *bev, void *ctx){
                 goto badcommand;
             enc=atoi(tokens[0]);
             /* This used to force to 0 on error, now it leaves unchanged */
-            if (enc >= 0 && enc <= 2) encoding = enc;
-            sdr_log(SDR_LOG_INFO,"encoding changed to %d\n", encoding);
+            if (enc >= 0 && enc <= 2) {
+                sem_wait(&audiostream_sem);
+                audiostream_conf.encoding = enc;
+                audiostream_conf.age++;
+                sem_post(&audiostream_sem);
+            }
+            sdr_log(SDR_LOG_INFO,"encoding changed to %d\n", enc);
         } else if(strncmp(cmd,"setsubrx",17)==0) {
             int state;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
