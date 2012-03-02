@@ -120,8 +120,8 @@ void audio_stream_reset() {
 
 
 void audio_stream_put_samples(short left_sample,short right_sample) {
-	int audio_buffer_length;
-	struct audio_entry * item;
+    int audio_buffer_length;
+    struct audio_entry * item;
 
     sdr_thread_assert_id(&audiostream_tid);
 
@@ -136,27 +136,27 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 	    else if (encoding == ENCODING_PCM) {
 		audio_buffer[audio_stream_buffer_insert*2+AUDIO_BUFFER_HEADER_SIZE] = (left_sample/2+right_sample/2) & 0x00ff;
 		audio_buffer[audio_stream_buffer_insert*2+1+AUDIO_BUFFER_HEADER_SIZE] = (left_sample/2+right_sample/2) >> 8;
-		}
+            }
 	    else if (encoding == ENCODING_CODEC2) {
 		codec2_buffer[audio_stream_buffer_insert] = left_sample/2+right_sample/2;
-		}
+            }
             else {
 		audio_buffer[audio_stream_buffer_insert+AUDIO_BUFFER_HEADER_SIZE]=alaw((left_sample+right_sample)/2); //encoding == others - defaults to alaw
-		}
+            }
         } else {
 	    if (encoding == ENCODING_ALAW){
-            audio_buffer[(audio_stream_buffer_insert*2)+AUDIO_BUFFER_HEADER_SIZE]=alaw(left_sample);
-            audio_buffer[(audio_stream_buffer_insert*2)+1+AUDIO_BUFFER_HEADER_SIZE]=alaw(right_sample);
+                audio_buffer[(audio_stream_buffer_insert*2)+AUDIO_BUFFER_HEADER_SIZE]=alaw(left_sample);
+                audio_buffer[(audio_stream_buffer_insert*2)+1+AUDIO_BUFFER_HEADER_SIZE]=alaw(right_sample);
 	    }
 	    else if (encoding == ENCODING_PCM) {
 		audio_buffer[audio_stream_buffer_insert*4+AUDIO_BUFFER_HEADER_SIZE] = left_sample & 0x00ff;
 		audio_buffer[audio_stream_buffer_insert*4+1+AUDIO_BUFFER_HEADER_SIZE] = left_sample >> 8;
 		audio_buffer[audio_stream_buffer_insert*4+2+AUDIO_BUFFER_HEADER_SIZE] = right_sample & 0x00ff;
 		audio_buffer[audio_stream_buffer_insert*4+3+AUDIO_BUFFER_HEADER_SIZE] = right_sample >> 8;
-		}
+            }
 	    else { // encoding == others
-            audio_buffer[(audio_stream_buffer_insert*2)+AUDIO_BUFFER_HEADER_SIZE]=alaw(left_sample);
-            audio_buffer[(audio_stream_buffer_insert*2)+1+AUDIO_BUFFER_HEADER_SIZE]=alaw(right_sample);
+                audio_buffer[(audio_stream_buffer_insert*2)+AUDIO_BUFFER_HEADER_SIZE]=alaw(left_sample);
+                audio_buffer[(audio_stream_buffer_insert*2)+1+AUDIO_BUFFER_HEADER_SIZE]=alaw(right_sample);
 	    }
         }
 
@@ -164,11 +164,11 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 
 
 	if ((encoding == ENCODING_CODEC2) && (audio_stream_buffer_insert == CODEC2_SAMPLES_PER_FRAME))  {
-		codec2_encode(codec2, bits, codec2_buffer);
-		memcpy(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE+BITS_SIZE*codec2_count], bits, BITS_SIZE);
-		codec2_count++;
-		if (codec2_count >= NO_CODEC2_FRAMES){
-		    audio_buffer[0]=AUDIO_BUFFER;
+            codec2_encode(codec2, bits, codec2_buffer);
+            memcpy(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE+BITS_SIZE*codec2_count], bits, BITS_SIZE);
+            codec2_count++;
+            if (codec2_count >= NO_CODEC2_FRAMES){
+                audio_buffer[0]=AUDIO_BUFFER;
 
 // g0orx binary header
 		audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
@@ -180,23 +180,23 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 		codec2_count = 0;
 		audio_stream_buffer_insert = 0;
                 allocate_audio_buffer();
-		}
+            }
 
-	    }
+        }
 
         if((encoding != ENCODING_CODEC2) && (audio_stream_buffer_insert==audio_buffer_size)) {
-		audio_buffer[0]=AUDIO_BUFFER;
+            audio_buffer[0]=AUDIO_BUFFER;
 // g0orx binary header
 
-		if (encoding == ENCODING_PCM) audio_buffer_length = audio_buffer_size*audio_channels*2;
-		else audio_buffer_length = audio_buffer_size*audio_channels;
-                audio_buffer[1]=HEADER_VERSION;
-                audio_buffer[2]=HEADER_SUBVERSION;
-                audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
-                audio_buffer[4]=audio_buffer_length&0xFF;
-		audio_stream_queue_add(audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
-	    	audio_stream_buffer_insert=0;
-                allocate_audio_buffer();
+            if (encoding == ENCODING_PCM) audio_buffer_length = audio_buffer_size*audio_channels*2;
+            else audio_buffer_length = audio_buffer_size*audio_channels;
+            audio_buffer[1]=HEADER_VERSION;
+            audio_buffer[2]=HEADER_SUBVERSION;
+            audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
+            audio_buffer[4]=audio_buffer_length&0xFF;
+            audio_stream_queue_add(audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+            audio_stream_buffer_insert=0;
+            allocate_audio_buffer();
         }
     }
     sample_count++;
