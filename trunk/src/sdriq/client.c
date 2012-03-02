@@ -136,8 +136,8 @@ int user_data_callback (SAMPLE_T *pi, SAMPLE_T *pq, int nSamples, void *extra)
         #endif
 
         // copy into the output buffer, converting to float
-        pRec->input_buffer[pRec->samples]             = *pq - pRec->m_NCOSpurOffsetQ;
-        pRec->input_buffer[pRec->samples+BUFFER_SIZE] = *pi - pRec->m_NCOSpurOffsetI;
+        pRec->input_buffer[pRec->samples]             = *pq ;
+        pRec->input_buffer[pRec->samples+BUFFER_SIZE] = *pi ;
 
         pq++, pi++;      // next input sample
         nSamples--;      // one less
@@ -147,8 +147,16 @@ int user_data_callback (SAMPLE_T *pi, SAMPLE_T *pq, int nSamples, void *extra)
         // when we have enough samples, send them to the client
         if(pRec->samples==BUFFER_SIZE) {
 
-            if (pRec->m_NcoSpurCalActive != false) NcoSpurCalibrate (pRec);
-
+            if (pRec->m_NcoSpurCalActive == false) {
+               int x;
+               for (x=0; x < pRec->samples; ++x) {
+                  pRec->input_buffer[x]             -= pRec->m_NCOSpurOffsetQ;
+                  pRec->input_buffer[x+BUFFER_SIZE] -= pRec->m_NCOSpurOffsetI;
+               }
+            } else {
+               NcoSpurCalibrate (pRec);
+            }
+           
             // send I/Q data to clients
             //fprintf (stderr, "%s: sending data.\n", __FUNCTION__);
             send_IQ_buffer(pRec);

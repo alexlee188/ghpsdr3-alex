@@ -269,9 +269,10 @@ void send_IQ_buffer (RECEIVER *pRec) {
 
 
 
-////////////////////////////////////////////////////////////////////////
-// Called to read/set/start calibration of the NCO Spur Offset value.
-////////////////////////////////////////////////////////////////////////
+/*
+ * Called to read/set/start calibration of the NCO Spur Offset value.
+ * Excerpted from CuteSDR Copyright (c) 2010 Moe Wheatley
+ */
 void ManageNCOSpurOffsets( RECEIVER *pRec, eNCOSPURCMD cmd, double* pNCONullValueI,  double* pNCONullValueQ)
 {
 	pRec->m_NcoSpurCalActive = false;
@@ -307,25 +308,26 @@ void ManageNCOSpurOffsets( RECEIVER *pRec, eNCOSPURCMD cmd, double* pNCONullValu
 	}
 }
 
-////////////////////////////////////////////////////////////////////////
-// Called to calculate the NCO Spur Offset value from the incoming m_DataBuf.
-////////////////////////////////////////////////////////////////////////
+/*
+ * Called to calculate the NCO Spur Offset value from the incoming m_DataBuf.
+ * Excerpted from CuteSDR (C) Copyright (c) 2010 Moe Wheatley
+ */
 void NcoSpurCalibrate (RECEIVER *pRec /* double* pData, qint32 length */ )
 {
-	if( pRec->m_NcoSpurCalCount < SPUR_CAL_MAXSAMPLES) {
-        int j;
+        if( pRec->m_NcoSpurCalCount < SPUR_CAL_MAXSAMPLES) {
+            int j;
 
-		for( j=0 ; j < pRec->samples; j++) {	//calculate average of I and Q data to get individual DC offsets
-            float q = pRec->input_buffer[j]             ;
-            float i = pRec->input_buffer[j+BUFFER_SIZE] ;
+            for( j=0 ; j < pRec->samples; j++) {	//calculate average of I and Q data to get individual DC offsets
+               float q = pRec->input_buffer[j]             ;
+               float i = pRec->input_buffer[j+BUFFER_SIZE] ;
 
-            pRec->m_NCOSpurOffsetQ = (1.0-1.0/100000.0)*pRec->m_NCOSpurOffsetQ + (1.0/100000.0)*q;
-            pRec->m_NCOSpurOffsetI = (1.0-1.0/100000.0)*pRec->m_NCOSpurOffsetI + (1.0/100000.0)*i;
-		}
-		pRec->m_NcoSpurCalCount += (pRec->samples/4);
+               pRec->m_NCOSpurOffsetQ = (1.0-1.0/100000.0)*pRec->m_NCOSpurOffsetQ + (1.0/100000.0)*q;
+               pRec->m_NCOSpurOffsetI = (1.0-1.0/100000.0)*pRec->m_NCOSpurOffsetI + (1.0/100000.0)*i;
+            }
+            pRec->m_NcoSpurCalCount += (pRec->samples/4);
 
 	} else {
-		pRec->m_NcoSpurCalActive = false;
-        fprintf (stderr, "NCO Cal Done");
+            pRec->m_NcoSpurCalActive = false;
+            fprintf (stderr, "NCO Cal Done");
 	}
 }
