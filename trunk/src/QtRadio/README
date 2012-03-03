@@ -47,3 +47,29 @@ QAudioFormat> becomes <QtMultimediaKit/QAudioFormat>. There are about
 Graeme Jury ZL2APV
 
 ################################################################################
+
+In order to compile the OpenCL enabled QtRadio, you have to specify the (non standard) location of includes and libs.
+After the Qt opencl build in /home/andrew/opencl, I also manually created the /home/andrew/opencl/qcl
+
+mkdir /home/andrew/opencl/qcl
+cp /home/andrew/opencl/src/openclgl/*.h /home/andrew/opencl/qcl
+cp /home/andrew/opencl/src/opencl/*.h   /home/andrew/opencl/qcl
+
+CUDA is in /usr/local/cuda/ 
+
+./configure CFLAGS='-fopenmp -O3 -msse3' \
+            CXXFLAGS='-fopenmp -O3 -msse3 -I/home/andrew/opencl/ -I /usr/local/cuda/include/' \
+            LDFLAGS='-L/home/andrew/opencl/lib/' 
+make -j4
+export LD_LIBRARY_PATH=/home/andrew/opencl/lib/
+./QtRadio
+
+Warning: depending on CPU power of your system, starting QtRadio could be lengthy,
+After the message
+
+Debug: G711A init encode table 
+
+please wait at least 30 seconds.
+
+Andrea Montefusco IW0HDV
+################################################################################
