@@ -175,10 +175,14 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			paint.setColor(Color.DKGRAY);
 			canvas.drawRect(0, getHeight()-50, 50, getHeight(), paint);
             canvas.drawRect(getWidth()-50,getHeight()-50,getWidth(),getHeight(),paint);
+            canvas.drawRect(125, getHeight()-50, 200, getHeight(), paint); //kb3omm add 1000's button
+            canvas.drawRect(getWidth()-200,getHeight()-50,getWidth()-125,getHeight(),paint); //kb3omm add 1000's button
             paint.setColor(Color.WHITE);
             paint.setTextSize(40.0F);
             canvas.drawText("<", 12, getHeight()-12, paint);
             canvas.drawText(">", getWidth()-36, getHeight()-12, paint);
+            canvas.drawText("<<", 142, getHeight()-12, paint); //kb3omm add 1000's button
+            canvas.drawText(">>", getWidth()-182, getHeight()-12, paint); //kb3omm add 1000's button
 			
 		} else {
 			paint.setColor(0xffffffff);
@@ -290,16 +294,30 @@ Log.i("SpectrumView","width="+width+" height="+height);
 					scroll=false;
 					jog=false;
 					if(startX<=50 && startY>=(getHeight()-50)) {
-						// frequency down
+						// frequency down 100
 						jog=true;
 						jogAmount=-100;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
 					} else if(startX>=(getWidth()-50) && startY>=(getHeight()-50)) {
-						// frequency up
+						// frequency up 100 Hz
 						jog=true;
 						jogAmount=100;
+						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
+						timer=new Timer();
+						timer.schedule(new JogTask(), 1000);
+					} else if((startX<=200) && (startX>=125) && (startY>=(getHeight()-50))) {
+						// frequency down 1000 Hz kb3omm added 1k decrement
+						jog=true;
+						jogAmount=-1000;
+						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
+						timer=new Timer();
+						timer.schedule(new JogTask(), 1000);
+					} else if((startX<=(getWidth()-125) && (startX>=(getWidth()-200)) && startY>=(getHeight()-50))) {
+						// frequency up 1000 Hz kb3omm added 1k increment
+						jog=true;
+						jogAmount=1000;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
@@ -313,8 +331,8 @@ Log.i("SpectrumView","width="+width+" height="+height);
 					// connection.setStatus("onTouch.ACTION_MOVE: "+(int)event.getX());
 					    int increment = (int) (startX - event.getX());
 					    if(!scroll) {
-						    connection.setFrequency((long) (connection.getFrequency() + (increment * (connection
-									.getSampleRate() / WIDTH))));
+						    connection.setFrequency((long) (((connection.getFrequency() + (increment * (connection
+									.getSampleRate() / WIDTH))))/100)*100); // kb3omm *100/100 min swipe increment 100hz
 					    startX = event.getX();
 	   				    moved=true;
 			            } 
