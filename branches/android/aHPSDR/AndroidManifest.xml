@@ -6,7 +6,7 @@
     <uses-sdk android:minSdkVersion="7" />
     <compatible-screens></compatible-screens>
 
-    <application android:icon="@drawable/icon" android:label="@string/app_name">
+    <application android:icon="@drawable/icon" android:label="@string/app_name" android:hardwareAccelerated="true">
         <activity android:name=".AHPSDRActivity"
                   android:label="@string/app_name">
             <intent-filter>
