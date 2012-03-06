@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
@@ -25,15 +26,17 @@ Log.i("SpectrumView","width="+width+" height="+height);
 		HEIGHT=height/2;
 		points = new float[WIDTH * 4];
 
-		waterfall = Bitmap.createBitmap(WIDTH, HEIGHT,
+		waterfall = Bitmap.createBitmap(WIDTH, HEIGHT*2,
 				Bitmap.Config.ARGB_8888);
-		pixels = new int[WIDTH * HEIGHT];
+		//pixels = new int[WIDTH * HEIGHT];
 
 		for (int x = 0; x < WIDTH; x++) {
-			for (int y = 0; y < HEIGHT; y++) {
+			for (int y = 0; y < (HEIGHT*2); y++) {
 				waterfall.setPixel(x, y, Color.BLACK);
 			}
 		}
+		
+		cy = HEIGHT - 1;
 		average=waterfallLow;
 		this.setOnTouchListener(this);
 	}
@@ -129,8 +132,11 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			canvas.drawLines(points, paint);
 
 			// draw the waterfall
-			canvas.drawBitmap(waterfall, 1, HEIGHT, paint);
+			{
+				Bitmap subBitmap = Bitmap.createBitmap(waterfall, 0, cy, WIDTH, HEIGHT);
+				canvas.drawBitmap(subBitmap, 1, HEIGHT, paint);
 
+			}
 			// draw the S-Meter
 			int dbm=connection.getMeter();
 			int smeter=dbm+127;
@@ -202,16 +208,18 @@ Log.i("SpectrumView","width="+width+" height="+height);
 		
 		// scroll the waterfall down
 		if(waterfall.isRecycled()) {
-			waterfall = Bitmap.createBitmap(WIDTH, HEIGHT,
+			waterfall = Bitmap.createBitmap(WIDTH, HEIGHT*2,
 					Bitmap.Config.ARGB_8888);
 			for (int x = 0; x < WIDTH; x++) {
-				for (int y = 0; y < HEIGHT; y++) {
+				for (int y = 0; y < (HEIGHT*2); y++) {
 					waterfall.setPixel(x, y, Color.BLACK);
 				}
 			}
+			cy = HEIGHT - 1;
 		}
-		waterfall.getPixels(pixels, 0, WIDTH, 0, 0, WIDTH, HEIGHT - 1);
-		waterfall.setPixels(pixels, 0, WIDTH, 0, 1, WIDTH, HEIGHT - 1);
+		//waterfall.getPixels(pixels, 0, WIDTH, 0, 0, WIDTH, HEIGHT - 1);
+		//waterfall.setPixels(pixels, 0, WIDTH, 0, 1, WIDTH, HEIGHT - 1);
+		if (--cy < 0) cy = HEIGHT - 1;  // "scroll" down one row with fast waterfall algorithm
 
 		int p = 0;
 		float sample;
@@ -235,8 +243,8 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			points[p++] = (float) i;
 			points[p++] = sample;
 
-			waterfall.setPixel(i, 0, calculatePixel(samples[i]));
-
+			waterfall.setPixel(i, cy, calculatePixel(samples[i]));
+			waterfall.setPixel(i, cy + HEIGHT, calculatePixel(samples[i]));
 			previous = sample;
 			average+=samples[i];
 		}
@@ -394,8 +402,8 @@ Log.i("SpectrumView","width="+width+" height="+height);
 	private float[] points;
 
 	Bitmap waterfall;
-	int[] pixels;
-	
+	//int[] pixels;
+	private int cy;
 	int offset;
 
 	private int spectrumHigh = 0;
