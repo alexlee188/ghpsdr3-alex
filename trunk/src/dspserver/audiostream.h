@@ -33,22 +33,50 @@
 
 #include <sys/queue.h>
 
-#define ENCODING_ALAW 0
-#define ENCODING_PCM 1
-#define ENCODING_CODEC2 2
-#define ENCODING_ALAW2 3
+/**
+ * @brief Possible values for audio stream encoding.
+ *
+ * The specific values of this enumeration are expressed here to
+ * emphasize that this isan externally visible enumeration, used in the
+ * client-server protocol.
+ */
+enum as_encoding {
+    ENCODING_ALAW               = 0,
+    ENCODING_PCM                = 1,
+    ENCODING_CODEC2             = 2,
+    ENCODING_ALAW2              = 3
+};
 
 #define AUDIO_BUFFER_SIZE 400
-
-int audio_buffer_size;
-int audio_sample_rate;
-int audio_channels;
 
 struct audio_entry {
 	unsigned char *buf;
 	int length;
 	TAILQ_ENTRY(audio_entry) entries;
 };
+
+/**
+ * @brief Audio stream configuration definition.
+ * 
+ * This structure represents the definition of an audio stream configuration.  One copy will be kept for communication between the client and iq_thread, and one copy will be kept in iq_thread for sample processing.
+ *
+ * @see audiostream_conf
+ */
+struct audiostream_config {
+    int bufsize;                /**< Size of the current buffer in samples    */
+    int samplerate;             /**< Sample rate of the current buffer in
+                                 *   samples per second                       */
+    int channels;               /**< Channels in the current buffer
+                                 *   1 = mono
+                                 *   2 = stereo                               */
+    enum as_encoding encoding;  /**< Wire encoding for the current buffer     */
+    int age;                    /**< Age of the current buffer; incremented on
+                                 *   each change to the configuration, reset
+                                 *   when a new buffer is allocated           */
+};
+
+extern struct audiostream_config audiostream_conf;
+extern sem_t audiostream_sem;
 
 
 void audio_stream_reset();

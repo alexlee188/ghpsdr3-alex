@@ -50,6 +50,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <pthread.h>
+#include <semaphore.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -65,6 +66,53 @@
 int audio_buffer_size = AUDIO_BUFFER_SIZE;
 int audio_sample_rate=8000;
 int audio_channels=1;
+
+/**
+ * @brief Client audio stream configuration.
+ *
+ * This structure is configured by the client to declare the audio
+ * stream characteristics it wants to receive.  The configuration is
+ * protected by audiostream_sem.  Each time an audio buffer is
+ * allocated, the iq_thread consults this configuration and makes a
+ * copy.  The audio stream configuration in iq_thread is then unchanged
+ * until the buffer is disposed (by either passing it to the client, or
+ * discarding it), at which point a new configuration is read.  This
+ * prevents iq_thread from having to take the lock at each sample.
+ *
+ * If, at disposal, the audio stream configuration has changed since the
+ * current buffer was allocated, the current buffer id discarded rather
+ * than giving the client audio it does not expect. The default
+ * configuration is for a buffer containing 50ms of audio, so this means
+ * that audio stream configuration changes will cause 50ms of audio to
+ * be lost.  If the client makes its buffers deeper or changes the
+ * sample rate, this buffer may represent a longer or shorter period of
+ * time.  If there is a desire to make it substantially longer, this
+ * scheme will have to be reconsidered.
+ *
+ * The specific members of this structure are discussed in the
+ * definition of struct audiostream_config.
+ *
+ * @see iq_thread
+ * @see audiostream_sem
+ * @see struct audiostream_config
+ */
+struct audiostream_config audiostream_conf = { AUDIO_BUFFER_SIZE, 8000, 1, 0 };
+
+/**
+ * @brief Protects audiostream_conf.
+ *
+ * @see audiostream_conf
+ */
+sem_t audiostream_sem;
+
+/**
+ * @brief Audio stream configuration used during sample processing.
+ *
+ * This instance must be accessed only by iq_thread.  The initial
+ * definition must match audiostream_conf exactly!
+ */
+static struct audiostream_config as_conf_cache = { AUDIO_BUFFER_SIZE,
+                                                   8000, 1, 0 };
 
 static unsigned char* audio_buffer=NULL;
 
@@ -95,80 +143,116 @@ void init_alaw_tables();
 
 
 void allocate_audio_buffer(){
+    int samplesize;
     sdr_thread_assert_id(&audiostream_tid);
-    if (encoding == ENCODING_ALAW) {
-	audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels)+AUDIO_BUFFER_HEADER_SIZE);
-	}
-    else if (encoding == ENCODING_PCM) {
-	audio_buffer=(unsigned char*)malloc((audio_buffer_size*audio_channels*2)+AUDIO_BUFFER_HEADER_SIZE); // 2 byte PCM
-	}
-    else if (encoding == ENCODING_CODEC2) {
-    	codec2_count = 0;
-	audio_buffer_size = BITS_SIZE*NO_CODEC2_FRAMES;
-	audio_buffer=(unsigned char*)malloc(audio_buffer_size*audio_channels + AUDIO_BUFFER_HEADER_SIZE);
-	};
+    sem_wait(&audiostream_sem);
+    if (audiostream_conf.age > 0) {
+        /* The stream configuration has changed, and we need to update
+         * our copy to reflect that. */
+        memcpy(&as_conf_cache, &audiostream_conf, sizeof(as_conf_cache));
+        audiostream_conf.age = 0;
+    }
+    sem_post(&audiostream_sem);
+
+    /* From this point until the buffer allocated here is handed to the
+     * client or discarded, all iq_thread operations are on
+     * as_conf_cache, NOT audiostream_conf. */
+    switch (as_conf_cache.encoding) {
+    case ENCODING_ALAW:
+        /* 8 bits per sample */
+        samplesize = as_conf_cache.bufsize * as_conf_cache.channels;
+        break;
+    case ENCODING_PCM:
+        /* 16 bit per sample */
+        samplesize = as_conf_cache.bufsize * as_conf_cache.channels * 2;
+        break;
+    case ENCODING_CODEC2:
+        /* FIXME: This seems like the wrong place for this? */
+        codec2_count = 0;
+        /* Force buffer size */
+        as_conf_cache.bufsize = BITS_SIZE * NO_CODEC2_FRAMES;
+        samplesize = audiostream_conf.bufsize * audiostream_conf.channels;
+        break;
+    default:
+        /* No ENCODING_ALAW2! */
+        samplesize = 0;
+    }
+    audio_buffer = malloc(samplesize + AUDIO_BUFFER_HEADER_SIZE);
 }
 
 void audio_stream_reset() {
-    sdr_thread_assert_id(&audiostream_tid);
-    audio_stream_buffer_insert=0;
+    /* FIXME: This isn't atomic */
     audio_stream_queue_free();
     Mic_stream_queue_free();
-    if (audio_buffer != NULL) free(audio_buffer);
-    allocate_audio_buffer();
 }
 
-
+/**
+ * @brief Process a single stereo audio sample.
+ *
+ * Operates only on as_conf_cache, and requires no synchronization as
+ * long as the calling thread is always iq_thread.
+ */
 void audio_stream_put_samples(short left_sample,short right_sample) {
-	int audio_buffer_length;
-	struct audio_entry * item;
+    int audio_buffer_length;
 
     sdr_thread_assert_id(&audiostream_tid);
+
+    /* FIXME: This really only applies once, at startup */
+    if (!audio_buffer)
+        allocate_audio_buffer();
 
     // samples are delivered at 48K
     // output to stream at 8K (1 in 6) or 48K (1 in 1)
     // codec2 encoding works only for 8K
 
     if(sample_count==0) {
+        int offset;
         // use this sample and convert to a-law or PCM or codec2
-        if(audio_channels==1) {
-            if (encoding == ENCODING_ALAW) audio_buffer[audio_stream_buffer_insert+AUDIO_BUFFER_HEADER_SIZE]=alaw((left_sample+right_sample)/2);
-	    else if (encoding == ENCODING_PCM) {
-		audio_buffer[audio_stream_buffer_insert*2+AUDIO_BUFFER_HEADER_SIZE] = (left_sample/2+right_sample/2) & 0x00ff;
-		audio_buffer[audio_stream_buffer_insert*2+1+AUDIO_BUFFER_HEADER_SIZE] = (left_sample/2+right_sample/2) >> 8;
-		}
-	    else if (encoding == ENCODING_CODEC2) {
-		codec2_buffer[audio_stream_buffer_insert] = left_sample/2+right_sample/2;
-		}
-            else {
-		audio_buffer[audio_stream_buffer_insert+AUDIO_BUFFER_HEADER_SIZE]=alaw((left_sample+right_sample)/2); //encoding == others - defaults to alaw
-		}
+        if(as_conf_cache.channels==1) {
+            switch (as_conf_cache.encoding) {
+            default: /* ALAW */
+            case ENCODING_ALAW:
+                offset = audio_stream_buffer_insert + AUDIO_BUFFER_HEADER_SIZE;
+                audio_buffer[offset] = alaw((left_sample + right_sample) / 2);
+                break;
+            case ENCODING_PCM:
+                offset = audio_stream_buffer_insert * 2 + AUDIO_BUFFER_HEADER_SIZE;
+                /* PCM on the wire is always LE? */
+                audio_buffer[offset] = (left_sample/2 + right_sample/2) & 0xff;
+                audio_buffer[offset + 1] = (left_sample/2 + right_sample/2) >> 8;
+                break;
+            case ENCODING_CODEC2:
+                codec2_buffer[audio_stream_buffer_insert] = left_sample/2 + right_sample/2;
+                break;
+            }
         } else {
-	    if (encoding == ENCODING_ALAW){
-            audio_buffer[(audio_stream_buffer_insert*2)+AUDIO_BUFFER_HEADER_SIZE]=alaw(left_sample);
-            audio_buffer[(audio_stream_buffer_insert*2)+1+AUDIO_BUFFER_HEADER_SIZE]=alaw(right_sample);
-	    }
-	    else if (encoding == ENCODING_PCM) {
-		audio_buffer[audio_stream_buffer_insert*4+AUDIO_BUFFER_HEADER_SIZE] = left_sample & 0x00ff;
-		audio_buffer[audio_stream_buffer_insert*4+1+AUDIO_BUFFER_HEADER_SIZE] = left_sample >> 8;
-		audio_buffer[audio_stream_buffer_insert*4+2+AUDIO_BUFFER_HEADER_SIZE] = right_sample & 0x00ff;
-		audio_buffer[audio_stream_buffer_insert*4+3+AUDIO_BUFFER_HEADER_SIZE] = right_sample >> 8;
-		}
-	    else { // encoding == others
-            audio_buffer[(audio_stream_buffer_insert*2)+AUDIO_BUFFER_HEADER_SIZE]=alaw(left_sample);
-            audio_buffer[(audio_stream_buffer_insert*2)+1+AUDIO_BUFFER_HEADER_SIZE]=alaw(right_sample);
-	    }
+            switch (as_conf_cache.encoding) {
+            default: /* ALAW */
+            case ENCODING_ALAW:
+                offset = audio_stream_buffer_insert * 2 + AUDIO_BUFFER_HEADER_SIZE;
+                audio_buffer[offset] = alaw(left_sample);
+                audio_buffer[offset + 1] = alaw(right_sample);
+                break;
+            case ENCODING_PCM:
+                offset = audio_stream_buffer_insert * 4 + AUDIO_BUFFER_HEADER_SIZE;
+                audio_buffer[offset] = left_sample & 0x00ff;
+                audio_buffer[offset + 1] = left_sample >> 8;
+                audio_buffer[offset + 2] = right_sample & 0x00ff;
+                audio_buffer[offset + 3] = right_sample >> 8;
+                break;
+            }
         }
 
 	audio_stream_buffer_insert++;
 
 
-	if ((encoding == ENCODING_CODEC2) && (audio_stream_buffer_insert == CODEC2_SAMPLES_PER_FRAME))  {
-		codec2_encode(codec2, bits, codec2_buffer);
-		memcpy(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE+BITS_SIZE*codec2_count], bits, BITS_SIZE);
-		codec2_count++;
-		if (codec2_count >= NO_CODEC2_FRAMES){
-		    audio_buffer[0]=AUDIO_BUFFER;
+	if ((as_conf_cache.encoding == ENCODING_CODEC2)
+            && (audio_stream_buffer_insert == CODEC2_SAMPLES_PER_FRAME))  {
+            codec2_encode(codec2, bits, codec2_buffer);
+            memcpy(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE+BITS_SIZE*codec2_count], bits, BITS_SIZE);
+            codec2_count++;
+            if (codec2_count >= NO_CODEC2_FRAMES){
+                audio_buffer[0]=AUDIO_BUFFER;
 
 // g0orx binary header
 		audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
@@ -180,27 +264,27 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 		codec2_count = 0;
 		audio_stream_buffer_insert = 0;
                 allocate_audio_buffer();
-		}
+            }
+        }
 
-	    }
-
-        if((encoding != ENCODING_CODEC2) && (audio_stream_buffer_insert==audio_buffer_size)) {
-		audio_buffer[0]=AUDIO_BUFFER;
-// g0orx binary header
-
-		if (encoding == ENCODING_PCM) audio_buffer_length = audio_buffer_size*audio_channels*2;
-		else audio_buffer_length = audio_buffer_size*audio_channels;
-                audio_buffer[1]=HEADER_VERSION;
-                audio_buffer[2]=HEADER_SUBVERSION;
-                audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
-                audio_buffer[4]=audio_buffer_length&0xFF;
-		audio_stream_queue_add(audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
-	    	audio_stream_buffer_insert=0;
-                allocate_audio_buffer();
+        if ((as_conf_cache.encoding != ENCODING_CODEC2)
+           && (audio_stream_buffer_insert==as_conf_cache.bufsize)) {
+            audio_buffer[0]=AUDIO_BUFFER;
+            audio_buffer_length = as_conf_cache.bufsize * as_conf_cache.channels;
+            if (as_conf_cache.encoding == ENCODING_PCM)
+                audio_buffer_length *= 2;
+            audio_buffer[1]=HEADER_VERSION;
+            audio_buffer[2]=HEADER_SUBVERSION;
+            /* FIXME: htons */
+            audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
+            audio_buffer[4]=audio_buffer_length&0xFF;
+            audio_stream_queue_add(audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+            audio_stream_buffer_insert=0;
+            allocate_audio_buffer();
         }
     }
     sample_count++;
-    if(audio_sample_rate==48000) {
+    if(as_conf_cache.samplerate==48000) {
         sample_count=0;
     } else {
         if(sample_count==6) {
@@ -208,8 +292,6 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
         }
     }
 }
-
-
 
 unsigned char alaw(short sample) {
     return encodetable[sample&0xFFFF];
@@ -252,4 +334,3 @@ void init_alaw_tables() {
     }
 
 }
-
