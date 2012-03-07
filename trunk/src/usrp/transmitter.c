@@ -133,7 +133,7 @@ void* tx_audio_thread(void* arg) {
                 offset=0;
                 tx_sequence=buffer.sequence;
                 // start of a frame
-                memcpy((char *)&(tx->output_buffer)[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
+                memcpy((char *)&tx->output_buffer[0],(char *)&buffer.data[0],buffer.length);
                 offset+=buffer.length;
             } else {
                 if((tx_sequence==buffer.sequence) && (offset==buffer.offset)) {

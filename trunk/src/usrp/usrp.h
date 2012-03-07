@@ -78,7 +78,7 @@ void usrp_set_receivers(int);
 int  usrp_get_receivers(void);
 
 /*!
- * Enabled TX function flag
+ * Tests the enabled TX function flag
  */
 bool  usrp_is_tx_enabled(void);
 
@@ -107,5 +107,10 @@ void usrp_set_frequency(double freq);
  * Process the TX modulation to USRP
  */ 
 int usrp_process_tx_modulation(float *outbuf, int mox);
+
+/*!
+ * Let the server discard rx samples
+ */
+void usrp_disable_rx_path(void);
 
 #endif

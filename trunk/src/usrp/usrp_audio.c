@@ -29,7 +29,7 @@
 
 static int SAMPLE_RATE;
 static int DECIM_FACT;
-static int AUDIO_DESTINATION = 0;
+static int AUDIO_DESTINATION = -1;
 static int SAMPLES_PER_BUFFER = TRANSMIT_BUFFER_SIZE;
 static int (*audio_processor)(float*, int) = NULL;
 
@@ -38,7 +38,28 @@ static PaStream* stream;
 int usrp_local_audio_write_decim (float* left_samples, int mox);
 int usrp_drop_audio_buffer(float *outbuf, int mox);
 
+
+void usrp_disable_path(char *path) {
+    
+    if (strcasecmp(path, "tx") == 0) {
+        AUDIO_DESTINATION = AUDIO_TO_NOTHING;
+        audio_processor = usrp_drop_audio_buffer;        
+        fprintf(stderr,"Discarding client generated tx audio samples.\n");
+    } else
+    if (strcasecmp(path, "rx") == 0) {
+        usrp_disable_rx_path();
+        fprintf(stderr,"Discarding USRP rx baseband samples\n");
+    }
+    else {
+        fprintf(stderr,"Illegal setting %s for disable. Ignoring", path);        
+    }
+}
+
 void usrp_set_server_audio (char* setting) {
+    
+    //If audio destination is already set to NOTHING, return
+    if (AUDIO_DESTINATION == AUDIO_TO_NOTHING) return;
+    
     if (strcasecmp(setting, "card") == 0) {
         AUDIO_DESTINATION = AUDIO_TO_LOCAL_CARD;
         audio_processor = usrp_local_audio_write_decim;
@@ -49,16 +70,8 @@ void usrp_set_server_audio (char* setting) {
         audio_processor = usrp_process_tx_modulation;
         fprintf(stderr,"Sending client generated audio to USRP MODULATION\n");
     }
-    else
-    if (strcasecmp(setting, "none") == 0) {
-        AUDIO_DESTINATION = AUDIO_TO_NOTHING;
-        audio_processor = usrp_drop_audio_buffer;
-        fprintf(stderr,"DISCARDING client generated audio\n");        
-    }
     else {
-        fprintf(stderr,"Illegal setting %s for audio-to. Using default: none", setting);        
-        AUDIO_DESTINATION = AUDIO_TO_NOTHING;
-        audio_processor = usrp_drop_audio_buffer;        
+        fprintf(stderr,"Illegal setting %s for audio-to. Using default: USRP", setting);        
     }
 }
 
@@ -241,7 +254,7 @@ int usrp_local_audio_write_decim (float* samples, int mox) {
 int usrp_drop_audio_buffer(float *outbuf, int mox) {
     
     //Do nothing stub to drop - or inspect, buffers
-    dump_float_buffer(outbuf);
+    //dump_float_buffer(outbuf);
     return 0;
 }
 
