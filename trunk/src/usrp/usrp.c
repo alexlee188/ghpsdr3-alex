@@ -77,12 +77,15 @@ static int INTERP_TX = 20;  //For the rational resampler
 // for the swap option
 static int real_position = 1;
 static int imag_position = 0;
+//to disable RX samples
+static bool drop_rx_samples = false;
 
 // TX audio sample is the HEAD of a queue to be forwarded to USRP
 TAILQ_HEAD(tailhead, _buffer_entry) tx_audio_iq_stream;
 struct tailhead *headp; /* Tail queue head. */
 #define MAX_QUEUE 50 //Max 50KSAMPLES in queue
 #define QUEUE_WAIT_TIME 10000  //Time to wait after a empty queue (uSec)
+#define USRP_DROP_WAIT_TIME 2000  //Time to wait after dropping rx samples (uSec)
 //static sem_t tx_audio_semaphore;
 static pthread_mutex_t queue_lock;
 
@@ -223,6 +226,12 @@ bool  usrp_is_tx_enabled(void)
     return usrp.tx_enabled;
 }
 
+void usrp_disable_rx_path(void) 
+{
+    drop_rx_samples = true;
+}
+
+
 void usrp_set_client_rx_rate (int rate)
 {
     switch (rate) {
@@ -289,7 +298,7 @@ void *usrp_receiver_thread (void *param)
         std::cerr << "RX Resampler object definition failed. Exiting..." << std::endl;
         exit (1);
     }
-    //std::cerr << boost::format("Using resampler %d.") % resampler_id << std::endl;
+    std::cerr << boost::format("RX thread Using resampler %d.") % resampler_id << std::endl;
      
     pRec->samples = 0;
     
@@ -330,7 +339,12 @@ void *usrp_receiver_thread (void *param)
                 "Got error code 0x%x, exiting loop..."
             ) % md.error_code << std::endl;
             goto done_loop;
-        }                
+        }
+
+        if (drop_rx_samples) {
+            usleep(USRP_DROP_WAIT_TIME);
+            continue;
+        }   
          
         //Here IQ samples are buffered: 
         //Rational resampling is applied at this point
@@ -392,6 +406,7 @@ void *usrp_transmitter_thread (void *param)
     BUFFER_ENTRY *item;
     
     const unsigned int MAX_USRP_TX_BUFFER = usrp.dev->get_max_send_samps_per_packet();
+    std::cerr << boost::format("Max packet size: %d") % MAX_USRP_TX_BUFFER << std::endl;
     std::vector<std::complex<float> > buff(MAX_USRP_TX_BUFFER);
     md.start_of_burst = false;
     md.end_of_burst = false; 
@@ -403,7 +418,7 @@ void *usrp_transmitter_thread (void *param)
         std::cerr << "TX Resampler object definition failed. Exiting..." << std::endl;
         exit (1);
     }
-    //std::cerr << boost::format("Using resampler %d.") % resampler_id << std::endl;    
+    std::cerr << boost::format("TX thread Using resampler %d.") % resampler_id << std::endl;    
  
     std::cerr << "Starting the USRP transmitter thread cycle" << std::endl;              
     
@@ -414,7 +429,7 @@ void *usrp_transmitter_thread (void *param)
         item = TAILQ_FIRST(&tx_audio_iq_stream);                   
         if (item != NULL) {            
             //Take next buffer from the queue
-            //it is a paired vecotrs [III...I][QQQ...Q] or vice versa
+            //it is a paired vectors [III...I][QQQ...Q] or vice versa
             audio_data = (float *)item->data;
             
             TAILQ_REMOVE(&tx_audio_iq_stream, item, entries);                    
@@ -425,9 +440,6 @@ void *usrp_transmitter_thread (void *param)
             usleep(QUEUE_WAIT_TIME);
             continue;
         }        
-        //cleanup container
-        free(item->data);
-        free(item);
         
         //std::cerr << boost::format("Remove from queue: len %d") % queue_length << std::endl;        
                 
@@ -444,6 +456,10 @@ void *usrp_transmitter_thread (void *param)
         else
             resampler_load_channels(resampler_id, &audio_data[TRANSMIT_BUFFER_SIZE], audio_data);                        
         
+        //CLEANUP: audio_data
+        free(item->data);
+        free(item);        
+        
         //Rational resampling API here                
         char *rr_msg = NULL;
         int output_frames_gen = 0;
@@ -452,7 +468,8 @@ void *usrp_transmitter_thread (void *param)
                         
         if (rr_retcode == RRESAMPLER_NO_ERROR) {
             
-            int acc_tx_samples = 0;        
+            int acc_tx_samples = 0;
+            int pcktcnt = 0;
             //Loop: send 1 I/Q packet of audio data to USRP
             do {
                 size_t num_tx_samples = 0;
@@ -477,16 +494,15 @@ void *usrp_transmitter_thread (void *param)
                 fprintf(stderr,"\n");                
                  */
                 //DEBUG TEST
-                                    
-                /*
+                                                    
                 usrp.dev->send(&buff.front(), num_tx_samples, md,
                     uhd::io_type_t::COMPLEX_FLOAT32,
                     uhd::device::SEND_MODE_ONE_PACKET
-                    );
-                     */                                
+                    );                
                      
                 /*
-                 * ???
+                 * NOT USED FOR NOW
+                 * 
                 //Check possible messages
                 if (usrp.dev->recv_async_msg(async_md)) {
                     
@@ -519,7 +535,7 @@ void *usrp_transmitter_thread (void *param)
                         goto done_tx_loop;
                     }
                 } */           
-                
+                //std::cerr << boost::format("packet sent: %d") % ++pcktcnt;
             } while (acc_tx_samples < output_frames_gen);        
             
             //std::cerr << "Audio Buffer sent" << std::endl;

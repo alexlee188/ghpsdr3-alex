@@ -61,11 +61,11 @@ int resampler_setup_new(int max_frames, int decim, int interp) {
 
 void resampler_load_channels(int r_id, float *ch1, float *ch2) {
 
-    unsigned int i=0;
- #pragma omp parallel for schedule(static) private(i)    
-    for (i=0; i<resampler_info[r_id].max_frames; ++i) {
-        src_data_objs[r_id]->data_in[CHANNELS*i] = ch1[i];
-        src_data_objs[r_id]->data_in[CHANNELS*i+1] = ch2[i];        
+    unsigned int idx=0;
+ //pra_gma omp parallel for schedule(static) private(i)    
+    for (idx=0; idx<resampler_info[r_id].max_frames; idx++) {
+        src_data_objs[r_id]->data_in[CHANNELS*idx] = ch1[idx];
+        src_data_objs[r_id]->data_in[CHANNELS*idx+1] = ch2[idx];        
     }
 }
 

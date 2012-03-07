@@ -6,4 +6,10 @@ void usrp_process_audio_buffer (float *outbuf, int mox);
 void usrp_set_server_audio (char* setting);
 int usrp_get_server_audio (void);
 
+/*!
+ * Disables the transmission of TX or RX samples
+ */
+void usrp_disable_path(char *path); 
+
+
 #endif
