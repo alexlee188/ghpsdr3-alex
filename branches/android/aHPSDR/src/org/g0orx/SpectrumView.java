@@ -243,8 +243,9 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			points[p++] = (float) i;
 			points[p++] = sample;
 
-			waterfall.setPixel(i, cy, calculatePixel(samples[i]));
-			waterfall.setPixel(i, cy + HEIGHT, calculatePixel(samples[i]));
+			int pixel_value = calculatePixel(samples[i]);
+			waterfall.setPixel(i, cy, pixel_value);
+			waterfall.setPixel(i, cy + HEIGHT, pixel_value);
 			previous = sample;
 			average+=samples[i];
 		}
