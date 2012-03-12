@@ -55,25 +55,11 @@ Waterfall::Waterfall(QWidget*& widget) {
 
     samples=NULL;
 
-    image = QImage(width()*2, height(), QImage::Format_RGB32);
-
-    int x, y;
-    #pragma omp parallel for schedule(static)
-    for (x = 0; x < image.width(); x++) {
-        for (y = 0; y < image.height(); y++) {
-            image.setPixel(x, y, 0xFF000000);
-        }
-  }
-    cy = image.height()/2 - 1;
-
     waterfallcl = new Waterfallcl;
-    //waterfallcl_thread = new QThread;
-    //waterfallcl->moveToThread(waterfallcl_thread);
-    //waterfallcl_thread->start(QThread::LowestPriority);
-    waterfallcl->setGeometry(QRect(QPoint(0,0),QPoint(511,255)));
-    waterfallcl->initialize(1024,256);
-    waterfallcl->show();
-
+    waterfallcl->setParent(this);
+    waterfallcl->setGeometry(QRect(QPoint(0,0),QPoint(width()*2-1,255)));
+    waterfallcl->initialize(width()*2,256);
+    waterfallcl->resize(width()*2,height());
 }
 
 Waterfall::~Waterfall() {
@@ -122,116 +108,27 @@ void Waterfall::setGeometry(QRect rect) {
 
     samples = (float*) malloc(rect.width() * sizeof (float));
 
-    // no scroll algorithm needs 2 copies of waterfaull
-    image = QImage(rect.width(), rect.height()*2, QImage::Format_RGB32);
-    cy = rect.height()-1;
-    qDebug() << "Waterfall::Waterfall " << rect.width() << ":" << rect.height();
-
-    int x, y;
-    #pragma omp parallel for schedule(static)
-    for (x = 0; x < rect.width(); x++) {
-        for (y = 0; y < rect.height()*2; y++) {
-            image.setPixel(x, y, 0xFF000000);
-        }
-    }
 }
 
 
 void Waterfall::mousePressEvent(QMouseEvent* event) {
 
-    //qDebug() << __FUNCTION__ << ": " << event->pos().x();
-
-    //qDebug() << "mousePressEvent: event->button(): " << event->button();
-
-    button=event->button();
-    startX=lastX=event->pos().x();
-    moved=0;
 }
 
 void Waterfall::mouseMoveEvent(QMouseEvent* event){
-    int move=event->pos().x()-lastX;
-    lastX=event->pos().x();
-//    qDebug() << __FUNCTION__ << ": " << event->pos().x() << " move:" << move;
 
-    moved=1;
-
-    if (! move==0) emit frequencyMoved(move,100);
 }
 
 void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
-    int move=event->pos().x()-lastX;
-    lastX=event->pos().x();
-    //qDebug() << __FUNCTION__ << ": " << event->pos().x() << " move:" << move;
 
-    if(moved) {
-        emit frequencyMoved(move,100);
-    } else {
-//        float hzPixel = sampleRate/width();  // spectrum resolution: Hz/pixel
-        float hzPixel = (float) sampleRate / width();  // spectrum resolution: Hz/pixel
-
-        long freqOffsetPixel;
-        long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel) - LO_offset;
-        if(subRx) {
-            freqOffsetPixel = (subRxFrequency-f)/hzPixel;
-            if (button == Qt::LeftButton) {
-                if((mode!="USB")&&(mode!="LSB")){ // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
-                    // set frequency to center of filter
-                    if(filterLow<0 && filterHigh<0) {
-                        freqOffsetPixel+=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
-                    } else if(filterLow>0 && filterHigh>0){
-                        freqOffsetPixel-=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
-                    } else {
-                        // no adjustment
-                    }
-                }
-            }
-        } else {
-            freqOffsetPixel = (f-frequency)/hzPixel; // compute the offset from the central frequency, in pixel
-            if (button == Qt::LeftButton) {
-                if((mode!="USB")&&(mode!="LSB")){ // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
-                    // set frequency to center of filter
-                    if(filterLow<0 && filterHigh<0) {
-                    freqOffsetPixel-=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
-                    } else if(filterLow>0 && filterHigh>0){
-                        freqOffsetPixel+=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
-                    } else {
-                    // no adjustment if filter extends each side of carrier frequency
-                    }
-                }
-            }
-        }
-
-        emit frequencyMoved(-(long long)(freqOffsetPixel*hzPixel)/100,100);
-
-    }
 }
 
 void Waterfall::wheelEvent(QWheelEvent *event) {
-    //qDebug() << __FUNCTION__ << "Delta: " << event->delta() << "y: " << event->pos().y() << " heigth:" << height();
-
-    // change frequency
-    float vOfs = (float)event->pos().y() / (float)height();
-    //qDebug() << "wheelEvent vOfs: " << vOfs;
-
-    if (vOfs > 0.75) {
-        emit frequencyMoved(event->delta()/8/15,10);
-    } else if (vOfs > 0.50) {
-        emit frequencyMoved(event->delta()/8/15,25);
-    } else if (vOfs > 0.25) {
-        emit frequencyMoved(event->delta()/8/15,50);
-    } else {
-        emit frequencyMoved(event->delta()/8/15,100);
-    }
 
 }
 
 
 void Waterfall::paintEvent(QPaintEvent*) {
-    QPainter painter(this);
-
-    //painter.fillRect(0, 0, width(), height(), Qt::black);
-
-    painter.drawImage(0,0,image,0,cy,image.width(),image.height()/2,Qt::AutoColor);
 
 }
 
@@ -240,9 +137,6 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     int i,j;
     int version,subversion;
     int offset;
-
-    if (cy <= 0) cy = image.height()/2 - 1;
-    else cy--;          // "scroll"
 
     version=header[1];
     subversion=header[2];
@@ -282,29 +176,11 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
         }
     }
     size = length;
-
     waterfallcl->updateWaterfall(header, buffer, length);
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_2()));
+    QTimer::singleShot(0,this,SLOT(updateWaterfall_3()));
 }
 
 void Waterfall::updateWaterfall_2(void){
-    int x,y;
-
-    if(image.width()!=width() ||
-       (image.height()/2) != (height())) {
-
-        qDebug() << "Waterfall::updateWaterfall " << size << "(" << width() << ")," << height();
-        image = QImage(width(), height()*2, QImage::Format_RGB32);
-        cy = image.height()/2 - 1;
-        #pragma omp parallel for schedule(static)
-        for (x = 0; x < width(); x++) {
-            for (y = 0; y < image.height(); y++) {
-                image.setPixel(x, y, 0xFF000000);
-            }
-        }
-    }
-
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_3()));
 }
 
 
@@ -312,18 +188,13 @@ void Waterfall::updateWaterfall_3(void){
     int x;
     int average=0;
 
-    // draw the new line
-    #pragma omp parallel for schedule(static)
     for(x=0;x<size;x++){
-        uint pixel = calculatePixel(samples[x]);
-        image.setPixel(x,cy,pixel);
-        image.setPixel(x,cy+height(),pixel);
-        #pragma omp critical
         average+=samples[x];
     }
+    average = average/size;
 
     if(waterfallAutomatic) {
-        waterfallLow=(average/size)-10;
+        waterfallLow=average-10;
         waterfallHigh=waterfallLow+60;
         waterfallcl->setLow(waterfallLow);
         waterfallcl->setHigh(waterfallHigh);
@@ -335,7 +206,6 @@ void Waterfall::updateWaterfall_3(void){
 
 
 void Waterfall::updateWaterfall_4(void){
-    QTimer::singleShot(0,this,SLOT(repaint()));
     QTimer::singleShot(0, waterfallcl, SLOT(updateWaterfallgl()));
 }
 

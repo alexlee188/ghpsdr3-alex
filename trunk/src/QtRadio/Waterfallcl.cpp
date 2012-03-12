@@ -47,7 +47,8 @@ void ImageCLContext::init(int wid, int ht)
         "  if (j >= width) j %= width;\n"
         "  int2 pos;\n"
         "  pos = (int2)(id, cy);\n"
-        "  float sample = 0.0f - (float)src[j];\n"
+        "  uint unsigned_sample = src[j] & 0xff;"
+        "  float sample = 0.0f - (float) unsigned_sample;\n"
         "  float percent = (sample - (float)waterfallLow)/ (float)(waterfallHigh - waterfallLow);\n"
         "  percent = (percent > 0.0f) ? percent : 0.0f;"
         "  if (percent < (2.0f/9.0f)){\n"
@@ -137,8 +138,8 @@ void Waterfallcl::initialize(int wid, int ht){
     data_height = ht;
     cy = data_height - 1;
     rquad = 0.0f;
-    zoom = 2.0f;
-    pan = 0.0f;
+    zoom = 4.5f * wid / 1024.0f;
+    pan = -0.55f;
 
     QImage t;
     QImage b;

@@ -99,7 +99,6 @@ private:
     int waterfallHigh;
     int waterfallLow;
     bool waterfallAutomatic;
-    int cy;         // current row
     int button;
     int startX;
     int lastX;
@@ -114,8 +113,6 @@ private:
     int colorHighR;
     int colorHighG;
     int colorHighB;
-    QImage image;
-
     short LO_offset;
 
     int sampleRate;
