@@ -69,3 +69,5 @@ trunk/src/hiqsdr/hiqsdr-server
 trunk/src/hiqsdr/hiqsdr-test
 trunk/src/sdriq/sdriq-server
 trunk/src/sdriq/sdriq-test
+branches/android/aHPSDR/bin/*
+
