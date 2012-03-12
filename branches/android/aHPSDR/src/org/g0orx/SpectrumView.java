@@ -261,6 +261,7 @@ Log.i("SpectrumView","width="+width+" height="+height);
 	}
 
 	private int calculatePixel(float sample) {
+	/*
 		// simple gray scale
 		int v = ((int) sample - waterfallLow) * 255
 				/ (waterfallHigh - waterfallLow);
@@ -271,7 +272,69 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			v = 255;
 
 		int pixel = (255 << 24) + (v << 16) + (v << 8) + v;
-		return pixel;
+		return pixel;		
+	*/
+		
+		int colorLowR = 0;
+		int colorLowG = 0;
+		int colorLowB = 0;
+		int colorHighR = 255;
+		int colorHighG = 255;
+		int colorHighB = 255;
+		
+	    int R,G,B;
+	    if(sample<waterfallLow) {
+	        R=colorLowR;
+	        G=colorLowG;
+	        B=colorLowB;
+	    } else if(sample>waterfallHigh) {
+	        R=colorHighR;
+	        G=colorHighG;
+	        B=colorHighB;
+	    } else {
+	        float range=waterfallHigh-waterfallLow;
+	        float offset=sample-waterfallLow;
+	        float percent=offset/range;
+	        if(percent<(2.0f/9.0f)) {
+	            float local_percent = percent / (2.0f/9.0f);
+	            R = (int)((1.0f-local_percent)*colorLowR);
+	            G = (int)((1.0f-local_percent)*colorLowG);
+	            B = (int)(colorLowB + local_percent*(255-colorLowB));
+	        } else if(percent<(3.0f/9.0f)) {
+	            float local_percent = (percent - 2.0f/9.0f) / (1.0f/9.0f);
+	            R = 0;
+	            G = (int)(local_percent*255);
+	            B = 255;
+	        } else if(percent<(4.0f/9.0f)) {
+	             float local_percent = (percent - 3.0f/9.0f) / (1.0f/9.0f);
+	             R = 0;
+	             G = 255;
+	             B = (int)((1.0f-local_percent)*255);
+	        } else if(percent<(5.0f/9.0f)) {
+	             float local_percent = (percent - 4.0f/9.0f) / (1.0f/9.0f);
+	             R = (int)(local_percent*255);
+	             G = 255;
+	             B = 0;
+	        } else if(percent<(7.0f/9.0f)) {
+	             float local_percent = (percent - 5.0f/9.0f) / (2.0f/9.0f);
+	             R = 255;
+	             G = (int)((1.0f-local_percent)*255);
+	             B = 0;
+	        } else if(percent<(8.0f/9.0f)) {
+	             float local_percent = (percent - 7.0f/9.0f) / (1.0f/9.0f);
+	             R = 255;
+	             G = 0;
+	             B = (int)(local_percent*255);
+	        } else {
+	             float local_percent = (percent - 8.0f/9.0f) / (1.0f/9.0f);
+	             R = (int)((0.75f + 0.25f*(1.0f-local_percent))*255.0f);
+	             G = (int)(local_percent*255.0f*0.5f);
+	             B = 255;
+	        }
+	    }
+
+	    int pixel = (255 << 24)+(R << 16)+(G << 8) + B;
+	    return pixel;
 	}
 
 	public void setVfoLock() {
