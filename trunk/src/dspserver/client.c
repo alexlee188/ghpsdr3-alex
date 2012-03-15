@@ -993,8 +993,8 @@ void readcb(struct bufferevent *bev, void *ctx){
             sem_post(&bufferevent_semaphore);
             rtp_tx_init();
         } else if(strncmp(cmd,"stopaudiostream",15)==0) {
-            // send_audio should not be stopped by any single client
-            // but by dspserver when all clients are disconnected.
+            // send_audio should only be stopped by dspserver when no more clients are connected.
+            // not by individual clients.
             /*
             sem_wait(&bufferevent_semaphore);
             send_audio=0;
