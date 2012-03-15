@@ -456,6 +456,7 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     rx.indexIn(answer);
                     QString protocol3= rx.cap(1);
                     if (protocol3.compare("Y") == 0){
+                        emit setProtocol3(true);
                         emit setFPS();
                     }
                 }
