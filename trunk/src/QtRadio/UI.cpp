@@ -473,7 +473,7 @@ void UI::fpsChanged(int f) {
 
 void UI::setFPS(void){
     QString command;
-        command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumFrame->width() << fps;
+    command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumFrame->width() << " " << fps;
         connection.sendCommand(command);
 }
 
@@ -2014,7 +2014,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - master 15 Mar 2012");
+                   + getversionstring() +  message + "  protocol-3 15 Mar 2012");
     lastmessage = message;
 
 }
