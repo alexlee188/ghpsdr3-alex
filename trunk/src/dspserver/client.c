@@ -993,9 +993,13 @@ void readcb(struct bufferevent *bev, void *ctx){
             sem_post(&bufferevent_semaphore);
             rtp_tx_init();
         } else if(strncmp(cmd,"stopaudiostream",15)==0) {
+            // send_audio should not be stopped by any single client
+            // but by dspserver when all clients are disconnected.
+            /*
             sem_wait(&bufferevent_semaphore);
             send_audio=0;
             sem_post(&bufferevent_semaphore);
+            */
         } else if(strncmp(cmd,"setencoding",11)==0) {
             int enc;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1439,6 +1443,8 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 		 sprintf(p,"%f;",LO_offset);
 		 strcat(answer,p);
 		 //fprintf(stderr,"q-loffset: %s\n",answer);
+	}else if (strcmp(message,"q-protocol3") == 0){
+		 strcat(answer,"q-protocol3:Y");
 	}else{
 		fprintf(stderr,"Unknown question: %s\n",message);
 		return;
