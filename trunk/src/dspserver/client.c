@@ -109,6 +109,13 @@ static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 #define RTP_BUFFER_SIZE 400
 #define RTP_TIMER_NS (RTP_BUFFER_SIZE/8 * 1000000)
 static unsigned char rtp_buffer[RTP_BUFFER_SIZE];
+static timer_t rtp_tx_timerid;
+
+// For timer based spectrum data (instead of sending one spectrum frame per getspectrum command from clients)
+#define SPECTRUM_TIMER_NS (20*1000000)
+static timer_t spectrum_timerid;
+static long spectrum_timestamp = 0;
+
 int data_in_counter=0;
 int iq_buffer_counter = 0;
 
@@ -246,6 +253,7 @@ void client_init(int receiver) {
     sem_init(&mic_semaphore,0,1);
     signal(SIGPIPE, SIG_IGN);
     rtp_init();
+    spectrum_timer_init();
 
     port=BASE_PORT+receiver;
     rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
@@ -282,6 +290,7 @@ void tx_init(void){
 }
 
 void rtp_tx_timer_handler(int);
+void spectrum_timer_handler(int);
 
 void rtp_tx_init(void){
 	int rc;
@@ -295,7 +304,6 @@ void rtp_tx_init(void){
 
 		rtp_tx_init_done = 1;
 
-		timer_t timerid;
 		struct itimerspec	value;
 		struct sigevent sev;
 
@@ -309,11 +317,31 @@ void rtp_tx_init(void){
 		sev.sigev_notify_function = rtp_tx_timer_handler;
 		sev.sigev_notify_attributes = NULL;
 
-		timer_create (CLOCK_REALTIME, &sev, &timerid);
-		timer_settime (timerid, 0, &value, NULL);
+		timer_create (CLOCK_REALTIME, &sev, &rtp_tx_timerid);
+		timer_settime (rtp_tx_timerid, 0, &value, NULL);
 
 	}
 }
+
+void spectrum_timer_init(void){
+
+	struct itimerspec	value;
+	struct sigevent sev;
+
+	value.it_value.tv_sec = 0;
+	value.it_value.tv_nsec = SPECTRUM_TIMER_NS;
+
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_nsec = SPECTRUM_TIMER_NS;
+
+	sev.sigev_notify = SIGEV_THREAD;
+	sev.sigev_notify_function = spectrum_timer_handler;
+	sev.sigev_notify_attributes = NULL;
+
+	timer_create (CLOCK_REALTIME, &sev, &spectrum_timerid);
+	timer_settime (spectrum_timerid, 0, &value, NULL);
+
+	}
 
 void rtp_tx_timer_handler(int sv){
     int i;
@@ -351,6 +379,39 @@ void rtp_tx_timer_handler(int sv){
 		}
 	    }
 	}
+}
+
+void spectrum_timer_handler(int sv){            // this is called every 20 ms
+        client_entry *item;
+
+        item = TAILQ_FIRST(&Client_list);
+        if (item == NULL) return;               // no clients
+
+        if(mox) {
+            Process_Panadapter(1,spectrumBuffer);
+            meter=CalculateTXMeter(1,5); // MIC
+            subrx_meter=-121;
+        } else {
+            Process_Panadapter(0,spectrumBuffer);
+            meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+            subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+            }
+        client_samples=malloc(BUFFER_HEADER_SIZE+samples);
+        client_set_samples(spectrumBuffer,samples);
+
+        sem_wait(&bufferevent_semaphore);
+        TAILQ_FOREACH(item, &Client_list, entries){
+            if(item->fps > 0) {
+                if (item->frame_counter-- <= 1) {
+                    bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+samples);
+                    item->frame_counter = 50 / item->fps;
+                }
+            }
+        }
+        free(client_samples);
+        sem_post(&bufferevent_semaphore);
+
+        spectrum_timestamp++;
 }
 
 void* rtp_tx_thread(void *arg){
@@ -635,6 +696,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     item->bev = bev;
     item->rtp = connection_unknown;
     item->fps = 0;
+    item->frame_counter = 0;
     TAILQ_INSERT_TAIL(&Client_list, item, entries);
 
     if (toShareOrNotToShare) {

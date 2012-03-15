@@ -59,6 +59,7 @@ typedef struct _client_entry {
 	struct sockaddr_in client;
 	struct bufferevent * bev;
 	int fps;
+	int frame_counter;
 	int samples;
 	RtpSession *session;
 	TAILQ_ENTRY(_client_entry) entries;
