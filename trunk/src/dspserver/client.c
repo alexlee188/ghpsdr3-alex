@@ -634,6 +634,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     bufferevent_enable(bev, EV_READ|EV_WRITE);
     item->bev = bev;
     item->rtp = connection_unknown;
+    item->fps = 0;
     TAILQ_INSERT_TAIL(&Client_list, item, entries);
 
     if (toShareOrNotToShare) {
@@ -679,6 +680,7 @@ static char *slave_commands[] = {
     "setclient",
     "startaudiostream",
     "startrtpstream",
+    "setfps",
     NULL
 };
 
@@ -1248,6 +1250,18 @@ void readcb(struct bufferevent *bev, void *ctx){
                 goto badcommand;
             sdr_log(SDR_LOG_INFO,"The value of mu sent = '%s'\n",tokens[0]);
             SetCorrectRXIQMu(0, 0, atof(tokens[0]));
+        } else if(strncmp(cmd,"setfps",6)==0) {
+            if (tokenize_cmd(&saveptr, tokens, 2) != 2)
+                goto badcommand;
+            sdr_log(SDR_LOG_INFO,"Spectrum fps set to = '%s'\n",tokens[1]);
+            if (slave) {
+                current_item->samples = atoi(tokens[0]);
+                current_item->fps = atoi(tokens[1]);
+            }
+            else  {
+                item->samples = atoi(tokens[0]);
+                item->fps = atoi(tokens[1]);
+            }
         } else {
             fprintf(stderr,"Invalid command: token: '%s'\n",cmd);
         }
@@ -1303,7 +1317,7 @@ void client_set_samples(float* samples,int size) {
     client_samples[11]=(sampleRate>>8)&0xFF;
     client_samples[12]=sampleRate&0xFF;
 
-    // addes for header version 2.1
+    // added for header version 2.1
     client_samples[13]=((int)LO_offset>>8)&0xFF; // IF
     client_samples[14]=(int)LO_offset&0xFF;
 
