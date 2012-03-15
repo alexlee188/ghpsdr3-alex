@@ -100,6 +100,7 @@ signals:
     void setCanTX(bool);
     void setChkTX(bool);  // password style server
     void resetbandedges(double loffset);
+    void setFPS();
 
 private:
     // really not used (and not even implemented)

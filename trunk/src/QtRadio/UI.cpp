@@ -284,6 +284,7 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(setChkTX(bool)),this,SLOT(setChkTX(bool)));
     connect(&connection,SIGNAL(resetbandedges(double)),this,SLOT(resetbandedges(double)));
     connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),rtp,SLOT(setRemote(QString,int)));
+    connect(&connection,SIGNAL(setFPS()),this,SLOT(setFPS()));
     connect(rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
     connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
@@ -468,6 +469,12 @@ void UI::spectrumLowChanged(int low) {
 void UI::fpsChanged(int f) {
     //qDebug() << "fpsChanged:" << f;
     fps=f;
+}
+
+void UI::setFPS(void){
+    QString command;
+        command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumFrame->width() << fps;
+        connection.sendCommand(command);
 }
 
 void UI::waterfallHighChanged(int high) {
@@ -717,9 +724,11 @@ void UI::disconnected(QString message) {
 }
 
 void UI::updateSpectrum() {
+    /*
     QString command;
         command.clear(); QTextStream(&command) << "getSpectrum " << widget.spectrumFrame->width();
         connection.sendCommand(command);
+    */
         if(infotick > 5){
            if (slave == 0) connection.sendCommand("q-info"); // get master freq changes
            infotick = 0;

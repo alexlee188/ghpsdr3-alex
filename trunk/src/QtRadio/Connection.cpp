@@ -146,6 +146,7 @@ void Connection::connected() {
     lastSlave =1;
     sendCommand("q-version");
     sendCommand("q-loffset");
+    sendCommand("q-protocol3");
     amSlave = true;
     serverver = 0;
 }
@@ -450,8 +451,16 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     lastMode = newmode;
                     lastSlave = newslave;
 
+                } else if (answer.contains("q-protocol3")){
+                    rx.setPattern("([YN])$");
+                    rx.indexIn(answer);
+                    QString protocol3= rx.cap(1);
+                    if (protocol3.compare("Y") == 0){
+                        emit setFPS();
+                    }
                 }
-                answer.prepend("  Question/Answer ");
+
+                //answer.prepend("  Question/Answer ");
                 //emit printStatusBar(answer);
                 //qDebug() << "ANSWER bytes "<< bytes <<" answer "<< ans;
                 free(ans);

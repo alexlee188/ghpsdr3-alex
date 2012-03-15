@@ -224,6 +224,7 @@ public slots:
     void spectrumHighChanged(int high);
     void spectrumLowChanged(int low);
     void fpsChanged(int f);
+    void setFPS(void);
     void waterfallHighChanged(int high);
     void waterfallLowChanged(int low);
     void waterfallAutomaticChanged(bool state);
