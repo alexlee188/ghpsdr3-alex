@@ -396,19 +396,19 @@ void spectrum_timer_handler(int sv){            // this is called every 20 ms
             meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             }
-        client_samples=malloc(BUFFER_HEADER_SIZE+samples);
-        client_set_samples(spectrumBuffer,samples);
 
         sem_wait(&bufferevent_semaphore);
         TAILQ_FOREACH(item, &Client_list, entries){
             if(item->fps > 0) {
                 if (item->frame_counter-- <= 1) {
-                    bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+samples);
+                    client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
+                    client_set_samples(spectrumBuffer,item->samples);
+                    bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
+                    free(client_samples);
                     item->frame_counter = 50 / item->fps;
                 }
             }
         }
-        free(client_samples);
         sem_post(&bufferevent_semaphore);
 
         spectrum_timestamp++;
