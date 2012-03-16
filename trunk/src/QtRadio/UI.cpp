@@ -566,6 +566,7 @@ void UI::actionDisconnect() {
     }
     QuickIP ="";
     spectrumTimer->stop();
+    protocol3 = false;
 
     connection.disconnect();
     widget.actionConnectToServer->setDisabled(FALSE);
