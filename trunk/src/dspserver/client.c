@@ -114,7 +114,7 @@ static timer_t rtp_tx_timerid;
 // For timer based spectrum data (instead of sending one spectrum frame per getspectrum command from clients)
 #define SPECTRUM_TIMER_NS (20*1000000)
 static timer_t spectrum_timerid;
-static long spectrum_timestamp = 0;
+static unsigned long spectrum_timestamp = 0;
 
 int data_in_counter=0;
 int iq_buffer_counter = 0;
@@ -794,7 +794,10 @@ void readcb(struct bufferevent *bev, void *ctx){
     int slave = 0;
     struct evbuffer *inbuf;
 
-    if ((item = TAILQ_FIRST(&Client_list)) == NULL) {
+    sem_wait(&bufferevent_semaphore);
+    item = TAILQ_FIRST(&Client_list);
+    sem_post(&bufferevent_semaphore);
+    if (item == NULL) {
         sdr_log(SDR_LOG_ERROR, "readcb called with no clients");
         return;
     }

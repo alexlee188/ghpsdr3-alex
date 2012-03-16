@@ -73,14 +73,15 @@ typedef struct _memory_entry {
 void client_init(int receiver);
 void rtp_tx_init(void);
 void tx_init(void);
-void spectrum_init();
+void spectrum_init(void);
+void spectrum_timer_init(void);
 void *spectrum_thread(void *);
 void *memory_thread(void *);
-void client_set_timing();
-void setprintcountry();
+void client_set_timing(void);
+void setprintcountry(void);
 void answer_question(char *message, char *clienttype, struct bufferevent *bev);
 char servername[21];
-void printversion();
+void printversion(void);
 extern double mic_src_ratio;
 
 #endif
