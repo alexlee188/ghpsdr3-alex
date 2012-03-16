@@ -432,7 +432,7 @@ void* rtp_tx_thread(void *arg){
 	item = TAILQ_FIRST(&Mic_rtp_stream);
 	sem_post(&mic_semaphore);
 	if (item == NULL){
-		usleep(100);
+		usleep(1000);
 		continue;
 		}
 
