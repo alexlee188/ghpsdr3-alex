@@ -402,6 +402,7 @@ void spectrum_timer_handler(int sv){            // this is called every 20 ms
             subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             }
         TAILQ_FOREACH(item, &Client_list, entries){
+            sem_post(&bufferevent_semaphore);
             if(item->fps > 0) {
                 if (item->frame_counter-- <= 1) {
                     client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
@@ -411,6 +412,7 @@ void spectrum_timer_handler(int sv){            // this is called every 20 ms
                     item->frame_counter = 50 / item->fps;
                 }
             }
+            sem_wait(&bufferevent_semaphore);
         }
         sem_post(&bufferevent_semaphore);
 
