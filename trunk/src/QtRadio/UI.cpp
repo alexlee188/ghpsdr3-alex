@@ -476,13 +476,15 @@ void UI::fpsChanged(int f) {
 void UI::setFPS(void){
     QString command;
     command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumFrame->width() << " " << fps;
-        connection.sendCommand(command);
+    connection.sendCommand(command);
 }
 
 void UI::resizeEvent(QResizeEvent *){
-    QString command;
-    command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumFrame->width() << " " << fps;
+    if (protocol3){
+        QString command;
+        command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumFrame->width() << " " << fps;
         connection.sendCommand(command);
+    }
 }
 
 void UI::setProtocol3(bool p){
@@ -2027,7 +2029,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  protocol-3 15 Mar 2012");
+                   + getversionstring() +  message + "  protocol-3 16 Mar 2012");
     lastmessage = message;
 
 }
