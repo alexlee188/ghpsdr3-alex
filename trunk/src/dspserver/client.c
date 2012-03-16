@@ -340,8 +340,7 @@ void spectrum_timer_init(void){
 
 	timer_create (CLOCK_REALTIME, &sev, &spectrum_timerid);
 	timer_settime (spectrum_timerid, 0, &value, NULL);
-
-	}
+}
 
 void rtp_tx_timer_handler(int sv){
     int i;
@@ -353,14 +352,17 @@ void rtp_tx_timer_handler(int sv){
     struct audio_entry *item;
     client_entry *client_item;
 
-    if ((client_item = TAILQ_FIRST(&Client_list)) == NULL) return;	// no master client
-    if (client_item->rtp != connection_rtp) return;			// not rtp master
+    sem_wait(&bufferevent_semaphore);
+    client_item = TAILQ_FIRST(&Client_list);
+    sem_post(&bufferevent_semaphore);
+    if (client_item == NULL) return;	                // no master client
+    if (client_item->rtp != connection_rtp) return;	// not rtp master
 	length=rtp_receive(client_item->session,rtp_buffer,RTP_BUFFER_SIZE);
-	recv_ts+=RTP_BUFFER_SIZE;		// proceed with timestamp increment as this is timer based	        
+	recv_ts+=RTP_BUFFER_SIZE;		        // proceed with timestamp increment as this is timer based	        
 	if (length > 0){
 	    for(i=0;i<length;i++) {
 		v=G711A_decode(rtp_buffer[i]);
-		fv=(float)v/32767.0F;   // get into the range -1..+1
+		fv=(float)v/32767.0F;                   // get into the range -1..+1
 
 		data_in[data_in_counter*2]=fv;
 		data_in[(data_in_counter*2)+1]=fv;
@@ -383,21 +385,22 @@ void rtp_tx_timer_handler(int sv){
 
 void spectrum_timer_handler(int sv){            // this is called every 20 ms
         client_entry *item;
-
+        
+        sem_wait(&bufferevent_semaphore);
         item = TAILQ_FIRST(&Client_list);
+        sem_post(&bufferevent_semaphore);
         if (item == NULL) return;               // no clients
 
+        sem_wait(&bufferevent_semaphore);
         if(mox) {
             Process_Panadapter(1,spectrumBuffer);
-            meter=CalculateTXMeter(1,5); // MIC
+            meter=CalculateTXMeter(1,5);        // MIC
             subrx_meter=-121;
         } else {
             Process_Panadapter(0,spectrumBuffer);
             meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             }
-
-        sem_wait(&bufferevent_semaphore);
         TAILQ_FOREACH(item, &Client_list, entries){
             if(item->fps > 0) {
                 if (item->frame_counter-- <= 1) {
@@ -566,6 +569,7 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
         /* ... */
     }
 
+    sem_wait(&bufferevent_semaphore);
     for (item = TAILQ_FIRST(&Client_list); item != NULL; item = TAILQ_NEXT(item, entries)){
 	if (item->bev == bev){
             char ipstr[16];
@@ -586,6 +590,8 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 	client_count++;
 	if (item->rtp == connection_rtp) rtp_client_count++;
     }
+
+    sem_post(&bufferevent_semaphore);
 
     if ((rtp_client_count <= 0) && is_rtp_client) {
 	rtp_connected = 0; 	// last rtp client disconnected
@@ -697,16 +703,21 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     item->rtp = connection_unknown;
     item->fps = 0;
     item->frame_counter = 0;
+    sem_wait(&bufferevent_semaphore);
     TAILQ_INSERT_TAIL(&Client_list, item, entries);
+    sem_post(&bufferevent_semaphore);
 
     if (toShareOrNotToShare) {
         int client_count = 0;
         char status_buf[32];
 
+        sem_wait(&bufferevent_semaphore);
         /* NB: Clobbers item */
         TAILQ_FOREACH(item, &Client_list, entries){
     	client_count++;
         }
+        sem_post(&bufferevent_semaphore);
+
         sprintf(status_buf,"%d client(s)", client_count);
         updateStatus(status_buf);
     }
@@ -795,12 +806,14 @@ void readcb(struct bufferevent *bev, void *ctx){
          * command it is executing, and abort if it is not. */
 
 	// locate the current_item for this slave client
+        sem_wait(&bufferevent_semaphore);
         for (current_item = TAILQ_FIRST(&Client_list); current_item != NULL; current_item = tmp_item){
             tmp_item = TAILQ_NEXT(current_item, entries);
             if (current_item->bev == bev){
                 break;
             }
         }
+        sem_post(&bufferevent_semaphore);
         if (current_item == NULL) {
             sdr_log(SDR_LOG_ERROR, "This slave was not located");
             return;
@@ -864,6 +877,8 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             samples=atoi(tokens[0]);
+
+            sem_wait(&bufferevent_semaphore);
             if(mox) {
                 Process_Panadapter(1,spectrumBuffer);
                 meter=CalculateTXMeter(1,5); // MIC
@@ -876,6 +891,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             client_samples=malloc(BUFFER_HEADER_SIZE+samples);
             client_set_samples(spectrumBuffer,samples);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
+            sem_post(&bufferevent_semaphore);
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;
