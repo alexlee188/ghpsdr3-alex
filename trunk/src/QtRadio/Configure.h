@@ -100,6 +100,7 @@ public:
     bool getRxIQcheckboxState();
     double getRxIQspinBoxValue();
     int getCwPitch();
+    bool getRxIQdivCheckBoxState();
 
 signals:
     void hostChanged(QString host);
