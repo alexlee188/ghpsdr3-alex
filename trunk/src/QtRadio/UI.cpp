@@ -2291,6 +2291,7 @@ void UI::RxIQspinChanged(double num)
     command.clear(); QTextStream(&command) << "SetIQEnable " << "false";
     connection.sendCommand(command);
     // Set the value of RxIQMu
+    if(configure.getRxIQdivCheckBoxState()) num=num/100;
     command.clear(); QTextStream(&command) << "RxIQmuVal " << num;
     connection.sendCommand(command);
     //If checked to be on, then turn it back on
