@@ -407,7 +407,9 @@ void spectrum_timer_handler(int sv){            // this is called every 20 ms
                 if (item->frame_counter-- <= 1) {
                     client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
                     client_set_samples(spectrumBuffer,item->samples);
+                    sem_wait(&bufferevent_semaphore);
                     bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
+                    sem_post(&bufferevent_semaphore);
                     free(client_samples);
                     item->frame_counter = 50 / item->fps;
                 }
