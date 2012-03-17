@@ -154,11 +154,8 @@ void* tx_thread(void* arg);
 void *rtp_tx_thread(void *arg);
 int local_rtp_port = LOCAL_RTP_PORT;
 
-void client_send_samples(int size);
-void client_set_samples(float* samples,int size);
+void client_set_samples(char *client_samples, float* samples,int size);
 
-char* client_samples;
-int samples;
 int prncountry = 0;
 
 static void *printcountrythread(void *);
@@ -385,13 +382,13 @@ void rtp_tx_timer_handler(int sv){
 
 void spectrum_timer_handler(int sv){            // this is called every 20 ms
         client_entry *item;
+        char * client_samples;
         
         sem_wait(&bufferevent_semaphore);
         item = TAILQ_FIRST(&Client_list);
         sem_post(&bufferevent_semaphore);
         if (item == NULL) return;               // no clients
 
-        sem_wait(&bufferevent_semaphore);
         if(mox) {
             Process_Panadapter(1,spectrumBuffer);
             meter=CalculateTXMeter(1,5);        // MIC
@@ -401,15 +398,14 @@ void spectrum_timer_handler(int sv){            // this is called every 20 ms
             meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             }
+        sem_wait(&bufferevent_semaphore);
         TAILQ_FOREACH(item, &Client_list, entries){
             sem_post(&bufferevent_semaphore);
             if(item->fps > 0) {
                 if (item->frame_counter-- <= 1) {
                     client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
-                    client_set_samples(spectrumBuffer,item->samples);
-                    sem_wait(&bufferevent_semaphore);
+                    client_set_samples(client_samples,spectrumBuffer,item->samples);
                     bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
-                    sem_post(&bufferevent_semaphore);
                     free(client_samples);
                     item->frame_counter = 50 / item->fps;
                 }
@@ -883,9 +879,8 @@ void readcb(struct bufferevent *bev, void *ctx){
         }else if(strncmp(cmd,"getspectrum",11)==0) {
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
-            samples=atoi(tokens[0]);
+            int samples=atoi(tokens[0]);
 
-            sem_wait(&bufferevent_semaphore);
             if(mox) {
                 Process_Panadapter(1,spectrumBuffer);
                 meter=CalculateTXMeter(1,5); // MIC
@@ -895,8 +890,9 @@ void readcb(struct bufferevent *bev, void *ctx){
                 meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
                 subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             }
-            client_samples=malloc(BUFFER_HEADER_SIZE+samples);
-            client_set_samples(spectrumBuffer,samples);
+            sem_wait(&bufferevent_semaphore);
+            char *client_samples=malloc(BUFFER_HEADER_SIZE+samples);
+            client_set_samples(client_samples,spectrumBuffer,samples);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
             sem_post(&bufferevent_semaphore);
             free(client_samples);
@@ -1358,7 +1354,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 }
 
 
-void client_set_samples(float* samples,int size) {
+void client_set_samples(char* client_samples, float* samples,int size) {
     int i,j;
     float slope;
     float max;
