@@ -147,7 +147,7 @@ int encoding = 0;
 
 static int send_audio = 0;
 
-static sem_t bufferevent_semaphore, mic_semaphore;
+static sem_t bufferevent_semaphore, mic_semaphore, spectrum_semaphore;
 
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
@@ -248,6 +248,7 @@ void client_init(int receiver) {
 
     sem_init(&bufferevent_semaphore,0,1);
     sem_init(&mic_semaphore,0,1);
+    sem_init(&spectrum_semaphore,0,1);
     signal(SIGPIPE, SIG_IGN);
     rtp_init();
     spectrum_timer_init();
@@ -382,13 +383,13 @@ void rtp_tx_timer_handler(int sv){
 
 void spectrum_timer_handler(int sv){            // this is called every 20 ms
         client_entry *item;
-        char * client_samples;
         
         sem_wait(&bufferevent_semaphore);
         item = TAILQ_FIRST(&Client_list);
         sem_post(&bufferevent_semaphore);
         if (item == NULL) return;               // no clients
 
+        sem_wait(&spectrum_semaphore);
         if(mox) {
             Process_Panadapter(1,spectrumBuffer);
             meter=CalculateTXMeter(1,5);        // MIC
@@ -397,14 +398,17 @@ void spectrum_timer_handler(int sv){            // this is called every 20 ms
             Process_Panadapter(0,spectrumBuffer);
             meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-            }
+        }
+        sem_post(&spectrum_semaphore);
         sem_wait(&bufferevent_semaphore);
         TAILQ_FOREACH(item, &Client_list, entries){
             sem_post(&bufferevent_semaphore);
             if(item->fps > 0) {
                 if (item->frame_counter-- <= 1) {
-                    client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
+                    char *client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
+                    sem_wait(&spectrum_semaphore);
                     client_set_samples(client_samples,spectrumBuffer,item->samples);
+                    sem_post(&spectrum_semaphore);
                     bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
                     free(client_samples);
                     item->frame_counter = 50 / item->fps;
@@ -880,7 +884,8 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             int samples=atoi(tokens[0]);
-
+            
+            sem_wait(&spectrum_semaphore);
             if(mox) {
                 Process_Panadapter(1,spectrumBuffer);
                 meter=CalculateTXMeter(1,5); // MIC
@@ -890,9 +895,10 @@ void readcb(struct bufferevent *bev, void *ctx){
                 meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
                 subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             }
-            sem_wait(&bufferevent_semaphore);
             char *client_samples=malloc(BUFFER_HEADER_SIZE+samples);
             client_set_samples(client_samples,spectrumBuffer,samples);
+            sem_post(&spectrum_semaphore);
+            sem_wait(&bufferevent_semaphore);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
             sem_post(&bufferevent_semaphore);
             free(client_samples);
