@@ -51,6 +51,30 @@
 
 const char* parse_command(CLIENT* client,char* command);
 
+void set_mox(CLIENT* client, int mox) {
+    
+    pthread_mutex_lock(&client->mox_lock);
+    client->mox = mox;
+    pthread_mutex_unlock(&client->mox_lock);    
+}
+
+int get_mox(CLIENT* client) {
+    
+    pthread_mutex_lock(&client->mox_lock);
+    int rv = client->mox;
+    pthread_mutex_unlock(&client->mox_lock);    
+    return rv;
+}
+
+
+int toggle_mox(CLIENT* client) {
+    
+    pthread_mutex_lock(&client->mox_lock);
+    int rv = (client->mox = 1 - client->mox);
+    pthread_mutex_unlock(&client->mox_lock);
+    return rv;
+}
+
 //Client thread for RX IQ stream
 void* client_thread(void* arg) {
     CLIENT* client=(CLIENT*)arg;
@@ -61,7 +85,8 @@ void* client_thread(void* arg) {
     client->receiver_state=RECEIVER_DETACHED;
     client->transmitter_state=TRANSMITTER_DETACHED;
     client->receiver_num=-1;
-    client->mox=0;
+    set_mox(client,0);
+    pthread_mutex_init(&client->mox_lock, NULL );
 
     while(1) {	
         bytes_read=recv(client->socket,command,sizeof(command),0);
@@ -85,7 +110,7 @@ void* client_thread(void* arg) {
         client->transmitter_state=TRANSMITTER_DETACHED;
     }
 
-    client->mox=0;
+    set_mox(client,0);
     client->bs_port=-1;
     detach_bandscope(client);
 
@@ -203,9 +228,11 @@ const char* parse_command(CLIENT* client,char* command) {
                 return INVALID_COMMAND;
             }
         } else if(strcmp(token,"mox")==0) {
-            //TODO: implement the mox/ptt behaviour...
-            //COMMAND: 'mox'
-            return NOT_IMPLEMENTED_COMMAND;
+            //Toggle the mox
+            int v=toggle_mox(client);
+            fprintf(stderr,"Toggled mox to %d for Client %d\n",v, client->receiver_num);            
+            return OK;
+            
         } else if(strcmp(token,"preamp")==0) {
             return NOT_IMPLEMENTED_COMMAND;
         } else if(strcmp(token,"record")==0) {
