@@ -408,8 +408,8 @@ void spectrum_timer_handler(int sv){            // this is called every 20 ms
                     char *client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
                     sem_wait(&spectrum_semaphore);
                     client_set_samples(client_samples,spectrumBuffer,item->samples);
-                    sem_post(&spectrum_semaphore);
                     bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
+                    sem_post(&spectrum_semaphore);
                     free(client_samples);
                     item->frame_counter = 50 / item->fps;
                 }
@@ -897,10 +897,10 @@ void readcb(struct bufferevent *bev, void *ctx){
             }
             char *client_samples=malloc(BUFFER_HEADER_SIZE+samples);
             client_set_samples(client_samples,spectrumBuffer,samples);
-            sem_post(&spectrum_semaphore);
             sem_wait(&bufferevent_semaphore);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
             sem_post(&bufferevent_semaphore);
+            sem_post(&spectrum_semaphore);
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;
