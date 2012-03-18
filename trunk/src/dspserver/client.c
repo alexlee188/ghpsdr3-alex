@@ -838,7 +838,8 @@ void readcb(struct bufferevent *bev, void *ctx){
      * what was here before. */
     inbuf = bufferevent_get_input(bev);
     while (evbuffer_get_length(inbuf) >= MSG_SIZE) {
-        if ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) != MSG_SIZE) {
+        bytesRead = bufferevent_read(bev, message, MSG_SIZE);
+        if (bytesRead != MSG_SIZE) {
             sdr_log(SDR_LOG_ERROR, "Short read from client; shouldn't happen\n");
             return;
         }
