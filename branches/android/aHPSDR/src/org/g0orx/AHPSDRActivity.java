@@ -150,7 +150,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		
 		update=new Update(connection);
 		update.setFps(fps);
-		update.start();
+		connection.getSpectrum_protocol3(fps+1);
+		//update.start();
 	}
 
 	public void onPause() {
@@ -923,6 +924,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 						public void onClick(DialogInterface dialog, int item) {
 							fps=item;
 							update.setFps(fps+1);
+							connection.getSpectrum_protocol3(fps+1);
 							dialog.dismiss();
 						}
 					});
