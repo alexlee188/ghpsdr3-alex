@@ -41,7 +41,6 @@
 #include <omp.h>
 #endif
 
-#include <semaphore.h>
 #include <signal.h>
 #include <string.h>
 #include <samplerate.h>
@@ -79,6 +78,7 @@ static int real_position = 1;
 static int imag_position = 0;
 //to disable RX samples
 static bool drop_rx_samples = false;
+static const int TRANSMIT_BUFFER_SIZE_BYTES = TRANSMIT_BUFFER_SIZE*2*sizeof(float);
 
 // TX audio sample is the HEAD of a queue to be forwarded to USRP
 TAILQ_HEAD(tailhead, _buffer_entry) tx_audio_iq_stream;
@@ -86,7 +86,7 @@ struct tailhead *headp; /* Tail queue head. */
 #define MAX_QUEUE 50 //Max 50KSAMPLES in queue
 #define QUEUE_WAIT_TIME 10000  //Time to wait after a empty queue (uSec)
 #define USRP_DROP_WAIT_TIME 2000  //Time to wait after dropping rx samples (uSec)
-//static sem_t tx_audio_semaphore;
+
 static pthread_mutex_t queue_lock;
 
 static int queue_length = 0;
@@ -96,9 +96,7 @@ void setup_tx_queue(void) {
     
     TAILQ_INIT(&tx_audio_iq_stream); 
 
-    pthread_mutex_init(&queue_lock, NULL );
-    signal(SIGPIPE, SIG_IGN);
-    
+    pthread_mutex_init(&queue_lock, NULL );        
 }
 
 //USRP initialisation
@@ -147,7 +145,7 @@ bool usrp_init (const char *rx_subdev_par, const char *tx_subdev_par)
         setup_tx_queue();
         
         resampler_init();
-        
+
         return true;
     }
     return false;
@@ -340,11 +338,6 @@ void *usrp_receiver_thread (void *param)
             ) % md.error_code << std::endl;
             goto done_loop;
         }
-
-        if (drop_rx_samples) {
-            usleep(USRP_DROP_WAIT_TIME);
-            continue;
-        }   
          
         //Here IQ samples are buffered: 
         //Rational resampling is applied at this point
@@ -360,13 +353,17 @@ void *usrp_receiver_thread (void *param)
             for (i=0; i<num_rx_samps; ++i)
                 resampler_load_data(resampler_id, i, buff[i].real(), buff[i].imag());                                    
         }
+        
+        if (drop_rx_samples) {
+            continue;
+        }           
                  
         //Rational resampling API here                
         char *rr_msg = NULL;
         int output_frames_gen = 0;
         int rr_retcode = do_resample(resampler_id, num_rx_samps, &output_frames_gen, rr_msg);         
                 
-        //std::cerr << boost::format("output_frames_gen %d.") % output_frames_gen << std::endl; 
+        //std::cerr << boost::format("output_frames_gen %d.") % output_frames_gen << std::endl;                 
         
         if (rr_retcode == RRESAMPLER_NO_ERROR) { 
             //Fetch resampled data into the Receiver input buffer
@@ -587,8 +584,11 @@ int usrp_process_tx_modulation(float *outbuf, int mox) {
     //If there is space in queue
     if (queue_length < MAX_QUEUE) {    
         //Add container to queue
-        audio_data = (unsigned char *) malloc(TRANSMIT_BUFFER_SIZE*2*sizeof(float));
-        memcpy(audio_data, outbuf, TRANSMIT_BUFFER_SIZE*2*sizeof(float));
+        audio_data = (unsigned char *) malloc(TRANSMIT_BUFFER_SIZE_BYTES);
+        if (mox==1)
+            memcpy(audio_data, outbuf, TRANSMIT_BUFFER_SIZE_BYTES);
+        else
+            memset(audio_data, 0, TRANSMIT_BUFFER_SIZE_BYTES);
         item = (BUFFER_ENTRY *) malloc(sizeof(*item));
         item->data = audio_data;    
         //std::cerr << boost::format("Add to queue: len %d") % queue_length << std::endl;        

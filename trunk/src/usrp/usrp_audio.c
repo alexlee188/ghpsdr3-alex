@@ -17,10 +17,8 @@
 #include "transmitter.h"
 #include "util.h"
 
-//#define DECIM_FACT         8 
 
-//#define SAMPLE_RATE        (CORE_BANDWIDTH/DECIM_FACT)   /* the sampling rate */
-#define CHANNELS           2       /* 1 = mono 2 = stereo */
+#define CHANNELS 2       /* 1 = mono 2 = stereo */
 #define BUFFER_DISCARDED -1
 
 #define AUDIO_TO_NOTHING 0
@@ -34,7 +32,6 @@
 static int SAMPLE_RATE;
 static int DECIM_FACT;
 static int AUDIO_DESTINATION = -1;
-static int SAMPLES_PER_BUFFER = TRANSMIT_BUFFER_SIZE;
 static int (*audio_processor)(float*, int) = NULL;
 
 static PaStream* stream;
@@ -53,9 +50,6 @@ void usrp_disable_path(char *path) {
     if (strcasecmp(path, "rx") == 0) {
         usrp_disable_rx_path();
         fprintf(stderr,"Discarding USRP rx baseband samples\n");
-    }
-    else {
-        fprintf(stderr,"Illegal setting %s for disable. Ignoring", path);        
     }
 }
 
@@ -156,8 +150,9 @@ int usrp_local_audio_open(int core_bandwidth) {
 
     fprintf (stderr,"input device=%d output device=%d\n",inputParameters.device,outputParameters.device);
     fprintf (stderr, "Audio sample SR: %d\n", SAMPLE_RATE);
-    rc=Pa_OpenStream(&stream,&inputParameters,&outputParameters,(double)SAMPLE_RATE,(unsigned long)SAMPLES_PER_BUFFER,paNoFlag,NULL,NULL);
-    //rc=Pa_OpenDefaultStream(&stream,CHANNELS,CHANNELS,paFloat32,SAMPLE_RATE,SAMPLES_PER_BUFFER,NULL, NULL);
+    //rc=Pa_OpenStream(&stream,&inputParameters,&outputParameters,(double)SAMPLE_RATE,(unsigned long)TRANSMIT_BUFFER_SIZE,paNoFlag,NULL,NULL);
+    rc=Pa_OpenStream(&stream,&inputParameters,&outputParameters,(double)SAMPLE_RATE,paFramesPerBufferUnspecified,paNoFlag,NULL,NULL);
+    //rc=Pa_OpenDefaultStream(&stream,CHANNELS,CHANNELS,paFloat32,SAMPLE_RATE,TRANSMIT_BUFFER_SIZE,NULL, NULL);
 
     if(rc!=paNoError) {
         fprintf(stderr,"Pa_OpenStream failed: %s\n",Pa_GetErrorText(rc));
@@ -214,15 +209,15 @@ int usrp_local_audio_close() {
 int usrp_local_audio_write(float* left_samples,float* right_samples) {
     int rc;
     int i;
-    float audio_buffer[SAMPLES_PER_BUFFER*2];
+    float audio_buffer[TRANSMIT_BUFFER_SIZE*2];
 
     // interleave samples
-    for(i=0;i<SAMPLES_PER_BUFFER;i++) {
+    for(i=0;i<TRANSMIT_BUFFER_SIZE;i++) {
         audio_buffer[i*2]=right_samples[i];
         audio_buffer[(i*2)+1]=left_samples[i];
     }
 
-    rc=Pa_WriteStream(stream,audio_buffer,SAMPLES_PER_BUFFER);
+    rc=Pa_WriteStream(stream,audio_buffer,TRANSMIT_BUFFER_SIZE);
     if(rc!=0) {
         fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n",Pa_GetErrorText(rc),rc);
     }
@@ -232,13 +227,13 @@ int usrp_local_audio_write(float* left_samples,float* right_samples) {
 
 //implements pointer audio_processor
 int usrp_local_audio_write_decim (float* samples, int mox) {
-    int rc, i;
+    int rc=0, i;
     float *left_samples = samples;    
-    float *right_samples = &left_samples[SAMPLES_PER_BUFFER];
-    float audio_buffer[SAMPLES_PER_BUFFER*2/DECIM_FACT];
+    float *right_samples = &left_samples[TRANSMIT_BUFFER_SIZE];
+    float audio_buffer[TRANSMIT_BUFFER_SIZE*2/DECIM_FACT];
 
     // interleave samples
-    for(i=0;i<SAMPLES_PER_BUFFER;i++) {
+    for(i=0;i<TRANSMIT_BUFFER_SIZE;i++) {
 
         if ((i % DECIM_FACT) == 0) {
             audio_buffer[i/DECIM_FACT*2]=right_samples[i];
@@ -246,7 +241,11 @@ int usrp_local_audio_write_decim (float* samples, int mox) {
         }
     }
 
-    rc = Pa_WriteStream (stream, audio_buffer, SAMPLES_PER_BUFFER*2/DECIM_FACT);
+    //TEMP
+    //dump_float_buffer_heads(audio_buffer);
+    //rc=0;
+    if (mox==1)
+        rc = Pa_WriteStream (stream, audio_buffer, TRANSMIT_BUFFER_SIZE*2/DECIM_FACT);
     if ( rc != 0 ) {
         fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n", Pa_GetErrorText(rc), rc);
     }

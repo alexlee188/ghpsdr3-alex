@@ -46,8 +46,10 @@ typedef struct _client {
     int iq_port;
     int bs_port;
     int mox;
+    pthread_mutex_t mox_lock;
 } CLIENT;
 
 
 void* client_thread(void* arg);
+int get_mox(CLIENT* client);
 
