@@ -96,6 +96,7 @@ void setup_tx_queue(void) {
     
     TAILQ_INIT(&tx_audio_iq_stream); 
 
+
     pthread_mutex_init(&queue_lock, NULL );        
 }
 
@@ -224,11 +225,11 @@ bool  usrp_is_tx_enabled(void)
     return usrp.tx_enabled;
 }
 
+
 void usrp_disable_rx_path(void) 
 {
     drop_rx_samples = true;
 }
-
 
 void usrp_set_client_rx_rate (int rate)
 {
@@ -476,7 +477,6 @@ void *usrp_transmitter_thread (void *param)
                 unsigned int i;
             #pragma omp parallel for schedule(static) private(i)
                 for (i=0; (i<MAX_USRP_TX_BUFFER) && (acc_tx_samples<output_frames_gen); ++i) {
-
                     resampler_fetch_data(resampler_id, i, &im, &rl);
                     buff[i] = std::complex<float>(im,rl);                                                     
                     num_tx_samples++; acc_tx_samples++;                

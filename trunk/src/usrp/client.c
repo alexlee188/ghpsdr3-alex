@@ -85,6 +85,7 @@ void* client_thread(void* arg) {
     client->receiver_state=RECEIVER_DETACHED;
     client->transmitter_state=TRANSMITTER_DETACHED;
     client->receiver_num=-1;
+
     set_mox(client,0);
     pthread_mutex_init(&client->mox_lock, NULL );
 
@@ -228,6 +229,7 @@ const char* parse_command(CLIENT* client,char* command) {
                 return INVALID_COMMAND;
             }
         } else if(strcmp(token,"mox")==0) {
+
             //Toggle the mox
             int v=toggle_mox(client);
             fprintf(stderr,"Toggled mox to %d for Client %d\n",v, client->receiver_num);            

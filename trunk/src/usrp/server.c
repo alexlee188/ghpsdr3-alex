@@ -164,6 +164,7 @@ void process_args(int argc,char* argv[]) {
                 break;
         
             case 7:
+
             default:
                 fprintf(stderr,"Usage: \n");
                 fprintf(stderr,"  usrp_server -r, --rx-subdev spec (default \"\")\n");
