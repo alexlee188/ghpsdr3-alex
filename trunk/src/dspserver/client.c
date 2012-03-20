@@ -838,7 +838,8 @@ void readcb(struct bufferevent *bev, void *ctx){
      * what was here before. */
     inbuf = bufferevent_get_input(bev);
     while (evbuffer_get_length(inbuf) >= MSG_SIZE) {
-        if ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) != MSG_SIZE) {
+        bytesRead = bufferevent_read(bev, message, MSG_SIZE);
+        if (bytesRead != MSG_SIZE) {
             sdr_log(SDR_LOG_ERROR, "Short read from client; shouldn't happen\n");
             return;
         }
@@ -1341,6 +1342,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 2) != 2)
                 goto badcommand;
             sdr_log(SDR_LOG_INFO,"Spectrum fps set to = '%s'\n",tokens[1]);
+            sem_wait(&bufferevent_semaphore);
             if (slave) {
                 current_item->samples = atoi(tokens[0]);
                 current_item->fps = atoi(tokens[1]);
@@ -1349,6 +1351,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                 item->samples = atoi(tokens[0]);
                 item->fps = atoi(tokens[1]);
             }
+            sem_post(&bufferevent_semaphore);
         } else {
             fprintf(stderr,"Invalid command: token: '%s'\n",cmd);
         }
