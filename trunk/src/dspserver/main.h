@@ -24,5 +24,5 @@
 * 
 */
 
-const char *version = "20120318;-protocol3"; //YYYYMMDD; text desc
+const char *version = "20120320;-protocol3"; //YYYYMMDD; text desc
 
