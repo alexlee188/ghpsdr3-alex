@@ -171,7 +171,7 @@ void allocate_audio_buffer(){
         codec2_count = 0;
         /* Force buffer size */
         as_conf_cache.bufsize = BITS_SIZE * NO_CODEC2_FRAMES;
-        samplesize = audiostream_conf.bufsize * audiostream_conf.channels;
+        samplesize = as_conf_cache.bufsize * audiostream_conf.channels;
         break;
     default:
         /* No ENCODING_ALAW2! */
