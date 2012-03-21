@@ -171,7 +171,7 @@ void allocate_audio_buffer(){
         codec2_count = 0;
         /* Force buffer size */
         as_conf_cache.bufsize = BITS_SIZE * NO_CODEC2_FRAMES;
-        samplesize = audiostream_conf.bufsize * audiostream_conf.channels;
+        samplesize = as_conf_cache.bufsize * as_conf_cache.channels;
         break;
     default:
         /* No ENCODING_ALAW2! */
@@ -251,6 +251,7 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
             codec2_encode(codec2, bits, codec2_buffer);
             memcpy(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE+BITS_SIZE*codec2_count], bits, BITS_SIZE);
             codec2_count++;
+	    audio_stream_buffer_insert = 0;
             if (codec2_count >= NO_CODEC2_FRAMES){
                 audio_buffer[0]=AUDIO_BUFFER;
 
