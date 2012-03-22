@@ -7,8 +7,8 @@
 /* Each point contains 2 floats - 1 real, 1 imaginary */
 #define NUM_POINTS 4096
 
-/* 1 - forward FFT, -1 - inverse FFT */
-#define DIRECTION 1
+/* -1 - forward FFT, 1 - inverse FFT */
+#define DIRECTION -1
 
 #include "fft_check.c"
 
@@ -152,7 +152,7 @@ void fftcl_plan_execute(fftcl_plan* plan){
    };
 
    /* Initialize kernel arguments */
-   direction = plan->direction;
+   direction = -plan->direction;		// kernel direction 1 is forward FFT, so it the reverse of FFTW_FORWARD, which is -1
    num_points = plan->N;
    points_per_group = local_mem_size/(2*sizeof(float));
    if(points_per_group > num_points)
@@ -333,7 +333,7 @@ int main() {
    fftcl_plan_destroy(planA);
 
    /* Compute accurate values */
-   if(DIRECTION > 0)
+   if(DIRECTION < 0)
       fft(NUM_POINTS, check_input, check_output);
    else
       ifft(NUM_POINTS, check_output, check_input);
@@ -348,7 +348,7 @@ int main() {
 
    /* Display check results */
    printf("%u-point ", NUM_POINTS);
-   if(DIRECTION > 0) 
+   if(DIRECTION < 0) 
       printf("FFT ");
    else
       printf("IFFT ");
