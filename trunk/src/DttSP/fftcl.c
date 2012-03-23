@@ -18,7 +18,7 @@
 #include <CL/cl.h>
 #endif
 
-#include "fftcl.h"
+#include "common.h"
 
 /* Host/device data structures */
 cl_device_id device;

@@ -168,6 +168,9 @@ init_spectrum (SpecBlock * sb)
 		fftwf_plan_dft_1d (sb->size, (fftwf_complex *) CXBbase (sb->timebuf),
 		(fftwf_complex *) CXBbase (sb->freqbuf),
 		FFTW_FORWARD, sb->planbits);
+	sb->plancl =
+		fftcl_plan_create (sb->size, CXBbase (sb->timebuf), CXBbase (sb->freqbuf),
+		FFTW_FORWARD);
 }
 
 void
@@ -198,5 +201,6 @@ finish_spectrum (SpecBlock * sb)
 		safefree ((char *) sb->output);
 		safefree ((char *) sb->coutput);
 		fftwf_destroy_plan (sb->plan);
+		fftcl_plan_destroy(sb->plancl);
 	}
 }

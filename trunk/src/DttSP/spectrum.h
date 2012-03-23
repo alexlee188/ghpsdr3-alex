@@ -58,6 +58,8 @@ Bridgewater, NJ 08807
 #include <update.h>
 #include <window.h>
 
+#include "fftcl.h"
+
 #define SPEC_MAG	(0)
 #define SPEC_PWR	(1)
 
@@ -80,8 +82,10 @@ typedef struct _spec_block
   COMPLEX *coutput;
   int planbits;
   fftwf_plan plan;
+  fftcl_plan *plancl;
   BOOLEAN polyphase;
 } SpecBlock;
+
 
 extern void init_spectrum (SpecBlock * sb);
 extern void reinit_spectrum (SpecBlock * sb);
