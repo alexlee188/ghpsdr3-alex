@@ -200,7 +200,10 @@ newFIRPFBChannelizer(RealFIR filter, unsigned int numchans, COMPLEX *sigin, COMP
 					(fftwf_complex *)tmp->sigout,
 					FFTW_FORWARD,
 					pbits);
-
+	tmp->pchancl = fftcl_plan_create(tmp->numchans,
+					tmp->fftbuffer,
+					tmp->sigout,
+					FFTW_FORWARD);
 	return tmp;
 }
 
@@ -208,6 +211,7 @@ void delFIRPB(FIRPFB p)
 {
 	unsigned int i;
 	fftwf_destroy_plan(p->pchan);
+	fftcl_plan_destroy(p->pchancl);
 	safefree((char *)p->fftbuffer);
 	for(i=0;i<p->numchans;i++)
 		safefree((char *)p->filter_partition[i]),
@@ -232,7 +236,8 @@ void doFIRPFBChannelizer(FIRPFB p)
 		for (j=p->depth-1;j>0;j--) // Move data along delay line 
 		p->filter_delayline[i][j] = p->filter_delayline[i][j-1];
 	}
-	fftwf_execute(p->pchan); // Do Channelizer
+	//fftwf_execute(p->pchan); // Do Channelizer
+	fftcl_plan_execute(p->pchancl);
 }
 
 void doFIRPFBUpsampler(FIRUpsampler p)

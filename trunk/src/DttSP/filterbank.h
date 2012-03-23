@@ -38,6 +38,7 @@ Bridgewater, NJ 08807
 #ifndef _FILTERBANK_H
 #define _FILTERBANK_H
 #include <filter.h>
+#include "fftcl.h"
 
 typedef struct _firpfb {
   COMPLEX *sigin;
@@ -48,6 +49,7 @@ typedef struct _firpfb {
   unsigned int numchans;
   unsigned int depth;
   fftwf_plan pchan;
+  fftcl_plan *pchancl;
 } firpfb,*FIRPFB;
 
 typedef struct _firdownsampler {
