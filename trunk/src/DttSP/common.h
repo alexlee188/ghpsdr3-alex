@@ -81,3 +81,7 @@ Bridgewater, NJ 08807
 #include <sdrexport.h>
 #include <local.h>
 #endif
+
+// OpenCL fft 
+#include "fftcl.h"
+

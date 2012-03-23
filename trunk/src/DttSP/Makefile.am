@@ -5,7 +5,7 @@
 
 noinst_LIBRARIES = libDttSP.a
 
-libDttSP_a_CFLAGS =   -g -O3 -msse -ffast-math -Wall -Wno-unused-function
+libDttSP_a_CFLAGS =   -std=gnu99 -O3 -msse -ffast-math -Wall -Wno-unused-function -lOpenCL
 
 # -DPACKAGE_NAME=\"dttsp\" -DPACKAGE_TARNAME=\"dttsp\" -DPACKAGE_VERSION=\"new\" -DPACKAGE_STRING=\"dttsp\ new\" -DPACKAGE_BUGREPORT=\"ab2kt@arrl.net\>\ or\ \<rwmcgwier@gmail.com\" -DPACKAGE=\"dttsp\" -DVERSION=\"new\"
 
@@ -91,4 +91,6 @@ libDttSP_a_SOURCES = \
 	wscompand.c \
 	wscompand.h \
 	compress.c \
-	compress.h 
+	compress.h \
+	fftcl.c \
+	fftcl.h

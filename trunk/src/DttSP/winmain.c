@@ -807,7 +807,9 @@ setup (char *app_data_path)
 		reset_meters (thread);
 		reset_spectrum (thread);
 		reset_counters (thread);
-		fprintf(stderr,"setup sdr thread %0u: done\n",thread),fflush(stderr);
+		
+		// initialize fftcl
+		fftcl_initialize();
 	}
 }
 
