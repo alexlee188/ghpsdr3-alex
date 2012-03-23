@@ -5,7 +5,7 @@
 #define SCALE_FUNC "fft_scale"
 
 /* Each point contains 2 floats - 1 real, 1 imaginary */
-#define NUM_POINTS 4096
+#define NUM_POINTS 256
 
 /* -1 - forward FFT, 1 - inverse FFT */
 #define DIRECTION -1
@@ -115,15 +115,11 @@ cl_program build_program(cl_context ctx, cl_device_id dev, const char* filename)
    return program;
 }
 
-fftcl_plan *fftcl_plan_create(int N, complex *in, complex *out, int direction){
+fftcl_plan *fftcl_plan_create(int N, double complex *in, double complex *out, int direction){
 	fftcl_plan *plan;
 	plan = (fftcl_plan*) malloc(sizeof(fftcl_plan));
 	plan->N = N;
-	plan->data = (float*) malloc(sizeof(float)*N*2);
-	for (int i=0; i<N; i++){
-		plan->data[i*2] = creal(in[i]);
-		plan->data[i*2+1] = cimag(in[i]);
-	}
+	plan->in = in;
 	plan->out = out;
 	plan->direction = direction;
 	return plan;
@@ -131,7 +127,6 @@ fftcl_plan *fftcl_plan_create(int N, complex *in, complex *out, int direction){
 
 void fftcl_plan_destroy(fftcl_plan* plan){
 	if (plan != NULL){
-		free(plan->data);
 		free(plan);
 	}
 }
@@ -142,10 +137,14 @@ void fftcl_plan_execute(fftcl_plan* plan){
    unsigned int num_points, points_per_group, stage;
    float *data = malloc(plan->N * 2 * sizeof(float));
 
+   for (int i=0; i<plan->N; i++){
+   	data[i*2] = creal(plan->in[i]);
+	data[i*2+1] = cimag(plan->in[i]);
+   }
    /* Create buffer */
    data_buffer = clCreateBuffer(context, 
          CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, 
-         2*plan->N*sizeof(float), plan->data, &err);
+         2*plan->N*sizeof(float), data, &err);
    if(err < 0) {
       perror("Couldn't create a buffer");
       exit(1);
@@ -277,6 +276,9 @@ void fftcl_initialize(void){
       exit(1);   
    };
    local_size = (int)pow(2, trunc(log2(local_size)));
+   fprintf(stderr,"MAX WORK_GROUP_SIZE = %d\n", (int)local_size);
+
+   local_size = 64;
 
    /* Determine local memory size */
    err = clGetDeviceInfo(device, CL_DEVICE_LOCAL_MEM_SIZE, 
@@ -304,8 +306,8 @@ int main() {
 
    float dataf[NUM_POINTS*2];
    float data[NUM_POINTS*2];
-   complex cdat[NUM_POINTS];
-   complex cdat_out[NUM_POINTS];
+   double complex cdat[NUM_POINTS];
+   double complex cdat_out[NUM_POINTS];
    double error, check_input[NUM_POINTS][2], check_output[NUM_POINTS][2];
    fftcl_plan *planA;
 
@@ -320,9 +322,8 @@ int main() {
       check_input[i][1] = dataf[2*i+1];
    }
 
-   planA = fftcl_plan_create(NUM_POINTS, cdat, cdat_out, DIRECTION);
    fftcl_initialize();
-
+   planA = fftcl_plan_create(NUM_POINTS, cdat, cdat_out, DIRECTION);
    fftcl_plan_execute(planA);
 
    for(i=0; i < NUM_POINTS; i++){
