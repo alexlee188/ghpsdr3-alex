@@ -167,13 +167,6 @@ void fftcl_plan_execute(fftcl_plan* plan){
       exit(1);   
    };
 
-   /* Create a command queue */
-   queue = clCreateCommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE, &err);
-   if(err < 0) {
-      perror("Couldn't create a command queue");
-      exit(1);   
-   };
-
    /* Enqueue initial kernel */
    global_size = (num_points/points_per_group)*local_size;
    err = clEnqueueNDRangeKernel(queue, init_kernel, 1, NULL, &global_size, 
@@ -284,6 +277,13 @@ void fftcl_initialize(void){
       sizeof(local_mem_size), &local_mem_size, NULL);
    if(err < 0) {
       perror("Couldn't determine the local memory size");
+      exit(1);   
+   };
+
+   /* Create a command queue */
+   queue = clCreateCommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE, &err);
+   if(err < 0) {
+      perror("Couldn't create a command queue");
       exit(1);   
    };
 }
