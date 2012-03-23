@@ -807,10 +807,12 @@ setup (char *app_data_path)
 		reset_meters (thread);
 		reset_spectrum (thread);
 		reset_counters (thread);
-		
-		// initialize fftcl
-		fftcl_initialize();
+
 	}
+
+		
+	// initialize fftcl
+	fftcl_initialize();
 }
 
 BOOLEAN reset_buflen = FALSE;
