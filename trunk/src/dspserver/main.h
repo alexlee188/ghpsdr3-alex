@@ -24,5 +24,5 @@
 * 
 */
 
-const char *version = "20120320;-protocol3"; //YYYYMMDD; text desc
+const char *version = "20120323;-OpenCL"; //YYYYMMDD; text desc
 
