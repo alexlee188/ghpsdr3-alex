@@ -808,9 +808,7 @@ setup (char *app_data_path)
 		reset_spectrum (thread);
 		reset_counters (thread);
 	}
-		
-	// initialize fftcl
-	fftcl_initialize();
+
 }
 
 BOOLEAN reset_buflen = FALSE;

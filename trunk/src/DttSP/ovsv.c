@@ -47,8 +47,8 @@ filter_OvSv(FiltOvSv pflt) {
 
   /* input sig -> z */
 
-  //fftwf_execute(pflt->pfwd);
-  fftcl_plan_execute(pflt->pfwdcl);
+  fftwf_execute(pflt->pfwd);
+  //fftcl_plan_execute(pflt->pfwdcl);
 
   /* convolve in z */
   for (i = 0; i < m; i++)
@@ -56,8 +56,8 @@ filter_OvSv(FiltOvSv pflt) {
 
   /* z convolved sig -> time output sig */
  
-  //fftwf_execute(pflt->pinv);
-  fftcl_plan_execute(pflt->pinvcl);
+  fftwf_execute(pflt->pinv);
+  //fftcl_plan_execute(pflt->pinvcl);
 
   /* prepare input sig vec for next fill */
  
@@ -144,16 +144,15 @@ newFiltOvSv(COMPLEX * coefs, int ncoef, int pbits) {
   {
     int i;
     COMPLEX *zcvec;
-    //fftwf_plan ptmp;
+    fftwf_plan ptmp;
     fftcl_plan *ptmpcl;
 
     zcvec = newvec_COMPLEX(fftlen, "temp filter z vec in newFiltOvSv");
     //ptmp = fftw_create_plan(fftlen, FFTW_FORWARD, pbits);
-/*
+
     ptmp =
       fftwf_plan_dft_1d(fftlen, (fftwf_complex *) zcvec,
 			(fftwf_complex *) zfvec, FFTW_FORWARD, pbits);
-*/
     ptmpcl =
       fftcl_plan_create(fftlen, zcvec, zfvec, FFTW_FORWARD);
 #ifdef LHS
@@ -165,10 +164,10 @@ newFiltOvSv(COMPLEX * coefs, int ncoef, int pbits) {
 #endif
 
     //fftw_one(ptmp, (fftw_complex *) zcvec, (fftw_complex *) zfvec);
-//    fftwf_execute(ptmp);
-//    fftwf_destroy_plan(ptmp);
-    fftcl_plan_execute(ptmpcl);
-    fftcl_plan_destroy(ptmpcl);
+    fftwf_execute(ptmp);
+    fftwf_destroy_plan(ptmp);
+    //fftcl_plan_execute(ptmpcl);
+    //fftcl_plan_destroy(ptmpcl);
 
     delvec_COMPLEX(zcvec);
   }

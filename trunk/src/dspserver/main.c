@@ -109,6 +109,7 @@
 #include "G711A.h"
 #include "rtp.h"
 #include "util.h"
+#include "../DttSP/fftcl.h"
 
 
 char propertyPath[128];
@@ -283,6 +284,11 @@ int main(int argc,char* argv[]) {
         fprintf(stderr,"current working directory path is > MAXPATHLEN");
         exit(1);
     }
+
+		
+    // initialize fftcl
+    fftcl_initialize();
+
     Setup_SDR(directory);
     Release_Update();
     SetTRX(0,0); // thread 0 is for receive
