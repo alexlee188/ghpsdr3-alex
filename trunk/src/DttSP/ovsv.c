@@ -41,13 +41,14 @@ filter_OvSv(FiltOvSv pflt) {
   int i, m = pflt->fftlen, n = pflt->buflen;
   COMPLEX *zfvec = pflt->zfvec,
           *zivec = pflt->zivec,
-          *zovec = pflt->zovec,
+ //         *zovec = pflt->zovec,
           *zrvec = pflt->zrvec;
-  REAL scl = pflt->scale;
+  // REAL scl = pflt->scale;
 
   /* input sig -> z */
 
-  fftwf_execute(pflt->pfwd);
+  //fftwf_execute(pflt->pfwd);
+  fftcl_plan_execute(pflt->pfwdcl);
 
   /* convolve in z */
   for (i = 0; i < m; i++)
@@ -55,8 +56,8 @@ filter_OvSv(FiltOvSv pflt) {
 
   /* z convolved sig -> time output sig */
  
-  fftwf_execute(pflt->pinv);
-
+  //fftwf_execute(pflt->pinv);
+  fftcl_plan_execute(pflt->pinvcl);
 
   /* prepare input sig vec for next fill */
  
@@ -130,6 +131,7 @@ newFiltOvSv(COMPLEX * coefs, int ncoef, int pbits) {
   int buflen, fftlen;
   FiltOvSv p;
   fftwf_plan pfwd, pinv;
+  fftcl_plan *pfwdcl, *pinvcl;
   COMPLEX *zrvec, *zfvec, *zivec, *zovec;
   p = (FiltOvSv) safealloc(1, sizeof(filt_ov_sv), "new overlap/save filter");
   buflen = nblock2(ncoef - 1), fftlen = 2 * buflen;
@@ -142,14 +144,18 @@ newFiltOvSv(COMPLEX * coefs, int ncoef, int pbits) {
   {
     int i;
     COMPLEX *zcvec;
-    fftwf_plan ptmp;
+    //fftwf_plan ptmp;
+    fftcl_plan *ptmpcl;
 
     zcvec = newvec_COMPLEX(fftlen, "temp filter z vec in newFiltOvSv");
     //ptmp = fftw_create_plan(fftlen, FFTW_FORWARD, pbits);
+/*
     ptmp =
       fftwf_plan_dft_1d(fftlen, (fftwf_complex *) zcvec,
 			(fftwf_complex *) zfvec, FFTW_FORWARD, pbits);
-
+*/
+    ptmpcl =
+      fftcl_plan_create(fftlen, zcvec, zfvec, FFTW_FORWARD);
 #ifdef LHS
     for (i = 0; i < ncoef; i++)
       zcvec[i] = coefs[i];
@@ -159,8 +165,11 @@ newFiltOvSv(COMPLEX * coefs, int ncoef, int pbits) {
 #endif
 
     //fftw_one(ptmp, (fftw_complex *) zcvec, (fftw_complex *) zfvec);
-    fftwf_execute(ptmp);
-    fftwf_destroy_plan(ptmp);
+//    fftwf_execute(ptmp);
+//    fftwf_destroy_plan(ptmp);
+    fftcl_plan_execute(ptmpcl);
+    fftcl_plan_destroy(ptmpcl);
+
     delvec_COMPLEX(zcvec);
   }
 
@@ -175,6 +184,13 @@ newFiltOvSv(COMPLEX * coefs, int ncoef, int pbits) {
 			   (fftwf_complex *) zovec,
 			   FFTW_BACKWARD,
 			   pbits);
+  pfwdcl = fftcl_plan_create(fftlen, zrvec,
+			   zivec,
+			   FFTW_FORWARD);
+  pinvcl = fftcl_plan_create(fftlen, zivec,
+			   zovec,
+			   FFTW_BACKWARD);
+
   /* stuff values */
   p->buflen = buflen;
   p->fftlen = fftlen;
@@ -184,6 +200,8 @@ newFiltOvSv(COMPLEX * coefs, int ncoef, int pbits) {
   p->zrvec = zrvec;
   p->pfwd = pfwd;
   p->pinv = pinv;
+  p->pfwdcl = pfwdcl;
+  p->pinvcl = pinvcl;
   p->scale = 1.0f / (REAL) fftlen;
   normalize_vec_COMPLEX (p->zfvec, p->fftlen, p->scale);
   return p;
@@ -199,6 +217,8 @@ delFiltOvSv(FiltOvSv p) {
     delvec_COMPLEX_fftw(p->zrvec);
     fftwf_destroy_plan(p->pfwd);
     fftwf_destroy_plan(p->pinv);
+    fftcl_plan_destroy(p->pfwdcl);
+    fftcl_plan_destroy(p->pinvcl);
     safefree((char *) p);
   }
 }

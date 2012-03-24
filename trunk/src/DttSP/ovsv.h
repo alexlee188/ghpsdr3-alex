@@ -44,11 +44,13 @@ Bridgewater, NJ 08807
 #include <lmadf.h>
 #include <fftw3.h>
 #include <fftw3_fix.h>
+#include "fftcl.h"
 
 typedef struct _filt_ov_sav {
   int buflen, fftlen;
   COMPLEX *zfvec, *zivec, *zovec, *zrvec;
   fftwf_plan pfwd, pinv;
+  fftcl_plan *pfwdcl, *pinvcl;
   REAL scale;
 } filt_ov_sv, *FiltOvSv;
 
