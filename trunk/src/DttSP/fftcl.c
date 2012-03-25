@@ -268,7 +268,7 @@ void fftcl_initialize(void){
       exit(1);   
    };
    //local_size = (int)pow(2, trunc(log2(local_size)));
-   fprintf(stderr,"MAX WORK_GROUP_SIZE = %d\n", (int)local_size);
+   fprintf(stderr,"GPU: max workgroup size = %d\n", (int)local_size);
 
    local_size = 16;
 
@@ -279,6 +279,7 @@ void fftcl_initialize(void){
       perror("Couldn't determine the local memory size");
       exit(1);   
    };
+   fprintf(stderr,"GPU: local memory size = %d\n", (int)local_mem_size);
 
    /* Create a command queue */
    queue = clCreateCommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE, &err);
