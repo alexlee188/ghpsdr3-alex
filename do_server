@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # define name used in the RMI registry
-export SDR_DEFRATE=192000
+export SDR_DEFRATE=96000
 export JACK_BUFFER=1024
 export LD_LIBRARY_PATH=/usr/local/lib
 
