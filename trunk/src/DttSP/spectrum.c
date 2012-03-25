@@ -104,8 +104,8 @@ compute_complex_spectrum(SpecBlock * sb)
 
 	// assume timebuf has windowed current snapshot
 
-	//fftwf_execute (sb->plan);
-	fftcl_plan_execute(sb->plancl);
+	fftwf_execute (sb->plan);
+	//fftcl_plan_execute(sb->plancl);
 
 	for (i = 0, j = half; i < half; i++, j++) {
 		sb->coutput[i] = CXBdata (sb->freqbuf, j);
@@ -122,8 +122,8 @@ compute_spectrum (SpecBlock * sb)
 
 	// assume timebuf has windowed current snapshot
 
-	//fftwf_execute (sb->plan);
-	fftcl_plan_execute(sb->plancl);	
+	fftwf_execute (sb->plan);
+	//fftcl_plan_execute(sb->plancl);	
 
 	if (sb->scale == SPEC_MAG)
 	{

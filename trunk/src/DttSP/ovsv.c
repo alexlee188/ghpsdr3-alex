@@ -47,8 +47,9 @@ filter_OvSv(FiltOvSv pflt) {
 
   /* input sig -> z */
 
-  fftwf_execute(pflt->pfwd);
-  //fftcl_plan_execute(pflt->pfwdcl);
+  if (pflt->pfwdcl->N == 1024) fftcl_plan_execute(pflt->pfwdcl);
+  else fftwf_execute(pflt->pfwd);
+
 
   /* convolve in z */
   for (i = 0; i < m; i++)
@@ -150,6 +151,7 @@ newFiltOvSv(COMPLEX * coefs, int ncoef, int pbits) {
     zcvec = newvec_COMPLEX(fftlen, "temp filter z vec in newFiltOvSv");
     //ptmp = fftw_create_plan(fftlen, FFTW_FORWARD, pbits);
 
+    fprintf(stderr, "fftlen = %d\n", fftlen);
     ptmp =
       fftwf_plan_dft_1d(fftlen, (fftwf_complex *) zcvec,
 			(fftwf_complex *) zfvec, FFTW_FORWARD, pbits);

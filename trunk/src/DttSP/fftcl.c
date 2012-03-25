@@ -177,7 +177,13 @@ void fftcl_plan_execute(fftcl_plan* plan){
 
    /* Read the results */
    err = clEnqueueReadBuffer(queue, buffer_r, CL_TRUE, 0, 
-         2*plan->N*sizeof(float), data_r, 0, NULL, NULL);
+         plan->N*sizeof(float), data_r, 0, NULL, NULL);
+   if(err < 0) {
+      perror("Couldn't read the buffer");
+      exit(1);
+   }
+   err = clEnqueueReadBuffer(queue, buffer_i, CL_TRUE, 0, 
+         plan->N*sizeof(float), data_i, 0, NULL, NULL);
    if(err < 0) {
       perror("Couldn't read the buffer");
       exit(1);

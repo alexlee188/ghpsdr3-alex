@@ -1,6 +1,6 @@
 PROJ=fft
 
-CC=gcc
+CC=clang
 
 CFLAGS=-std=c99 -Wall -DUNIX -DDEBUG -O3 -mavx
 
