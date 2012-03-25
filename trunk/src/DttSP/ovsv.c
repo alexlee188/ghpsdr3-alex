@@ -164,10 +164,10 @@ newFiltOvSv(COMPLEX * coefs, int ncoef, int pbits) {
 #endif
 
     //fftw_one(ptmp, (fftw_complex *) zcvec, (fftw_complex *) zfvec);
-    //fftwf_execute(ptmp);
-    //fftwf_destroy_plan(ptmp);
-    fftcl_plan_execute(ptmpcl);
-    fftcl_plan_destroy(ptmpcl);
+    fftwf_execute(ptmp);
+    fftwf_destroy_plan(ptmp);
+    //fftcl_plan_execute(ptmpcl);
+    //fftcl_plan_destroy(ptmpcl);
 
     delvec_COMPLEX(zcvec);
   }

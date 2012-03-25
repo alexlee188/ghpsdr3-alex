@@ -236,8 +236,8 @@ void doFIRPFBChannelizer(FIRPFB p)
 		for (j=p->depth-1;j>0;j--) // Move data along delay line 
 		p->filter_delayline[i][j] = p->filter_delayline[i][j-1];
 	}
-	//fftwf_execute(p->pchan); // Do Channelizer
-	fftcl_plan_execute(p->pchancl);
+	fftwf_execute(p->pchan); // Do Channelizer
+	//fftcl_plan_execute(p->pchancl);
 }
 
 void doFIRPFBUpsampler(FIRUpsampler p)
