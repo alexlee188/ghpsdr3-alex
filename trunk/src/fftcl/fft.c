@@ -5,7 +5,7 @@
 #define SCALE_FUNC "fft_scale"
 
 /* Each point contains 2 floats - 1 real, 1 imaginary */
-#define NUM_POINTS 256
+#define NUM_POINTS 4096
 
 /* -1 - forward FFT, 1 - inverse FFT */
 #define DIRECTION -1
@@ -212,7 +212,7 @@ void fftcl_plan_execute(fftcl_plan* plan){
       err = clEnqueueNDRangeKernel(queue, scale_kernel, 1, NULL, &global_size, 
                                    &local_size, 0, NULL, NULL); 
       if(err < 0) {
-         perror("Couldn't enqueue the initial kernel");
+         perror("Couldn't enqueue the scale kernel");
          exit(1);
       }
    }
@@ -272,7 +272,7 @@ void fftcl_initialize(void){
    local_size = (int)pow(2, trunc(log2(local_size)));
    fprintf(stderr,"MAX WORK_GROUP_SIZE = %d\n", (int)local_size);
 
-   local_size = 64;
+   local_size = 16;
 
    /* Determine local memory size */
    err = clGetDeviceInfo(device, CL_DEVICE_LOCAL_MEM_SIZE, 

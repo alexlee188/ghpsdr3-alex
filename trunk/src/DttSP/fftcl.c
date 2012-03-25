@@ -210,7 +210,7 @@ void fftcl_plan_execute(fftcl_plan* plan){
       err = clEnqueueNDRangeKernel(queue, scale_kernel, 1, NULL, &global_size, 
                                    &local_size, 0, NULL, NULL); 
       if(err < 0) {
-         perror("Couldn't enqueue the initial kernel");
+         perror("Couldn't enqueue the scale kernel");
          exit(1);
       }
    }
@@ -267,10 +267,10 @@ void fftcl_initialize(void){
 
       exit(1);   
    };
-   local_size = (int)pow(2, trunc(log2(local_size)));
+   //local_size = (int)pow(2, trunc(log2(local_size)));
    fprintf(stderr,"MAX WORK_GROUP_SIZE = %d\n", (int)local_size);
 
-   local_size = 64;
+   local_size = 16;
 
    /* Determine local memory size */
    err = clGetDeviceInfo(device, CL_DEVICE_LOCAL_MEM_SIZE, 
