@@ -2,7 +2,7 @@ PROJ=fft
 
 CC=gcc
 
-CFLAGS=-std=c99 -Wall -DUNIX -g -DDEBUG
+CFLAGS=-std=c99 -Wall -DUNIX -DDEBUG -O3 -mavx
 
 # Check for 32-bit vs 64-bit
 PROC_TYPE = $(strip $(shell uname -m | grep 64))
@@ -49,7 +49,7 @@ endif
 endif
 endif
 
-$(PROJ): $(PROJ).c
+$(PROJ): $(PROJ).c fftcl.c
 	$(CC) $(CFLAGS) -o $@ $^ $(INC_DIRS:%=-I%) $(LIB_DIRS:%=-L%) $(LIBS)
 
 .PHONY: clean
