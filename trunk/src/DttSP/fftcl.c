@@ -165,6 +165,7 @@ void fftcl_plan_execute(fftcl_plan* plan){
 
 	   /* Enqueue kernel1k */
 	   global_size = 1024;
+	   local_size = 16;
 	   err = clEnqueueNDRangeKernel(queue, kernel1k, 1, NULL, &global_size, 
 		                        &local_size, 0, NULL, NULL); 
 	   if(err < 0) {
@@ -213,16 +214,17 @@ void fftcl_plan_execute(fftcl_plan* plan){
 	   };
 
 	   /* Set kernel arguments */
-	   err = clSetKernelArg(kernel1k, 0, sizeof(cl_mem), &buffer_r);
-	   err |= clSetKernelArg(kernel1k, 1, sizeof(cl_mem), &buffer_out);
+	   err = clSetKernelArg(kernel2k, 0, sizeof(cl_mem), &buffer_r);
+	   err |= clSetKernelArg(kernel2k, 1, sizeof(cl_mem), &buffer_out);
 
 	   if(err < 0) {
-	      printf("Couldn't set a kernel argument");
+	      printf("Couldn't set a kernel2k argument");
 	      exit(1);   
 	   };
 
 	   /* Enqueue kernel2k */
 	   global_size = 2048;
+	   local_size = 64;
 	   err = clEnqueueNDRangeKernel(queue, kernel2k, 1, NULL, &global_size, 
 		                        &local_size, 0, NULL, NULL); 
 	   if(err < 0) {

@@ -776,12 +776,10 @@ void shuff_and_window( __global float *in,
 					   __local  float *r_buf,
 					   __local  float *i_buf);
 
-__kernel void fft_2048( __global float *in,
-						__global float *out)
+__kernel void fft_2048( __global float *in, __global float *out)
 {
 
-	__local float r_buf[2048],
-				  i_buf[2048];
+	__local float r_buf[2048], i_buf[2048];
 
 	shuff_and_window(in, out, r_buf, i_buf);
 
