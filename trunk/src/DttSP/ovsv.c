@@ -47,7 +47,7 @@ filter_OvSv(FiltOvSv pflt) {
 
   /* input sig -> z */
 
-  if (pflt->pfwdcl->N == 1024) fftcl_plan_execute(pflt->pfwdcl);
+  if ((pflt->pfwdcl->N == 1024) || (pflt->pfwdcl->N == 2048)) fftcl_plan_execute(pflt->pfwdcl);
   else fftwf_execute(pflt->pfwd);
 
 

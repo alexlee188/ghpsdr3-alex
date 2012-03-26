@@ -23,7 +23,7 @@ cl_device_id device;
 cl_context context;
 cl_command_queue queue;
 cl_program program;
-cl_kernel kernel;
+cl_kernel kernel1k, kernel2k;
 cl_int err, i;
 size_t global_size, local_size;
 cl_ulong local_mem_size;
@@ -127,75 +127,129 @@ void fftcl_plan_destroy(fftcl_plan* plan){
 }
 
 void fftcl_plan_execute(fftcl_plan* plan){
-   cl_mem buffer_r, buffer_i;
-   int direction;
+   cl_mem buffer_r, buffer_i, buffer_out;
    float *data_r = malloc(plan->N * sizeof(float));
    float *data_i = malloc(plan->N * sizeof(float));
+   float *data_out = malloc(plan->N * 2 * sizeof(float));  // N real followed by N imag
 
    for (int i=0; i<plan->N; i++){
    	data_r[i] = c_re(plan->in[i]);
 	data_i[i] = c_im(plan->in[i]);
    }
-   /* Create buffers */
-   buffer_r = clCreateBuffer(context, 
-         CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, 
-         plan->N*sizeof(float), data_r, &err);
-   if(err < 0) {
-      perror("Couldn't create buffer_r");
-      exit(1);
-   };
-   buffer_i = clCreateBuffer(context, 
-         CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, 
-         plan->N*sizeof(float), data_i, &err);
-   if(err < 0) {
-      perror("Couldn't create buffer_r");
-      exit(1);
-   };
 
-   /* Initialize kernel arguments */
-   if (plan->direction == FFTW_FORWARD) direction = 1;
-   else direction = -1;
+   if (plan->N == 1024){
+	   /* Create buffers */
+	   buffer_r = clCreateBuffer(context, 
+		 CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, 
+		 plan->N*sizeof(float), data_r, &err);
+	   if(err < 0) {
+	      perror("Couldn't create buffer_r");
+	      exit(1);
+	   };
+	   buffer_i = clCreateBuffer(context, 
+		 CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, 
+		 plan->N*sizeof(float), data_i, &err);
+	   if(err < 0) {
+	      perror("Couldn't create buffer_r");
+	      exit(1);
+	   };
 
-   /* Set kernel arguments */
-   err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &buffer_r);
-   err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &buffer_i);
+	   /* Set kernel arguments */
+	   err = clSetKernelArg(kernel1k, 0, sizeof(cl_mem), &buffer_r);
+	   err |= clSetKernelArg(kernel1k, 1, sizeof(cl_mem), &buffer_i);
 
-   if(err < 0) {
-      printf("Couldn't set a kernel argument");
-      exit(1);   
-   };
+	   if(err < 0) {
+	      printf("Couldn't set a kernel argument");
+	      exit(1);   
+	   };
 
-   /* Enqueue initial kernel */
-   global_size = 1024;
-   err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &global_size, 
-                                &local_size, 0, NULL, NULL); 
-   if(err < 0) {
-      perror("Couldn't enqueue the initial kernel");
-      exit(1);
+	   /* Enqueue kernel1k */
+	   global_size = 1024;
+	   err = clEnqueueNDRangeKernel(queue, kernel1k, 1, NULL, &global_size, 
+		                        &local_size, 0, NULL, NULL); 
+	   if(err < 0) {
+	      perror("Couldn't enqueue kernel1k");
+	      exit(1);
+	   }
+
+
+	   /* Read the results */
+	   err = clEnqueueReadBuffer(queue, buffer_r, CL_TRUE, 0, 
+		 plan->N*sizeof(float), data_r, 0, NULL, NULL);
+	   if(err < 0) {
+	      perror("Couldn't read the buffer");
+	      exit(1);
+	   }
+	   err = clEnqueueReadBuffer(queue, buffer_i, CL_TRUE, 0, 
+		 plan->N*sizeof(float), data_i, 0, NULL, NULL);
+	   if(err < 0) {
+	      perror("Couldn't read the buffer");
+	      exit(1);
+	   }
+
+	   for (int i=0; i < plan->N; i++){
+		plan->out[i] = Cmplx(data_r[i], data_i[i]);
+	   }
+
+	   clReleaseMemObject(buffer_r);
+	   clReleaseMemObject(buffer_i);
+   } // end N == 1024
+
+   else if (plan->N == 2048){	// only real is used as this is a real input --> complex fft out
+	   buffer_r = clCreateBuffer(context, 
+		 CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, 
+		 plan->N*sizeof(float), data_r, &err);
+	   if(err < 0) {
+	      perror("Couldn't create buffer_r");
+	      exit(1);
+	   };
+
+	   buffer_out = clCreateBuffer(context, 
+		 CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, 
+		 plan->N*2*sizeof(float), data_out, &err);
+	   if(err < 0) {
+	      perror("Couldn't create buffer_out");
+	      exit(1);
+	   };
+
+	   /* Set kernel arguments */
+	   err = clSetKernelArg(kernel1k, 0, sizeof(cl_mem), &buffer_r);
+	   err |= clSetKernelArg(kernel1k, 1, sizeof(cl_mem), &buffer_out);
+
+	   if(err < 0) {
+	      printf("Couldn't set a kernel argument");
+	      exit(1);   
+	   };
+
+	   /* Enqueue kernel2k */
+	   global_size = 2048;
+	   err = clEnqueueNDRangeKernel(queue, kernel2k, 1, NULL, &global_size, 
+		                        &local_size, 0, NULL, NULL); 
+	   if(err < 0) {
+	      perror("Couldn't enqueue kernel2k");
+	      exit(1);
+	   }
+
+
+	   /* Read the results */
+	   err = clEnqueueReadBuffer(queue, buffer_out, CL_TRUE, 0, 
+		 plan->N*2*sizeof(float), data_out, 0, NULL, NULL);
+	   if(err < 0) {
+	      perror("Couldn't read the buffer");
+	      exit(1);
+	   }
+
+	   for (int i=0; i < plan->N; i++){
+		plan->out[i] = Cmplx(data_out[i], data_out[i+plan->N]);
+	   }
+
+	   clReleaseMemObject(buffer_r);
+	   clReleaseMemObject(buffer_out);
    }
 
-
-   /* Read the results */
-   err = clEnqueueReadBuffer(queue, buffer_r, CL_TRUE, 0, 
-         plan->N*sizeof(float), data_r, 0, NULL, NULL);
-   if(err < 0) {
-      perror("Couldn't read the buffer");
-      exit(1);
-   }
-   err = clEnqueueReadBuffer(queue, buffer_i, CL_TRUE, 0, 
-         plan->N*sizeof(float), data_i, 0, NULL, NULL);
-   if(err < 0) {
-      perror("Couldn't read the buffer");
-      exit(1);
-   }
-
-   for (int i=0; i < plan->N; i++){
-	plan->out[i] = Cmplx(data_r[i], data_i[i]);
-   }
    free(data_r);
    free(data_i);
-   clReleaseMemObject(buffer_r);
-   clReleaseMemObject(buffer_i);
+   free(data_out);
 }
 
 void fftcl_initialize(void){
@@ -211,14 +265,21 @@ void fftcl_initialize(void){
    program = build_program(context, device, PROGRAM_FILE);
 
    /* Create kernels for the FFT */
-   kernel = clCreateKernel(program, "kfft", &err);
+   kernel1k = clCreateKernel(program, "kfft", &err);
    if(err < 0) {
-      printf("Couldn't create the kernel: %d", err);
+      printf("Couldn't create the kernel1k: %d", err);
+      exit(1);
+   };
+
+   /* Create kernels for the FFT */
+   kernel2k = clCreateKernel(program, "fft_2048", &err);
+   if(err < 0) {
+      printf("Couldn't create the kernel2k: %d", err);
       exit(1);
    };
 
    /* Determine maximum work-group size */
-   err = clGetKernelWorkGroupInfo(kernel, device, 
+   err = clGetKernelWorkGroupInfo(kernel1k, device, 
       CL_KERNEL_WORK_GROUP_SIZE, sizeof(local_size), &local_size, NULL);
    if(err < 0) {
       perror("Couldn't find the maximum work-group size");
@@ -228,7 +289,7 @@ void fftcl_initialize(void){
    //local_size = (int)pow(2, trunc(log2(local_size)));
    fprintf(stderr,"GPU: max workgroup size = %d\n", (int)local_size);
 
-   local_size = 16;
+   local_size = 1;
 
    /* Determine local memory size */
    err = clGetDeviceInfo(device, CL_DEVICE_LOCAL_MEM_SIZE, 
@@ -250,7 +311,8 @@ void fftcl_initialize(void){
 void fftcl_destroy(void){
 
    /* Deallocate resources */
-   clReleaseKernel(kernel);
+   clReleaseKernel(kernel1k);
+   clReleaseKernel(kernel2k);
    clReleaseCommandQueue(queue);
    clReleaseProgram(program);
    clReleaseContext(context);
