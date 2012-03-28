@@ -130,7 +130,7 @@ void fftcl_plan_execute(fftcl_plan* plan){
    cl_mem buffer_c;		// complex buffer_c
 
    // copy input to output, for doing in place fft at output buffer
-   memcpy(plan->out, plan->in, plan->N);
+   memcpy(plan->out, plan->in, plan->N*2*sizeof(float));
 
    buffer_c = clCreateBuffer(context, 
 	 CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, 
