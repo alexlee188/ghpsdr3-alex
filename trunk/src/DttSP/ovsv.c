@@ -48,6 +48,7 @@ filter_OvSv(FiltOvSv pflt) {
   /* input sig -> z */
 
   fftwf_execute(pflt->pfwd);
+  //fftcl_plan_execute(pflt->pfwdcl);
 
   /* convolve in z */
   for (i = 0; i < m; i++)
