@@ -1309,7 +1309,6 @@ InvPass2_512(uint rw, uint b, uint me, uint inOffset, uint outOffset, __local fl
 
 }
 
- typedef union  { uint u; int i; } cb_t;
 
 __kernel __attribute__((reqd_work_group_size (64,1,1)))
 void fft_fwd_512(__global float2 * restrict gb)
@@ -3367,7 +3366,6 @@ InvPass3_1024(uint rw, uint b, uint me, uint inOffset, uint outOffset, __local f
 
 }
 
- typedef union  { uint u; int i; } cb_t;
 
 __kernel __attribute__((reqd_work_group_size (128,1,1)))
 void fft_fwd_1024(__global float2 * restrict gb)
@@ -6466,7 +6464,6 @@ InvPass3_2048(uint rw, uint b, uint me, uint inOffset, uint outOffset, __local f
 
 }
 
- typedef union  { uint u; int i; } cb_t;
 
 __kernel __attribute__((reqd_work_group_size (256,1,1)))
 void fft_fwd_2048(__global float2 * restrict gb)
@@ -6486,10 +6483,10 @@ void fft_fwd_2048(__global float2 * restrict gb)
 	ioOffset = batch*2048;
 	lwb = gb + ioOffset;
 
-	FwdPass0(1, b, me, 0, 0, lwb, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
-	FwdPass1(1, b, me, 0, 0, lds, lds, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
-	FwdPass2(1, b, me, 0, 0, lds, lds, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
-	FwdPass3(1, b, me, 0, 0, lds, lds, lwb, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
+	FwdPass0_2048(1, b, me, 0, 0, lwb, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
+	FwdPass1_2048(1, b, me, 0, 0, lds, lds, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
+	FwdPass2_2048(1, b, me, 0, 0, lds, lds, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
+	FwdPass3_2048(1, b, me, 0, 0, lds, lds, lwb, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
 }
 
 __kernel __attribute__((reqd_work_group_size (256,1,1)))
@@ -6510,10 +6507,10 @@ void fft_back_2048(__global float2 * restrict gb)
 	ioOffset = batch*2048;
 	lwb = gb + ioOffset;
 
-	InvPass0(1, b, me, 0, 0, lwb, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
-	InvPass1(1, b, me, 0, 0, lds, lds, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
-	InvPass2(1, b, me, 0, 0, lds, lds, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
-	InvPass3(1, b, me, 0, 0, lds, lds, lwb, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
+	InvPass0_2048(1, b, me, 0, 0, lwb, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
+	InvPass1_2048(1, b, me, 0, 0, lds, lds, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
+	InvPass2_2048(1, b, me, 0, 0, lds, lds, lds, lds, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
+	InvPass3_2048(1, b, me, 0, 0, lds, lds, lwb, &R0, &R1, &R2, &R3, &R4, &R5, &R6, &R7);
 }
 
 
