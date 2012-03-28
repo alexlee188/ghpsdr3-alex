@@ -24,6 +24,7 @@ cl_context context;
 cl_command_queue queue;
 cl_program program;
 cl_kernel kernel_f512, kernel_b512, kernel_f1024, kernel_b1024, kernel_f2048, kernel_b2048;
+cl_kernel kernel_f4096, kernel_b4096;
 cl_int err, i;
 cl_ulong local_mem_size;
 
@@ -244,6 +245,42 @@ void fftcl_plan_execute(fftcl_plan* plan){
 
    } // end N == 2048
 
+   else if (plan->N == 4096){
+	size_t global_size = 256;
+	size_t local_size = 256;
+	if (plan->direction == FFTW_FORWARD){
+	   /* Set kernel arguments */
+	   err = clSetKernelArg(kernel_f4096, 0, sizeof(cl_mem), &buffer_c);
+	   if(err < 0) {
+	      printf("Couldn't set a kernel argument");
+	      exit(1);   
+	   };
+	   /* Enqueue kernel */
+	   err = clEnqueueNDRangeKernel(queue, kernel_f4096, 1, NULL, &global_size, 
+		                        &local_size, 0, NULL, NULL); 
+	   if(err < 0) {
+	      perror("Couldn't enqueue kernel_f4096");
+	      exit(1);
+	   }
+        } else	{// inverse
+	   /* Set kernel arguments */
+	   err = clSetKernelArg(kernel_b4096, 0, sizeof(cl_mem), &buffer_c);
+	   if(err < 0) {
+	      printf("Couldn't set a kernel argument");
+	      exit(1);   
+	   };
+	   /* Enqueue kernel */
+	   err = clEnqueueNDRangeKernel(queue, kernel_b4096, 1, NULL, &global_size, 
+		                        &local_size, 0, NULL, NULL); 
+	   if(err < 0) {
+	      perror("Couldn't enqueue kernel_b4096");
+	      exit(1);
+	   }
+	}
+
+   } // end N == 4096
+
+
    /* Read the results */
    err = clEnqueueReadBuffer(queue, buffer_c, CL_TRUE, 0, 
 	 2*plan->N*sizeof(float), plan->out, 0, NULL, NULL);
@@ -309,6 +346,21 @@ void fftcl_initialize(void){
 
       exit(1);
    };
+   /* Create kernels for the FFT */
+   kernel_f4096 = clCreateKernel(program, "fft_fwd_4096", &err);
+   if(err < 0) {
+      printf("Couldn't create the kernel_f4096: %d", err);
+      exit(1);
+   };
+
+   /* Create kernels for the FFT */
+   kernel_b4096 = clCreateKernel(program, "fft_back_4096", &err);
+   if(err < 0) {
+      printf("Couldn't create the kernel_b4096: %d", err);
+
+      exit(1);
+   };
+
    /* Determine maximum work-group size */
    err = clGetKernelWorkGroupInfo(kernel_f512, device, 
       CL_KERNEL_WORK_GROUP_SIZE, sizeof(local_size), &local_size, NULL);
@@ -346,6 +398,8 @@ void fftcl_destroy(void){
    clReleaseKernel(kernel_b1024);
    clReleaseKernel(kernel_f2048);
    clReleaseKernel(kernel_b2048);
+   clReleaseKernel(kernel_f4096);
+   clReleaseKernel(kernel_b4096);
    clReleaseCommandQueue(queue);
    clReleaseProgram(program);
    clReleaseContext(context);
