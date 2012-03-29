@@ -1,14 +1,10 @@
 #define _CRT_SECURE_NO_WARNINGS
-#define PROGRAM_FILE "fft.cl"
-#define INIT_FUNC "fft_init"
-#define STAGE_FUNC "fft_stage"
-#define SCALE_FUNC "fft_scale"
 
 /* Each point contains 2 floats - 1 real, 1 imaginary */
-#define NUM_POINTS 4096
+#define NUM_POINTS 1024
 
 /* -1 - forward FFT, 1 - inverse FFT */
-#define DIRECTION 1
+#define DIRECTION -1
 
 #include "fft_check.c"
 
@@ -34,8 +30,8 @@ int main() {
 
    float dataf[NUM_POINTS*2];
    float data[NUM_POINTS*2];
-   double complex cdat[NUM_POINTS];
-   double complex cdat_out[NUM_POINTS];
+   float complex cdat[NUM_POINTS];
+   float complex cdat_out[NUM_POINTS];
    double error, check_input[NUM_POINTS][2], check_output[NUM_POINTS][2];
    fftcl_plan *planA;
    int i;

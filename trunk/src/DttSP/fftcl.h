@@ -1,13 +1,7 @@
 #ifndef _FFTCL_H
 #define _FFTCL_H
 
-#include <fromsys.h>
-#include <defs.h>
-#include <banal.h>
-#include <splitfields.h>
-#include <datatypes.h>
-#include <bufvec.h>
-#include <cxops.h>
+#include <complex.h>
 
 typedef struct _fftcl_plan {
 	int N;
