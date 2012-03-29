@@ -172,6 +172,8 @@ newFiltOvSv(COMPLEX * coefs, int ncoef, int pbits) {
     delvec_COMPLEX(zcvec);
   }
 
+  fprintf(stderr,"GPU: fftlen = %d\n", (int) fftlen);
+
   /* prepare transforms for signal */
   //pfwd = fftw_create_plan(fftlen, FFTW_FORWARD, pbits);
   //pinv = fftw_create_plan(fftlen, FFTW_BACKWARD, pbits);
