@@ -68,6 +68,7 @@ UI::UI(const QString server) {
     canTX = true;  // set to false if dspserver says so
     audio = new Audio;
     loffset =0;
+    protocol3 = false;
 
     rtp = new RTP;
     rtp_thread = new QThread(this);
@@ -284,6 +285,8 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(setChkTX(bool)),this,SLOT(setChkTX(bool)));
     connect(&connection,SIGNAL(resetbandedges(double)),this,SLOT(resetbandedges(double)));
     connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),rtp,SLOT(setRemote(QString,int)));
+    connect(&connection,SIGNAL(setFPS()),this,SLOT(setFPS()));
+    connect(&connection,SIGNAL(setProtocol3(bool)),this,SLOT(setProtocol3(bool)));
     connect(rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
     connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
@@ -470,6 +473,24 @@ void UI::fpsChanged(int f) {
     fps=f;
 }
 
+void UI::setFPS(void){
+    QString command;
+    command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumFrame->width() << " " << fps;
+    connection.sendCommand(command);
+}
+
+void UI::resizeEvent(QResizeEvent *){
+    if (protocol3){
+        QString command;
+        command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumFrame->width() << " " << fps;
+        connection.sendCommand(command);
+    }
+}
+
+void UI::setProtocol3(bool p){
+    protocol3 = p;
+}
+
 void UI::waterfallHighChanged(int high) {
     //qDebug() << __LINE__ << __FUNCTION__ << ": " << high;
 
@@ -545,6 +566,7 @@ void UI::actionDisconnect() {
     }
     QuickIP ="";
     spectrumTimer->stop();
+    protocol3 = false;
 
     connection.disconnect();
     widget.actionConnectToServer->setDisabled(FALSE);
@@ -717,22 +739,25 @@ void UI::disconnected(QString message) {
 }
 
 void UI::updateSpectrum() {
-    QString command;
+
+    if (!protocol3){
+        QString command;
         command.clear(); QTextStream(&command) << "getSpectrum " << widget.spectrumFrame->width();
         connection.sendCommand(command);
-        if(infotick > 5){
-           if (slave == 0) connection.sendCommand("q-info"); // get master freq changes
-           infotick = 0;
-        }
-        if(infotick2 == 0){ // set to 0 wehen we first connect
-           if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
-        }
-        if(infotick2 == 25){
-           if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
-           infotick2 = 0;
-        }
-        infotick++;
-        infotick2++;
+    }
+    if(infotick > 5){
+       if (slave == 0) connection.sendCommand("q-info"); // get master freq changes
+       infotick = 0;
+    }
+    if(infotick2 == 0){ // set to 0 wehen we first connect
+       if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
+    }
+    if(infotick2 == 25){
+       if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
+       infotick2 = 0;
+    }
+    infotick++;
+    infotick2++;
 
 }
 
@@ -2005,7 +2030,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - master 15 Mar 2012");
+                   + getversionstring() +  message + "  protocol-3 16 Mar 2012");
     lastmessage = message;
 
 }

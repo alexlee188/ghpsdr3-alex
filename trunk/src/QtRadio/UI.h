@@ -224,6 +224,7 @@ public slots:
     void spectrumHighChanged(int high);
     void spectrumLowChanged(int low);
     void fpsChanged(int f);
+    void setFPS(void);
     void waterfallHighChanged(int high);
     void waterfallLowChanged(int low);
     void waterfallAutomaticChanged(bool state);
@@ -260,6 +261,7 @@ public slots:
     void setChkTX(bool chk);
     void setservername(QString sname);
     void setCanTX(bool tx);
+    void setProtocol3(bool p);
     void closeServers ();
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
@@ -274,7 +276,7 @@ signals:
 
 protected:
 //    void paintEvent(QPaintEvent*);
-
+    void resizeEvent(QResizeEvent *);
 
 private:
     void printWindowTitle(QString message);
@@ -388,7 +390,7 @@ private:
     bool canTX;
     bool chkTX;
     double loffset;
-
+    bool protocol3;
 };
 
 #endif	/* _UI_H */
