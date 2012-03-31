@@ -29,14 +29,6 @@
 
 #include <sys/queue.h>
 
-/*!
- * The queue item
- */
-typedef struct _buffer_entry {
-	unsigned char* data;
-	TAILQ_ENTRY(_buffer_entry) entries;
-} BUFFER_ENTRY;
-
 
 /*!
  * Initialises the USRP by means of UHD library.

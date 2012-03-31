@@ -45,11 +45,11 @@ void usrp_disable_path(char *path) {
     if (strcasecmp(path, "tx") == 0) {
         AUDIO_DESTINATION = AUDIO_TO_NOTHING;
         audio_processor = usrp_drop_audio_buffer;        
-        fprintf(stderr,"Discarding client generated tx audio samples.\n");
+        fprintf(stderr,"Discarding client generated TX baseband samples.\n");
     } else
     if (strcasecmp(path, "rx") == 0) {
         usrp_disable_rx_path();
-        fprintf(stderr,"Discarding USRP rx baseband samples\n");
+        fprintf(stderr,"Discarding USRP RX samples\n");
     }
 }
 

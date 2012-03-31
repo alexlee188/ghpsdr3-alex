@@ -101,12 +101,13 @@ int main(int argc,char* argv[]) {
 	//usrp_set_receivers(receivers_par);
     usrp_set_receivers(1); //Forced to 1 in this development stage
     usrp_set_client_rx_rate(rx_client_rate_par);	
-    usrp_disable_path(disable_path);  
-    usrp_set_server_audio(audio_to);//This always after call to usrp_disable_path()
+    usrp_disable_path(disable_path);
+    if (!usrp_is_tx_enabled()) usrp_disable_path("tx"); //forcing
+    usrp_set_server_audio(audio_to);//This always AFTER call to usrp_disable_path()
 	usrp_set_swap_iq(reverse_iq);
 
     init_receivers();  //receiver
-    if (usrp_is_tx_enabled()) init_transmitter(); //transmitter
+    init_transmitter(); //transmitter
     init_bandscope();  //bandscope
 
 	//Client listener thread start

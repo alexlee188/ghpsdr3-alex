@@ -27,7 +27,7 @@
 //The USRP Server can handle 1 receiver only, at this stage.
 #define MAX_RECEIVERS 1
 
-#define BUFFER_SIZE 1024
+#define RECEIVE_BUFFER_SIZE 1024
 #define IQ_SERVER_PORT 11002
 
 typedef struct _receiver {
@@ -36,7 +36,7 @@ typedef struct _receiver {
     int frequency_changed;
     long frequency;
     pthread_t rx_thread_id;
-    float input_buffer[BUFFER_SIZE*2];
+    float input_buffer[RECEIVE_BUFFER_SIZE*2];
     int samples;
 } RECEIVER;
 

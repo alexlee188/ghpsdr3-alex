@@ -127,7 +127,7 @@ void* tx_audio_thread(void* arg) {
         while(1) {            
             bytes_read=recvfrom(tx->tx_audio_socket,(char*)&buffer,sizeof(buffer),0,&audio,(socklen_t*)&audio_length);
             if(bytes_read<0) {
-                perror("recvfrom socket failed for TX audio");
+                perror("recvfrom socket failed about TX audio");
                 exit(1);
             }                   
 
