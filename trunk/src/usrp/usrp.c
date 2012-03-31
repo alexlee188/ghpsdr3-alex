@@ -269,7 +269,6 @@ void usrp_disable_rx_path(void)
     drop_rx_samples = true;
 }
 
-
 void usrp_set_client_rx_rate (int rate)
 {
     switch (rate) {
@@ -456,7 +455,7 @@ void *usrp_rx_forwarder_thread (void *param)
         //Rational resampling is applied at this point
         //Interleaving real/imag in the resampler buffer        
         if (real_position == 1) {
-            unsigned int i;
+            unsigned int i;            
         #pragma omp parallel for schedule(static) private(i)
             for (i=0; i<num_rx_samps; ++i)
                 resampler_load_data(resampler_id, i, (*buff)[i].imag(), (*buff)[i].real());                        
@@ -699,6 +698,7 @@ bool usrp_start (RECEIVER *pRec)
  * outbuf[0..TRANSMIT_BUFFER_SIZE-1] and
  * outbuf[TRANSMIT_BUFFER_SIZE..TRANSMIT_BUFFER_SIZE-1]
  */
+
 //CRITICAL SECTION on the TX QUEUE 
 int usrp_process_tx_modulation(float *outbuf, int mox) {
 

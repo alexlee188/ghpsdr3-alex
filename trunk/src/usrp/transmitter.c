@@ -98,7 +98,6 @@ const char* detach_transmitter(CLIENT* client) {
     return OK;
 }
 
-
 /* 
  * The TX audio thread, consuming audio transferred by the dspserver.
  * 
@@ -127,7 +126,7 @@ void* tx_audio_thread(void* arg) {
         while(1) {            
             bytes_read=recvfrom(tx->tx_audio_socket,(char*)&buffer,sizeof(buffer),0,&audio,(socklen_t*)&audio_length);
             if(bytes_read<0) {
-                perror("recvfrom socket failed about TX audio");
+                perror("recvfrom socket failed for TX audio");
                 exit(1);
             }                   
 

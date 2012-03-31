@@ -73,7 +73,6 @@ void resampler_load_data(int r_id, int idx, float ch1, float ch2) {
 
     src_data_objs[r_id]->data_in[CHANNELS*idx] = ch1;
     src_data_objs[r_id]->data_in[CHANNELS*idx+1] = ch2;        
-
 }
 
 int do_resample(int r_id, int frames, int *out_frames_gen, const char *message) {
