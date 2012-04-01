@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <semaphore.h>
 
 #ifdef MAC
 #include <OpenCL/cl.h>
@@ -27,6 +28,8 @@ cl_kernel kernel_f512, kernel_b512, kernel_f1024, kernel_b1024, kernel_f2048, ke
 cl_kernel kernel_f4096, kernel_b4096;
 cl_int err, i;
 cl_ulong local_mem_size;
+
+static sem_t fft_semaphore;
 
 /* Find a GPU or CPU associated with the first available platform */
 cl_device_id create_device() {
@@ -128,6 +131,8 @@ void fftcl_plan_destroy(fftcl_plan* plan){
 
 void fftcl_plan_execute(fftcl_plan* plan){
    cl_mem buffer_c;		// complex buffer_c
+
+   sem_wait(&fft_semaphore);
 
    // copy input to output, for doing in place fft at output buffer
    memcpy(plan->out, plan->in, plan->N*2*sizeof(float));
@@ -289,6 +294,8 @@ void fftcl_plan_execute(fftcl_plan* plan){
       exit(1);
    }
    clReleaseMemObject(buffer_c);
+
+   sem_post(&fft_semaphore);
 }
 
 void fftcl_initialize(void){
@@ -387,6 +394,9 @@ void fftcl_initialize(void){
       perror("Couldn't create a command queue");
       exit(1);   
    };
+
+   sem_init(&fft_semaphore, 0, 1);
+   sem_post(&fft_semaphore);
 }
 
 void fftcl_destroy(void){
