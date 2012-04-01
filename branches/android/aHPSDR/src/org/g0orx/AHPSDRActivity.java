@@ -55,10 +55,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		frequency=prefs.getLong("Frequency",14200000L);
 		filterLow=prefs.getInt("FilterLow",150);
 		filterHigh=prefs.getInt("FilterHigh", 2850);
-		gain=prefs.getInt("gain", 80);
+		gain=prefs.getInt("gain", 50); // kb3omm set initial gain lower
 		agc=prefs.getInt("AGC", AGC_LONG);
 		fps=prefs.getInt("Fps", FPS_10);
-		server=prefs.getString("Server", "192.168.1.6");
+		server=prefs.getString("Server", "");
 		receiver=prefs.getInt("Receiver", 0);
 		
 		Display display = getWindowManager().getDefaultDisplay(); 
@@ -150,7 +150,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		
 		update=new Update(connection);
 		update.setFps(fps);
-		update.start();
+		connection.getSpectrum_protocol3(fps+1);
+		//update.start();
 	}
 
 	public void onPause() {
@@ -171,13 +172,13 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	}
 
 	public boolean onCreateOptionsMenu(Menu menu) {
-		menu.add(0, MENU_CONNECTION,0, "Connection");
-		menu.add(0, MENU_SERVERS, 0, "Servers");
-		menu.add(0, MENU_RECEIVER,0, "Receiver");
+		menu.add(0, MENU_SERVERS, 0, "Servers"); //kb3omm reordered the menu to my likings
 		menu.add(0, MENU_BAND, 0, "Band");
 		menu.add(0, MENU_FREQUENCY, 0, "Frequency");
 		menu.add(0, MENU_MODE, 0, "Mode");
-		menu.add(0, MENU_FILTER, 0, "FILTER");
+		menu.add(0, MENU_FILTER, 0, "Filter");
+		menu.add(0, MENU_CONNECTION,0, "Connection");
+		menu.add(0, MENU_RECEIVER,0, "Receiver");
 		menu.add(0, MENU_AGC, 0, "AGC");
 		menu.add(0, MENU_DSP, 0, "DSP");
 		menu.add(0, MENU_GAIN, 0, "GAIN");
@@ -923,6 +924,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 						public void onClick(DialogInterface dialog, int item) {
 							fps=item;
 							update.setFps(fps+1);
+							connection.getSpectrum_protocol3(fps+1);
 							dialog.dismiss();
 						}
 					});

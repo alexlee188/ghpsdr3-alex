@@ -109,6 +109,13 @@ static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 #define RTP_BUFFER_SIZE 400
 #define RTP_TIMER_NS (RTP_BUFFER_SIZE/8 * 1000000)
 static unsigned char rtp_buffer[RTP_BUFFER_SIZE];
+static timer_t rtp_tx_timerid;
+
+// For timer based spectrum data (instead of sending one spectrum frame per getspectrum command from clients)
+#define SPECTRUM_TIMER_NS (20*1000000)
+static timer_t spectrum_timerid;
+static unsigned long spectrum_timestamp = 0;
+
 int data_in_counter=0;
 int iq_buffer_counter = 0;
 
@@ -140,18 +147,15 @@ int encoding = 0;
 
 static int send_audio = 0;
 
-static sem_t bufferevent_semaphore, mic_semaphore;
+static sem_t bufferevent_semaphore, mic_semaphore, spectrum_semaphore;
 
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
 void *rtp_tx_thread(void *arg);
 int local_rtp_port = LOCAL_RTP_PORT;
 
-void client_send_samples(int size);
-void client_set_samples(float* samples,int size);
+void client_set_samples(char *client_samples, float* samples,int size);
 
-char* client_samples;
-int samples;
 int prncountry = 0;
 
 static void *printcountrythread(void *);
@@ -244,8 +248,10 @@ void client_init(int receiver) {
 
     sem_init(&bufferevent_semaphore,0,1);
     sem_init(&mic_semaphore,0,1);
+    sem_init(&spectrum_semaphore,0,1);
     signal(SIGPIPE, SIG_IGN);
     rtp_init();
+    spectrum_timer_init();
 
     port=BASE_PORT+receiver;
     rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
@@ -282,6 +288,7 @@ void tx_init(void){
 }
 
 void rtp_tx_timer_handler(int);
+void spectrum_timer_handler(int);
 
 void rtp_tx_init(void){
 	int rc;
@@ -295,7 +302,6 @@ void rtp_tx_init(void){
 
 		rtp_tx_init_done = 1;
 
-		timer_t timerid;
 		struct itimerspec	value;
 		struct sigevent sev;
 
@@ -309,10 +315,29 @@ void rtp_tx_init(void){
 		sev.sigev_notify_function = rtp_tx_timer_handler;
 		sev.sigev_notify_attributes = NULL;
 
-		timer_create (CLOCK_REALTIME, &sev, &timerid);
-		timer_settime (timerid, 0, &value, NULL);
+		timer_create (CLOCK_REALTIME, &sev, &rtp_tx_timerid);
+		timer_settime (rtp_tx_timerid, 0, &value, NULL);
 
 	}
+}
+
+void spectrum_timer_init(void){
+
+	struct itimerspec	value;
+	struct sigevent sev;
+
+	value.it_value.tv_sec = 0;
+	value.it_value.tv_nsec = SPECTRUM_TIMER_NS;
+
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_nsec = SPECTRUM_TIMER_NS;
+
+	sev.sigev_notify = SIGEV_THREAD;
+	sev.sigev_notify_function = spectrum_timer_handler;
+	sev.sigev_notify_attributes = NULL;
+
+	timer_create (CLOCK_REALTIME, &sev, &spectrum_timerid);
+	timer_settime (spectrum_timerid, 0, &value, NULL);
 }
 
 void rtp_tx_timer_handler(int sv){
@@ -325,14 +350,17 @@ void rtp_tx_timer_handler(int sv){
     struct audio_entry *item;
     client_entry *client_item;
 
-    if ((client_item = TAILQ_FIRST(&Client_list)) == NULL) return;	// no master client
-    if (client_item->rtp != connection_rtp) return;			// not rtp master
+    sem_wait(&bufferevent_semaphore);
+    client_item = TAILQ_FIRST(&Client_list);
+    sem_post(&bufferevent_semaphore);
+    if (client_item == NULL) return;	                // no master client
+    if (client_item->rtp != connection_rtp) return;	// not rtp master
 	length=rtp_receive(client_item->session,rtp_buffer,RTP_BUFFER_SIZE);
-	recv_ts+=RTP_BUFFER_SIZE;		// proceed with timestamp increment as this is timer based	        
+	recv_ts+=RTP_BUFFER_SIZE;		        // proceed with timestamp increment as this is timer based	        
 	if (length > 0){
 	    for(i=0;i<length;i++) {
 		v=G711A_decode(rtp_buffer[i]);
-		fv=(float)v/32767.0F;   // get into the range -1..+1
+		fv=(float)v/32767.0F;                   // get into the range -1..+1
 
 		data_in[data_in_counter*2]=fv;
 		data_in[(data_in_counter*2)+1]=fv;
@@ -353,6 +381,46 @@ void rtp_tx_timer_handler(int sv){
 	}
 }
 
+void spectrum_timer_handler(int sv){            // this is called every 20 ms
+        client_entry *item;
+        
+        sem_wait(&bufferevent_semaphore);
+        item = TAILQ_FIRST(&Client_list);
+        sem_post(&bufferevent_semaphore);
+        if (item == NULL) return;               // no clients
+
+        sem_wait(&spectrum_semaphore);
+        if(mox) {
+            Process_Panadapter(1,spectrumBuffer);
+            meter=CalculateTXMeter(1,5);        // MIC
+            subrx_meter=-121;
+        } else {
+            Process_Panadapter(0,spectrumBuffer);
+            meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+            subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+        }
+        sem_post(&spectrum_semaphore);
+        sem_wait(&bufferevent_semaphore);
+        TAILQ_FOREACH(item, &Client_list, entries){
+            sem_post(&bufferevent_semaphore);
+            if(item->fps > 0) {
+                if (item->frame_counter-- <= 1) {
+                    char *client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
+                    sem_wait(&spectrum_semaphore);
+                    client_set_samples(client_samples,spectrumBuffer,item->samples);
+                    bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
+                    sem_post(&spectrum_semaphore);
+                    free(client_samples);
+                    item->frame_counter = 50 / item->fps;
+                }
+            }
+            sem_wait(&bufferevent_semaphore);
+        }
+        sem_post(&bufferevent_semaphore);
+
+        spectrum_timestamp++;
+}
+
 void* rtp_tx_thread(void *arg){
     int j;
     float data_out[TX_BUFFER_SIZE*2*24];	// data_in is 8khz (duplicated to stereo) Mic samples.  
@@ -368,7 +436,7 @@ void* rtp_tx_thread(void *arg){
 	item = TAILQ_FIRST(&Mic_rtp_stream);
 	sem_post(&mic_semaphore);
 	if (item == NULL){
-		usleep(100);
+		usleep(1000);
 		continue;
 		}
 
@@ -505,6 +573,7 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
         /* ... */
     }
 
+    sem_wait(&bufferevent_semaphore);
     for (item = TAILQ_FIRST(&Client_list); item != NULL; item = TAILQ_NEXT(item, entries)){
 	if (item->bev == bev){
             char ipstr[16];
@@ -525,6 +594,8 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
 	client_count++;
 	if (item->rtp == connection_rtp) rtp_client_count++;
     }
+
+    sem_post(&bufferevent_semaphore);
 
     if ((rtp_client_count <= 0) && is_rtp_client) {
 	rtp_connected = 0; 	// last rtp client disconnected
@@ -634,16 +705,23 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     bufferevent_enable(bev, EV_READ|EV_WRITE);
     item->bev = bev;
     item->rtp = connection_unknown;
+    item->fps = 0;
+    item->frame_counter = 0;
+    sem_wait(&bufferevent_semaphore);
     TAILQ_INSERT_TAIL(&Client_list, item, entries);
+    sem_post(&bufferevent_semaphore);
 
     if (toShareOrNotToShare) {
         int client_count = 0;
         char status_buf[32];
 
+        sem_wait(&bufferevent_semaphore);
         /* NB: Clobbers item */
         TAILQ_FOREACH(item, &Client_list, entries){
     	client_count++;
         }
+        sem_post(&bufferevent_semaphore);
+
         sprintf(status_buf,"%d client(s)", client_count);
         updateStatus(status_buf);
     }
@@ -679,6 +757,7 @@ static char *slave_commands[] = {
     "setclient",
     "startaudiostream",
     "startrtpstream",
+    "setfps",
     NULL
 };
 
@@ -719,7 +798,10 @@ void readcb(struct bufferevent *bev, void *ctx){
     int slave = 0;
     struct evbuffer *inbuf;
 
-    if ((item = TAILQ_FIRST(&Client_list)) == NULL) {
+    sem_wait(&bufferevent_semaphore);
+    item = TAILQ_FIRST(&Client_list);
+    sem_post(&bufferevent_semaphore);
+    if (item == NULL) {
         sdr_log(SDR_LOG_ERROR, "readcb called with no clients");
         return;
     }
@@ -731,12 +813,14 @@ void readcb(struct bufferevent *bev, void *ctx){
          * command it is executing, and abort if it is not. */
 
 	// locate the current_item for this slave client
+        sem_wait(&bufferevent_semaphore);
         for (current_item = TAILQ_FIRST(&Client_list); current_item != NULL; current_item = tmp_item){
             tmp_item = TAILQ_NEXT(current_item, entries);
             if (current_item->bev == bev){
                 break;
             }
         }
+        sem_post(&bufferevent_semaphore);
         if (current_item == NULL) {
             sdr_log(SDR_LOG_ERROR, "This slave was not located");
             return;
@@ -754,7 +838,8 @@ void readcb(struct bufferevent *bev, void *ctx){
      * what was here before. */
     inbuf = bufferevent_get_input(bev);
     while (evbuffer_get_length(inbuf) >= MSG_SIZE) {
-        if ((bytesRead = bufferevent_read(bev, message, MSG_SIZE)) != MSG_SIZE) {
+        bytesRead = bufferevent_read(bev, message, MSG_SIZE);
+        if (bytesRead != MSG_SIZE) {
             sdr_log(SDR_LOG_ERROR, "Short read from client; shouldn't happen\n");
             return;
         }
@@ -799,7 +884,9 @@ void readcb(struct bufferevent *bev, void *ctx){
         }else if(strncmp(cmd,"getspectrum",11)==0) {
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
-            samples=atoi(tokens[0]);
+            int samples=atoi(tokens[0]);
+            
+            sem_wait(&spectrum_semaphore);
             if(mox) {
                 Process_Panadapter(1,spectrumBuffer);
                 meter=CalculateTXMeter(1,5); // MIC
@@ -809,9 +896,12 @@ void readcb(struct bufferevent *bev, void *ctx){
                 meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
                 subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             }
-            client_samples=malloc(BUFFER_HEADER_SIZE+samples);
-            client_set_samples(spectrumBuffer,samples);
+            char *client_samples=malloc(BUFFER_HEADER_SIZE+samples);
+            client_set_samples(client_samples,spectrumBuffer,samples);
+            sem_wait(&bufferevent_semaphore);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
+            sem_post(&bufferevent_semaphore);
+            sem_post(&spectrum_semaphore);
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;
@@ -993,9 +1083,13 @@ void readcb(struct bufferevent *bev, void *ctx){
             sem_post(&bufferevent_semaphore);
             rtp_tx_init();
         } else if(strncmp(cmd,"stopaudiostream",15)==0) {
+            // send_audio should only be stopped by dspserver when no more clients are connected.
+            // not by individual clients.
+            /*
             sem_wait(&bufferevent_semaphore);
             send_audio=0;
             sem_post(&bufferevent_semaphore);
+            */
         } else if(strncmp(cmd,"setencoding",11)==0) {
             int enc;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1244,6 +1338,20 @@ void readcb(struct bufferevent *bev, void *ctx){
                 goto badcommand;
             sdr_log(SDR_LOG_INFO,"The value of mu sent = '%s'\n",tokens[0]);
             SetCorrectRXIQMu(0, 0, atof(tokens[0]));
+        } else if(strncmp(cmd,"setfps",6)==0) {
+            if (tokenize_cmd(&saveptr, tokens, 2) != 2)
+                goto badcommand;
+            sdr_log(SDR_LOG_INFO,"Spectrum fps set to = '%s'\n",tokens[1]);
+            sem_wait(&bufferevent_semaphore);
+            if (slave) {
+                current_item->samples = atoi(tokens[0]);
+                current_item->fps = atoi(tokens[1]);
+            }
+            else  {
+                item->samples = atoi(tokens[0]);
+                item->fps = atoi(tokens[1]);
+            }
+            sem_post(&bufferevent_semaphore);
         } else {
             fprintf(stderr,"Invalid command: token: '%s'\n",cmd);
         }
@@ -1255,7 +1363,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 }
 
 
-void client_set_samples(float* samples,int size) {
+void client_set_samples(char* client_samples, float* samples,int size) {
     int i,j;
     float slope;
     float max;
@@ -1299,7 +1407,7 @@ void client_set_samples(float* samples,int size) {
     client_samples[11]=(sampleRate>>8)&0xFF;
     client_samples[12]=sampleRate&0xFF;
 
-    // addes for header version 2.1
+    // added for header version 2.1
     client_samples[13]=((int)LO_offset>>8)&0xFF; // IF
     client_samples[14]=(int)LO_offset&0xFF;
 
@@ -1439,6 +1547,8 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 		 sprintf(p,"%f;",LO_offset);
 		 strcat(answer,p);
 		 //fprintf(stderr,"q-loffset: %s\n",answer);
+	}else if (strcmp(message,"q-protocol3") == 0){
+		 strcat(answer,"q-protocol3:Y");
 	}else{
 		fprintf(stderr,"Unknown question: %s\n",message);
 		return;

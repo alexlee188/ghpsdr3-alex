@@ -51,7 +51,7 @@ public class Connection extends Thread {
 		
 		    audioTrack.play();
 		    
-		    sendCommand("setClient aHPSDR(v1.0)");
+		    sendCommand("setClient aHPSDR(v1.1)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
@@ -371,6 +371,10 @@ public class Connection extends Thread {
 
 	public void getSpectrum() {
 		sendCommand("getSpectrum " + SPECTRUM_BUFFER_SIZE);
+	}
+	
+	public void getSpectrum_protocol3(int fps){
+		sendCommand("setFPS " + SPECTRUM_BUFFER_SIZE + " " + fps);
 	}
 
 	public int[] getSamples() {

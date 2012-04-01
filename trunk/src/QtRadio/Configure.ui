@@ -39,7 +39,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="Server">
     <attribute name="title">
@@ -48,8 +48,8 @@
     <widget class="QLabel" name="label_6">
      <property name="geometry">
       <rect>
-       <x>40</x>
-       <y>30</y>
+       <x>36</x>
+       <y>28</y>
        <width>41</width>
        <height>17</height>
       </rect>
@@ -77,9 +77,9 @@
     <widget class="QLabel" name="label_7">
      <property name="geometry">
       <rect>
-       <x>40</x>
-       <y>80</y>
-       <width>62</width>
+       <x>36</x>
+       <y>73</y>
+       <width>71</width>
        <height>17</height>
       </rect>
      </property>
@@ -1171,7 +1171,7 @@
        <x>20</x>
        <y>160</y>
        <width>181</width>
-       <height>91</height>
+       <height>121</height>
       </rect>
      </property>
      <property name="title">
@@ -1197,7 +1197,7 @@
       <property name="geometry">
        <rect>
         <x>90</x>
-        <y>50</y>
+        <y>80</y>
         <width>59</width>
         <height>29</height>
        </rect>
@@ -1206,7 +1206,7 @@
        <number>-10</number>
       </property>
       <property name="maximum">
-       <number>30</number>
+       <number>100</number>
       </property>
       <property name="singleStep">
        <number>2</number>
@@ -1219,13 +1219,29 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>57</y>
+        <y>87</y>
         <width>69</width>
         <height>19</height>
        </rect>
       </property>
       <property name="text">
        <string>RXIQMu</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="RxIQdivCheckBox">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>50</y>
+        <width>151</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Divide by 100</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
       </property>
      </widget>
     </widget>
