@@ -141,24 +141,9 @@ void Waterfallcl::initialize(int wid, int ht){
     zoom = 4.5f * wid / 1024.0f;
     pan = -0.55f;
 
-    QImage t;
-    QImage b;
-
-    b = QImage( MAX_CL_WIDTH, 512, QImage::Format_ARGB32_Premultiplied);
-    //b.fill(Qt::green);
-
-
-    t = QGLWidget::convertToGLFormat( b );
-
-    makeCurrent();
-    ImageCLContext *ctx = image_context();
-
     glEnable(GL_TEXTURE_2D);
     glShadeModel(GL_SMOOTH);
-    // Create the textures in the GL context.
-    glGenTextures(2, textureId);
 
-    glBindTexture(GL_TEXTURE_2D, textureId[0]);
 #ifdef GL_CLAMP_TO_EDGE
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -168,38 +153,17 @@ void Waterfallcl::initialize(int wid, int ht){
 #endif
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, MAX_CL_WIDTH, 512, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, t.bits());
 
-
-    //loadGLTextures(textureId[1]);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepth(1.0f);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
-    /*
-    // If the context supports object sharing, then this is really easy.
-    if (ctx->glContext->supportsObjectSharing()) {
-    waterfall_buffer = ctx->glContext->createTexture2D
-            (GL_TEXTURE_2D, textureId[0], 0, QCLMemoryObject::ReadWrite);
-    if (waterfall_buffer == 0) qFatal("Unabel to create waterfall_buffer");
-    }
-    */
-    //else {
-    //    qDebug() << "System does not support CL/GL object sharing";
-        waterfall_buffer = ctx->glContext->createImage2DDevice
-            (QCLImageFormat(QCLImageFormat::Order_RGBA,
-                        QCLImageFormat::Type_Unnormalized_UInt8),
-                        QSize(MAX_CL_WIDTH, 512), QCLMemoryObject::ReadWrite);
-        waterfall_buffer.write(t);
-    //}
-
-    spectrum_buffer = ctx->glContext->createBufferDevice(MAX_CL_WIDTH, QCLMemoryObject::ReadWrite);
+    ShaderProgram = NULL;
+    VertexShader = NULL;
+    FragmentShader = NULL;
+    LoadShader("./Basic.vsh", "./Basic.fsh");
 
 }
 
@@ -270,16 +234,6 @@ void Waterfallcl::paintGL()
     glScalef(zoom, 2.0f, 2.0f);
     glRotatef(rquad,1.0f,0.0f,0.0f);
 
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureId[0]);
-
-    void *ptr = malloc(waterfall_buffer.width()*waterfall_buffer.height()*waterfall_buffer.bytesPerElement());
-    waterfall_buffer.read(ptr, QRect(QPoint(0,0), QPoint((data_width-1),511)));
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-                    data_width, 512 ,
-                    GL_RGBA, GL_UNSIGNED_BYTE, ptr);
-    free(ptr);
-
     GLfloat h = (float)cy / 511.0f;
     GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
 
@@ -316,28 +270,62 @@ void Waterfallcl::paintGL()
     glTexCoord2f(0.0f, h); glVertex3f(-1.0f,  1.0f, -1.0f);
     glEnd();
 
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glDisable(GL_TEXTURE_2D);
-
     //rquad -= 0.2f;
 
 }
 
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
-
-    ImageCLContext *ctx = image_context();
-    QCLKernel waterfall = ctx->waterfall;
-
     data_width = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
-
-    spectrum_buffer.write(0, buffer, data_width);
-    waterfall.setGlobalWorkSize(data_width);
-
     if (cy-- <= 0) cy = 255;
-    //ctx->glContext->acquire(waterfall_buffer).waitForFinished();
-    waterfall(spectrum_buffer, cy, data_width, 256, LO_offset, waterfallLow, waterfallHigh, waterfall_buffer);
-    //ctx->glContext->release(waterfall_buffer).waitForFinished();
 
 }
 
+void Waterfallcl::LoadShader(QString vshader, QString fshader){
+    if(ShaderProgram)
+        {
+        ShaderProgram->release();
+        ShaderProgram->removeAllShaders();
+        }
+    else ShaderProgram = new QGLShaderProgram;
+
+    if(VertexShader)
+        {
+        delete VertexShader;
+        VertexShader = NULL;
+        }
+
+    if(FragmentShader)
+        {
+        delete FragmentShader;
+        FragmentShader = NULL;
+        }
+
+    // load and compile vertex shader
+    QFileInfo vsh(vshader);
+    if(vsh.exists())
+        {
+        VertexShader = new QGLShader(QGLShader::Vertex);
+        if(VertexShader->compileSourceFile(vshader))
+            ShaderProgram->addShader(VertexShader);
+        else qWarning() << "Vertex Shader Error" << VertexShader->log();
+        }
+    else qWarning() << "Vertex Shader source file " << vshader << " not found.";
+
+    // load and compile fragment shader
+    QFileInfo fsh(fshader);
+    if(fsh.exists())
+        {
+        FragmentShader = new QGLShader(QGLShader::Fragment);
+        if(FragmentShader->compileSourceFile(fshader))
+            ShaderProgram->addShader(FragmentShader);
+        else qWarning() << "Fragment Shader Error" << FragmentShader->log();
+        }
+    else qWarning() << "Fragment Shader source file " << fshader << " not found.";
+
+    if(!ShaderProgram->link())
+        {
+        qWarning() << "Shader Program Linker Error" << ShaderProgram->log();
+        }
+    else ShaderProgram->bind();
+}
 

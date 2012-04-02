@@ -36,6 +36,7 @@
 #include <qcl/qclprogram.h>
 #include <qcl/qclvector.h>
 #include <qcl/qclcontextgl.h>
+#include <QGLShader>
 #include "qclmemoryobject.h"
 
 
@@ -61,8 +62,10 @@ protected:
     void mouseMoveEvent(QMouseEvent* event);
     void mousePressEvent(QMouseEvent* event);
 private:
+    void LoadShader(QString vshader, QString fshader); 
+    QGLShaderProgram *ShaderProgram;
+    QGLShader *VertexShader, *FragmentShader;
     QCLImage2D waterfall_buffer;
-    GLuint textureId[2];        // [0] is for buffer width x height*2
     QCLBuffer spectrum_buffer;
     int data_width;
     int data_height;
