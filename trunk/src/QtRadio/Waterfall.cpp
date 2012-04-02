@@ -103,33 +103,23 @@ void Waterfall::setObjectName(QString name) {
 
 void Waterfall::setGeometry(QRect rect) {
     QFrame::setGeometry(rect);
-
-    qDebug() << "Waterfall::setGeometry: width=" << rect.width() << " height=" << rect.height();
-
-    samples = (float*) malloc(rect.width() * sizeof (float));
-
 }
 
 
 void Waterfall::mousePressEvent(QMouseEvent* event) {
-
 }
 
 void Waterfall::mouseMoveEvent(QMouseEvent* event){
-
 }
 
 void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
-
 }
 
 void Waterfall::wheelEvent(QWheelEvent *event) {
-
 }
 
 
 void Waterfall::paintEvent(QPaintEvent*) {
-
 }
 
 
@@ -148,36 +138,23 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     } else {
         LO_offset=0;
     }
-
-    if(samples!=NULL) {
-        free(samples);
-    }
     samples = (float*) malloc(width() * sizeof (float));
 
     // rotate spectrum display if LO is not 0
     if(LO_offset==0) {
-        #pragma omp parallel for schedule(static)
-        for(i=0;i<width();i++) {
-            samples[i] = -(buffer[i] & 0xFF);
-        }
-
         waterfallcl->setLO_offset(0);
     } else {
         float step=(float)sampleRate/(float)width();
         offset=(int)((float)LO_offset/step);
         waterfallcl->setLO_offset(offset);
-
-        #pragma omp parallel for schedule(static) private(i,j)
-        for(i=0;i<width();i++) {
-            j=i-offset;
-            if(j<0) j+=width();
-            if(j>=width()) j%=width();
-            samples[i] = -(buffer[j] & 0xFF);
-        }
     }
     size = length;
     waterfallcl->updateWaterfall(header, buffer, length);
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_3()));
+
+    for(i=0;i<width();i++) average += -(buffer[j] & 0xFF);
+    average = average/width();
+
+    QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
 }
 
 void Waterfall::updateWaterfall_2(void){
@@ -185,13 +162,10 @@ void Waterfall::updateWaterfall_2(void){
 
 
 void Waterfall::updateWaterfall_3(void){
-    int x;
-    int average=0;
+}
 
-    for(x=0;x<size;x++){
-        average+=samples[x];
-    }
-    average = average/size;
+
+void Waterfall::updateWaterfall_4(void){
 
     if(waterfallAutomatic) {
         waterfallLow=average-10;
@@ -200,12 +174,6 @@ void Waterfall::updateWaterfall_3(void){
         waterfallcl->setHigh(waterfallHigh);
     }
 
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
-
-}
-
-
-void Waterfall::updateWaterfall_4(void){
     QTimer::singleShot(0, waterfallcl, SLOT(updateWaterfallgl()));
 }
 
