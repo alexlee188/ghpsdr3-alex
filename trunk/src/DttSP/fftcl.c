@@ -396,7 +396,6 @@ void fftcl_initialize(void){
    };
 
    sem_init(&fft_semaphore, 0, 1);
-   sem_post(&fft_semaphore);
 }
 
 void fftcl_destroy(void){
