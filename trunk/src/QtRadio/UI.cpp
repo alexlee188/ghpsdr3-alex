@@ -282,7 +282,7 @@ UI::UI(const QString server) {
     connect(this,SIGNAL(HideTX(bool)),widget.ctlFrame,SLOT(HideTX(bool)));
     connect(&connection,SIGNAL(setservername(QString)),this,SLOT(setservername(QString)));
     connect(&connection,SIGNAL(setCanTX(bool)),this,SLOT(setCanTX(bool)));
-    connect(&connection,SIGNAL(setChkTX(bool)),this,SLOT(setChkTX(bool)));
+    connect(&connection,SIGNAL(setChkTX(bool)),this,SLOT(setChkTX(void)));
     connect(&connection,SIGNAL(resetbandedges(double)),this,SLOT(resetbandedges(double)));
     connect(&connection,SIGNAL(setRemoteRTPPort(QString,int)),rtp,SLOT(setRemote(QString,int)));
     connect(&connection,SIGNAL(setFPS()),this,SLOT(setFPS()));
@@ -2341,8 +2341,7 @@ void UI::setCanTX(bool tx){
     emit HideTX(tx);
 }
 
-void UI::setChkTX(bool chk){
-
+void UI::setChkTX(void){
    chkTX = true;
    infotick2 = 0;
 }

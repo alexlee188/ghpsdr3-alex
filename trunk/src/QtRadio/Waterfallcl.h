@@ -22,6 +22,7 @@
 #define GL_GLEXT_PROTOTYPES
 #include <QtCore>
 #include <QPainter>
+#include <QImage>
 #include <QMouseEvent>
 #include <QDebug>
 #include <GL/glu.h>
@@ -67,12 +68,9 @@ protected:
     void mousePressEvent(QMouseEvent* event);
 private:
     void LoadShader(QString vshader, QString fshader); 
-    void createTBO(GLuint* tbo, GLuint* tex);
-    void deleteTBO(GLuint* tbo);
-    void setShaderUniforms(void);
     QGLShaderProgram *ShaderProgram;
     QGLShader *VertexShader, *FragmentShader;
-    GLuint spectrumTex, tbo, vs_tboSampler;
+    GLuint spectrumTexture_location, cy_location, spectrumTex;
     int data_width;
     int data_height;
     int waterfallHigh;

@@ -258,7 +258,7 @@ public slots:
     void slaveSetMode(int newmode);
     void slaveSetSlave(int slave); // 0 = slave
     void setdspversion(long dspversion, QString dspversiontxt);
-    void setChkTX(bool chk);
+    void setChkTX(void);
     void setservername(QString sname);
     void setCanTX(bool tx);
     void setProtocol3(bool p);

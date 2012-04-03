@@ -2,7 +2,7 @@ PROJ=fft
 
 CC=clang
 
-CFLAGS=-std=c99 -Wall -DUNIX -DDEBUG -O3 -mavx
+CFLAGS=-std=c99 -Wall -DUNIX -DDEBUG -O3 -msse3
 
 # Check for 32-bit vs 64-bit
 PROC_TYPE = $(strip $(shell uname -m | grep 64))

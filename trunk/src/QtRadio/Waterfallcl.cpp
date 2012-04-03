@@ -132,33 +132,6 @@ Waterfallcl::~Waterfallcl(){
 
 }
 
-void Waterfallcl::createTBO(GLuint* tbo, GLuint* tex) {
-    // create buffer object
-    glGenBuffers(1, tbo);
-    glBindBuffer(GL_TEXTURE_BUFFER_EXT, *tbo);
-
-    // initialize buffer object
-    unsigned int size = MAX_CL_WIDTH * MAX_CL_HEIGHT;
-    glBufferData(GL_TEXTURE_BUFFER_EXT, size, 0, GL_DYNAMIC_DRAW);
-
-    //tex
-    glGenTextures(1, tex);
-    glBindTexture(GL_TEXTURE_BUFFER_EXT, *tex);
-    glTexBufferEXT(GL_TEXTURE_BUFFER_EXT, GL_ALPHA8, *tbo);
-    glBindBuffer(GL_TEXTURE_BUFFER_EXT, 0);
-
-}
-
-void Waterfallcl::deleteTBO(GLuint* tbo) {
-    glBindBuffer(1, *tbo);
-    glDeleteBuffers(1, tbo);
-    *tbo = 0;
-}
-
-void Waterfallcl::setShaderUniforms() {
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_BUFFER_EXT, spectrumTex);
-}
 
 
 void Waterfallcl::initialize(int wid, int ht){
@@ -170,8 +143,17 @@ void Waterfallcl::initialize(int wid, int ht){
     zoom = 4.5f * wid / 1024.0f;
     pan = -0.55f;
 
-    glEnable(GL_TEXTURE_2D);
-    glShadeModel(GL_SMOOTH);
+
+
+    QImage t;
+    QImage b;
+    b = QImage( MAX_CL_WIDTH, MAX_CL_HEIGHT, QImage::Format_ARGB32_Premultiplied );
+    t = QGLWidget::convertToGLFormat( b );;
+    glGenTextures(1, &spectrumTex);
+    glBindTexture(GL_TEXTURE_2D, spectrumTex);
+    glTexImage2D( GL_TEXTURE_2D, 0, 3, t.width(), t.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, t.bits() );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
 #ifdef GL_CLAMP_TO_EDGE
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -180,12 +162,9 @@ void Waterfallcl::initialize(int wid, int ht){
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 #endif
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClearDepth(1.0f);
-
+    glEnable(GL_TEXTURE_2D);
+    glShadeModel(GL_SMOOTH);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
@@ -193,8 +172,13 @@ void Waterfallcl::initialize(int wid, int ht){
     VertexShader = NULL;
     FragmentShader = NULL;
     LoadShader("./Basic.vsh", "./Basic.fsh");
-    createTBO(&tbo, &spectrumTex);
-    setShaderUniforms();
+    spectrumTexture_location = glGetUniformLocation(ShaderProgram->programId(), "spectrumTexture");
+    cy_location =  glGetUniformLocation(ShaderProgram->programId(), "cy");
+    glUseProgram(ShaderProgram->programId());
+    //Bind to tex unit 0
+    glUniform1i(spectrumTexture_location, 0);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearDepth(1.0f);
 
 }
 
@@ -265,6 +249,10 @@ void Waterfallcl::paintGL()
     glScalef(zoom, 2.0f, 2.0f);
     glRotatef(rquad,1.0f,0.0f,0.0f);
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, spectrumTex);
+    glUniform1i(cy_location, cy);
+
     GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
 
     glBegin(GL_QUADS);
@@ -307,6 +295,19 @@ void Waterfallcl::paintGL()
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
     data_width = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
     if (cy-- <= 0) cy = MAX_CL_HEIGHT - 1;
+
+    unsigned char data[MAX_CL_WIDTH][4];
+    for (int i = 0; i < data_width; i++){
+        data[i][0] = buffer[i];
+        data[i][1] = 0;
+        data[i][2] = 0;
+        data[i][3] = 255;
+    }
+
+    // Update Texture
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
+                    GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)data);
+
 
 }
 
