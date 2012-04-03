@@ -123,6 +123,7 @@ Q_GLOBAL_STATIC(ImageCLContext, image_context)
 
 
 Waterfallcl::Waterfallcl(){
+    makeCurrent();
 }
 
 Waterfallcl::~Waterfallcl(){
