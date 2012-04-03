@@ -19,11 +19,15 @@
 #ifndef WATERFALLCL_H
 #define	WATERFALLCL_H
 
+#define GL_GLEXT_PROTOTYPES
 #include <QtCore>
 #include <QPainter>
 #include <QMouseEvent>
 #include <QDebug>
 #include <GL/glu.h>
+#include <GL/gl.h>
+#include <QtOpenGL>
+#include <QtOpenGL/QGLBuffer>
 #include <QtOpenGL/QGLWidget>
 #include <QtOpenGL/qglfunctions.h>
 #include <qcl/qclbuffer.h>
@@ -51,7 +55,7 @@ public:
     void setLow(int low);
     void setHigh(int high);
     void setAutomatic(bool state);
-    void setLO_offset(short offset);
+    void setLO_offset(GLfloat offset);
 
 public slots:
     void updateWaterfall(char* header,char* buffer,int width);
@@ -63,17 +67,19 @@ protected:
     void mousePressEvent(QMouseEvent* event);
 private:
     void LoadShader(QString vshader, QString fshader); 
+    void createTBO(GLuint* tbo, GLuint* tex);
+    void deleteTBO(GLuint* tbo);
+    void setShaderUniforms(void);
     QGLShaderProgram *ShaderProgram;
     QGLShader *VertexShader, *FragmentShader;
-    QCLImage2D waterfall_buffer;
-    QCLBuffer spectrum_buffer;
+    GLuint spectrumTex, tbo, vs_tboSampler;
     int data_width;
     int data_height;
     int waterfallHigh;
     int waterfallLow;
     bool waterfallAutomatic;
     int cy;
-    int LO_offset;
+    GLfloat LO_offset;
     GLfloat rquad;
     int lastX, lastY;
     GLfloat zoom, pan;

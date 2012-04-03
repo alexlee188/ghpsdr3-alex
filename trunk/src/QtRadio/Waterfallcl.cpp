@@ -20,6 +20,7 @@
 #include "Waterfallcl.h"
 
 #define MAX_CL_WIDTH 2048
+#define MAX_CL_HEIGHT 256
 
 class ImageCLContext
 {
@@ -131,6 +132,34 @@ Waterfallcl::~Waterfallcl(){
 
 }
 
+void Waterfallcl::createTBO(GLuint* tbo, GLuint* tex) {
+    // create buffer object
+    glGenBuffers(1, tbo);
+    glBindBuffer(GL_TEXTURE_BUFFER_EXT, *tbo);
+
+    // initialize buffer object
+    unsigned int size = MAX_CL_WIDTH * MAX_CL_HEIGHT;
+    glBufferData(GL_TEXTURE_BUFFER_EXT, size, 0, GL_DYNAMIC_DRAW);
+
+    //tex
+    glGenTextures(1, tex);
+    glBindTexture(GL_TEXTURE_BUFFER_EXT, *tex);
+    glTexBufferEXT(GL_TEXTURE_BUFFER_EXT, GL_ALPHA8, *tbo);
+    glBindBuffer(GL_TEXTURE_BUFFER_EXT, 0);
+
+}
+
+void Waterfallcl::deleteTBO(GLuint* tbo) {
+    glBindBuffer(1, *tbo);
+    glDeleteBuffers(1, tbo);
+    *tbo = 0;
+}
+
+void Waterfallcl::setShaderUniforms() {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_BUFFER_EXT, spectrumTex);
+}
+
 
 void Waterfallcl::initialize(int wid, int ht){
 
@@ -164,6 +193,8 @@ void Waterfallcl::initialize(int wid, int ht){
     VertexShader = NULL;
     FragmentShader = NULL;
     LoadShader("./Basic.vsh", "./Basic.fsh");
+    createTBO(&tbo, &spectrumTex);
+    setShaderUniforms();
 
 }
 
@@ -179,7 +210,7 @@ void Waterfallcl::setAutomatic(bool state) {
     waterfallAutomatic=state;
 }
 
-void Waterfallcl::setLO_offset(short offset){
+void Waterfallcl::setLO_offset(GLfloat offset){
     LO_offset = offset;
 }
 
@@ -201,7 +232,7 @@ void Waterfallcl::resizeGL( int width, int height )
 void Waterfallcl::setGeometry(QRect rect){
     data_width = rect.width();
     data_height = rect.height();
-    cy = 255;
+    cy = MAX_CL_HEIGHT - 1;
 }
 
 void Waterfallcl::mouseMoveEvent(QMouseEvent* event){
@@ -234,40 +265,39 @@ void Waterfallcl::paintGL()
     glScalef(zoom, 2.0f, 2.0f);
     glRotatef(rquad,1.0f,0.0f,0.0f);
 
-    GLfloat h = (float)cy / 511.0f;
     GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
 
     glBegin(GL_QUADS);
     // Front Face
-    glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f, -1.0f,  1.0f);
-    glTexCoord2f(tex_width, h + 0.5f); glVertex3f( 1.0f, -1.0f,  1.0f);
-    glTexCoord2f(tex_width, h); glVertex3f( 1.0f,  1.0f,  1.0f);
-    glTexCoord2f(0.0f, h); glVertex3f(-1.0f,  1.0f,  1.0f);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
+    glTexCoord2f(tex_width, 1.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
+    glTexCoord2f(tex_width, 0.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
     // Back Face
-    glTexCoord2f(0.0f, h); glVertex3f(-1.0f, -1.0f, -1.0f);
-    glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f,  1.0f, -1.0f);
-    glTexCoord2f(tex_width, h + 0.5f); glVertex3f( 1.0f,  1.0f, -1.0f);
-    glTexCoord2f(tex_width, h); glVertex3f( 1.0f, -1.0f, -1.0f);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
+    glTexCoord2f(tex_width, 1.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
+    glTexCoord2f(tex_width, 0.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
     // Top Face
-    glTexCoord2f(0.0f, h); glVertex3f(-1.0f,  1.0f, -1.0f);
-    glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f,  1.0f,  1.0f);
-    glTexCoord2f(tex_width, h + 0.5f); glVertex3f( 1.0f,  1.0f,  1.0f);
-    glTexCoord2f(tex_width, h); glVertex3f( 1.0f,  1.0f, -1.0f);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
+    glTexCoord2f(tex_width, 1.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
+    glTexCoord2f(tex_width, 0.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
     // Bottom Face
-    glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f, -1.0f, -1.0f);
-    glTexCoord2f(tex_width, h + 0.5f); glVertex3f( 1.0f, -1.0f, -1.0f);
-    glTexCoord2f(tex_width, h); glVertex3f( 1.0f, -1.0f,  1.0f);
-    glTexCoord2f(0.0f, h); glVertex3f(-1.0f, -1.0f,  1.0f);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
+    glTexCoord2f(tex_width, 1.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
+    glTexCoord2f(tex_width, 0.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
     // Right face
-    glTexCoord2f(tex_width, h + 0.5f); glVertex3f( 1.0f, -1.0f, -1.0f);
-    glTexCoord2f(tex_width, h); glVertex3f( 1.0f,  1.0f, -1.0f);
-    glTexCoord2f(0.0f, h); glVertex3f( 1.0f,  1.0f,  1.0f);
-    glTexCoord2f(0.0f, h + 0.5f); glVertex3f( 1.0f, -1.0f,  1.0f);
+    glTexCoord2f(tex_width, 1.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
+    glTexCoord2f(tex_width, 0.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
     // Left Face
-    glTexCoord2f(0.0f, h + 0.5f); glVertex3f(-1.0f, -1.0f, -1.0f);
-    glTexCoord2f(tex_width, h + 0.5f); glVertex3f(-1.0f, -1.0f,  1.0f);
-    glTexCoord2f(tex_width, h); glVertex3f(-1.0f,  1.0f,  1.0f);
-    glTexCoord2f(0.0f, h); glVertex3f(-1.0f,  1.0f, -1.0f);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
+    glTexCoord2f(tex_width, 1.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
+    glTexCoord2f(tex_width, 0.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
     glEnd();
 
     //rquad -= 0.2f;
@@ -276,7 +306,7 @@ void Waterfallcl::paintGL()
 
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
     data_width = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
-    if (cy-- <= 0) cy = 255;
+    if (cy-- <= 0) cy = MAX_CL_HEIGHT - 1;
 
 }
 

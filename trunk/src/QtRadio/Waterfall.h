@@ -81,8 +81,6 @@ signals:
 
 private slots:
     void updateWaterfall_2(void);
-    void updateWaterfall_3(void);
-    void updateWaterfall_4(void);
 protected:
     void paintEvent(QPaintEvent*);
 
@@ -94,8 +92,6 @@ protected:
 
 private:
     uint calculatePixel(int sample);
-
-    float* samples;
     int waterfallHigh;
     int waterfallLow;
     bool waterfallAutomatic;
@@ -122,7 +118,6 @@ private:
     long long frequency;
     long long subRxFrequency;
     bool subRx;
-    int size;
     Waterfallcl *waterfallcl;
     QThread *waterfallcl_thread;
     QString mode;

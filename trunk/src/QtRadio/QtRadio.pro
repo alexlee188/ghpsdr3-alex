@@ -88,7 +88,8 @@ SOURCES += main.cpp\
     servers.cpp \
     G711A.cpp \
     RTP.cpp \
-    Waterfallcl.cpp
+    Waterfallcl.cpp \
+    glee.c
 
 
 HEADERS  += \ 
@@ -138,7 +139,8 @@ HEADERS  += \
     servers.h \
     G711A.h \
     RTP.h \
-    Waterfallcl.h
+    Waterfallcl.h \
+    glee.h
     cusdr_queue.h
 
 FORMS    += \   

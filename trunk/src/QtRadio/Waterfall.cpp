@@ -53,8 +53,6 @@ Waterfall::Waterfall(QWidget*& widget) {
     colorHighG=255;
     colorHighB=0;
 
-    samples=NULL;
-
     waterfallcl = new Waterfallcl;
     waterfallcl->setParent(this);
     waterfallcl->setGeometry(QRect(QPoint(0,0),QPoint(width()*2-1,255)));
@@ -138,34 +136,23 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     } else {
         LO_offset=0;
     }
-    samples = (float*) malloc(width() * sizeof (float));
 
     // rotate spectrum display if LO is not 0
     if(LO_offset==0) {
-        waterfallcl->setLO_offset(0);
+        waterfallcl->setLO_offset(0.0f);
     } else {
-        float step=(float)sampleRate/(float)width();
-        offset=(int)((float)LO_offset/step);
+        offset=(float)LO_offset/(float)sampleRate;
         waterfallcl->setLO_offset(offset);
     }
-    size = length;
     waterfallcl->updateWaterfall(header, buffer, length);
 
     for(i=0;i<width();i++) average += -(buffer[j] & 0xFF);
     average = average/width();
 
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
+    QTimer::singleShot(0,this,SLOT(updateWaterfall_2()));
 }
 
 void Waterfall::updateWaterfall_2(void){
-}
-
-
-void Waterfall::updateWaterfall_3(void){
-}
-
-
-void Waterfall::updateWaterfall_4(void){
 
     if(waterfallAutomatic) {
         waterfallLow=average-10;
@@ -181,15 +168,6 @@ void Waterfall::updateWaterfall_4(void){
 
 
 uint Waterfall::calculatePixel(int sample) {
-        // simple gray scale
-//        int v=((int)sample-waterfallLow)*255/(waterfallHigh-waterfallLow);
-//
-//        if(v<0) v=0;
-//        if(v>255) v=255;
-//
-//        int pixel=(255<<24)+(v<<16)+(v<<8)+v;
-//        return pixel;
-
     int R,G,B;
     if(sample<waterfallLow) {
         R=colorLowR;
