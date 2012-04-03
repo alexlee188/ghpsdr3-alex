@@ -123,9 +123,6 @@ Q_GLOBAL_STATIC(ImageCLContext, image_context)
 
 
 Waterfallcl::Waterfallcl(){
-    makeCurrent();
-    ImageCLContext *ctx = image_context();
-    ctx->init(MAX_CL_WIDTH,256);
 }
 
 Waterfallcl::~Waterfallcl(){
@@ -356,6 +353,7 @@ void Waterfallcl::LoadShader(QString vshader, QString fshader){
     if(!ShaderProgram->link())
         {
         qWarning() << "Shader Program Linker Error" << ShaderProgram->log();
+        qFatal("Fatal");
         }
     else ShaderProgram->bind();
 }
