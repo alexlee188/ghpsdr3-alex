@@ -139,8 +139,7 @@ HEADERS  += \
     servers.h \
     G711A.h \
     RTP.h \
-    Waterfallcl.h \
-    glee.h
+    Waterfallcl.h
     cusdr_queue.h
 
 FORMS    += \   
