@@ -172,6 +172,9 @@ void Waterfallcl::initialize(int wid, int ht){
     LoadShader("./Basic.vsh", "./Basic.fsh");
     spectrumTexture_location = glGetUniformLocation(ShaderProgram->programId(), "spectrumTexture");
     cy_location =  glGetUniformLocation(ShaderProgram->programId(), "cy");
+    offset_location =  glGetUniformLocation(ShaderProgram->programId(), "offset");
+    waterfallLow_location =  glGetUniformLocation(ShaderProgram->programId(), "waterfallLow");
+    waterfallHigh_location =  glGetUniformLocation(ShaderProgram->programId(), "waterfallHigh");
     glUseProgram(ShaderProgram->programId());
     //Bind to tex unit 0
     glUniform1i(spectrumTexture_location, 0);

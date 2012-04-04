@@ -70,7 +70,8 @@ private:
     void LoadShader(QString vshader, QString fshader); 
     QGLShaderProgram *ShaderProgram;
     QGLShader *VertexShader, *FragmentShader;
-    GLuint spectrumTexture_location, cy_location, spectrumTex;
+    GLuint spectrumTexture_location, spectrumTex;
+    GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location;
     int data_width;
     int data_height;
     int waterfallHigh;

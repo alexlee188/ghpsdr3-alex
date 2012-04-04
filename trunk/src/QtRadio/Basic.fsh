@@ -1,8 +1,7 @@
 uniform sampler2D spectrumTexture;
 uniform float cy;
-
-#define MAX_CL_WIDTH 2048
-#define MAX_CL_HEIGHT 256
+uniform float offset;
+uniform float waterfallLow, waterfallHigh;
 
 void main()
 {
@@ -11,6 +10,27 @@ void main()
   if (y_coord > 1.0) y_coord -= 1.0;
   vec4 texel = texture2D(spectrumTexture, vec2(gl_TexCoord[0].s, y_coord));
 
-  //vec4 texel = texture2D(spectrumTexture, gl_TexCoord[0].st);
+  float sample =  1.0 - texel.r;
+  float percent = (sample - 0.5) *2.0;
+  if (percent < 0.0) percent = 0.0;
+  if (percent > 1.0) percent = 1.0;
+
+  if (percent < (2.0/9.0)) {texel = vec4(0.0, 0.0, percent/(2.0/9.0), 1.0);}
+  else if (percent < (3.0/9.0)) {texel = vec4(0.0, (percent - (2.0/9.0))/(1.0/9.0), 1.0, 1.0);}
+  else if (percent < (4.0/9.0)) {
+	float local_percent = (percent - (3.0/9.0))/(3.0/9.0);
+	texel = vec4(0.0, (1.0 - local_percent), 1.0, 1.0);
+  }
+  else if (percent < (5.0/9.0)) {texel = vec4((percent - (4.0/9.0))/(1.0/9.0), 1.0, 0.0, 1.0);}
+  else if (percent < (7.0/9.0)) {
+	float local_percent = (percent - (5.0/9.0))/(2.0/9.0);
+	texel = vec4(1.0, (1,0 - local_percent), 0.0, 1.0);
+  }
+  else if (percent < (8.0/9.0)){ texel = vec4(1.0, 0.0, (percent - (7.0/9.0))/(1.0/9.0), 1.0);}
+  else {
+	float local_percent = (percent - 8.0/9.0)/(1.0/9.0);
+	texel = vec4(0.75+0.25*(1.0-local_percent), 0.5*local_percent, 1.0, 1.0);
+  }
+
   gl_FragColor = texel;
 }
