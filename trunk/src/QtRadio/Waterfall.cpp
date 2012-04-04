@@ -125,7 +125,6 @@ void Waterfall::paintEvent(QPaintEvent*) {
 void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     int i,j;
     int version,subversion;
-    int offset;
 
     version=header[1];
     subversion=header[2];
@@ -142,7 +141,7 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     if(LO_offset==0) {
         waterfallcl->setLO_offset(0.0f);
     } else {
-        offset=(float)LO_offset/(float)sampleRate;
+        GLfloat offset=(float)LO_offset/(float)sampleRate;
         waterfallcl->setLO_offset(offset);
     }
     waterfallcl->updateWaterfall(header, buffer, length);

@@ -254,6 +254,11 @@ void Waterfallcl::paintGL()
     glBindTexture(GL_TEXTURE_2D, spectrumTex);
     float current_line = (float) cy /  MAX_CL_HEIGHT;
     glUniform1f(cy_location, current_line);
+    glUniform1f(offset_location, LO_offset);
+    float wfLow = (float) (waterfallLow) / 256.0f;
+    float wfHigh = (float) (waterfallHigh) / 256.0f;
+    glUniform1f(waterfallLow_location, wfLow);
+    glUniform1f(waterfallHigh_location, wfHigh);
 
     GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
 
