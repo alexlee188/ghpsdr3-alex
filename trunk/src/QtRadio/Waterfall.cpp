@@ -141,13 +141,16 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     if(LO_offset==0) {
         waterfallcl->setLO_offset(0.0f);
     } else {
-        GLfloat offset=(float)LO_offset/(float)sampleRate;
+        GLfloat offset=(float)LO_offset/(float)sampleRate*length/MAX_CL_WIDTH;
         waterfallcl->setLO_offset(offset);
     }
+
+
     waterfallcl->updateWaterfall(header, buffer, length);
 
-    for(i=0;i<width();i++) average += -(buffer[j] & 0xFF);
-    average = average/width();
+    int sum = 0;
+    for(i=0;i<length;i++) sum += -(buffer[j] & 0xFF);
+    average = (float)average * 0.95f + (float)(sum/length) * 0.05f; // running average
 
     QTimer::singleShot(0,this,SLOT(updateWaterfall_2()));
 }

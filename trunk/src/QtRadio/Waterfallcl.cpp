@@ -19,8 +19,7 @@
 #include <QDebug>
 #include "Waterfallcl.h"
 
-#define MAX_CL_WIDTH 2048
-#define MAX_CL_HEIGHT 256
+
 
 class ImageCLContext
 {
@@ -175,6 +174,7 @@ void Waterfallcl::initialize(int wid, int ht){
     offset_location =  glGetUniformLocation(ShaderProgram->programId(), "offset");
     waterfallLow_location =  glGetUniformLocation(ShaderProgram->programId(), "waterfallLow");
     waterfallHigh_location =  glGetUniformLocation(ShaderProgram->programId(), "waterfallHigh");
+    width_location =  glGetUniformLocation(ShaderProgram->programId(), "width");
     glUseProgram(ShaderProgram->programId());
     //Bind to tex unit 0
     glUniform1i(spectrumTexture_location, 0);
@@ -184,11 +184,15 @@ void Waterfallcl::initialize(int wid, int ht){
 }
 
 void Waterfallcl::setHigh(int high) {
+    float wfHigh = (float) (waterfallHigh) / 256.0f;
+    glUniform1f(waterfallHigh_location, wfHigh);
     waterfallHigh=high;
 }
 
 void Waterfallcl::setLow(int low) {
     waterfallLow=low;
+    float wfLow = (float) (waterfallLow) / 256.0f;
+    glUniform1f(waterfallLow_location, wfLow);
 }
 
 void Waterfallcl::setAutomatic(bool state) {
@@ -197,6 +201,7 @@ void Waterfallcl::setAutomatic(bool state) {
 
 void Waterfallcl::setLO_offset(GLfloat offset){
     LO_offset = offset;
+    glUniform1f(offset_location, LO_offset);
 }
 
 
@@ -254,11 +259,6 @@ void Waterfallcl::paintGL()
     glBindTexture(GL_TEXTURE_2D, spectrumTex);
     float current_line = (float) cy /  MAX_CL_HEIGHT;
     glUniform1f(cy_location, current_line);
-    glUniform1f(offset_location, LO_offset);
-    float wfLow = (float) (waterfallLow) / 256.0f;
-    float wfHigh = (float) (waterfallHigh) / 256.0f;
-    glUniform1f(waterfallLow_location, wfLow);
-    glUniform1f(waterfallHigh_location, wfHigh);
 
     GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
 
@@ -311,6 +311,7 @@ void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
         data[i][3] = 255;
     }
 
+    glUniform1f(width_location, (float)width/MAX_CL_WIDTH);
     // Update Texture
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)data);

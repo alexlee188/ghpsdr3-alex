@@ -1,6 +1,7 @@
 uniform sampler2D spectrumTexture;
 uniform float cy;
 uniform float offset;
+uniform float width;
 uniform float waterfallLow, waterfallHigh;
 
 void main()
@@ -8,13 +9,13 @@ void main()
 
   float y_coord = gl_TexCoord[0].t + cy;
   if (y_coord > 1.0) y_coord -= 1.0;
-  float x_coord = gl_TexCoord[0].s;
-  if (x_coord > 1.0) x_coord -= 1.0;
-  if (x_coord < 0.0) x_coord += 1.0;
+  float x_coord = gl_TexCoord[0].s - offset;
+  if (x_coord < 0.0) x_coord += width;
+  if (x_coord > width) x_coord -= width;
   vec4 value = texture2D(spectrumTexture, vec2(x_coord, y_coord));
-  float sample = 1.0 - value.r;
+  float sample = 0.0 - value.r;
 
-  float percent = (sample - 0.4) * 1.5;
+  float percent = (sample - waterfallLow)/(waterfallHigh-waterfallLow);
   if (percent < 0.0) percent = 0.0;
   if (percent > 1.0) percent = 1.0;
 

@@ -44,6 +44,8 @@
 #include <QGLShader>
 #include "qclmemoryobject.h"
 
+#define MAX_CL_WIDTH 2048
+#define MAX_CL_HEIGHT 256
 
 class Waterfallcl : public QGLWidget {
     Q_OBJECT
@@ -71,7 +73,7 @@ private:
     QGLShaderProgram *ShaderProgram;
     QGLShader *VertexShader, *FragmentShader;
     GLuint spectrumTexture_location, spectrumTex;
-    GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location;
+    GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location, width_location;
     int data_width;
     int data_height;
     int waterfallHigh;
