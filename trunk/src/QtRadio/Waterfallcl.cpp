@@ -19,7 +19,8 @@
 #include <QDebug>
 #include "Waterfallcl.h"
 
-
+#define ZOOM_FACTOR (4.65)
+#define PAN_FACTOR (-1.5)
 
 class ImageCLContext
 {
@@ -27,14 +28,14 @@ public:
     ImageCLContext() : glContext(0) {}
     ~ImageCLContext();
 
-    void init(int wid, int ht);
+    void init(int wid);
 
     QCLContextGL *glContext;
     QCLProgram program;
     QCLKernel waterfall;
 };
 
-void ImageCLContext::init(int wid, int ht)
+void ImageCLContext::init(int wid)
 {
     QByteArray source = QByteArray(
 
@@ -137,8 +138,8 @@ void Waterfallcl::initialize(int wid, int ht){
     data_height = ht;
     cy = data_height - 1;
     rquad = 0.0f;
-    zoom = 4.5f * wid / 1024.0f;
-    pan = -0.55f;
+    zoom = ZOOM_FACTOR;
+    pan = PAN_FACTOR;
 
 
 
@@ -217,6 +218,8 @@ void Waterfallcl::resizeGL( int width, int height )
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    zoom = ZOOM_FACTOR;
+    pan = PAN_FACTOR;
 }
 
 void Waterfallcl::setGeometry(QRect rect){
@@ -251,7 +254,7 @@ void Waterfallcl::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glLoadIdentity();
-    glTranslatef(pan,0.0f,-6.0f);
+    glTranslatef(pan,0.3f,-6.0f);
     glScalef(zoom, 2.0f, 2.0f);
     glRotatef(rquad,1.0f,0.0f,0.0f);
 
@@ -306,9 +309,6 @@ void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
     unsigned char data[MAX_CL_WIDTH][4];
     for (int i = 0; i < data_width; i++){
         data[i][0] = buffer[i];
-        data[i][1] = 0;
-        data[i][2] = 0;
-        data[i][3] = 255;
     }
 
     glUniform1f(width_location, (float)width/MAX_CL_WIDTH);
