@@ -57,7 +57,7 @@ Waterfall::Waterfall(QWidget*& widget) {
     waterfallcl->setParent(this);
     waterfallcl->initialize(width()*2,256);
     waterfallcl->resize(width()*2,height());
-    //waterfallcl->setGeometry(QRect(QPoint(0,0),QPoint(width()*2-1,255)));
+    waterfallcl->setGeometry(QRect(QPoint(0,0),QPoint(width()*2-1,255)));
 
 }
 
