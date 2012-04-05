@@ -158,7 +158,7 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
 void Waterfall::updateWaterfall_2(void){
 
     if(waterfallAutomatic) {
-        waterfallLow=average-10;
+        waterfallLow=average-20;
         waterfallHigh=waterfallLow+60;
         waterfallcl->setLow(waterfallLow);
         waterfallcl->setHigh(waterfallHigh);
