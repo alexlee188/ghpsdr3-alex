@@ -1500,13 +1500,16 @@ Process_IQ_Balance(unsigned int thread)
 	snap_spectrum (&uni[thread].spec, uni[thread].spec.type);	// sb->timebuf has a copy of
 									// time domain data
 	compute_spectrum(&uni[thread].spec);				// sb->output has PWR spectrum
+	//need_save = yes;
 	//compute_utility utility
 	//for (i=0; i < iterations; i++){
+		//if (need_save) save copy of timebuf
 		//random walk adjust gain and phase
 		//apply new_gain and new_phase to timebuf
 		compute_spectrum (&uni[thread].spec);
 		//compute_utility u
-		//if (u < utility) {utility = u; gain = new_gain; phase = new_phase;}
+		//if (u < utility) {utility = u; gain = new_gain; phase = new_phase; need_save = yes}
+		//else {restore timebuf from copy; need_save = no}
 	//}
 
 	rx[thread][0].iqfix->gain = gain;
