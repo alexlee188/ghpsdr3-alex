@@ -1370,28 +1370,7 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     int lindex,rindex;
     float extras;
 
-// g0orx binary header
-
-/*
-    // first byte is the buffer type
-    client_samples[0]=SPECTRUM_BUFFER;
-    sprintf(&client_samples[1],"%f",HEADER_VERSION);
-
-    // next 6 bytes contain the main rx s meter
-    sprintf(&client_samples[14],"%d",(int)meter);
-
-    // next 6 bytes contain the subrx s meter
-    sprintf(&client_samples[20],"%d",(int)subrx_meter);
-
-    // next 6 bytes contain data length
-    sprintf(&client_samples[26],"%d",size);
-
-    // next 8 bytes contain the sample rate
-    sprintf(&client_samples[32],"%d",sampleRate);
-
-    // next 8 bytes contain the meter - for compatability
-    sprintf(&client_samples[40],"%d",(int)meter);
-*/
+    // g0orx binary header
 
     client_samples[0]=SPECTRUM_BUFFER;
     client_samples[1]=HEADER_VERSION;

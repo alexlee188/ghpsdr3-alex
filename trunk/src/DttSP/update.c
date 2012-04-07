@@ -1475,6 +1475,46 @@ Process_Panadapter (unsigned int thread, float *results)
 }
 
 DttSP_EXP void
+Process_IQ_Balance(unsigned int thread)
+{
+	extern BOOLEAN reset_em;
+	REAL gain, phase;
+
+	//sem_wait (&top[thread].sync.upd.sem);
+	if (uni[thread].mode.trx == TX) {		// Auto IQ Balancing for Rx only
+		//sem_post (&top[thread].sync.upd.sem);
+		return;
+	}
+	gain = rx[thread][0].iqfix->gain;		// only for main Rx
+	phase = rx[thread][0].iqfix->phase;
+
+	uni[thread].spec.type = SPEC_PRE_FILT;
+	uni[thread].spec.scale = SPEC_PWR;
+
+	if (reset_em)
+	{
+		gain = 1.0f;
+		phase = 0.0f;
+	}
+
+	snap_spectrum (&uni[thread].spec, uni[thread].spec.type);	// sb->timebuf has a copy of
+									// time domain data
+	compute_spectrum(&uni[thread].spec);				// sb->output has PWR spectrum
+	//compute_utility utility
+	//for (i=0; i < iterations; i++){
+		//random walk adjust gain and phase
+		//apply new_gain and new_phase to timebuf
+		compute_spectrum (&uni[thread].spec);
+		//compute_utility u
+		//if (u < utility) {utility = u; gain = new_gain; phase = new_phase;}
+	//}
+
+	rx[thread][0].iqfix->gain = gain;
+	rx[thread][0].iqfix->phase = phase;
+	//sem_post (&top[thread].sync.upd.sem);
+}
+
+DttSP_EXP void
 Process_Phase (unsigned int thread, float *results, int numpoints)
 {
 	int i, j;
