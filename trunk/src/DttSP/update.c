@@ -1477,8 +1477,6 @@ Process_Panadapter (unsigned int thread, float *results)
 	//sem_post (&top[thread].sync.upd.sem);
 	compute_spectrum (&uni[thread].spec);
 	memcpy ((void *) results, uni[thread].spec.output, uni[thread].spec.size * sizeof (float));
-
-	Process_IQ_Balance(thread);
 }
 
 float utility(SpecBlock *sb){
@@ -1512,7 +1510,7 @@ void random_gain_phase(SpecBlock *sb, REAL gain, REAL phase, REAL *new_gain, REA
 	}
 }
 
-void Process_IQ_Balance(unsigned int thread)
+DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 {
 	extern BOOLEAN reset_em;
 	REAL gain, phase, new_gain, new_phase;
@@ -1533,20 +1531,17 @@ void Process_IQ_Balance(unsigned int thread)
 
 	sb = &uni[thread].spec;
 	sb->type = SPEC_PRE_FILT;
-	sb->scale = SPEC_PWR;
+	sb->scale = SPEC_MAG;
 
-/*
 	if (reset_em)
 	{
 		gain = 1.0f;
 		phase = 0.0f;
 	}
-*/
 
-	//snap_spectrum (sb, sb->type);			// sb->timebuf has a copy of time domain data
+	snap_spectrum (sb, sb->type);			// sb->timebuf has a copy of time domain data
 							// after windowing
-	//compute_spectrum(sb);				// sb->output has PWR spectrum
-	//these steps have already done by Process_Panadapter
+	compute_spectrum(sb);				// sb->output has MAG spectrum
 
 	p = newvec_COMPLEX_fftw(sb->size, "spectrum timebuf");
 	tmp_timebuf = newCXB (sb->size, p, "spectrum timebuf");
