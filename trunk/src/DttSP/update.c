@@ -1518,7 +1518,7 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 	COMPLEX *p;
 	CXB tmp_timebuf, original_timebuf;
 	float current_utility, u;
-	int iterations = 10;
+	int iterations = 5;
 
 	//sem_wait (&top[thread].sync.upd.sem);
 	if (uni[thread].mode.trx == TX) {		// Auto IQ Balancing for Rx only
@@ -1527,7 +1527,6 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 	}
 	gain = rx[thread][0].iqfix->gain;		// only for main Rx
 	phase = rx[thread][0].iqfix->phase;
-	fprintf(stderr,"iqfix->gain = %f  iqfix->phase = %f\n", gain, phase);
 
 	sb = &uni[thread].spec;
 	sb->type = SPEC_PRE_FILT;
@@ -1561,6 +1560,7 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 			phase = new_phase;
 			// update original_timebuf to changed gain phase
 			memcpy(CXBbase(original_timebuf), CXBbase(sb->timebuf), sb->size*sizeof(float)*2);
+			fprintf(stderr,"gain = %f  phase = %f\n", gain, phase);
 		}
 		else {
 			// restore old sb->timebuf from previous step
