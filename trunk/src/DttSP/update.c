@@ -1474,11 +1474,24 @@ Process_Panadapter (unsigned int thread, float *results)
 	memcpy ((void *) results, uni[thread].spec.output, uni[thread].spec.size * sizeof (float));
 }
 
+float utility(SpecBlock *sb){
+	return 1.0;
+}
+
+void random_gain_phase(SpecBlock *sb, REAL gain, REAL phase, REAL *new_gain, REAL *new_phase){
+}
+
 DttSP_EXP void
 Process_IQ_Balance(unsigned int thread)
 {
 	extern BOOLEAN reset_em;
-	REAL gain, phase;
+	REAL gain, phase, new_gain, new_phase;
+	SpecBlock *sb;
+	COMPLEX *p;
+	CXB tmp_timebuf, original_timebuf;
+	float current_utility, u;
+	int i;
+	int iterations = 3;
 
 	//sem_wait (&top[thread].sync.upd.sem);
 	if (uni[thread].mode.trx == TX) {		// Auto IQ Balancing for Rx only
@@ -1488,8 +1501,9 @@ Process_IQ_Balance(unsigned int thread)
 	gain = rx[thread][0].iqfix->gain;		// only for main Rx
 	phase = rx[thread][0].iqfix->phase;
 
-	uni[thread].spec.type = SPEC_PRE_FILT;
-	uni[thread].spec.scale = SPEC_PWR;
+	sb = &uni[thread].spec;
+	sb->type = SPEC_PRE_FILT;
+	sb->scale = SPEC_PWR;
 
 	if (reset_em)
 	{
@@ -1497,23 +1511,41 @@ Process_IQ_Balance(unsigned int thread)
 		phase = 0.0f;
 	}
 
-	snap_spectrum (&uni[thread].spec, uni[thread].spec.type);	// sb->timebuf has a copy of
-									// time domain data
-	compute_spectrum(&uni[thread].spec);				// sb->output has PWR spectrum
-	//need_save = yes;
-	//compute_utility utility
-	//for (i=0; i < iterations; i++){
-		//if (need_save) save copy of timebuf
-		//random walk adjust gain and phase
-		//apply new_gain and new_phase to timebuf
-		compute_spectrum (&uni[thread].spec);
-		//compute_utility u
-		//if (u < utility) {utility = u; gain = new_gain; phase = new_phase; need_save = yes}
-		//else {restore timebuf from copy; need_save = no}
-	//}
+	snap_spectrum (sb, sb->type);			// sb->timebuf has a copy of time domain data
+							// after windowing
+	p = newvec_COMPLEX_fftw(sb->size, "spectrum timebuf");
+	tmp_timebuf = newCXB (sb->size, p, "spectrum timebuf");
+	for (i = 0; i < sb->size; i++)			// make a copy in tmp_timebuf
+		CXBdata (tmp_timebuf, i) = CXBdata (sb->timebuf, i);
+
+	original_timebuf = sb->timebuf;			// save pointer for restore at end of function
+	sb->timebuf = tmp_timebuf;			// use tmp_timebuf for spectrum and utility computations
+	compute_spectrum(sb);				// sb->output has PWR spectrum
+	current_utility = utility(sb);
+	for (i=0; i < iterations; i++){
+		random_gain_phase(sb, gain, phase, &new_gain, &new_phase);
+		compute_spectrum (sb);
+		u = utility(sb);
+		if (u > current_utility){
+			current_utility = u;
+			gain = new_gain;
+			phase = new_phase;
+			for (i = 0; i < sb->size; i++)		// update sb->timebuf to changed gain phase
+				CXBdata (sb->timebuf, i) = CXBdata (tmp_timebuf, i);
+		}
+		else {
+			for (i = 0; i < sb->size; i++)		// restore old sb->timebuf from previous step
+				CXBdata (tmp_timebuf, i) = CXBdata (sb->timebuf, i);
+		}
+	}
 
 	rx[thread][0].iqfix->gain = gain;
 	rx[thread][0].iqfix->phase = phase;
+
+	//cleanup tmp_timebuf
+	sb->timebuf = original_timebuf;
+	delvec_COMPLEX_fftw(tmp_timebuf->data);
+	delCXB (tmp_timebuf);
 	//sem_post (&top[thread].sync.upd.sem);
 }
 
