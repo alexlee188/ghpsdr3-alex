@@ -67,8 +67,12 @@ void* listener_thread(void* arg) {
     //int address_length; // unused
     struct sockaddr_in address;
     CLIENT* client;
+    int old_state, old_type;
     int rc;
     int on=1;
+    
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);    
 
     // create TCP socket to listen on
     s=socket(AF_INET,SOCK_STREAM,0);

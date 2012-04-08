@@ -81,31 +81,26 @@ static int imag_position = 0;
 static bool drop_rx_samples = false;
 static const int TRANSMIT_BUFFER_SIZE_BYTES = TRANSMIT_BUFFER_SIZE*2*sizeof(float);
 static int MAX_USRP_RX_BUFFER = 0; //will be initialized
-
-
-/*!
- * The tx queue item
- */
-typedef struct _tx_buffer_entry {
-	unsigned char* data;
-	TAILQ_ENTRY(_tx_buffer_entry) entries;
-} TX_BUFFER_ENTRY;
+static int MAX_USRP_TX_BUFFER = 0; //will be initialized
+static bool tx_resampler_init = true;
+static int tx_resampler_id = -1;
 
 /*!
- * The tx queue item
+ * The queue item
  */
-typedef struct _rx_buffer_entry {
+typedef struct _queue_buffer_entry {
 	std::vector<std::complex<float> > *data;
-	TAILQ_ENTRY(_rx_buffer_entry) entries;
-} RX_BUFFER_ENTRY;
+    int data_length;
+	TAILQ_ENTRY(_queue_buffer_entry) entries;
+} QUEUE_BUFFER_ENTRY;
 
 
 // TX audio sample is the HEAD of a queue to be forwarded to USRP
-TAILQ_HEAD(tx_tailhead, _tx_buffer_entry) tx_audio_iq_stream;
+TAILQ_HEAD(tx_tailhead, _queue_buffer_entry) tx_audio_iq_stream;
 struct tx_tailhead *tx_headp; /* Tail queue head. */
 
 // RX USRP sample is the HEAD of a queue to be processed by server
-TAILQ_HEAD(rx_tailhead, _rx_buffer_entry) rx_samples_iq_stream;
+TAILQ_HEAD(rx_tailhead, _queue_buffer_entry) rx_samples_iq_stream;
 struct rx_tailhead *rx_headp; /* Tail queue head. */
 
 #define MAX_QUEUE 50 //Max 50KSAMPLES in queue
@@ -180,6 +175,7 @@ bool usrp_init (const char *rx_subdev_par, const char *tx_subdev_par)
         
         usrp.dev = usrp.sdev->get_device();
         MAX_USRP_RX_BUFFER = usrp.dev->get_max_recv_samps_per_packet();
+        MAX_USRP_TX_BUFFER = usrp.dev->get_max_send_samps_per_packet();
                 
         setup_rx_queue();
         setup_tx_queue();
@@ -317,7 +313,11 @@ void usrp_set_frequency (double freq)
 void *usrp_receiver_thread (void *param)
 {            
     uhd::rx_metadata_t md;	    
-    std::vector<std::complex<float> > buff(MAX_USRP_RX_BUFFER);              
+    std::vector<std::complex<float> > buff(MAX_USRP_RX_BUFFER);       
+    int old_state, old_type;
+
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);       
     
     //Setup the samples streaming
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);    
@@ -360,11 +360,18 @@ void *usrp_receiver_thread (void *param)
             ) << std::endl;
             goto done_loop;
                         
-        case uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:
+        case uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:              
+            /*
+             * Let the progranm continue.
+             * In current version, overflows will be detected by "OOO's" at stderr
+             * More elegant management will come in official version.
+             * 
             std::cerr << boost::format(
                 "Internal USRP receiver buffer overflow, exiting loop..."
-            ) << std::endl;            
-            goto done_loop;             
+            ) << std::endl;  
+            goto done_loop;
+             */
+            break; 
 
         default:
             std::cerr << boost::format(
@@ -374,14 +381,14 @@ void *usrp_receiver_thread (void *param)
         }
         
         //ENQUEUE The buffer
-        RX_BUFFER_ENTRY *item;
+        QUEUE_BUFFER_ENTRY *item;
         //Copy of the buffer in a NEW allocated buffer
         std::vector<std::complex<float> > *buff2 = new std::vector<std::complex<float> >(buff);
 
         //If there is space in queue
         if (rx_queue_length < MAX_QUEUE) {    
             //Add container to queue
-            item = (RX_BUFFER_ENTRY *) malloc(sizeof(*item));
+            item = (QUEUE_BUFFER_ENTRY *) malloc(sizeof(*item));
             item->data = buff2;    
             //std::cerr << boost::format("Add to queue: len %d") % rx_queue_length << std::endl;        
             pthread_mutex_lock(&rx_queue_lock);
@@ -411,14 +418,18 @@ void *usrp_receiver_thread (void *param)
 void *usrp_rx_forwarder_thread (void *param)
 {
     RECEIVER *pRec = (RECEIVER *)param; 
+    int old_state, old_type;
 
     //debug
 	//std::cerr << inspect_receiver(pRec) << std::endl;
+    
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);    
 
     pRec->samples = 0;
     
     std::vector<std::complex<float> > *buff;
-    RX_BUFFER_ENTRY *item;
+    QUEUE_BUFFER_ENTRY *item;
     
     //NEW RES LIB    
     int resampler_id = resampler_setup_new(MAX_USRP_RX_BUFFER, DECIM_RX, INTERP_RX);    
@@ -440,7 +451,7 @@ void *usrp_rx_forwarder_thread (void *param)
         item = TAILQ_FIRST(&rx_samples_iq_stream);                   
         if (item != NULL) {            
             //Take next Vector buffer from the queue
-            buff = (std::vector<std::complex<float> > *)item->data;            
+            buff = (std::vector<std::complex<float> > *)item->data;              
             TAILQ_REMOVE(&rx_samples_iq_stream, item, entries);                    
             rx_queue_length--;
             pthread_mutex_unlock(&rx_queue_lock);
@@ -466,8 +477,9 @@ void *usrp_rx_forwarder_thread (void *param)
                 resampler_load_data(resampler_id, i, (*buff)[i].real(), (*buff)[i].imag());                                    
         }
         
-        //Vector cleanup
+        //Vector cleanup        
         delete buff;
+        free(item);
         
         if (drop_rx_samples) {
             continue;
@@ -514,29 +526,22 @@ void *usrp_rx_forwarder_thread (void *param)
 void *usrp_transmitter_thread (void *param)
 {    
     uhd::tx_metadata_t md;
-    uhd::async_metadata_t async_md;
-    float *audio_data;
-    int audio_data_cnt = 0;
-    TX_BUFFER_ENTRY *item;
+    uhd::async_metadata_t async_md;        
+    int old_state, old_type;
+    QUEUE_BUFFER_ENTRY *item;
+    std::vector<std::complex<float> > *buff;
+    int num_tx_samples = 0;
     
-    const unsigned int MAX_USRP_TX_BUFFER = usrp.dev->get_max_send_samps_per_packet();
-    std::cerr << boost::format("Max packet size: %d") % MAX_USRP_TX_BUFFER << std::endl;
-    std::vector<std::complex<float> > buff(MAX_USRP_TX_BUFFER);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);    
+    
     md.start_of_burst = false;
     md.end_of_burst = false; 
-
-    //NEW RES LIB    
-    int resampler_id = resampler_setup_new(TRANSMIT_BUFFER_SIZE, DECIM_TX, INTERP_TX);    
-    
-    if (resampler_id < 0) { //FAILURE!
-        std::cerr << "TX Resampler object definition failed. Exiting..." << std::endl;
-        exit (1);
-    }
-    std::cerr << boost::format("TX thread Using resampler %d.") % resampler_id << std::endl;    
  
     std::cerr << "Starting the USRP transmitter thread cycle" << std::endl;              
     
     //CRITICAL SECTION on the TX QUEUE    
+    //TODO: benchmark to avoid underruns
     while(1) {        
         //If there is buffer pair in the queue
         pthread_mutex_lock(&tx_queue_lock);            
@@ -544,8 +549,8 @@ void *usrp_transmitter_thread (void *param)
         if (item != NULL) {            
             //Take next buffer from the queue
             //it is a paired vectors [III...I][QQQ...Q] or vice versa
-            audio_data = (float *)item->data;
-            
+            buff = (std::vector<std::complex<float> > *) item->data;
+            num_tx_samples = item->data_length;
             TAILQ_REMOVE(&tx_audio_iq_stream, item, entries);                    
             tx_queue_length--;
             pthread_mutex_unlock(&tx_queue_lock);
@@ -555,119 +560,60 @@ void *usrp_transmitter_thread (void *param)
             continue;
         }        
         
-        //std::cerr << boost::format("Remove from queue: len %d") % tx_queue_length << std::endl;        
-                
-        //DEBUG TEST
-        //std::cerr << boost::format("Dumping audio data buffer #%d") % ++audio_data_cnt << std::endl;              
-        //dump_float_buffer_heads(audio_data);
-        //continue;
-        //DEBUG TEST
+        //std::cerr << boost::format("Remove from queue: len %d") % tx_queue_length << std::endl;                            
         
-        //Rational resampler to reach 320KSPS
-        //Load resampler with audio received by the dspserver
-        if (real_position == 1) 
-            resampler_load_channels(resampler_id, audio_data, &audio_data[TRANSMIT_BUFFER_SIZE]);                        
-        else
-            resampler_load_channels(resampler_id, &audio_data[TRANSMIT_BUFFER_SIZE], audio_data);                        
+        usrp.dev->send(&buff->front(), num_tx_samples, md,
+            uhd::io_type_t::COMPLEX_FLOAT32,
+            uhd::device::SEND_MODE_ONE_PACKET
+            );                        
         
         //CLEANUP: audio_data
-        free(item->data);
+        delete buff;
         free(item);        
-        
-        //Rational resampling API here                
-        char *rr_msg = NULL;
-        int output_frames_gen = 0;
-        int rr_retcode = do_resample(resampler_id, TRANSMIT_BUFFER_SIZE, &output_frames_gen, rr_msg);                         
-        //std::cerr << boost::format("output_frames_gen %d.\n") % output_frames_gen << std::endl;  
-                        
-        if (rr_retcode == RRESAMPLER_NO_ERROR) {
+                                                                                                 
+        /*
+         * NOT USED FOR NOW
+         * 
+        //Check possible messages
+        if (usrp.dev->recv_async_msg(async_md)) {
             
-            int acc_tx_samples = 0;
-            int pcktcnt = 0;
-            //Loop: send 1 I/Q packet of audio data to USRP
-            do {
-                size_t num_tx_samples = 0;
-                float im, rl;
-                //Loop 1 packet, or less, sent to USRP
-                unsigned int i;
-            #pragma omp parallel for schedule(static) private(i)
-                for (i=0; (i<MAX_USRP_TX_BUFFER) && (acc_tx_samples<output_frames_gen); ++i) {
+            switch(async_md.event_code){
+            case uhd::async_metadata_t::EVENT_CODE_BURST_ACK:
+                break;
 
-                    resampler_fetch_data(resampler_id, i, &im, &rl);
-                    buff[i] = std::complex<float>(im,rl);                                                     
-                    num_tx_samples++; acc_tx_samples++;                
-                }                                                
-                //DEBUG TEST
-                /*
-                fprintf(stderr, "  Re: %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f\n",
-                buff[i].real(),buff[i+1].real(),buff[i+2].real(),buff[i+3].real(),
-                buff[i+4].real(),buff[i+5].real(),buff[i+6].real(),buff[i+7].real());
-                fprintf(stderr, "  Im: %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f\n",
-                buff[i].imag(),buff[i+1].imag(),buff[i+2].imag(),buff[i+3].imag(),
-                buff[i+4].imag(),buff[i+5].imag(),buff[i+6].imag(),buff[i+7].imag());
-                fprintf(stderr,"\n");                
-                 */
-                //DEBUG TEST
-                                                    
-                usrp.dev->send(&buff.front(), num_tx_samples, md,
-                    uhd::io_type_t::COMPLEX_FLOAT32,
-                    uhd::device::SEND_MODE_ONE_PACKET
-                    );                
-                     
-                /*
-                 * NOT USED FOR NOW
-                 * 
-                //Check possible messages
-                if (usrp.dev->recv_async_msg(async_md)) {
-                    
-                    switch(async_md.event_code){
-                    case uhd::async_metadata_t::EVENT_CODE_BURST_ACK:
-                        break;
+            case uhd::async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET:
+                std::cout << boost::format(
+                    "Got underflow indication after sending packet. Exiting transmitter thread..."
+                ) << std::endl;
+                goto done_tx_loop;
+                
+            case uhd::async_metadata_t::EVENT_CODE_TIME_ERROR:
+                std::cout << boost::format(
+                    "Wrong timing in sending packet. Exiting transmitter thread..."
+                ) << std::endl;
+                goto done_tx_loop;
+                
+            case uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR:
+                std::cout << boost::format(
+                    "Probable packet loss indication after sending packet."
+                ) << std::endl;
+                break;
 
-                    case uhd::async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET:
-                        std::cout << boost::format(
-                            "Got underflow indication after sending packet. Exiting transmitter thread..."
-                        ) << std::endl;
-                        goto done_tx_loop;
-                        
-                    case uhd::async_metadata_t::EVENT_CODE_TIME_ERROR:
-                        std::cout << boost::format(
-                            "Wrong timing in sending packet. Exiting transmitter thread..."
-                        ) << std::endl;
-                        goto done_tx_loop;
-                        
-                    case uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR:
-                        std::cout << boost::format(
-                            "Probable packet loss indication after sending packet."
-                        ) << std::endl;
-                        break;
-
-                    default:
-                        std::cout << boost::format(
-                            "Got error code 0x%x. Exiting transmitter thread..."
-                            ) % async_md.event_code << std::endl;
-                        goto done_tx_loop;
-                    }
-                } */           
-                //std::cerr << boost::format("packet sent: %d") % ++pcktcnt;
-            } while (acc_tx_samples < output_frames_gen);        
-            
-            //std::cerr << "Audio Buffer sent" << std::endl;
-            
-        } else {
-            //A rational resampler error occurred!            
-            std::cerr << boost::format("TX Rational resampling error: %s") % rr_msg << std::endl;
-        }
-        
-    } done_tx_loop:
-    
+            default:
+                std::cout << boost::format(
+                    "Got error code 0x%x. Exiting transmitter thread..."
+                    ) % async_md.event_code << std::endl;
+                goto done_tx_loop;
+            }
+        } */                   
+    }  
     return 0;
 }
 
 bool usrp_start (RECEIVER *pRec)
 {
     //Creates the IQ samples receiving thread
-    if (pthread_create(&pRec->rx_thread_id,NULL,usrp_rx_forwarder_thread,(void *)pRec)!=0) {
+    if (pthread_create(&pRec->rx_fwd_thread_id,NULL,usrp_rx_forwarder_thread,(void *)pRec)!=0) {
         std::cerr << boost::format(
             "Failed to create USRP RX forwarder thread for rx %d") % pRec->client->receiver_num << std::endl;
         return false; 
@@ -701,29 +647,91 @@ bool usrp_start (RECEIVER *pRec)
 
 //CRITICAL SECTION on the TX QUEUE 
 int usrp_process_tx_modulation(float *outbuf, int mox) {
-
-    unsigned char *audio_data;
-    TX_BUFFER_ENTRY *item;
     
-    //If there is space in queue
-    if (tx_queue_length < MAX_QUEUE) {    
-        //Add container to queue
-        audio_data = (unsigned char *) malloc(TRANSMIT_BUFFER_SIZE_BYTES);
-        if (mox==1)
-            memcpy(audio_data, outbuf, TRANSMIT_BUFFER_SIZE_BYTES);
-        else
-            memset(audio_data, 0, TRANSMIT_BUFFER_SIZE_BYTES);
-        item = (TX_BUFFER_ENTRY *) malloc(sizeof(*item));
-        item->data = audio_data;    
-        //std::cerr << boost::format("Add to queue: len %d") % tx_queue_length << std::endl;        
-        pthread_mutex_lock(&tx_queue_lock);
-        TAILQ_INSERT_TAIL(&tx_audio_iq_stream, item, entries);
-        tx_queue_length++;
-        pthread_mutex_unlock(&tx_queue_lock);    
-        return 0;    
-    } else {
-        //else discard buffer and return -1    
-        return -1;
+    float *audio_data;
+    QUEUE_BUFFER_ENTRY *item;    
+        
+    //std::cerr << boost::format("Max packet size: %d") % MAX_USRP_TX_BUFFER << std::endl;    
+    std::vector<std::complex<float> > buff(MAX_USRP_TX_BUFFER);    
+    
+    //At first call only, instantiate the rational resampler
+    if (tx_resampler_init) {        
+        //NEW RES LIB    
+        tx_resampler_id = resampler_setup_new(TRANSMIT_BUFFER_SIZE, DECIM_TX, INTERP_TX);    
+        
+        if (tx_resampler_id < 0) { //FAILURE!
+            std::cerr << "TX Resampler object definition failed. Exiting..." << std::endl;
+            exit (1);
+        }
+        std::cerr << boost::format("TX thread Using resampler %d.") % tx_resampler_id << std::endl;                    
+        tx_resampler_init = false;
     }
+        
+    audio_data = (float *) malloc(TRANSMIT_BUFFER_SIZE_BYTES);
+    if (mox==1)
+        memcpy(audio_data, outbuf, TRANSMIT_BUFFER_SIZE_BYTES);
+    else
+        memset(audio_data, 0, TRANSMIT_BUFFER_SIZE_BYTES);
+        
+    //Rational resampler to reach 320KSPS
+    //Load resampler with audio received by the dspserver
+    if (real_position == 1) 
+        resampler_load_channels(tx_resampler_id, audio_data, &audio_data[TRANSMIT_BUFFER_SIZE]);                        
+    else
+        resampler_load_channels(tx_resampler_id, &audio_data[TRANSMIT_BUFFER_SIZE], audio_data);                        
+
+    //Rational resampling API here                
+    char *rr_msg = NULL;
+    int output_frames_gen = 0;
+    int rr_retcode = do_resample(tx_resampler_id, TRANSMIT_BUFFER_SIZE, &output_frames_gen, rr_msg);                         
+    //std::cerr << boost::format("output_frames_gen %d.\n") % output_frames_gen << std::endl; 
+
+    //Release audio data
+    free(audio_data); 
+
+    if (rr_retcode == RRESAMPLER_NO_ERROR) {
+        
+        int acc_tx_samples = 0;        
+        //Loop: send 1 I/Q packet of audio data to USRP
+        do {
+            size_t num_tx_samples = 0;
+            float im, rl;
+            //Fill 1 packet, or less, to be sent IN QUEUE to USRP TX
+            unsigned int i;
+        #pragma omp parallel for schedule(static) private(i)
+            for (i=0; (i<MAX_USRP_TX_BUFFER) && (acc_tx_samples<output_frames_gen); ++i) {
+
+                resampler_fetch_data(tx_resampler_id, i, &im, &rl);
+                buff[i] = std::complex<float>(im,rl);                                                     
+                num_tx_samples++; acc_tx_samples++;                
+            } 
+
+            //Copy of the buffer in a NEW allocated buffer
+            std::vector<std::complex<float> > *buff2 = new std::vector<std::complex<float> >(buff);
+                                            
+            //If there is space in queue
+            if (tx_queue_length < MAX_QUEUE) {    
+            //Add container to queue
+                item = (QUEUE_BUFFER_ENTRY *) malloc(sizeof(*item));
+                item->data = buff2; 
+                item->data_length = num_tx_samples;
+                //std::cerr << boost::format("Add to queue: len %d") % tx_queue_length << std::endl;        
+                pthread_mutex_lock(&tx_queue_lock);
+                TAILQ_INSERT_TAIL(&tx_audio_iq_stream, item, entries);
+                tx_queue_length++;
+                pthread_mutex_unlock(&tx_queue_lock);                      
+            } else {
+                //else discard buffer    
+                std::cerr << boost::format("TX queue is full: tx buffer not forwarded!") << std::endl;
+            }            
+
+        } while (acc_tx_samples < output_frames_gen);        
+    
+    } else {
+        //A rational resampler error occurred!            
+        std::cerr << boost::format("TX Rational resampling error: %s") % rr_msg << std::endl;
+        return -1;
+    }    
+    return 0;
 }
 

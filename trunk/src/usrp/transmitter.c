@@ -116,7 +116,7 @@ void* tx_audio_thread(void* arg) {
     BUFFER buffer;
 
     fprintf(stderr,"Starting tx_audio_thread for client %d\n",rx->id);
-
+    
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);
     

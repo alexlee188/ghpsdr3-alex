@@ -78,6 +78,7 @@ int toggle_mox(CLIENT* client) {
 //Client thread for RX IQ stream
 void* client_thread(void* arg) {
     CLIENT* client=(CLIENT*)arg;
+    int old_state, old_type;
     char command[80];
     int bytes_read;
     const char* response;
@@ -87,6 +88,9 @@ void* client_thread(void* arg) {
     client->receiver_num=-1;
     set_mox(client,0);
     pthread_mutex_init(&client->mox_lock, NULL );
+    
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);    
 
     while(1) {	
         bytes_read=recv(client->socket,command,sizeof(command),0);
@@ -121,6 +125,8 @@ void* client_thread(void* arg) {
 #endif
 
     fprintf(stderr,"Client Handler: Client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
+
+    //TODO: hanlde graceful USRP threads exit
 
     free(client);
     return 0;
@@ -172,8 +178,8 @@ const char* parse_command(CLIENT* client,char* command) {
                     if(token!=NULL) {
                         client->iq_port=atoi(token);
                     }
-                    //NOTE:as it is now, only receiver 0's client will issue 'start' command.
-                    // starts the USRP threads
+                    //NOTE:as it is now the usrp-server, only receiver 0's is supported
+                    //then it is the only one to issue 'start' command.
                     if (usrp_start (&receiver[client->receiver_num]))
                         fprintf(stderr,"Started USRP for Client %d\n",client->receiver_num);
                     else {

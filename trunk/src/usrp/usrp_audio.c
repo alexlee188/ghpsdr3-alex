@@ -133,7 +133,7 @@ int usrp_local_audio_open(int core_bandwidth) {
     }
     
     ddev=Pa_GetDefaultInputDevice();    
-    //TODO: this is an assumption, should work in most cases
+    //ATTN: this is an assumption, should work in most cases
     inputParameters.device= (ddev>=0) ? ddev : 0;
     inputParameters.channelCount=2;
     inputParameters.sampleFormat=paFloat32;        
@@ -141,7 +141,7 @@ int usrp_local_audio_open(int core_bandwidth) {
     inputParameters.hostApiSpecificStreamInfo=NULL;
 
     ddev=Pa_GetDefaultOutputDevice();
-    //TODO: this is an assumption, should work in most cases
+    //ATTN: this is an assumption, should work in most cases
     outputParameters.device= (ddev>=0) ? ddev : 0;
     outputParameters.channelCount=2;
     outputParameters.sampleFormat=paFloat32;
