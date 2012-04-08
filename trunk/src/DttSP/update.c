@@ -1475,10 +1475,33 @@ Process_Panadapter (unsigned int thread, float *results)
 }
 
 float utility(SpecBlock *sb){
-	return 1.0;
+	float result = 0.0f;
+	int halflength = sb->size /2;
+	int i;
+	float distanceFromCenter;
+	
+	for (i = 0; i < halflength; i++){
+		distanceFromCenter = halflength - i;
+		if (distanceFromCenter > 0.05f * halflength){
+			result += fabsf(sb->output[i] - sb->output[sb->size - 2 -i]);
+		}
+	}
+	return result;
 }
 
 void random_gain_phase(SpecBlock *sb, REAL gain, REAL phase, REAL *new_gain, REAL *new_phase){
+	float random_number;
+	int i;
+
+	random_number = ((float)rand()/(float)RAND_MAX - 0.5) * 2.0;
+	*new_gain = *new_gain + random_number * 0.001;
+	random_number = ((float)rand()/(float)RAND_MAX - 0.5) * 2.0;
+	*new_phase = *new_phase + random_number * 0.001;
+	for (i = 0; i < sb->size; i++)
+	{
+		CXBimag (sb->timebuf, i) += *new_phase * CXBreal (sb->timebuf, i);
+		CXBreal (sb->timebuf, i) *= *new_gain;
+	}
 }
 
 DttSP_EXP void
