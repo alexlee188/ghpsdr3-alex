@@ -74,6 +74,8 @@ correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan)
 	int i;
 	REAL doit;
 	if (IQdoit == 0) return;
+
+/*
 	if (subchan == 0) doit = iq->mu;
 	else doit = 0;
 	if(!isTX)
@@ -105,6 +107,8 @@ correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan)
 	}
 	else
 	{
+*/
+	if(!isTX){
 		for (i = 0; i < CXBhave (sigbuf); i++)
 		{
 			CXBimag (sigbuf, i) += iq->phase * CXBreal (sigbuf, i);
