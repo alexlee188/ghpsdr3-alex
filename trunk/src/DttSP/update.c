@@ -1451,6 +1451,9 @@ Process_Spectrum (unsigned int thread, float *results)
 }
 
 DttSP_EXP void
+Process_IQ_Balance(unsigned int thread);
+
+DttSP_EXP void
 Process_Panadapter (unsigned int thread, float *results)
 {
 	extern BOOLEAN reset_em;
@@ -1472,6 +1475,8 @@ Process_Panadapter (unsigned int thread, float *results)
 	//sem_post (&top[thread].sync.upd.sem);
 	compute_spectrum (&uni[thread].spec);
 	memcpy ((void *) results, uni[thread].spec.output, uni[thread].spec.size * sizeof (float));
+
+	Process_IQ_Balance(thread);
 }
 
 float utility(SpecBlock *sb){
@@ -1536,8 +1541,10 @@ Process_IQ_Balance(unsigned int thread)
 		phase = 0.0f;
 	}
 
-	snap_spectrum (sb, sb->type);			// sb->timebuf has a copy of time domain data
+	//snap_spectrum (sb, sb->type);			// sb->timebuf has a copy of time domain data
 							// after windowing
+	//this step is already done by Process_Panadapter
+
 	p = newvec_COMPLEX_fftw(sb->size, "spectrum timebuf");
 	tmp_timebuf = newCXB (sb->size, p, "spectrum timebuf");
 	for (i = 0; i < sb->size; i++)			// make a copy in tmp_timebuf
