@@ -396,6 +396,7 @@ void spectrum_timer_handler(int sv){            // this is called every 20 ms
             subrx_meter=-121;
         } else {
             Process_Panadapter(0,spectrumBuffer);
+            Process_IQ_Balance(0);
             meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
             subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
         }
