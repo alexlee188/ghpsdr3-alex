@@ -207,5 +207,4 @@ extern void SetTXLevelerTop (unsigned int thread, double maxgain);
 extern float CalculateTXMeter(int thread,unsigned int subrx);
 extern void SetCorrectIQEnable(int setit);
 extern void SetCorrectRXIQMu (unsigned int thread, unsigned int subrx, double mu);
-extern void Process_IQ_Balance(unsigned int thread);
 #endif

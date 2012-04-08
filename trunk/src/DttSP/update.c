@@ -1457,6 +1457,7 @@ DttSP_EXP void
 Process_Panadapter (unsigned int thread, float *results)
 {
 	extern BOOLEAN reset_em;
+
 	//sem_wait (&top[thread].sync.upd.sem);
 	if (uni[thread].mode.trx == TX)
 		uni[thread].spec.type = SPEC_POST_FILT;
@@ -1472,6 +1473,7 @@ Process_Panadapter (unsigned int thread, float *results)
 		return;
 	}
 	snap_spectrum (&uni[thread].spec, uni[thread].spec.type);
+
 	//sem_post (&top[thread].sync.upd.sem);
 	compute_spectrum (&uni[thread].spec);
 	memcpy ((void *) results, uni[thread].spec.output, uni[thread].spec.size * sizeof (float));
@@ -1488,7 +1490,7 @@ float utility(SpecBlock *sb){
 	for (i = 0; i < halflength; i++){
 		distanceFromCenter = halflength - i;
 		if (distanceFromCenter > 0.05f * halflength){
-			result += fabsf(sb->output[i] - sb->output[sb->size - 2 -i]);
+			result += fabsf(sb->output[i] - sb->output[sb->size - 1 -i]);
 		}
 	}
 	return result;
@@ -1502,17 +1504,15 @@ void random_gain_phase(SpecBlock *sb, REAL gain, REAL phase, REAL *new_gain, REA
 	*new_gain = gain + random_number * 0.001;
 	random_number = ((float)rand()/(float)RAND_MAX - 0.5) * 2.0;
 	*new_phase = phase + random_number * 0.001;
-	fprintf(stderr, "random before: imag = %f, real = %f\n", CXBimag(sb->timebuf,100), CXBreal(sb->timebuf,100));
+
 	for (i = 0; i < sb->size; i++)
 	{
 		CXBimag (sb->timebuf, i) += (*new_phase) * CXBreal (sb->timebuf, i);
 		CXBreal (sb->timebuf, i) *= (*new_gain);
 	}
-	fprintf(stderr, "random after : imag = %f, real = %f\n", CXBimag(sb->timebuf,100), CXBreal(sb->timebuf,100));
 }
 
-DttSP_EXP void
-Process_IQ_Balance(unsigned int thread)
+void Process_IQ_Balance(unsigned int thread)
 {
 	extern BOOLEAN reset_em;
 	REAL gain, phase, new_gain, new_phase;
@@ -1520,8 +1520,7 @@ Process_IQ_Balance(unsigned int thread)
 	COMPLEX *p;
 	CXB tmp_timebuf, original_timebuf;
 	float current_utility, u;
-	int i, j;
-	int iterations = 3;
+	int iterations = 10;
 
 	//sem_wait (&top[thread].sync.upd.sem);
 	if (uni[thread].mode.trx == TX) {		// Auto IQ Balancing for Rx only
@@ -1530,31 +1529,34 @@ Process_IQ_Balance(unsigned int thread)
 	}
 	gain = rx[thread][0].iqfix->gain;		// only for main Rx
 	phase = rx[thread][0].iqfix->phase;
+	fprintf(stderr,"iqfix->gain = %f  iqfix->phase = %f\n", gain, phase);
 
 	sb = &uni[thread].spec;
 	sb->type = SPEC_PRE_FILT;
 	sb->scale = SPEC_PWR;
 
+/*
 	if (reset_em)
 	{
 		gain = 1.0f;
 		phase = 0.0f;
 	}
+*/
 
 	//snap_spectrum (sb, sb->type);			// sb->timebuf has a copy of time domain data
 							// after windowing
-	//this step is already done by Process_Panadapter
+	//compute_spectrum(sb);				// sb->output has PWR spectrum
+	//these steps have already done by Process_Panadapter
 
 	p = newvec_COMPLEX_fftw(sb->size, "spectrum timebuf");
 	tmp_timebuf = newCXB (sb->size, p, "spectrum timebuf");
-	for (i = 0; i < sb->size; i++)			// make a copy in tmp_timebuf
-		CXBdata (tmp_timebuf, i) = CXBdata (sb->timebuf, i);
+	memcpy(CXBbase(tmp_timebuf), CXBbase(sb->timebuf), sb->size*sizeof(float)*2);// make a copy in tmp_timebuf
 
 	original_timebuf = sb->timebuf;			// save pointer for restore at end of function
 	sb->timebuf = tmp_timebuf;			// use tmp_timebuf for spectrum and utility computations
-	compute_spectrum(sb);				// sb->output has PWR spectrum
+
 	current_utility = utility(sb);
-	for (j=0; j < iterations; j++){
+	for (int j=0; j < iterations; j++){
 		random_gain_phase(sb, gain, phase, &new_gain, &new_phase);
 		compute_spectrum (sb);
 		u = utility(sb);
@@ -1562,18 +1564,17 @@ Process_IQ_Balance(unsigned int thread)
 			current_utility = u;
 			gain = new_gain;
 			phase = new_phase;
-			for (i = 0; i < sb->size; i++)		// update sb->timebuf to changed gain phase
-				CXBdata (sb->timebuf, i) = CXBdata (tmp_timebuf, i);
+			// update original_timebuf to changed gain phase
+			memcpy(CXBbase(original_timebuf), CXBbase(sb->timebuf), sb->size*sizeof(float)*2);
 		}
 		else {
-			for (i = 0; i < sb->size; i++)		// restore old sb->timebuf from previous step
-				CXBdata (tmp_timebuf, i) = CXBdata (sb->timebuf, i);
+			// restore old sb->timebuf from previous step
+			memcpy(CXBbase(sb->timebuf), CXBbase(original_timebuf), sb->size*sizeof(float)*2);
 		}
 	}
 
 	rx[thread][0].iqfix->gain = gain;
 	rx[thread][0].iqfix->phase = phase;
-	//fprintf(stderr,"iqfix->gain = %f  iqfix->phase = %f\n", gain, phase);
 
 	//cleanup tmp_timebuf
 	sb->timebuf = original_timebuf;

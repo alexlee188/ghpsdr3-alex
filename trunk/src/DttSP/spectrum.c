@@ -122,6 +122,10 @@ compute_spectrum (SpecBlock * sb)
 
 	// assume timebuf has windowed current snapshot
 
+	sb->plan =
+		fftwf_plan_dft_1d (sb->size, (fftwf_complex *) CXBbase (sb->timebuf),
+		(fftwf_complex *) CXBbase (sb->freqbuf),
+		FFTW_FORWARD, sb->planbits);
 	fftwf_execute (sb->plan);
 	//fftcl_plan_execute(sb->plancl);	
 
