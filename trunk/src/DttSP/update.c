@@ -1494,14 +1494,16 @@ void random_gain_phase(SpecBlock *sb, REAL gain, REAL phase, REAL *new_gain, REA
 	int i;
 
 	random_number = ((float)rand()/(float)RAND_MAX - 0.5) * 2.0;
-	*new_gain = *new_gain + random_number * 0.001;
+	*new_gain = gain + random_number * 0.001;
 	random_number = ((float)rand()/(float)RAND_MAX - 0.5) * 2.0;
-	*new_phase = *new_phase + random_number * 0.001;
+	*new_phase = phase + random_number * 0.001;
+	fprintf(stderr, "random before: imag = %f, real = %f\n", CXBimag(sb->timebuf,100), CXBreal(sb->timebuf,100));
 	for (i = 0; i < sb->size; i++)
 	{
-		CXBimag (sb->timebuf, i) += *new_phase * CXBreal (sb->timebuf, i);
-		CXBreal (sb->timebuf, i) *= *new_gain;
+		CXBimag (sb->timebuf, i) += (*new_phase) * CXBreal (sb->timebuf, i);
+		CXBreal (sb->timebuf, i) *= (*new_gain);
 	}
+	fprintf(stderr, "random after : imag = %f, real = %f\n", CXBimag(sb->timebuf,100), CXBreal(sb->timebuf,100));
 }
 
 DttSP_EXP void
@@ -1513,7 +1515,7 @@ Process_IQ_Balance(unsigned int thread)
 	COMPLEX *p;
 	CXB tmp_timebuf, original_timebuf;
 	float current_utility, u;
-	int i;
+	int i, j;
 	int iterations = 3;
 
 	//sem_wait (&top[thread].sync.upd.sem);
@@ -1545,7 +1547,7 @@ Process_IQ_Balance(unsigned int thread)
 	sb->timebuf = tmp_timebuf;			// use tmp_timebuf for spectrum and utility computations
 	compute_spectrum(sb);				// sb->output has PWR spectrum
 	current_utility = utility(sb);
-	for (i=0; i < iterations; i++){
+	for (j=0; j < iterations; j++){
 		random_gain_phase(sb, gain, phase, &new_gain, &new_phase);
 		compute_spectrum (sb);
 		u = utility(sb);
@@ -1564,6 +1566,7 @@ Process_IQ_Balance(unsigned int thread)
 
 	rx[thread][0].iqfix->gain = gain;
 	rx[thread][0].iqfix->phase = phase;
+	//fprintf(stderr,"iqfix->gain = %f  iqfix->phase = %f\n", gain, phase);
 
 	//cleanup tmp_timebuf
 	sb->timebuf = original_timebuf;
@@ -1659,6 +1662,7 @@ CalculateRXMeter (unsigned int thread, unsigned int subrx, METERTYPE mt)
 
 	//sem_post (&top[thread].sync.upd.sem);
 	return returnval;
+
 }
 
 DttSP_EXP float
