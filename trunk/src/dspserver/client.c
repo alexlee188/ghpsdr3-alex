@@ -1378,7 +1378,7 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     client_samples[2]=HEADER_SUBVERSION;
     client_samples[3]=(size>>8)&0xFF;  // samples length
     client_samples[4]=size&0xFF;
-    client_samples[5]=((int)meter>>8)&0xFF; // mainn rx meter
+    client_samples[5]=((int)meter>>8)&0xFF; // main rx meter
     client_samples[6]=(int)meter&0xFF;
     client_samples[7]=((int)subrx_meter>>8)&0xFF; // sub rx meter
     client_samples[8]=(int)subrx_meter&0xFF;

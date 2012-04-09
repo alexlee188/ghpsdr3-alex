@@ -108,13 +108,13 @@ correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan)
 	else
 	{
 */
-	if((subchan == 0) || isTX){		// for Rx in main channel or for Tx
-		for (i = 0; i < CXBhave (sigbuf); i++)
-		{
-			CXBimag (sigbuf, i) += iq->phase * CXBreal (sigbuf, i);
-			CXBreal (sigbuf, i) *= iq->gain;
-		}
-	//fprintf(stderr,"gain = %f  phase = %f\n", iq->gain, iq->phase);
+
+	for (i = 0; i < CXBhave (sigbuf); i++)
+	{
+		CXBimag (sigbuf, i) += iq->phase * CXBreal (sigbuf, i);
+		CXBreal (sigbuf, i) *= iq->gain;
 	}
+	fprintf(stderr,"Tx/Rx: %d channel = %d gain = %f  phase = %f\n", isTX, subchan, iq->gain, iq->phase);
+
 
 }
