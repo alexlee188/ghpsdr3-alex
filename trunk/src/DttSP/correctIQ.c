@@ -108,7 +108,7 @@ correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan)
 	else
 	{
 */
-	if(!isTX){
+	if((subchan == 0) || isTX){		// for Rx in main channel or for Tx
 		for (i = 0; i < CXBhave (sigbuf); i++)
 		{
 			CXBimag (sigbuf, i) += iq->phase * CXBreal (sigbuf, i);
