@@ -1479,17 +1479,22 @@ Process_Panadapter (unsigned int thread, float *results)
 	memcpy ((void *) results, uni[thread].spec.output, uni[thread].spec.size * sizeof (float));
 }
 
+#define LO_OFFSET 9000.0f
+#define SAMPLING_RATE 96000.0f
+#define LO_SHIFT (LO_OFFSET/SAMPLING_RATE)
+
 float utility(SpecBlock *sb){
 	float result = 0.0f;
 	int halflength = sb->size /2;
-	int i;
+	int j, k;
 	float distanceFromCenter;
-	
-	for (i = 0; i < halflength; i++){
+	int shift = (float)sb->size * LO_SHIFT;
+
+	for (int i = 0; i < halflength; i++){
+		j = i;
+		k = sb->size - 1 - i;
 		distanceFromCenter = halflength - i;
-		if (distanceFromCenter > 0.05f * halflength){
-			result += fabsf(sb->output[i] - sb->output[sb->size - 1 -i]);
-		}
+		result += fabsf(sb->output[j] - sb->output[k]);
 	}
 	return result;
 }
@@ -1560,7 +1565,6 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 			phase = new_phase;
 			// update original_timebuf to changed gain phase
 			memcpy(CXBbase(original_timebuf), CXBbase(sb->timebuf), sb->size*sizeof(float)*2);
-			fprintf(stderr,"gain = %f  phase = %f\n", gain, phase);
 		}
 		else {
 			// restore old sb->timebuf from previous step

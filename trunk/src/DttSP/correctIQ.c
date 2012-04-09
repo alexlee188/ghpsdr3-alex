@@ -114,6 +114,7 @@ correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan)
 			CXBimag (sigbuf, i) += iq->phase * CXBreal (sigbuf, i);
 			CXBreal (sigbuf, i) *= iq->gain;
 		}
+	//fprintf(stderr,"gain = %f  phase = %f\n", iq->gain, iq->phase);
 	}
 
 }
