@@ -1537,9 +1537,9 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 	float current_utility, u;
 	int iterations = 2;
 
-	//sem_wait (&top[thread].sync.upd.sem);
+	sem_wait (&top[thread].sync.upd.sem);
 	if (uni[thread].mode.trx == TX) {		// Auto IQ Balancing for Rx only
-		//sem_post (&top[thread].sync.upd.sem);
+		sem_post (&top[thread].sync.upd.sem);
 		return;
 	}
 	gain = rx[thread][0].iqfix->gain;		// only for main Rx
@@ -1575,7 +1575,7 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 			current_utility = u;
 			gain = new_gain;
 			phase = new_phase;
-			fprintf(stderr, "u = %f\n", u);
+			//fprintf(stderr, "u = %f\n", u);
 			//fprintf(stderr, "gain = %f phase = %f\n", gain, phase);
 			break;
 		}
@@ -1587,12 +1587,15 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 
 	rx[thread][0].iqfix->gain = gain;
 	rx[thread][0].iqfix->phase = phase;
+	rx[thread][1].iqfix->gain = gain;
+	rx[thread][1].iqfix->phase = phase;
+
 
 	//cleanup tmp_timebuf
 	sb->timebuf = original_timebuf;
 	delvec_COMPLEX_fftw(tmp_timebuf->data);
 	delCXB (tmp_timebuf);
-	//sem_post (&top[thread].sync.upd.sem);
+	sem_post (&top[thread].sync.upd.sem);
 }
 
 DttSP_EXP void
