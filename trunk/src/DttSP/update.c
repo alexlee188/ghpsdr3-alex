@@ -825,27 +825,36 @@ GetSAMFreq(int thread, int subrx, REAL *freq)
 }
 
 DttSP_EXP void
-SetCorrectIQ (unsigned int thread, unsigned int subrx, double phase, double gain)
+SetCorrectIQ (unsigned int thread, unsigned int subrx, REAL phase, REAL gain)
 {
 	sem_wait(&top[thread].sync.upd.sem);
-	rx[thread][subrx].iqfix->phase = (REAL) (0.001 * phase);
-	rx[thread][subrx].iqfix->gain = (REAL) (1.0 + 0.001 * gain);
+	rx[thread][subrx].iqfix->phase = phase;
+	rx[thread][subrx].iqfix->gain = gain;
 	sem_post(&top[thread].sync.upd.sem);
 }
 
 DttSP_EXP void
-SetCorrectIQGain (unsigned int thread, unsigned int subrx, double gain)
+GetCorrectIQ (unsigned int thread, unsigned int subrx, REAL *phase, REAL *gain)
 {
 	sem_wait(&top[thread].sync.upd.sem);
-	rx[thread][subrx].iqfix->gain = (REAL) (1.0 + 0.001 * gain);
+	*phase = rx[thread][subrx].iqfix->phase;
+	*gain = rx[thread][subrx].iqfix->gain;
 	sem_post(&top[thread].sync.upd.sem);
 }
 
 DttSP_EXP void
-SetCorrectIQPhase (unsigned int thread, unsigned int subrx, double phase)
+SetCorrectIQGain (unsigned int thread, unsigned int subrx, REAL gain)
 {
 	sem_wait(&top[thread].sync.upd.sem);
-	rx[thread][subrx].iqfix->phase = (REAL) (0.001 * phase);
+	rx[thread][subrx].iqfix->gain = gain;
+	sem_post(&top[thread].sync.upd.sem);
+}
+
+DttSP_EXP void
+SetCorrectIQPhase (unsigned int thread, unsigned int subrx, REAL phase)
+{
+	sem_wait(&top[thread].sync.upd.sem);
+	rx[thread][subrx].iqfix->phase = phase;
 	sem_post(&top[thread].sync.upd.sem);
 }
 
@@ -1537,13 +1546,13 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 	float current_utility, u;
 	int iterations = 2;
 
-	sem_wait (&top[thread].sync.upd.sem);
+	//sem_wait (&top[thread].sync.upd.sem);
 	if (uni[thread].mode.trx == TX) {		// Auto IQ Balancing for Rx only
-		sem_post (&top[thread].sync.upd.sem);
+		//sem_post (&top[thread].sync.upd.sem);
 		return;
 	}
-	gain = rx[thread][0].iqfix->gain;		// only for main Rx
-	phase = rx[thread][0].iqfix->phase;
+	
+	GetCorrectIQ(thread, 0, &phase, &gain);		// from main Rx thread
 
 	sb = &uni[thread].spec;
 	sb->type = SPEC_PRE_FILT;
@@ -1585,17 +1594,15 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 		}
 	}
 
-	rx[thread][0].iqfix->gain = gain;
-	rx[thread][0].iqfix->phase = phase;
-	rx[thread][1].iqfix->gain = gain;
-	rx[thread][1].iqfix->phase = phase;
+	SetCorrectIQ(thread, 0, phase, gain);
+	SetCorrectIQ(thread, 1, phase, gain);
 
 
 	//cleanup tmp_timebuf
 	sb->timebuf = original_timebuf;
 	delvec_COMPLEX_fftw(tmp_timebuf->data);
 	delCXB (tmp_timebuf);
-	sem_post (&top[thread].sync.upd.sem);
+	//sem_post (&top[thread].sync.upd.sem);
 }
 
 DttSP_EXP void
