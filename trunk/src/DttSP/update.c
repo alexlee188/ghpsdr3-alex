@@ -1483,17 +1483,23 @@ Process_Panadapter (unsigned int thread, float *results)
 #define SAMPLING_RATE 96000.0f
 #define LO_SHIFT (LO_OFFSET/SAMPLING_RATE)
 
+
 float utility(SpecBlock *sb){
 	float result = 0.0f;
 	int shift = (float)sb->size * LO_SHIFT;
-	float DC_point = (float)sb->size/2 - shift;
-	int left = DC_point / 2.0f;		// about 1/4 left of DC_point
-	int end = (float) DC_point * 0.95f;
+	int DC_point = sb->size/2 - shift;
+	int start = DC_point / 4;
+	int end = (float) DC_point * 0.9f;
 
-
-	for (int i = left; i < end; i++){
-		int j = (float)i + (DC_point - (float)i) * 2.0f;
-		result += fabsf(sb->output[i] - sb->output[j]);
+	for (int i = start; i < end; i+=50){
+		int j = i + (DC_point - i) * 2;
+		float left = 0.0f;
+		float right = 0.0f;
+		for (int k = -20; k < 20; k++){
+			left += sb->output[i+k];
+			right += sb->output[j+k];
+		}
+		result += fabsf(left - right);
 	}
 	return result;
 }
@@ -1522,7 +1528,7 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 	COMPLEX *p;
 	CXB tmp_timebuf, original_timebuf;
 	float current_utility, u;
-	int iterations = 5;
+	int iterations = 10;
 
 	//sem_wait (&top[thread].sync.upd.sem);
 	if (uni[thread].mode.trx == TX) {		// Auto IQ Balancing for Rx only
@@ -1562,12 +1568,10 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 			current_utility = u;
 			gain = new_gain;
 			phase = new_phase;
-			// update original_timebuf to changed gain phase
-			memcpy(CXBbase(original_timebuf), CXBbase(sb->timebuf), sb->size*sizeof(float)*2);
 			//fprintf(stderr, "gain = %f phase = %f\n", gain, phase);
 		}
 		else {
-			// restore old sb->timebuf from previous step
+			// restore old sb->timebuf
 			memcpy(CXBbase(sb->timebuf), CXBbase(original_timebuf), sb->size*sizeof(float)*2);
 		}
 	}
@@ -1659,6 +1663,8 @@ CalculateRXMeter (unsigned int thread, unsigned int subrx, METERTYPE mt)
 		case ADC_IMAG:
 			returnval = (float) uni[thread].meter.rx.val[subrx][RX_ADC_REAL];
 			break;
+
+
 		case AGC_GAIN:
 			returnval = (float) uni[thread].meter.rx.val[subrx][RX_AGC_GAIN];
 			break;
