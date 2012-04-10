@@ -1577,6 +1577,7 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 			phase = new_phase;
 			fprintf(stderr, "u = %f\n", u);
 			//fprintf(stderr, "gain = %f phase = %f\n", gain, phase);
+			break;
 		}
 		else {
 			// restore old sb->timebuf
