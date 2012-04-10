@@ -90,6 +90,7 @@ typedef struct _spec_block
 extern void init_spectrum (SpecBlock * sb);
 extern void reinit_spectrum (SpecBlock * sb);
 extern void snap_spectrum (SpecBlock * sb, int label);
+extern void snap_timebuf(SpecBlock *sb, int label);
 extern void snap_scope (SpecBlock * sb, int label);
 extern void compute_spectrum (SpecBlock * sb);
 extern void compute_complex_spectrum(SpecBlock * sb);

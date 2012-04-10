@@ -79,6 +79,49 @@ snap_spectrum (SpecBlock * sb, int label)
 	sb->label = label;
 }
 
+// snapshot of current signal without window
+void
+snap_timebuf (SpecBlock * sb, int label)
+{
+	int i, j;
+
+	// where most recent signal started
+	j = sb->fill;
+
+	// copy starting from there in circular fashion,
+	// applying window as we go
+	if (!sb->polyphase)
+	{
+		for (i = 0; i < sb->size; i++)
+		{
+			CXBdata (sb->timebuf, i) = CXBdata (sb->accum, j);
+			j = (++j & sb->mask);
+		}
+	}
+	else
+	{
+		int k;
+		for (i = 0; i < sb->size; i++)
+		{
+			CXBreal (sb->timebuf, i) = CXBreal (sb->accum, j);
+			CXBimag (sb->timebuf, i) = CXBimag (sb->accum, j);
+			for (k = 1; k < 8; k++)
+			{
+				int accumidx = (j + k * sb->size) & sb->mask;
+				int winidx = i + k * sb->size;
+				CXBreal (sb->timebuf, i) +=
+					CXBreal (sb->accum, accumidx);
+				CXBimag (sb->timebuf, i) +=
+					CXBimag (sb->accum, accumidx);
+			}
+			j = (++j & sb->mask);
+		}
+
+	}
+	sb->label = label;
+}
+
+
 void
 snap_scope (SpecBlock * sb, int label)
 {

@@ -1492,7 +1492,6 @@ Process_Panadapter (unsigned int thread, float *results)
 #define SAMPLING_RATE 96000.0f
 #define LO_SHIFT (LO_OFFSET/SAMPLING_RATE)
 
-static int one_short = 0;
 
 float utility(SpecBlock *sb){
 	float result = 0.0f;
@@ -1501,22 +1500,16 @@ float utility(SpecBlock *sb){
 	int start = DC_point * 2 - 6.0;
 	int end = DC_point + shift/2;
 
-/*
-	if (one_short == 1000){
-		for (int i = 0; i < sb->size/8; i++){
-			fprintf (stderr, "%d: %f %f %f %f %f %f %f %f\n", i, sb->output[i*4],
-				sb->output[i*8+1], sb->output[i*8+2],
-				sb->output[i*8+3], sb->output[i*8+4],
-				sb->output[i*8+5], sb->output[i*8+6],
-				sb->output[i*8+7]);
-		}
-		fprintf(stderr, "DC Point = %f shift = %f start = %d end = %d\n",
-			DC_point, shift, start, end);
-	}		
-	one_short ++;
-*/
-	//fprintf(stderr, "2049: %f   1279: %f\n", sb->output[2049], sb->output[1279]);
-	result = sb->output[2049] - sb->output[1279];
+	for (int i = start; i > end; i -= 10){
+		int j = 2*DC_point - i - 1;
+		float left = 0.0f, right = 0.0f;
+		for (int k = -4; k < 5; k++){
+			left += sb->output[i+k];
+			right += sb->output[j+k];
+		} 
+		result += fabsf(left - right);
+	}
+	//result = sb->output[2049] - sb->output[1279];
 	return result;
 }
 
@@ -1533,6 +1526,14 @@ void random_gain_phase(SpecBlock *sb, REAL gain, REAL phase, REAL *new_gain, REA
 	{
 		CXBimag (sb->timebuf, i) += (*new_phase) * CXBreal (sb->timebuf, i);
 		CXBreal (sb->timebuf, i) *= (*new_gain);
+	}
+}
+
+void apply_window(SpecBlock *sb){
+	for (int i = 0; i < sb->size; i++)
+	{
+		CXBdata (sb->timebuf, i) =
+			Cscl (CXBdata (sb->timebuf, i), sb->window[i]);
 	}
 }
 
@@ -1564,20 +1565,22 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 		phase = 0.0f;
 	}
 
-	snap_spectrum (sb, sb->type);			// sb->timebuf has a copy of time domain data
-							// after windowing
-	compute_spectrum(sb);				// sb->output has MAG spectrum
+	original_timebuf = sb->timebuf;			// save pointer for restore at end of function
+	snap_timebuf (sb, sb->type);			// sb->timebuf has a copy of time domain data
 
 	p = newvec_COMPLEX_fftw(sb->size, "spectrum timebuf");
 	tmp_timebuf = newCXB (sb->size, p, "spectrum timebuf");
-	memcpy(CXBbase(tmp_timebuf), CXBbase(sb->timebuf), sb->size*sizeof(float)*2);// make a copy in tmp_timebuf
+	memcpy(CXBbase(tmp_timebuf), CXBbase(original_timebuf), sb->size*sizeof(float)*2);
 
-	original_timebuf = sb->timebuf;			// save pointer for restore at end of function
-	sb->timebuf = tmp_timebuf;			// use tmp_timebuf for spectrum and utility computations
+	sb->timebuf = tmp_timebuf;	// use tmp_timebuf for spectrum and utility computations
 
+	apply_window(sb);
+	compute_spectrum(sb);		// sb->output has MAG spectrum
 	current_utility = utility(sb);
 	for (int j=0; j < iterations; j++){
+		memcpy(CXBbase(tmp_timebuf), CXBbase(original_timebuf), sb->size*sizeof(float)*2);
 		random_gain_phase(sb, gain, phase, &new_gain, &new_phase);
+		apply_window(sb);
 		compute_spectrum (sb);
 		u = utility(sb);
 		if (u > current_utility){
@@ -1587,10 +1590,6 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 			//fprintf(stderr, "u = %f\n", u);
 			//fprintf(stderr, "gain = %f phase = %f\n", gain, phase);
 			break;
-		}
-		else {
-			// restore old sb->timebuf
-			memcpy(CXBbase(sb->timebuf), CXBbase(original_timebuf), sb->size*sizeof(float)*2);
 		}
 	}
 
