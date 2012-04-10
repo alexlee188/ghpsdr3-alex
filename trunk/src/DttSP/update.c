@@ -1483,24 +1483,31 @@ Process_Panadapter (unsigned int thread, float *results)
 #define SAMPLING_RATE 96000.0f
 #define LO_SHIFT (LO_OFFSET/SAMPLING_RATE)
 
+static int one_short = 0;
 
 float utility(SpecBlock *sb){
 	float result = 0.0f;
-	int shift = (float)sb->size * LO_SHIFT;
-	int DC_point = sb->size/2 - shift;
-	int start = DC_point / 4;
-	int end = (float) DC_point * 0.9f;
+	float shift = (float)sb->size * LO_SHIFT;
+	float DC_point = sb->size/2 - shift + 0.5;
+	int start = DC_point * 2 - 6.0;
+	int end = DC_point + shift/2;
 
-	for (int i = start; i < end; i+=50){
-		int j = i + (DC_point - i) * 2;
-		float left = 0.0f;
-		float right = 0.0f;
-		for (int k = -20; k < 20; k++){
-			left += sb->output[i+k];
-			right += sb->output[j+k];
+/*
+	if (one_short == 1000){
+		for (int i = 0; i < sb->size/8; i++){
+			fprintf (stderr, "%d: %f %f %f %f %f %f %f %f\n", i, sb->output[i*4],
+				sb->output[i*8+1], sb->output[i*8+2],
+				sb->output[i*8+3], sb->output[i*8+4],
+				sb->output[i*8+5], sb->output[i*8+6],
+				sb->output[i*8+7]);
 		}
-		result += fabsf(left - right);
-	}
+		fprintf(stderr, "DC Point = %f shift = %f start = %d end = %d\n",
+			DC_point, shift, start, end);
+	}		
+	one_short ++;
+*/
+	fprintf(stderr, "2049: %f   1279: %f\n", sb->output[2049], sb->output[1279]);
+	result = sb->output[2049] - sb->output[1279];
 	return result;
 }
 
@@ -1528,7 +1535,7 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 	COMPLEX *p;
 	CXB tmp_timebuf, original_timebuf;
 	float current_utility, u;
-	int iterations = 10;
+	int iterations = 2;
 
 	//sem_wait (&top[thread].sync.upd.sem);
 	if (uni[thread].mode.trx == TX) {		// Auto IQ Balancing for Rx only
@@ -1568,6 +1575,7 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 			current_utility = u;
 			gain = new_gain;
 			phase = new_phase;
+			fprintf(stderr, "u = %f\n", u);
 			//fprintf(stderr, "gain = %f phase = %f\n", gain, phase);
 		}
 		else {
@@ -1659,6 +1667,8 @@ CalculateRXMeter (unsigned int thread, unsigned int subrx, METERTYPE mt)
 			break;
 		case ADC_REAL:
 			returnval = (float) uni[thread].meter.rx.val[subrx][RX_ADC_IMAG];
+
+
 			break;
 		case ADC_IMAG:
 			returnval = (float) uni[thread].meter.rx.val[subrx][RX_ADC_REAL];
