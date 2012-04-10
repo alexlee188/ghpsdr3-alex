@@ -1506,7 +1506,7 @@ float utility(SpecBlock *sb){
 	}		
 	one_short ++;
 */
-	fprintf(stderr, "2049: %f   1279: %f\n", sb->output[2049], sb->output[1279]);
+	//fprintf(stderr, "2049: %f   1279: %f\n", sb->output[2049], sb->output[1279]);
 	result = sb->output[2049] - sb->output[1279];
 	return result;
 }
@@ -1535,7 +1535,7 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 	COMPLEX *p;
 	CXB tmp_timebuf, original_timebuf;
 	float current_utility, u;
-	int iterations = 2;
+	int iterations = 10;
 
 	sem_wait (&top[thread].sync.upd.sem);
 	if (uni[thread].mode.trx == TX) {		// Auto IQ Balancing for Rx only
@@ -1666,6 +1666,7 @@ CalculateRXMeter (unsigned int thread, unsigned int subrx, METERTYPE mt)
 		case SIGNAL_STRENGTH:
 			returnval = uni[thread].meter.rx.val[subrx][RX_SIGNAL_STRENGTH];
 			break;
+
 		case AVG_SIGNAL_STRENGTH:
 			returnval = (float) uni[thread].meter.rx.val[subrx][RX_AVG_SIGNAL_STRENGTH];
 			break;
