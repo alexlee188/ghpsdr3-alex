@@ -4,16 +4,16 @@
 #
 #-------------------------------------------------
 
-# Uncomment line below when using QtSDK, comment for  Ubuntu repository ver.
-QT       += core gui network multimedia mobility
+# Comment line below when using QtSDK, uncomment for  Ubuntu repository ver.
+#QT       += core gui network multimedia mobility
 
 # Uncomment 2 lines below when using QtSDK, comment for  Ubuntu repository ver.
 CONFIG	+= mobility
 MOBILITY += multimedia
 
 # Comment 2 lines below when using QtSDK, uncomment for  Ubuntu repository ver.
-#INCLUDEPATH += /usr/include/QtMobility
-#INCLUDEPATH += /usr/include/QtMultimediaKit
+INCLUDEPATH += /usr/include/QtMobility
+INCLUDEPATH += /usr/include/QtMultimediaKit
 
 TARGET = QtRadio
 TEMPLATE = app
@@ -134,5 +134,5 @@ OTHER_FILES +=
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/release/ 
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/debug/ 
 else:symbian: LIBS += -lcodec2 -lsamplerate
-else:unix: LIBS += -lcodec2 -lsamplerate -lortp
+else:unix: LIBS += -lcodec2 -lsamplerate -lortp -lpulse-simple
 

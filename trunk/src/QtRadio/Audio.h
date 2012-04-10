@@ -38,6 +38,8 @@
 #include <ortp/rtpsession.h>
 #include "G711A.h"
 #include "cusdr_queue.h"
+#include <pulse/simple.h>
+#include <pulse/error.h>
 
 #define AUDIO_BUFFER_SIZE 800
 #define AUDIO_OUTPUT_BUFFER_SIZE (1024*2)
@@ -77,6 +79,7 @@ private:
     RtpSession* rtpSession;
     G711A g711a;
     QHQueue<qint16> queue;
+
 signals:
 };
 
@@ -107,6 +110,9 @@ private:
     void* codec2;
     int audio_channels;
     int audio_encoding;
+    QFile rawfile;
+    pa_sample_spec ss;
+    pa_simple *pulse;
 };
 
 

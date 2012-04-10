@@ -41,6 +41,7 @@ Audio_playback::Audio_playback()
     rtp_connected = false;
     useRTP = false;
     pdecoded_buffer = &queue;
+
 }
 
 Audio_playback::~Audio_playback()
@@ -49,12 +50,12 @@ Audio_playback::~Audio_playback()
 
 void Audio_playback::start()
 {
-    open(QIODevice::ReadOnly);
+   //open(QIODevice::ReadOnly);
 }
 
 void Audio_playback::stop()
 {
-    close();
+    //close();
 }
 
 void Audio_playback::set_decoded_buffer(QHQueue<qint16> *pBuffer){
@@ -143,11 +144,14 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
                 data[bytes_read++]=(char)(v&0xFF);
                 break;
             }
+            //v
+            //rawfile.putChar(data[bytes_read--]);
         }
    }
 
    return bytes_read;
  }
+
 
  qint64 Audio_playback::writeData(const char *data, qint64 len){
      Q_UNUSED(data)
@@ -421,7 +425,7 @@ void Audio::rtp_set_rtpSession(RtpSession* session){
 
 Audio_processing::Audio_processing(){
     int sr_error;
-
+    int sserror;
     src_state =  src_new (
                 //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
                 //SRC_SINC_MEDIUM_QUALITY,
@@ -439,11 +443,24 @@ Audio_processing::Audio_processing(){
 
     codec2 = codec2_create();
     pdecoded_buffer = &queue;
+    rawfile.setFileName("/tmp/qt.raw");
+    ss.format = PA_SAMPLE_S16LE;
+    ss.rate = 8000;
+    ss.channels = 1;
+    pulse = NULL;
+    if (!(pulse = pa_simple_new(NULL, "QtRadio-Testing", PA_STREAM_PLAYBACK, NULL, "playback", &ss, NULL, NULL, &sserror))) {
+            fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(sserror));
+        }
+    //if (!rawfile.open(QIODevice::WriteOnly)) {
+   //     qDebug() << "Cannot open file for writing: ";
+
+    //}
 }
 
 Audio_processing::~Audio_processing(){
      src_delete(src_state);
      codec2_destroy(codec2);
+     pa_simple_free (pulse);
 }
 
 void Audio_processing::set_queue(QHQueue<qint16> *buffer){
@@ -487,8 +504,10 @@ void Audio_processing::process_audio(char* header,char* buffer,int length) {
 
 void Audio_processing::resample(int no_of_samples){
     int i;
+    int e;
     qint16 v;
     int rc;
+    char d[2];
 
     if (pdecoded_buffer->isFull()) {
         src_ratio = 0.9;
@@ -518,7 +537,13 @@ void Audio_processing::resample(int no_of_samples){
             for (i = 0; i < sr_data.output_frames_gen; i++){
                 v = buffer_out[i]*32767.0;
                 #pragma omp ordered
-                pdecoded_buffer->enqueue(v);
+                //pdecoded_buffer->enqueue(v);
+                //qDebug()<<v;
+                d[0]=v&0xFF;
+                d[1]=(v>>8)&0xFF;
+               e= pa_simple_write(pulse,d,2, NULL);
+                //rawfile.putChar(d[0]);
+                //rawfile.putChar(d[1]);
             }
     }
 }
