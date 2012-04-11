@@ -1509,7 +1509,7 @@ float utility(SpecBlock *sb){
 		} 
 		result += fabsf(left - right);
 	}
-	//result = sb->output[2049] - sb->output[1279];
+	result = sb->output[2049] - sb->output[1279];
 	return result;
 }
 
@@ -1517,9 +1517,9 @@ void random_gain_phase(SpecBlock *sb, REAL gain, REAL phase, REAL *new_gain, REA
 	float random_number;
 
 	random_number = ((float)rand()/(float)RAND_MAX - 0.5) * 2.0;
-	*new_gain = gain + random_number * 0.001;
+	*new_gain = gain + random_number * 0.005;
 	random_number = ((float)rand()/(float)RAND_MAX - 0.5) * 2.0;
-	*new_phase = phase + random_number * 0.001;
+	*new_phase = phase + random_number * 0.005;
 
 	for (int i = 0; i < sb->size; i++)
 	{
@@ -1540,6 +1540,7 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 {
 	extern BOOLEAN reset_em;
 	REAL gain, phase, new_gain, new_phase;
+	REAL final_gain, final_phase;
 	SpecBlock *sb;
 	COMPLEX *p;
 	CXB tmp_timebuf, original_timebuf;
@@ -1556,7 +1557,7 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 
 	sb = &uni[thread].spec;
 	sb->type = SPEC_PRE_FILT;
-	sb->scale = SPEC_MAG;
+	sb->scale = SPEC_PWR;
 
 	if (reset_em)
 	{
@@ -1564,8 +1565,12 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 		phase = 0.0f;
 	}
 
+	final_gain = gain;
+	final_phase = phase;
+
 	original_timebuf = sb->timebuf;			// save pointer for restore at end of function
 	snap_timebuf (sb, sb->type);			// sb->timebuf has a copy of time domain data
+
 	p = newvec_COMPLEX_fftw(sb->size, "spectrum timebuf");
 	tmp_timebuf = newCXB (sb->size, p, "spectrum timebuf");
 	memcpy(CXBbase(tmp_timebuf), CXBbase(original_timebuf), sb->size*sizeof(COMPLEX));
@@ -1582,15 +1587,15 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 		u = utility(sb);
 		if (u > current_utility){
 			current_utility = u;
-			gain = new_gain;
-			phase = new_phase;
+			final_gain = new_gain;
+			final_phase = new_phase;
 			fprintf(stderr, "u = %f\n", u);
-			//fprintf(stderr, "gain = %f phase = %f\n", gain, phase);
+			fprintf(stderr, "gain = %f phase = %f\n", final_gain, final_phase);
 		}
 	}
 
-	SetCorrectIQ(thread, 0, phase, gain);
-	SetCorrectIQ(thread, 1, phase, gain);
+	SetCorrectIQ(thread, 0, final_phase, final_gain);
+	SetCorrectIQ(thread, 1, final_phase, final_gain);
 
 
 	//cleanup tmp_timebuf
