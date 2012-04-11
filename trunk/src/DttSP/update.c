@@ -1509,7 +1509,7 @@ float utility(SpecBlock *sb){
 		} 
 		result += fabsf(left - right);
 	}
-	result = sb->output[2049] - sb->output[1279];
+	//result = sb->output[2049] - sb->output[1279];
 	return result;
 }
 
@@ -1589,8 +1589,8 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 			current_utility = u;
 			final_gain = new_gain;
 			final_phase = new_phase;
-			fprintf(stderr, "u = %f\n", u);
-			fprintf(stderr, "gain = %f phase = %f\n", final_gain, final_phase);
+			//fprintf(stderr, "u = %f\n", u);
+			//fprintf(stderr, "gain = %f phase = %f\n", final_gain, final_phase);
 		}
 	}
 
