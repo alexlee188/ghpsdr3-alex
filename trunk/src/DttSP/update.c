@@ -1567,18 +1567,17 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 
 	original_timebuf = sb->timebuf;			// save pointer for restore at end of function
 	snap_timebuf (sb, sb->type);			// sb->timebuf has a copy of time domain data
-
 	p = newvec_COMPLEX_fftw(sb->size, "spectrum timebuf");
 	tmp_timebuf = newCXB (sb->size, p, "spectrum timebuf");
-	memcpy(CXBbase(tmp_timebuf), CXBbase(original_timebuf), sb->size*sizeof(float)*2);
-
+	memcpy(CXBbase(tmp_timebuf), CXBbase(original_timebuf), sb->size*sizeof(COMPLEX));
 	sb->timebuf = tmp_timebuf;	// use tmp_timebuf for spectrum and utility computations
 
 	apply_window(sb);
 	compute_spectrum(sb);		// sb->output has MAG spectrum
 	current_utility = utility(sb);
+	fprintf(stderr, "current_utility = %f\n", current_utility);
 	for (int j=0; j < iterations; j++){
-		memcpy(CXBbase(tmp_timebuf), CXBbase(original_timebuf), sb->size*sizeof(float)*2);
+		memcpy(CXBbase(tmp_timebuf), CXBbase(original_timebuf), sb->size*sizeof(COMPLEX));
 		random_gain_phase(sb, gain, phase, &new_gain, &new_phase);
 		apply_window(sb);
 		compute_spectrum (sb);
@@ -1587,7 +1586,7 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 			current_utility = u;
 			gain = new_gain;
 			phase = new_phase;
-			//fprintf(stderr, "u = %f\n", u);
+			fprintf(stderr, "u = %f\n", u);
 			//fprintf(stderr, "gain = %f phase = %f\n", gain, phase);
 			break;
 		}
