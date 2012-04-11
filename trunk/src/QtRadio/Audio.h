@@ -110,7 +110,6 @@ private:
     void* codec2;
     int audio_channels;
     int audio_encoding;
-    QFile rawfile;
     pa_sample_spec ss;
     pa_simple *pulse;
 };

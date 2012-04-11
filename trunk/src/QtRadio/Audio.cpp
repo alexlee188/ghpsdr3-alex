@@ -144,8 +144,6 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
                 data[bytes_read++]=(char)(v&0xFF);
                 break;
             }
-            //v
-            //rawfile.putChar(data[bytes_read--]);
         }
    }
 
@@ -443,7 +441,6 @@ Audio_processing::Audio_processing(){
 
     codec2 = codec2_create();
     pdecoded_buffer = &queue;
-    rawfile.setFileName("/tmp/qt.raw");
     ss.format = PA_SAMPLE_S16LE;
     ss.rate = 8000;
     ss.channels = 1;
@@ -451,10 +448,6 @@ Audio_processing::Audio_processing(){
     if (!(pulse = pa_simple_new(NULL, "QtRadio-Testing", PA_STREAM_PLAYBACK, NULL, "playback", &ss, NULL, NULL, &sserror))) {
             fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(sserror));
         }
-    //if (!rawfile.open(QIODevice::WriteOnly)) {
-   //     qDebug() << "Cannot open file for writing: ";
-
-    //}
 }
 
 Audio_processing::~Audio_processing(){
@@ -541,9 +534,7 @@ void Audio_processing::resample(int no_of_samples){
                 //qDebug()<<v;
                 d[0]=v&0xFF;
                 d[1]=(v>>8)&0xFF;
-               e= pa_simple_write(pulse,d,2, NULL);
-                //rawfile.putChar(d[0]);
-                //rawfile.putChar(d[1]);
+               e= pa_simple_write(pulse,d,2, NULL);                
             }
     }
 }
