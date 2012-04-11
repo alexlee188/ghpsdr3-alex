@@ -1515,14 +1515,13 @@ float utility(SpecBlock *sb){
 
 void random_gain_phase(SpecBlock *sb, REAL gain, REAL phase, REAL *new_gain, REAL *new_phase){
 	float random_number;
-	int i;
 
 	random_number = ((float)rand()/(float)RAND_MAX - 0.5) * 2.0;
 	*new_gain = gain + random_number * 0.001;
 	random_number = ((float)rand()/(float)RAND_MAX - 0.5) * 2.0;
 	*new_phase = phase + random_number * 0.001;
 
-	for (i = 0; i < sb->size; i++)
+	for (int i = 0; i < sb->size; i++)
 	{
 		CXBimag (sb->timebuf, i) += (*new_phase) * CXBreal (sb->timebuf, i);
 		CXBreal (sb->timebuf, i) *= (*new_gain);
@@ -1573,10 +1572,10 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 	memcpy(CXBbase(tmp_timebuf), CXBbase(original_timebuf), sb->size*sizeof(float)*2);
 
 	sb->timebuf = tmp_timebuf;	// use tmp_timebuf for spectrum and utility computations
-
 	apply_window(sb);
 	compute_spectrum(sb);		// sb->output has MAG spectrum
 	current_utility = utility(sb);
+	fprintf(stderr, "current_utility = %f\n", current_utility);
 	for (int j=0; j < iterations; j++){
 		memcpy(CXBbase(tmp_timebuf), CXBbase(original_timebuf), sb->size*sizeof(float)*2);
 		random_gain_phase(sb, gain, phase, &new_gain, &new_phase);
@@ -1587,9 +1586,8 @@ DttSP_EXP void Process_IQ_Balance(unsigned int thread)
 			current_utility = u;
 			gain = new_gain;
 			phase = new_phase;
-			//fprintf(stderr, "u = %f\n", u);
+			fprintf(stderr, "u = %f\n", u);
 			//fprintf(stderr, "gain = %f phase = %f\n", gain, phase);
-			break;
 		}
 	}
 
