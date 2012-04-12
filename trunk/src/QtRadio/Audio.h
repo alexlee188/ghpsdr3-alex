@@ -88,6 +88,8 @@ class Audio_processing : public QObject {
 public:
     Audio_processing();
     ~Audio_processing();
+    void StartPulse(int srate);
+    void StopPulse();
 public slots:
     void process_audio(char* header, char* buffer, int length);
     void set_queue(QHQueue<qint16> *buffer);
@@ -112,6 +114,10 @@ private:
     int audio_encoding;
     pa_sample_spec ss;
     pa_simple *pulse;
+    int sr_error;
+    int sserror;
+    int pulsebufcount;
+    char pulsebuf[1000];
 };
 
 
@@ -150,6 +156,7 @@ private:
     int audio_channels;
     Audio_processing* audio_processing;
     QThread* audio_processing_thread;
+    bool UsePulseDirect;
 };
 
 

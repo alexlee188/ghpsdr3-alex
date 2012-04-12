@@ -51,6 +51,7 @@ Audio_playback::~Audio_playback()
 void Audio_playback::start()
 {
    //open(QIODevice::ReadOnly);
+
 }
 
 void Audio_playback::stop()
@@ -165,7 +166,7 @@ Audio::Audio() {
     audio_byte_order=QAudioFormat::LittleEndian;
     rtp_connected = false;
     useRTP = false;
-
+    UsePulseDirect = true;
     qDebug() << "Audio: LittleEndian=" << QAudioFormat::LittleEndian << " BigEndian=" << QAudioFormat::BigEndian;
 
     audio_format.setSampleType(QAudioFormat::SignedInt);
@@ -275,9 +276,12 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
     audio_out->set_rtpSession(0);
     audio_out->set_rtp_connected(false);
     audio_out->set_useRTP(false);
-    audio_out->start();
-    audio_output->start(audio_out);
-
+    if (UsePulseDirect){
+       audio_processing->StartPulse(sampleRate);
+    }else{
+        audio_out->start();
+        audio_output->start(audio_out);
+    }
     audio_processing->set_audio_channels(audio_format.channels());
     audio_processing->set_audio_encoding(audio_encoding);
     audio_processing->set_queue(&decoded_buffer);
@@ -292,7 +296,11 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
         qDebug() << "    sample size: " << audio_format.sampleSize();
         qDebug() << "    sample type: " << audio_format.sampleType();
         qDebug() << "    channels: " << audio_format.channels();
-        audio_out->stop();
+        if (UsePulseDirect){
+           audio_processing->StopPulse();
+        }else{
+           audio_out->stop();
+        }
         delete audio_out;
         delete audio_output;
     }
@@ -309,7 +317,11 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
     audio_byte_order=byteOrder;
 
     if(audio_output!=NULL) {
-        audio_out->stop();
+        if (UsePulseDirect){
+           audio_processing->StopPulse();
+        }else{
+           audio_out->stop();
+        }
         delete audio_out;
         delete audio_output;
     }
@@ -338,9 +350,12 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
     audio_out->set_rtpSession(0);
     audio_out->set_rtp_connected(false);
     audio_out->set_useRTP(false);
-    audio_out->start();
-    audio_output->start(audio_out);
-
+    if (UsePulseDirect){
+       audio_processing->StartPulse(sampleRate);
+    }else{
+        audio_out->start();
+        audio_output->start(audio_out);
+    }
     audio_processing->set_audio_channels(audio_format.channels());
     audio_processing->set_audio_encoding(audio_encoding);
     audio_processing->set_queue(&decoded_buffer);
@@ -354,7 +369,11 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
         qDebug() << "    sample size: " << audio_format.sampleSize();
         qDebug() << "    sample type: " << audio_format.sampleType();
         qDebug() << "    channels: " << audio_format.channels();
-        audio_out->stop();
+        if (UsePulseDirect){
+           audio_processing->StopPulse();
+        }else{
+           audio_out->stop();
+        }
         delete  audio_out;
         delete audio_output;
 
@@ -422,8 +441,7 @@ void Audio::rtp_set_rtpSession(RtpSession* session){
 }
 
 Audio_processing::Audio_processing(){
-    int sr_error;
-    int sserror;
+
     src_state =  src_new (
                 //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
                 //SRC_SINC_MEDIUM_QUALITY,
@@ -441,13 +459,8 @@ Audio_processing::Audio_processing(){
 
     codec2 = codec2_create();
     pdecoded_buffer = &queue;
-    ss.format = PA_SAMPLE_S16LE;
-    ss.rate = 8000;
-    ss.channels = 1;
-    pulse = NULL;
-    if (!(pulse = pa_simple_new(NULL, "QtRadio-Testing", PA_STREAM_PLAYBACK, NULL, "playback", &ss, NULL, NULL, &sserror))) {
-            fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(sserror));
-        }
+    pulsebufcount = 0;
+
 }
 
 Audio_processing::~Audio_processing(){
@@ -500,7 +513,6 @@ void Audio_processing::resample(int no_of_samples){
     int e;
     qint16 v;
     int rc;
-    char d[2];
 
     if (pdecoded_buffer->isFull()) {
         src_ratio = 0.9;
@@ -531,10 +543,14 @@ void Audio_processing::resample(int no_of_samples){
                 v = buffer_out[i]*32767.0;
                 #pragma omp ordered
                 //pdecoded_buffer->enqueue(v);
-                //qDebug()<<v;
-                d[0]=v&0xFF;
-                d[1]=(v>>8)&0xFF;
-               e= pa_simple_write(pulse,d,2, NULL);                
+                pulsebuf[pulsebufcount]=v&0xFF;
+                pulsebuf[pulsebufcount +1]=(v>>8)&0xFF;
+                pulsebufcount += 2;
+                if (pulsebufcount == 512){
+                   e= pa_simple_write(pulse,pulsebuf,512, NULL);
+                   pulsebufcount = 0;
+                }
+
             }
     }
 }
@@ -602,4 +618,20 @@ void Audio_processing::init_decodetable() {
         }
         decodetable[i] = (short) value;
     }
+}
+
+void  Audio_processing::StartPulse(int srate){
+    qDebug() << "Pulserate: " <<srate;
+    ss.format = PA_SAMPLE_S16LE;
+    ss.rate = srate;
+    ss.channels = 1;
+    pulse = NULL;
+    if (!(pulse = pa_simple_new(NULL, "QtRadio-Testing", PA_STREAM_PLAYBACK, NULL, "playback", &ss, NULL, NULL, &sserror))) {
+            fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(sserror));
+        }
+}
+
+void  Audio_processing::StopPulse(){
+   int e = pa_simple_flush(pulse, NULL);
+    pa_simple_free(pulse);
 }
