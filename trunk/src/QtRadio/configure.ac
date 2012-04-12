@@ -66,6 +66,12 @@ AC_SEARCH_LIBS([src_new], [samplerate],[have_samplerate=yes])
 have_ortp=no
 AC_SEARCH_LIBS([ortp_init], [ortp],[have_ortp=yes])
 
+have_pulse_simple=no
+AC_SEARCH_LIBS([pa_simple_new], [pulse-simple],[have_pulse_simple=yes])
+
+have_pulse=no
+AC_SEARCH_LIBS([pa_strerror], [pulse],[have_pulse=yes])
+
 if test "x${have_codec2}" = xyes; then
     AC_CHECK_HEADERS([codec2.h], [], [have_codec2=no])
 fi
@@ -102,6 +108,30 @@ if test "x${have_ortp}" = xno; then
 
 fi
 
+if test "x${have_pulse_simple}" = xyes; then
+    AC_CHECK_HEADERS([pulse/simple.h], [], [have_pulse_simple=no])
+fi
+
+if test "x${have_pulse_simple}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The pulse-simple library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
+
+if test "x${have_pulse}" = xyes; then
+    AC_CHECK_HEADERS([pulse/error.h], [], [have_pulse=no])
+fi
+
+if test "x${have_pulse}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The pulse library and header file required to build ghpsdr3.
+-----------------------------------])
+
+fi
 
 
 AC_CONFIG_FILES([
