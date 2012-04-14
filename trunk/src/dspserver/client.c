@@ -179,8 +179,7 @@ void audio_stream_queue_add(unsigned char *buffer, int length) {
 
     sem_wait(&bufferevent_semaphore);
     if(send_audio) {
-        //item = malloc(sizeof(*item));                 // buffer has already been allocated in
-                                                        // audiostream.c
+        item = malloc(sizeof(*item));
         item->buf = buffer;
         item->length = length;
         TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
