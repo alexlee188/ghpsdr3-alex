@@ -45,7 +45,7 @@
 #include "qclmemoryobject.h"
 
 #define MAX_CL_WIDTH 2048
-#define MAX_CL_HEIGHT 256
+#define MAX_CL_HEIGHT 512
 
 class Waterfallcl : public QGLWidget {
     Q_OBJECT
@@ -81,7 +81,6 @@ private:
     bool waterfallAutomatic;
     int cy;
     GLfloat LO_offset;
-    GLfloat rquad;
     int lastX, lastY;
     GLfloat zoom, pan;
 };
