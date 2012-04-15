@@ -22,106 +22,6 @@
 #define ZOOM_FACTOR (1.0)
 #define PAN_FACTOR (0.0)
 
-class ImageCLContext
-{
-public:
-    ImageCLContext() : glContext(0) {}
-    ~ImageCLContext();
-
-    void init(int wid);
-
-    QCLContextGL *glContext;
-    QCLProgram program;
-    QCLKernel waterfall;
-};
-
-void ImageCLContext::init(int wid)
-{
-    QByteArray source = QByteArray(
-
-        "__kernel void waterfall(__global __read_only char *src, const int cy, const int width,\n"
-                "const int height, const int offset, const int waterfallLow,\n"
-                "const int waterfallHigh, __write_only image2d_t image) {\n"
-        "  int id = get_global_id(0);\n"
-        "  int j = id - offset;\n"
-        "  if (j < 0) j += width;\n"
-        "  if (j >= width) j %= width;\n"
-        "  int2 pos;\n"
-        "  pos = (int2)(id, cy);\n"
-        "  uint unsigned_sample = src[j] & 0xff;"
-        "  float sample = 0.0f - (float) unsigned_sample;\n"
-        "  float percent = (sample - (float)waterfallLow)/ (float)(waterfallHigh - waterfallLow);\n"
-        "  percent = (percent > 0.0f) ? percent : 0.0f;"
-        "  if (percent < (2.0f/9.0f)){\n"
-        "    uint value = 255.0f * percent / (2.0f/9.0f);\n"
-        "    write_imageui(image, pos, (uint4)(0, 0, value, 255));\n"
-        "    pos = (int2)(id, cy + height);\n"
-        "    write_imageui(image, pos, (uint4)(0, 0, value, 255));\n"
-        "    }\n"
-        "  else if (percent < (3.0f/9.0f)){\n"
-        "    uint value = 255.0f * (percent - (2.0f/9.0f)) / (1.0f/9.0f);\n"
-        "    write_imageui(image, pos, (uint4)(0, value, 255, 255));\n"
-        "    pos = (int2)(id, cy + height);\n"
-        "    write_imageui(image, pos, (uint4)(0, value, 255, 255));\n"
-        "    }\n"
-        "  else if (percent < (4.0f/9.0f)){\n"
-        "    uint value = 255* (1.0f - ((percent - (3.0f/9.0f)) / (1.0f/9.0f)));\n"
-        "    write_imageui(image, pos, (uint4)(0, value, 255, 255));\n"
-        "    pos = (int2)(id, cy + height);\n"
-        "    write_imageui(image, pos, (uint4)(0, value, 255, 255));\n"
-        "    }\n"
-        "  else if (percent < (5.0f/9.0f)){\n"
-        "    uint value = 255*((percent - (4.0f/9.0f)) / (1.0f/9.0f));\n"
-        "    write_imageui(image, pos, (uint4)(value, 255, 0, 255));\n"
-        "    pos = (int2)(id, cy + height);\n"
-        "    write_imageui(image, pos, (uint4)(value, 255, 0, 255));\n"
-        "    }\n"
-        "  else if (percent < (7.0f/9.0f)){\n"
-        "    uint value = 255*(1.0f - ((percent - (5.0f/9.0f)) / (2.0f/9.0f)));\n"
-        "    write_imageui(image, pos, (uint4)(255, value, 0, 255));\n"
-        "    pos = (int2)(id, cy + height);\n"
-        "    write_imageui(image, pos, (uint4)(255, value, 0, 255));\n"
-        "    }\n"
-        "  else if (percent < (8.0f/9.0f)){\n"
-        "    uint value = 255*((percent - (7.0f/9.0f)) / (1.0f/9.0f));\n"
-        "    write_imageui(image, pos, (uint4)(255, 0, value, 255));\n"
-        "    pos = (int2)(id, cy + height);\n"
-        "    write_imageui(image, pos, (uint4)(255, 0, value, 255));\n"
-        "    }\n"
-        "  else {\n"
-        "    float local_percent = (percent - (8.0f/9.0f)) / (1.0f/9.0f);\n"
-        "    int R = (0.75f + 0.25f * (1.0f - local_percent))*255.0f;\n"
-        "    int G = 0.5f * local_percent * 255.0f;\n"
-        "    write_imageui(image, pos, (uint4)(R, G, 255, 255));\n"
-        "    pos = (int2)(id, cy + height);\n"
-        "    write_imageui(image, pos, (uint4)(R, G, 255, 255));\n"
-        "    }\n"
-        "}\n");
-
-    if (glContext) {
-        waterfall.setGlobalWorkSize(wid);
-        return;
-    }
-
-    glContext = new QCLContextGL();
-    if (!glContext->create())
-        return;
-
-    program = glContext->buildProgramFromSourceCode(source);
-    qDebug() << program.sourceCode();
-    waterfall = program.createKernel("waterfall");
-    waterfall.setGlobalWorkSize(wid);
-
-}
-
-ImageCLContext::~ImageCLContext()
-{
-    delete glContext;
-}
-
-Q_GLOBAL_STATIC(ImageCLContext, image_context)
-
-
 Waterfallcl::Waterfallcl(){
     makeCurrent();
 }
@@ -129,8 +29,6 @@ Waterfallcl::Waterfallcl(){
 Waterfallcl::~Waterfallcl(){
 
 }
-
-
 
 void Waterfallcl::initialize(int wid, int ht){
 

@@ -64,10 +64,6 @@ int main(int argc, char *argv[]) {
 
     qDebug() << "QThread: Main GUI thread : " << app.thread()->currentThread();
 
-    if (!QCLDevice::devices(QCLDevice::Default).isEmpty()) {
-        qDebug() << "HasOpenCL";
-    }
-
     //trying to get the arguments into a list    
     QStringList args = app.arguments();
 
