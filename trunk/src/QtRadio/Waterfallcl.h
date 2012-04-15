@@ -31,18 +31,7 @@
 #include <QtOpenGL/QGLBuffer>
 #include <QtOpenGL/QGLWidget>
 #include <QtOpenGL/qglfunctions.h>
-#include <qcl/qclbuffer.h>
-#include <qcl/qclcommandqueue.h>
-#include <qcl/qclcontext.h>
-#include <qcl/qcldevice.h>
-#include <qcl/qclevent.h>
-#include <qcl/qclimage.h>
-#include <qcl/qclimageformat.h>
-#include <qcl/qclprogram.h>
-#include <qcl/qclvector.h>
-#include <qcl/qclcontextgl.h>
 #include <QGLShader>
-#include "qclmemoryobject.h"
 
 #define MAX_CL_WIDTH 2048
 #define MAX_CL_HEIGHT 512

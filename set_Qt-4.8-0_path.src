@@ -1,4 +1,4 @@
-#export PATH=/usr/local/Trolltech/Qt-4.8.0/bin:$PATH
-export PATH=~/QtSDK/Desktop/Qt/4.8.0/gcc/bin:$PATH
+export PATH=/usr/local/Trolltech/Qt-4.8.0/bin:$PATH
+#export PATH=~/QtSDK/Desktop/Qt/4.8.0/gcc/bin:$PATH
 
 
