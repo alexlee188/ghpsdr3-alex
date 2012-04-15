@@ -262,9 +262,10 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
                 audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
                 audio_buffer[4]=audio_buffer_length&0xFF;
 		audio_stream_queue_add(audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+		audio_buffer = NULL;	// now that the audio_buffer pointer has been added to queue
 		codec2_count = 0;
 		audio_stream_buffer_insert = 0;
-                allocate_audio_buffer();
+                //allocate_audio_buffer();
             }
         }
 
@@ -280,8 +281,9 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
             audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
             audio_buffer[4]=audio_buffer_length&0xFF;
             audio_stream_queue_add(audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+	    audio_buffer = NULL;	// audio_buffer pointer has already been queued.
             audio_stream_buffer_insert=0;
-            allocate_audio_buffer();
+            //allocate_audio_buffer();
         }
     }
     sample_count++;
