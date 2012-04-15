@@ -28,7 +28,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <qcl/qcldevice.h>
 
 
 int fOutputDisabled = 0;
