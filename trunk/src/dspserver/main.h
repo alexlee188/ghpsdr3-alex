@@ -24,5 +24,6 @@
 * 
 */
 
-const char *version = "20120323;-OpenCL"; //YYYYMMDD; text desc
+const char *version = "20120415;-opengl"; //YYYYMMDD; text desc
+
 
