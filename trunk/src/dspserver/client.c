@@ -184,6 +184,7 @@ void audio_stream_queue_add(unsigned char *buffer, int length) {
         item->length = length;
         TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
     }
+    else free(buffer);
     sem_post(&bufferevent_semaphore);
 }
 
@@ -191,7 +192,7 @@ struct audio_entry *audio_stream_queue_remove(){
 	struct audio_entry *first_item;
 	sem_wait(&bufferevent_semaphore);
 	first_item = TAILQ_FIRST(&IQ_audio_stream);
-	if (first_item != NULL) TAILQ_REMOVE(&IQ_audio_stream, first_item, entries);
+        if (first_item != NULL) TAILQ_REMOVE(&IQ_audio_stream, first_item, entries);
 	sem_post(&bufferevent_semaphore);
 	return first_item;
 }
