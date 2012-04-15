@@ -184,6 +184,7 @@ void audio_stream_queue_add(unsigned char *buffer, int length) {
         item->length = length;
         TAILQ_INSERT_TAIL(&IQ_audio_stream, item, entries);
     }
+    else free(buffer);
     sem_post(&bufferevent_semaphore);
 }
 
