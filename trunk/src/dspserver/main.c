@@ -287,7 +287,7 @@ int main(int argc,char* argv[]) {
 
 		
     // initialize fftcl
-    fftcl_initialize();
+    //fftcl_initialize();
 
     Setup_SDR(directory);
     Release_Update();
