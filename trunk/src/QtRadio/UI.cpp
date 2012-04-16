@@ -306,7 +306,7 @@ UI::UI(const QString server) {
     squelchValue=-100;
     squelch=false;
 
-    audio_device=0;
+    audio->get_audio_device(&audio_device);
     audio_sample_rate=configure.getSampleRate();
     audio_channels=configure.getChannels();
     audio_byte_order=configure.getByteOrder();
@@ -512,6 +512,7 @@ void UI::waterfallAutomaticChanged(bool state) {
 }
 
 void UI::audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder) {
+    audio_device = info;
     audio_sample_rate = rate;
     audio_channels = channels;
     audio_byte_order = byteOrder;
@@ -640,6 +641,8 @@ void UI::connected() {
     command.clear(); QTextStream(&command) << "setEncoding " << audio->get_audio_encoding();
     connection.sendCommand(command);
     // qDebug() << "Command: " << command;
+
+    audio->select_audio(audio_device, audio_sample_rate, audio_channels, audio_byte_order);
 
     // start the audio
     audio_buffers=0;
@@ -2030,7 +2033,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - opengl 15 Apr 2012");
+                   + getversionstring() +  message + "  - opengl 16 Apr 2012");
     lastmessage = message;
 
 }

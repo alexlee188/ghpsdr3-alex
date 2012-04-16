@@ -192,6 +192,9 @@ Audio::~Audio() {
     audio_processing->deleteLater();
 }
 
+void Audio::get_audio_device(QAudioDeviceInfo * device){
+	*device = audio_device;
+}
 
 void Audio::get_audio_devices(QComboBox* comboBox) {
     QList<QAudioDeviceInfo> devices=QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
@@ -363,17 +366,19 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
 void Audio::stateChanged(QAudio::State State){
     switch (State) {
         case QAudio::StoppedState:
+	case QAudio::SuspendedState:
             if (audio_output->error() != QAudio::NoError) {
                 qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << State;
+	    audio_output->start(audio_out);
             break;
             }
         case QAudio::IdleState:
-        case QAudio::SuspendedState:
         case QAudio::ActiveState:
         default:
  //           qDebug() << "QAudioOutput: state changed" << " state=" << State;
-        return;
+	    break;
     }
+    return;
 }
 
 void Audio::set_audio_encoding(int enc){
