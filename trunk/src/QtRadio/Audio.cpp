@@ -192,6 +192,10 @@ Audio::~Audio() {
     audio_processing->deleteLater();
 }
 
+void Audio::clear_decoded_buffer(void){
+    decoded_buffer.clear();
+}
+
 void Audio::get_audio_device(QAudioDeviceInfo * device){
 	*device = audio_device;
 }
