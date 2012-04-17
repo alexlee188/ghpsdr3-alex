@@ -39,6 +39,7 @@ Log.i("SpectrumView","width="+width+" height="+height);
 		cy = HEIGHT - 1;
 		average=waterfallLow;
 		this.setOnTouchListener(this);
+
 	}
 
 	public void setConnection(Connection connection) {
@@ -469,6 +470,9 @@ Log.i("SpectrumView","width="+width+" height="+height);
 	//int[] pixels;
 	private int cy;
 	int offset;
+	
+	private int vShader;
+	private int fShader;
 
 	private int spectrumHigh = 0;
 	private int spectrumLow = -140;
