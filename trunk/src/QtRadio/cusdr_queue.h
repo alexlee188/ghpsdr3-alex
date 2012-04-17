@@ -12,7 +12,9 @@ public:
 		: m_semFree(maxSize)
 		, m_semUsed(0)
 	{
+        m_max_size = maxSize;
 	}
+
 	
 	void enqueue(const T &value) {
 
@@ -86,16 +88,21 @@ public:
 
     T tryDequeue() {
 
-        bool t = m_semUsed.tryAcquire(1);
-        if (!t)
-            return T();
-
         m_mutex.lock();
 			T val = m_queue.dequeue();
         m_mutex.unlock();
-        m_semUsed.release();
 
         return val;
+    }
+
+    void clear() {
+        m_mutex.lock();
+            m_queue.clear();
+            int avail = m_semUsed.available();
+            m_semUsed.acquire(avail);           // available -> 0
+            avail = m_semFree.available();
+            m_semFree.release(m_max_size - avail); // avilable -> m_max_size
+        m_mutex.unlock();
     }
 
 private:
@@ -103,6 +110,7 @@ private:
     QSemaphore	m_semFree;
     QSemaphore	m_semUsed;
     QMutex		m_mutex;
+    int         m_max_size;
 };
 
 #endif // CUSDR_QUEUE_H

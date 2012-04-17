@@ -642,6 +642,7 @@ void UI::connected() {
     connection.sendCommand(command);
     // qDebug() << "Command: " << command;
 
+    // upon connection, (re)select the audio_device in case it was stopped because of errors
     audio->select_audio(audio_device, audio_sample_rate, audio_channels, audio_byte_order);
 
     // start the audio
@@ -731,6 +732,9 @@ void UI::disconnected(QString message) {
         audio->rtp_set_disconnected();
         rtp->shutdown();
     }
+
+    audio->clear_decoded_buffer();
+
 //    widget.statusbar->showMessage(message,0); //gvj deleted code
     printWindowTitle(message);
     widget.actionConnectToServer->setDisabled(FALSE);
@@ -2033,7 +2037,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  - opengl 16 Apr 2012");
+                   + getversionstring() +  message + "  - opengl 17 Apr 2012");
     lastmessage = message;
 
 }
