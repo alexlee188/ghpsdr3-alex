@@ -35,6 +35,10 @@ public class Connection extends Thread {
 		this.server=server;
 	}
 	
+	public void setFps(int fps){
+		this.fps = fps;
+	}
+	
 	public void connect() {
 		Log.i("Connection","connect: "+server+":"+port);
 		try {
@@ -437,6 +441,7 @@ public class Connection extends Thread {
 	private int band;
 	private short meter;
 	private int agc;
+	private int fps;
 
 	private int cwPitch = 600;
 

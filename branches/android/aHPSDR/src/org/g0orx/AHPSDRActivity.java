@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.DialogInterface.OnClickListener;
 import android.content.pm.ActivityInfo;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -24,13 +25,14 @@ import android.widget.EditText;
 import android.widget.Toast;
 import android.media.AudioManager;
 
+//import graphics.shaders.Renderer;
+
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import org.apache.http.util.ByteArrayBuffer;
 import java.util.Vector;
-
 public class AHPSDRActivity extends Activity implements SensorEventListener {
 	/** Called when the activity is first created. */
 	
@@ -128,7 +130,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public void onStart() {
 		super.onStart();
 		Log.i("AHPSDR", "onStart");
-
+		//connection.setFps(fps);
 	}
 
 	public void onResume() {
@@ -150,6 +152,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		
 		update=new Update(connection);
 		update.setFps(fps);
+		connection.setFps(fps);
 		connection.getSpectrum_protocol3(fps+1);
 		//update.start();
 	}
@@ -352,6 +355,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 							update=new Update(connection);					
 							spectrumView.setConnection(connection);
 							update.setFps(fps);
+							connection.setFps(fps);
 							update.start();
 							dialog.dismiss();
 						}
@@ -1096,5 +1100,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	
 	private float xAxisLevel=-1.9F;
 	
+	private GLSurfaceView mGLSurfaceView;
+	// The Renderer
+	Renderer renderer;
 
 }

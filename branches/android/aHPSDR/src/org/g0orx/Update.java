@@ -11,7 +11,7 @@ public class Update extends Thread {
 	public void run() {
 		Log.i("Update","run");
 		while (running) {
-			connection.getSpectrum();
+			//connection.getSpectrum();
 			try {
 				sleep(1000 / fps);
 			} catch (Exception e) {
