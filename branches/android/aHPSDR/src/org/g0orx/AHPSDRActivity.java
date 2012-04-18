@@ -130,7 +130,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public void onStart() {
 		super.onStart();
 		Log.i("AHPSDR", "onStart");
-		//connection.setFps(fps);
 	}
 
 	public void onResume() {
@@ -154,7 +153,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		update.setFps(fps);
 		connection.setFps(fps);
 		connection.getSpectrum_protocol3(fps+1);
-		//update.start();
 	}
 
 	public void onPause() {
@@ -237,6 +235,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					update=new Update(connection);					
 					spectrumView.setConnection(connection);
 					update.setFps(fps);
+					connection.setFps(fps);
+					connection.getSpectrum_protocol3(fps+1);
 					update.start();
 					setTitle("aHPSDR: "+server+" (rx"+receiver+")");
 					dialog.dismiss();
@@ -320,6 +320,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
     							update.setFps(fps);
     							update.start();
     							setTitle("aHPSDR: "+server+" (rx"+receiver+")");
+    							connection.setFps(fps);
+    							connection.getSpectrum_protocol3(fps+1);
     							dialog.dismiss();
     						}
     			});
