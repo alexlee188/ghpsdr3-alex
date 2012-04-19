@@ -2,12 +2,17 @@ package org.g0orx;
 
 import android.app.Activity;
 
+
+
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.DialogInterface.OnClickListener;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.util.Log;
@@ -24,25 +29,37 @@ import android.hardware.SensorManager;
 import android.widget.EditText;
 import android.widget.Toast;
 import android.media.AudioManager;
-
-//import graphics.shaders.Renderer;
-
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import org.apache.http.util.ByteArrayBuffer;
 import java.util.Vector;
+import android.util.DisplayMetrics;
 public class AHPSDRActivity extends Activity implements SensorEventListener {
 	/** Called when the activity is first created. */
 	
-	
-
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		setTitle("aHPSDR: ");
+
+		// Create a new GLSurfaceView - this holds the GL Renderer
+		mGLSurfaceView = new GLSurfaceView(this);
+		
+		// detect if OpenGL ES 2.0 support exists - if it doesn't, exit.
+		if (detectOpenGLES20()) {
+			// Tell the surface view we want to create an OpenGL ES 2.0-compatible
+			// context, and set an OpenGL ES 2.0-compatible renderer.
+			mGLSurfaceView.setEGLContextClientVersion(2);
+			renderer = new Renderer(this);
+			mGLSurfaceView.setRenderer(renderer);
+		} 
+		else { // quit if no support - get a better phone! :P
+			this.finish();
+		}
+		
 		
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -63,9 +80,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		server=prefs.getString("Server", "");
 		receiver=prefs.getInt("Receiver", 0);
 		
-		Display display = getWindowManager().getDefaultDisplay(); 
-		width = display.getWidth();
-		height = display.getHeight();
+		DisplayMetrics metrics = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(metrics);
+		int height = metrics.heightPixels;
+		int width = metrics.widthPixels;
 		
 		//connection = new Connection(server, BASE_PORT+receiver, width);
 		connection=null;
@@ -73,6 +91,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		//update = new Update(connection);
 
 		spectrumView = new SpectrumView(this, width, height/2, connection);
+
 
 		//connection.setSpectrumView(spectrumView);
 
@@ -942,6 +961,19 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		}
 		return dialog;
 	}
+	
+	/**
+	 * Detects if OpenGL ES 2.0 exists
+	 * @return true if it does
+	 */
+	private boolean detectOpenGLES20() {
+		ActivityManager am =
+			(ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+		ConfigurationInfo info = am.getDeviceConfigurationInfo();
+		Log.d("OpenGL Ver:", info.getGlEsVersion());
+		return (info.reqGlEsVersion >= 0x20000);
+	}
+	
 	
 	private int width;
 	private int height;
