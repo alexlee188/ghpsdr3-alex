@@ -23,9 +23,10 @@ Log.i("SpectrumView","width="+width+" height="+height);
 		this.connection = connection;
 		paint = new Paint();
 		WIDTH=width;
-		HEIGHT=height/2;
+		HEIGHT=height;
 		points = new float[WIDTH * 4];
 
+		
 		waterfall = Bitmap.createBitmap(WIDTH, HEIGHT*2,
 				Bitmap.Config.ARGB_8888);
 		//pixels = new int[WIDTH * HEIGHT];
@@ -132,12 +133,15 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			paint.setColor(Color.WHITE);
 			canvas.drawLines(points, paint);
 
+			
 			// draw the waterfall
 			{
 				Bitmap subBitmap = Bitmap.createBitmap(waterfall, 0, cy, WIDTH, HEIGHT);
 				canvas.drawBitmap(subBitmap, 1, HEIGHT, paint);
 
 			}
+			
+			
 			// draw the S-Meter
 			int dbm=connection.getMeter();
 			int smeter=dbm+127;
@@ -180,25 +184,24 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			
 			// draw the job buttons
 			paint.setColor(Color.DKGRAY);
-			canvas.drawRect(0, getHeight()-50, 50, getHeight(), paint);
-            canvas.drawRect(getWidth()-50,getHeight()-50,getWidth(),getHeight(),paint);
-            canvas.drawRect(125, getHeight()-50, 200, getHeight(), paint); //kb3omm add 1000's button
-            canvas.drawRect(getWidth()-200,getHeight()-50,getWidth()-125,getHeight(),paint); //kb3omm add 1000's button
+			canvas.drawRect(0, HEIGHT-50, 50, HEIGHT, paint);
+            canvas.drawRect(WIDTH-50,HEIGHT-50,WIDTH,HEIGHT,paint);
+            canvas.drawRect(125, HEIGHT-50, 200, HEIGHT, paint); //kb3omm add 1000's button
+            canvas.drawRect(WIDTH-200,HEIGHT-50,WIDTH-125,HEIGHT,paint); //kb3omm add 1000's button
             paint.setColor(Color.WHITE);
             paint.setTextSize(40.0F);
-            canvas.drawText("<", 12, getHeight()-12, paint);
-            canvas.drawText(">", getWidth()-36, getHeight()-12, paint);
-            canvas.drawText("<<", 142, getHeight()-12, paint); //kb3omm add 1000's button
-            canvas.drawText(">>", getWidth()-182, getHeight()-12, paint); //kb3omm add 1000's button
+            canvas.drawText("<", 12, HEIGHT-12, paint);
+            canvas.drawText(">", WIDTH-36, HEIGHT-12, paint);
+            canvas.drawText("<<", 142, HEIGHT-12, paint); //kb3omm add 1000's button
+            canvas.drawText(">>", WIDTH-182, HEIGHT-12, paint); //kb3omm add 1000's button
 			
 		} else {
 			paint.setColor(0xffffffff);
-			canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), paint);
+			canvas.drawRect(0, 0, WIDTH, HEIGHT, paint);
 			paint.setColor(Color.RED);
 			//canvas.drawText("Server is busy - please wait", 20, canvas
-			//		.getHeight() / 2, paint);
-			canvas.drawText(connection.getStatus(), 20, canvas
-					.getHeight() / 2, paint);
+			//		.HEIGHT / 2, paint);
+			canvas.drawText(connection.getStatus(), 20, HEIGHT, paint);
 		}
 	}
 
@@ -206,6 +209,7 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			int sampleRate, int offset) {
 
 		this.offset=offset;
+		
 		
 		// scroll the waterfall down
 		if(waterfall.isRecycled()) {
@@ -218,6 +222,7 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			}
 			cy = HEIGHT - 1;
 		}
+		
 		//waterfall.getPixels(pixels, 0, WIDTH, 0, 0, WIDTH, HEIGHT - 1);
 		//waterfall.setPixels(pixels, 0, WIDTH, 0, 1, WIDTH, HEIGHT - 1);
 		if (--cy < 0) cy = HEIGHT - 1;  // "scroll" down one row with fast waterfall algorithm
@@ -366,28 +371,28 @@ Log.i("SpectrumView","width="+width+" height="+height);
 					moved=false;
 					scroll=false;
 					jog=false;
-					if(startX<=50 && startY>=(getHeight()-50)) {
+					if(startX<=50 && startY>=(HEIGHT-50)) {
 						// frequency down 100
 						jog=true;
 						jogAmount=-100;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if(startX>=(getWidth()-50) && startY>=(getHeight()-50)) {
+					} else if(startX>=(WIDTH-50) && startY>=(HEIGHT-50)) {
 						// frequency up 100 Hz
 						jog=true;
 						jogAmount=100;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=200) && (startX>=125) && (startY>=(getHeight()-50))) {
+					} else if((startX<=200) && (startX>=125) && (startY>=(HEIGHT-50))) {
 						// frequency down 1000 Hz kb3omm added 1k decrement
 						jog=true;
 						jogAmount=-1000;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=(getWidth()-125) && (startX>=(getWidth()-200)) && startY>=(getHeight()-50))) {
+					} else if((startX<=(WIDTH-125) && (startX>=(WIDTH-200)) && startY>=(HEIGHT-50))) {
 						// frequency up 1000 Hz kb3omm added 1k increment
 						jog=true;
 						jogAmount=1000;
@@ -470,9 +475,6 @@ Log.i("SpectrumView","width="+width+" height="+height);
 	//int[] pixels;
 	private int cy;
 	int offset;
-	
-	private int vShader;
-	private int fShader;
 
 	private int spectrumHigh = 0;
 	private int spectrumLow = -140;

@@ -72,7 +72,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 		//update = new Update(connection);
 
-		spectrumView = new SpectrumView(this, width, height, connection);
+		spectrumView = new SpectrumView(this, width, height/2, connection);
 
 		//connection.setSpectrumView(spectrumView);
 
