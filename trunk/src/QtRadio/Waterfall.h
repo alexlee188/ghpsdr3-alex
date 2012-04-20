@@ -110,7 +110,7 @@ private:
     int colorHighG;
     int colorHighB;
     short LO_offset;
-    int average;
+    float average;
 
     int sampleRate;
     int filterLow;

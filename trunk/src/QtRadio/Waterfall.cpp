@@ -52,6 +52,7 @@ Waterfall::Waterfall(QWidget*& widget) {
     colorHighR=255;
     colorHighG=255;
     colorHighB=0;
+    average = -105.0;
 
     waterfallcl = new Waterfallcl;
     waterfallcl->setParent(this);
@@ -150,7 +151,7 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
 
     int sum = 0;
     for(i=0;i<length;i++) sum += -(buffer[j] & 0xFF);
-    average = (float)average * 0.95f + (float)(sum/length) * 0.05f; // running average
+    average = average * 0.99f + (float)(sum/length) * 0.01f; // running average
 
     QTimer::singleShot(0,this,SLOT(updateWaterfall_2()));
 }
@@ -158,7 +159,7 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
 void Waterfall::updateWaterfall_2(void){
 
     if(waterfallAutomatic) {
-        waterfallLow=average-20;
+        waterfallLow=average-10;
         waterfallHigh=waterfallLow+60;
         waterfallcl->setLow(waterfallLow);
         waterfallcl->setHigh(waterfallHigh);
