@@ -371,28 +371,30 @@ Log.i("SpectrumView","width="+width+" height="+height);
 					moved=false;
 					scroll=false;
 					jog=false;
-					if(startX<=50 && startY>=(HEIGHT-62)) {
+					if(startX<=50 && startY>=(HEIGHT-62) && startY <= HEIGHT) {
 						// frequency down 100
 						jog=true;
 						jogAmount=-100;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if(startX>=(WIDTH-50) && startY>=(HEIGHT-62)) {
+					} else if(startX>=(WIDTH-50) && startY>=(HEIGHT-62) && startY <= HEIGHT) {
 						// frequency up 100 Hz
 						jog=true;
 						jogAmount=100;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=200) && (startX>=125) && (startY>=(HEIGHT-62))) {
+					} else if((startX<=200) && (startX>=125) && (startY>=(HEIGHT-62))
+							&& (startY <= HEIGHT)) {
 						// frequency down 1000 Hz kb3omm added 1k decrement
 						jog=true;
 						jogAmount=-1000;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=(WIDTH-125) && (startX>=(WIDTH-200)) && startY>=(HEIGHT-62))) {
+					} else if((startX<=(WIDTH-125)) && (startX>=(WIDTH-200)) 
+							&& (startY>=(HEIGHT-62)) && (startY <= HEIGHT)) {
 						// frequency up 1000 Hz kb3omm added 1k increment
 						jog=true;
 						jogAmount=1000;

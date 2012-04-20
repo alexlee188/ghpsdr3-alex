@@ -35,6 +35,19 @@ class Renderer implements GLSurfaceView.Renderer {
 	private int vShader = R.raw.basic_vs;
 	private int fShader = R.raw.basic_fs;
 	private Shader shader;
+	private int _program;
+	private int _cy;
+	private float _LO_offset;
+	private int _width;
+	private float _waterfallLow;
+	private float _waterfallHigh;
+	private Bitmap _waterfall;
+	private int spectrumTexture_location;
+	private int cy_location;
+	private int offset_location;
+	private int width_location;
+	private int waterfallLow_location;
+	private int waterfallHigh_location;
 
 	/***************************
 	 * CONSTRUCTOR(S)
@@ -46,6 +59,40 @@ class Renderer implements GLSurfaceView.Renderer {
 	}
 
 	/*****************************
+	 * SET RENDER PARAMETERS
+	 *****************************/
+	public void setWaterfall(Bitmap waterfall){
+		this._waterfall = waterfall;
+	}
+	
+	public void set_cy(int cy){
+		_cy = cy;
+		GLES20.glUniform1i(cy_location, _cy);
+	}
+	
+	public void set_width(int width){
+		_width = width;
+		GLES20.glUniform1f(width_location, _width);
+	}
+	
+	public void set_LO_offset(float offset){
+		_LO_offset = offset;
+		GLES20.glUniform1f(offset_location, _LO_offset);
+	}
+	
+	public void set_waterfallLow(int low){
+		_waterfallLow = low;
+		_waterfallLow /= 256.0;
+		GLES20.glUniform1f(waterfallLow_location, _waterfallLow);
+	}
+	
+	public void set_waterfallHigh(int high){
+		_waterfallHigh = high;
+		_waterfallHigh /= 256.0;
+		GLES20.glUniform1f(waterfallHigh_location, _waterfallHigh);
+	}
+	
+	/*****************************
 	 * GL FUNCTIONS
 	 ****************************/
 	/*
@@ -56,20 +103,6 @@ class Renderer implements GLSurfaceView.Renderer {
 		// class's static methods instead.
 		GLES20.glClearColor(.0f, .0f, .0f, 1.0f);
 		GLES20.glClear( GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
-
-		GLES20.glUseProgram(0);
-
-		int _program = shader.get_program();
-		
-		// Start using the shader
-		GLES20.glUseProgram(_program);
-		checkGlError("glUseProgram");
-
-		/*
-		GLES20.glUniform4fv(GLES20.glGetUniformLocation(_program, "lightPos"), 1, lightPos, 0);
-		GLES20.glUniform4fv(GLES20.glGetUniformLocation(_program, "lightColor"), 1, lightColor, 0);
-		*/
-
 	}
 
 	/*
@@ -97,8 +130,19 @@ class Renderer implements GLSurfaceView.Renderer {
 		GLES20.glEnable( GLES20.GL_CULL_FACE );
 		GLES20.glCullFace(GLES20.GL_BACK); 
 
-		// set the view matrix
-		//Matrix.setLookAtM(mVMatrix, 0, 0, 0, -5.0f, 0.0f, 0f, 0f, 0f, 1.0f, 0.0f);
+
+		GLES20.glUseProgram(0);
+		_program = shader.get_program();	
+		// Start using the shader
+		GLES20.glUseProgram(_program);
+		checkGlError("glUseProgram");
+		spectrumTexture_location = GLES20.glGetUniformLocation(_program, "spectrumTexture");
+		GLES20.glUniform1i(spectrumTexture_location, 0);
+		cy_location = GLES20.glGetUniformLocation(_program, "cy");
+		offset_location = GLES20.glGetUniformLocation(_program, "offset");
+		width_location = GLES20.glGetUniformLocation(_program, "width");
+		waterfallLow_location = GLES20.glGetUniformLocation(_program, "waterfallLow");
+		waterfallHigh_location = GLES20.glGetUniformLocation(_program, "waterfallHigh");
 	}
 
 
