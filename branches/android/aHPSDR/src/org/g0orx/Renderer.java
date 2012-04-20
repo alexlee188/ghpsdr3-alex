@@ -4,7 +4,6 @@
 
 package org.g0orx;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -53,6 +52,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	private int waterfallLow_location;
 	private int waterfallHigh_location;
 
+	
 	/***************************
 	 * CONSTRUCTOR(S)
 	 **************************/
@@ -121,9 +121,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	public void onDrawFrame(GL10 glUnused) {
 		// Ignore the passed-in GL10 interface, and use the GLES20
 		// class's static methods instead.
-		GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false, 12, rectangleVB);
-		GLES20.glEnableVertexAttribArray(maPositionHandle);
-		GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3);
+		// scaling
 		
 	}
 
@@ -165,7 +163,7 @@ class Renderer implements GLSurfaceView.Renderer {
 		width_location = GLES20.glGetUniformLocation(_program, "width");
 		waterfallLow_location = GLES20.glGetUniformLocation(_program, "waterfallLow");
 		waterfallHigh_location = GLES20.glGetUniformLocation(_program, "waterfallHigh");
-		maPositionHandle = GLES20.glGetAttribLocation(_program, "vPosition");
+		//maPositionHandle = GLES20.glGetAttribLocation(_program, "vPosition");
 		initShapes();
 	}
 

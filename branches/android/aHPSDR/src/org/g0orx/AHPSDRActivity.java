@@ -85,17 +85,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
 		height = metrics.heightPixels;
 		width = metrics.widthPixels;
-		
-		//connection = new Connection(server, BASE_PORT+receiver, width);
+
 		connection=null;
 
-		//update = new Update(connection);
-
 		spectrumView = new SpectrumView(this, width, height/2, connection);
-
-
-		//connection.setSpectrumView(spectrumView);
-
 		setContentView(spectrumView);
 		//setContentView(mGLSurfaceView);
 		
