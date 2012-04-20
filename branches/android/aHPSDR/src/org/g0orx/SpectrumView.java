@@ -184,16 +184,16 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			
 			// draw the job buttons
 			paint.setColor(Color.DKGRAY);
-			canvas.drawRect(0, HEIGHT-50, 50, HEIGHT, paint);
-            canvas.drawRect(WIDTH-50,HEIGHT-50,WIDTH,HEIGHT,paint);
-            canvas.drawRect(125, HEIGHT-50, 200, HEIGHT, paint); //kb3omm add 1000's button
-            canvas.drawRect(WIDTH-200,HEIGHT-50,WIDTH-125,HEIGHT,paint); //kb3omm add 1000's button
+			canvas.drawRect(0, HEIGHT-62, 50, HEIGHT-12, paint);
+            canvas.drawRect(WIDTH-50,HEIGHT-62,WIDTH,HEIGHT-12,paint);
+            canvas.drawRect(125, HEIGHT-62, 200, HEIGHT-12, paint); //kb3omm add 1000's button
+            canvas.drawRect(WIDTH-200,HEIGHT-62,WIDTH-125,HEIGHT-12,paint); //kb3omm add 1000's button
             paint.setColor(Color.WHITE);
             paint.setTextSize(40.0F);
-            canvas.drawText("<", 12, HEIGHT-12, paint);
-            canvas.drawText(">", WIDTH-36, HEIGHT-12, paint);
-            canvas.drawText("<<", 142, HEIGHT-12, paint); //kb3omm add 1000's button
-            canvas.drawText(">>", WIDTH-182, HEIGHT-12, paint); //kb3omm add 1000's button
+            canvas.drawText("<", 12, HEIGHT-24, paint);
+            canvas.drawText(">", WIDTH-36, HEIGHT-24, paint);
+            canvas.drawText("<<", 142, HEIGHT-24, paint); //kb3omm add 1000's button
+            canvas.drawText(">>", WIDTH-182, HEIGHT-24, paint); //kb3omm add 1000's button
 			
 		} else {
 			paint.setColor(0xffffffff);
@@ -371,28 +371,28 @@ Log.i("SpectrumView","width="+width+" height="+height);
 					moved=false;
 					scroll=false;
 					jog=false;
-					if(startX<=50 && startY>=(HEIGHT-50)) {
+					if(startX<=50 && startY>=(HEIGHT-62)) {
 						// frequency down 100
 						jog=true;
 						jogAmount=-100;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if(startX>=(WIDTH-50) && startY>=(HEIGHT-50)) {
+					} else if(startX>=(WIDTH-50) && startY>=(HEIGHT-62)) {
 						// frequency up 100 Hz
 						jog=true;
 						jogAmount=100;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=200) && (startX>=125) && (startY>=(HEIGHT-50))) {
+					} else if((startX<=200) && (startX>=125) && (startY>=(HEIGHT-62))) {
 						// frequency down 1000 Hz kb3omm added 1k decrement
 						jog=true;
 						jogAmount=-1000;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=(WIDTH-125) && (startX>=(WIDTH-200)) && startY>=(HEIGHT-50))) {
+					} else if((startX<=(WIDTH-125) && (startX>=(WIDTH-200)) && startY>=(HEIGHT-62))) {
 						// frequency up 1000 Hz kb3omm added 1k increment
 						jog=true;
 						jogAmount=1000;

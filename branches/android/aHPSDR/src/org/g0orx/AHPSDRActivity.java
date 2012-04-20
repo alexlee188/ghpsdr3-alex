@@ -82,8 +82,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		
 		DisplayMetrics metrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
-		int height = metrics.heightPixels;
-		int width = metrics.widthPixels;
+		height = metrics.heightPixels;
+		width = metrics.widthPixels;
 		
 		//connection = new Connection(server, BASE_PORT+receiver, width);
 		connection=null;
