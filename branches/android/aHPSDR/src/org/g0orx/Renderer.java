@@ -5,11 +5,12 @@
 package org.g0orx;
 
 import java.io.InputStream;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
-
+import java.nio.IntBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -31,6 +32,9 @@ class Renderer implements GLSurfaceView.Renderer {
 	 * PROPERTIES
 	 ******************************/
 
+	private int MAX_CL_WIDTH = 4096;
+	private int MAX_CL_HEIGHT = 512;
+	
 	private Context mContext;
 	private static String TAG = "Renderer";
 	private FloatBuffer rectangleVB;
@@ -38,21 +42,21 @@ class Renderer implements GLSurfaceView.Renderer {
 	private int fShader = R.raw.basic_fs;
 	private Shader shader;
 	private int _program;
-	private int maPositionHandle;
 	private int _cy;
 	private float _LO_offset;
 	private int _width;
+	private int _height;
 	private float _waterfallLow;
 	private float _waterfallHigh;
-	private Bitmap _waterfall;
 	private int spectrumTexture_location;
 	private int cy_location;
 	private int offset_location;
 	private int width_location;
 	private int waterfallLow_location;
 	private int waterfallHigh_location;
+	private int spectrumTex;
+	private ByteBuffer byteBuffer;
 
-	
 	/***************************
 	 * CONSTRUCTOR(S)
 	 **************************/
@@ -60,14 +64,15 @@ class Renderer implements GLSurfaceView.Renderer {
 
 		this.mContext = context;
 		shader = new Shader(this.vShader, this.fShader, this.mContext, true, 1);
+		
+		byteBuffer = ByteBuffer.allocateDirect(MAX_CL_WIDTH * MAX_CL_HEIGHT *4);
+		byteBuffer.order(ByteOrder.BIG_ENDIAN);
+		
 	}
 
 	/*****************************
 	 * SET RENDER PARAMETERS
 	 *****************************/
-	public void setWaterfall(Bitmap waterfall){
-		this._waterfall = waterfall;
-	}
 	
 	public void set_cy(int cy){
 		_cy = cy;
@@ -121,8 +126,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	public void onDrawFrame(GL10 glUnused) {
 		// Ignore the passed-in GL10 interface, and use the GLES20
 		// class's static methods instead.
-		// scaling
-		
+	
 	}
 
 	/*
@@ -131,6 +135,8 @@ class Renderer implements GLSurfaceView.Renderer {
 	 */
 	public void onSurfaceChanged(GL10 glUnused, int width, int height) {
 		GLES20.glViewport(0, 0, width, height);
+		_width = width;
+		_height = height;
 	}
 
 	/**
@@ -164,7 +170,15 @@ class Renderer implements GLSurfaceView.Renderer {
 		waterfallLow_location = GLES20.glGetUniformLocation(_program, "waterfallLow");
 		waterfallHigh_location = GLES20.glGetUniformLocation(_program, "waterfallHigh");
 		//maPositionHandle = GLES20.glGetAttribLocation(_program, "vPosition");
-		initShapes();
+		//initShapes();
+	
+		int[] textureId = new int[1];
+		GLES20.glGenTextures(1, textureId, 0);
+		spectrumTex = textureId[0];
+		GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, spectrumTex);
+		GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, _width, _height, 0,
+				GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, byteBuffer);
 	}
 
 
