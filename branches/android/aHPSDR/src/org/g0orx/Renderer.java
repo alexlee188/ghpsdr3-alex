@@ -37,7 +37,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	private float[] mProjMatrix = new float[16];
 	private float[] mVMatrix = new float[16]; 		// modelview
 
-	private final int MAX_CL_WIDTH = 4096;
+	private final int MAX_CL_WIDTH = 1024;
 	private final int MAX_CL_HEIGHT = 512;
 	
 	private Context mContext;
@@ -62,19 +62,36 @@ class Renderer implements GLSurfaceView.Renderer {
 	private int uMVPMatrix_location;
 	private int aPosition_location;
 	private int spectrumTex;
-	private ByteBuffer byteBuffer;
 
+    private FloatBuffer mVertices;
+    private ShortBuffer mIndices;
+    
+    private final float[] mVerticesData =
+    { 
+            -0.5f, 0.5f, 0.0f, // Position 0
+            0.0f, 0.0f, // TexCoord 0
+            -0.5f, -0.5f, 0.0f, // Position 1
+            0.0f, 1.0f, // TexCoord 1
+            0.5f, -0.5f, 0.0f, // Position 2
+            1.0f, 1.0f, // TexCoord 2
+            0.5f, 0.5f, 0.0f, // Position 3
+            1.0f, 0.0f // TexCoord 3
+    };
+
+    private final short[] mIndicesData =
+    { 
+            0, 1, 2, 0, 2, 3 
+    };
+    
+
+	
 	/***************************
 	 * CONSTRUCTOR(S)
 	 **************************/
 	public Renderer(Context context) {
 
 		this.mContext = context;
-		shader = new Shader(this.vShader, this.fShader, this.mContext, true, 1);
-		
-		byteBuffer = ByteBuffer.allocateDirect(MAX_CL_WIDTH * MAX_CL_HEIGHT *4);
-		byteBuffer.order(ByteOrder.BIG_ENDIAN);
-		
+		shader = new Shader(this.vShader, this.fShader, this.mContext, true, 1);	
 	}
 
 	/*****************************
@@ -112,29 +129,34 @@ class Renderer implements GLSurfaceView.Renderer {
 	 * GL FUNCTIONS
 	 ****************************/
 	
-
-	private void initShapes(){
-		float triangleCoords[] = {
-				-0.5f, -0.25f, 0,
-				0.5f, -0.25f, 0,
-				0.0f, 0.559016994f, 0
-		};
-		ByteBuffer vbb = ByteBuffer.allocateDirect(triangleCoords.length * 4);
-		vbb.order(ByteOrder.nativeOrder());
-		rectangleVB = vbb.asFloatBuffer();
-		rectangleVB.put(triangleCoords);
-		rectangleVB.position(0);
-		
-	}
-	
 	/*
 	 * Draw function - called for every frame
 	 */
 	public void onDrawFrame(GL10 glUnused) {
 		// Ignore the passed-in GL10 interface, and use the GLES20
 		// class's static methods instead.
+		// Load the vertex position
+        mVertices.position(0);
+        GLES20.glVertexAttribPointer ( aPosition_location, 3, GLES20.GL_FLOAT, 
+                                       false, 
+                                       5 * 4, mVertices );
+        // Load the texture coordinate
+        mVertices.position(3);
+        GLES20.glVertexAttribPointer ( spectrumTexture_location, 2, GLES20.GL_FLOAT,
+                                       false, 
+                                       5 * 4, 
+                                       mVertices );
+        GLES20.glEnableVertexAttribArray ( aPosition_location);
+        GLES20.glEnableVertexAttribArray ( spectrumTexture_location );
+        
+        // Bind the texture
+        GLES20.glActiveTexture ( GLES20.GL_TEXTURE0 );
+        GLES20.glBindTexture ( GLES20.GL_TEXTURE_2D, spectrumTex );
 
+        // Set the sampler texture unit to 0
+        GLES20.glUniform1i (spectrumTexture_location, 0 );
 
+        GLES20.glDrawElements ( GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_SHORT, mIndices );
 	}
 
 	/*
@@ -188,18 +210,44 @@ class Renderer implements GLSurfaceView.Renderer {
 		waterfallHigh_location = GLES20.glGetUniformLocation(_program, "waterfallHigh");
 		aPosition_location = GLES20.glGetAttribLocation(_program, "aPosition");
 		uMVPMatrix_location = GLES20.glGetUniformLocation(_program, "uMVPMatrix");
-		//initShapes();
 	
-		int[] textureId = new int[1];
-		GLES20.glGenTextures(1, textureId, 0);
-		spectrumTex = textureId[0];
-		GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, spectrumTex);
-		GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, _width, _height, 0,
-				GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, byteBuffer);
+		spectrumTex = createTexture2D();
+		
 	}
 
+	private int createTexture2D(){
+		int[] textureId = new int[1];
+	       // 2x2 Image, 4 bytes per pixel (R, G, B, A)
+        byte[] pixels = 
+            {  
+                127,   0,   0, 127, // Red
+                0, 127,   0, 127, // Green
+                0,   0, 127, 127, // Blue
+                127, 127, 0,  127  // Yellow
+            };
+        ByteBuffer pixelBuffer = ByteBuffer.allocateDirect(4*4);
+        pixelBuffer.put(pixels).position(0);
 
+        // Use tightly packed data
+        GLES20.glPixelStorei ( GLES20.GL_UNPACK_ALIGNMENT, 1 );
+
+        //  Generate a texture object
+        GLES20.glGenTextures ( 1, textureId, 0 );
+
+        // Bind the texture object
+        GLES20.glBindTexture ( GLES20.GL_TEXTURE_2D, textureId[0] );
+
+        //  Load the texture
+        GLES20.glTexImage2D ( GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 2, 2, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, pixelBuffer );
+
+        // Set the filtering mode
+        GLES20.glTexParameteri ( GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST );
+        GLES20.glTexParameteri ( GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST );
+
+		return textureId[0];
+	}
+	
+	
 	// debugging opengl
 	private void checkGlError(String op) {
 		int error;

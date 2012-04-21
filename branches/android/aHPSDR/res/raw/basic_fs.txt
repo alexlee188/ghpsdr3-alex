@@ -3,13 +3,14 @@ uniform float cy;
 uniform float offset;
 uniform float width;
 uniform float waterfallLow, waterfallHigh;
+varying vec2 tCoord;
 
 void main()
 {
 
-  float y_coord = gl_TexCoord[0].t + cy;
+  float y_coord = tCoord.t + cy;
   if (y_coord > 1.0) y_coord -= 1.0;
-  float x_coord = gl_TexCoord[0].s - offset;
+  float x_coord = tCoord.s - offset;
   if (x_coord < 0.0) x_coord += width;
   if (x_coord > width) x_coord -= width;
   vec4 value = texture2D(spectrumTexture, vec2(x_coord, y_coord));

@@ -264,6 +264,13 @@ Log.i("SpectrumView","width="+width+" height="+height);
 		waterfallLow=(average/WIDTH)-5;
 		waterfallHigh=waterfallLow+55;
 		
+		renderer.set_cy(cy);
+		renderer.set_width(WIDTH);
+		renderer.set_LO_offset(0);
+		renderer.set_waterfallHigh(waterfallHigh);
+		renderer.set_waterfallLow(waterfallLow);
+		
+		
 		this.postInvalidate();
 	}
 
@@ -346,6 +353,10 @@ Log.i("SpectrumView","width="+width+" height="+height);
 
 	public void setVfoLock() {
 		vfoLocked = !vfoLocked;
+	}
+	
+	public void setRenderer(Renderer renderer){
+		this.renderer = renderer;
 	}
 
 	public void scroll(int step) {
@@ -467,6 +478,8 @@ Log.i("SpectrumView","width="+width+" height="+height);
 	private Paint paint;
 
 	private Connection connection;
+	
+	private Renderer renderer;
 
 	private int WIDTH = 480;
 	private int HEIGHT = 160;

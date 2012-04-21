@@ -1,8 +1,10 @@
 uniform mat4 uMVPMatrix;
 attribute vec4 aPosition;
+attribute vec2 textureCoord;
+varying vec2 tCoord;
 
 void main()
 {
-  gl_TexCoord[0] = gl_MultiTexCoord0;
+  tCoord = textureCoord;
   gl_Position = uMVPMatrix * aPosition;
 }
