@@ -32,8 +32,13 @@ class Renderer implements GLSurfaceView.Renderer {
 	 * PROPERTIES
 	 ******************************/
 
-	private int MAX_CL_WIDTH = 4096;
-	private int MAX_CL_HEIGHT = 512;
+	// Modelview/Projection matrices
+	private float[] mMVPMatrix = new float[16];
+	private float[] mProjMatrix = new float[16];
+	private float[] mVMatrix = new float[16]; 		// modelview
+
+	private final int MAX_CL_WIDTH = 4096;
+	private final int MAX_CL_HEIGHT = 512;
 	
 	private Context mContext;
 	private static String TAG = "Renderer";
@@ -54,6 +59,8 @@ class Renderer implements GLSurfaceView.Renderer {
 	private int width_location;
 	private int waterfallLow_location;
 	private int waterfallHigh_location;
+	private int uMVPMatrix_location;
+	private int aPosition_location;
 	private int spectrumTex;
 	private ByteBuffer byteBuffer;
 
@@ -126,7 +133,8 @@ class Renderer implements GLSurfaceView.Renderer {
 	public void onDrawFrame(GL10 glUnused) {
 		// Ignore the passed-in GL10 interface, and use the GLES20
 		// class's static methods instead.
-	
+
+
 	}
 
 	/*
@@ -137,6 +145,13 @@ class Renderer implements GLSurfaceView.Renderer {
 		GLES20.glViewport(0, 0, width, height);
 		_width = width;
 		_height = height;
+		float ratio = (float) width / height;
+		Matrix.frustumM(mProjMatrix, 0, -ratio, ratio, -1, 1, 0.5f, 10);
+
+		// Creating MVP matrix
+		Matrix.multiplyMM(mMVPMatrix, 0, mProjMatrix, 0, mVMatrix, 0);
+		// send to the shader
+		GLES20.glUniformMatrix4fv(uMVPMatrix_location, 1, false, mMVPMatrix, 0);
 	}
 
 	/**
@@ -156,7 +171,9 @@ class Renderer implements GLSurfaceView.Renderer {
 		//GLES20.glEnable( GLES20.GL_CULL_FACE );
 		//GLES20.glCullFace(GLES20.GL_BACK); 
 
-
+		// set the view matrix
+		Matrix.setLookAtM(mVMatrix, 0, 0, 0, -5.0f, 0.0f, 0f, 0f, 0f, 1.0f, 0.0f);
+		
 		GLES20.glUseProgram(0);
 		_program = shader.get_program();	
 		// Start using the shader
@@ -169,7 +186,8 @@ class Renderer implements GLSurfaceView.Renderer {
 		width_location = GLES20.glGetUniformLocation(_program, "width");
 		waterfallLow_location = GLES20.glGetUniformLocation(_program, "waterfallLow");
 		waterfallHigh_location = GLES20.glGetUniformLocation(_program, "waterfallHigh");
-		//maPositionHandle = GLES20.glGetAttribLocation(_program, "vPosition");
+		aPosition_location = GLES20.glGetAttribLocation(_program, "aPosition");
+		uMVPMatrix_location = GLES20.glGetUniformLocation(_program, "uMVPMatrix");
 		//initShapes();
 	
 		int[] textureId = new int[1];
