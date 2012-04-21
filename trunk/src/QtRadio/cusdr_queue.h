@@ -87,10 +87,13 @@ public:
     }
 
     T tryDequeue() {
-
+        bool t = m_semUsed.tryAcquire(1);
+        if (!t)
+            return T();
         m_mutex.lock();
 			T val = m_queue.dequeue();
         m_mutex.unlock();
+        m_semUsed.release();
 
         return val;
     }
