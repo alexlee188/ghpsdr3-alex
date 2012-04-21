@@ -42,15 +42,13 @@ class Renderer implements GLSurfaceView.Renderer {
 	
 	private Context mContext;
 	private static String TAG = "Renderer";
-	private FloatBuffer rectangleVB;
 	private int vShader = R.raw.basic_vs;
 	private int fShader = R.raw.basic_fs;
 	private Shader shader;
 	private int _program;
-	private int _cy;
+	private float _cy;
 	private float _LO_offset;
-	private int _width;
-	private int _height;
+	private float _width = (float)640 / MAX_CL_WIDTH;
 	private float _waterfallLow;
 	private float _waterfallHigh;
 	private int spectrumTexture_location;
@@ -63,21 +61,8 @@ class Renderer implements GLSurfaceView.Renderer {
 	private int aPosition_location;
 	private int spectrumTex;
 
-    private FloatBuffer mVertices;
     private ShortBuffer mIndices;
     
-    private final float[] mVerticesData =
-    { 
-            -0.5f, 0.5f, 0.0f, // Position 0
-            0.0f, 0.0f, // TexCoord 0
-            -0.5f, -0.5f, 0.0f, // Position 1
-            0.0f, 1.0f, // TexCoord 1
-            0.5f, -0.5f, 0.0f, // Position 2
-            1.0f, 1.0f, // TexCoord 2
-            0.5f, 0.5f, 0.0f, // Position 3
-            1.0f, 0.0f // TexCoord 3
-    };
-
     private final short[] mIndicesData =
     { 
             0, 1, 2, 0, 2, 3 
@@ -91,7 +76,10 @@ class Renderer implements GLSurfaceView.Renderer {
 	public Renderer(Context context) {
 
 		this.mContext = context;
-		shader = new Shader(this.vShader, this.fShader, this.mContext, true, 1);	
+		shader = new Shader(this.vShader, this.fShader, this.mContext, true, 1);
+		
+		mIndices = ByteBuffer.allocateDirect(mIndicesData.length * 2).order(ByteOrder.nativeOrder()).asShortBuffer();
+		mIndices.put(mIndicesData).position(0);
 	}
 
 	/*****************************
@@ -100,7 +88,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	
 	public void set_cy(int cy){
 		_cy = cy;
-		GLES20.glUniform1i(cy_location, _cy);
+		GLES20.glUniform1f(cy_location, _cy);
 	}
 	
 	public void set_width(int width){
@@ -136,6 +124,23 @@ class Renderer implements GLSurfaceView.Renderer {
 		// Ignore the passed-in GL10 interface, and use the GLES20
 		// class's static methods instead.
 		// Load the vertex position
+		float[] mVerticesData =
+		    { 
+		            -0.5f, 0.5f, 0.0f, // Position 0
+		            0.0f, 0.0f, // TexCoord 0
+		            -0.5f, -0.5f, 0.0f, // Position 1
+		            0.0f, _width, // TexCoord 1
+		            0.5f, -0.5f, 0.0f, // Position 2
+		            1.0f, _width, // TexCoord 2
+		            0.5f, 0.5f, 0.0f, // Position 3
+		            1.0f, 0.0f // TexCoord 3
+		    };
+		
+	    FloatBuffer mVertices;
+		
+		mVertices = ByteBuffer.allocateDirect(mVerticesData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+		mVertices.put(mVerticesData).position(0);
+		
         mVertices.position(0);
         GLES20.glVertexAttribPointer ( aPosition_location, 3, GLES20.GL_FLOAT, 
                                        false, 
@@ -165,8 +170,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	 */
 	public void onSurfaceChanged(GL10 glUnused, int width, int height) {
 		GLES20.glViewport(0, 0, width, height);
-		_width = width;
-		_height = height;
+		_width = (float)width / MAX_CL_WIDTH;
 		float ratio = (float) width / height;
 		Matrix.frustumM(mProjMatrix, 0, -ratio, ratio, -1, 1, 0.5f, 10);
 
