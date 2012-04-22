@@ -9,6 +9,9 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #endif
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include "client.h"
 #include "receiver.h"
@@ -33,6 +36,8 @@ static int SAMPLE_RATE;
 static int DECIM_FACT;
 static int AUDIO_DESTINATION = -1;
 static int (*audio_processor)(float*, int) = NULL;
+static float audio_buffer[TRANSMIT_BUFFER_SIZE*2]; //Max size
+static int AUDIO_BUFFER_SIZE = 0;
 
 static PaStream* stream;
 
@@ -40,11 +45,11 @@ int usrp_local_audio_write_decim (float* left_samples, int mox);
 int usrp_drop_audio_buffer(float *outbuf, int mox);
 
 
-void usrp_disable_path(char *path) {
+void usrp_disable_path(const char *path) {
     
     if (strcasecmp(path, "tx") == 0) {
         AUDIO_DESTINATION = AUDIO_TO_NOTHING;
-        audio_processor = usrp_drop_audio_buffer;        
+        audio_processor = usrp_drop_audio_buffer;
         fprintf(stderr,"Discarding client generated TX baseband samples.\n");
     } else
     if (strcasecmp(path, "rx") == 0) {
@@ -104,6 +109,7 @@ int usrp_local_audio_open(int core_bandwidth) {
         break;
     }
     SAMPLE_RATE = core_bandwidth / DECIM_FACT;
+    AUDIO_BUFFER_SIZE = TRANSMIT_BUFFER_SIZE*2/DECIM_FACT;
 
     rc=Pa_Initialize();
     if(rc!=paNoError) {
@@ -209,7 +215,6 @@ int usrp_local_audio_close() {
 int usrp_local_audio_write(float* left_samples,float* right_samples) {
     int rc;
     int i;
-    float audio_buffer[TRANSMIT_BUFFER_SIZE*2];
 
     // interleave samples
     for(i=0;i<TRANSMIT_BUFFER_SIZE;i++) {
@@ -227,25 +232,25 @@ int usrp_local_audio_write(float* left_samples,float* right_samples) {
 
 //implements pointer audio_processor
 int usrp_local_audio_write_decim (float* samples, int mox) {
-    int rc=0, i;
+    int rc=0, i, j;
     float *left_samples = samples;    
-    float *right_samples = &left_samples[TRANSMIT_BUFFER_SIZE];
-    float audio_buffer[TRANSMIT_BUFFER_SIZE*2/DECIM_FACT];
+    float *right_samples = &left_samples[TRANSMIT_BUFFER_SIZE];    
 
-    // interleave samples
-    for(i=0;i<TRANSMIT_BUFFER_SIZE;i++) {
+    // interleave samples     
+    for(i=j=0;i<TRANSMIT_BUFFER_SIZE;i++) {
 
         if ((i % DECIM_FACT) == 0) {
-            audio_buffer[i/DECIM_FACT*2]=right_samples[i];
-            audio_buffer[(i/DECIM_FACT*2)+1]=left_samples[i];
+            audio_buffer[j*2]=right_samples[i];
+            audio_buffer[j*2+1]=left_samples[i];
+            j++;
         }
-    }
+    }    
 
     //TEMP
     //dump_float_buffer_heads(audio_buffer);
     //rc=0;
     if (mox==1)
-        rc = Pa_WriteStream (stream, audio_buffer, TRANSMIT_BUFFER_SIZE*2/DECIM_FACT);
+        rc = Pa_WriteStream (stream, audio_buffer, AUDIO_BUFFER_SIZE);
     if ( rc != 0 ) {
         fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n", Pa_GetErrorText(rc), rc);
     }
@@ -262,7 +267,7 @@ int usrp_drop_audio_buffer(float *outbuf, int mox) {
 }
 
 //Proxy function for audio consumers
-        //REMEMBER: the outbuf carries 2 channels: 
+        //REMEMBER: the outbuf carries I & Q channels: 
         //outbuf[0..TRANSMIT_BUFFER_SIZE-1] and
         //outbuf[TRANSMIT_BUFFER_SIZE..2*TRANSMIT_BUFFER_SIZE-1]
 void usrp_process_audio_buffer (float *outbuf, int mox) {
@@ -271,8 +276,7 @@ void usrp_process_audio_buffer (float *outbuf, int mox) {
     int rc=audio_processor(outbuf, mox);    
     if (rc != 0) {
         fprintf(stderr,"USRP Audio buffer processing returns non-zero: %d (AUDIO DESTINATION: %d)\n",
-            rc, AUDIO_DESTINATION);
-        exit(1);
+            rc, AUDIO_DESTINATION);        
     }
 }
 

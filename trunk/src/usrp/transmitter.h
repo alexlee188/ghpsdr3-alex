@@ -31,12 +31,12 @@ const char* attach_transmitter(CLIENT* client, const char * rx_attach_message);
 /*!
  * Dectivates the transmitter from a client
  */
-const char* detach_transmitter(CLIENT* client);
+void stop_tx_audio(CLIENT* client);
 
 /*!
- * The thread receiving TX audio IQ samples from dspserver
+ * Starts the thread receiving TX audio IQ samples from dspserver
  */ 
-void* tx_audio_thread(void* arg);
+int start_tx_audio_thread(CLIENT * client);
 
 /*!
  * ???? 

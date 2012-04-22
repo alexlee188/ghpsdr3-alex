@@ -24,6 +24,11 @@
 *
 */
 
+//Enables the OpenMP compilation
+#ifndef _OPENMP
+#define _OPENMP
+#endif
+
 #if ! defined __USPR_H__
 #define       __USPR_H__
 
@@ -37,9 +42,19 @@
 bool usrp_init (const char *rx_subdev_par, const char *tx_subdev_par);
 
 /*!
- * Starts the main receiving thread
+ * Starts the main USRP handling threads
  */
-bool usrp_start (RECEIVER *);
+bool usrp_start (CLIENT *client);
+
+/*!
+ *Starts the RX sanmples forwarder thread
+ */
+int usrp_start_rx_forwarder_thread (CLIENT *client);
+
+/*!
+ * Causes the RX forwarder thread to exit
+ */ 
+void usrp_stop_rx_forwarder(void);
 
 void usrp_deinit (void);
 
@@ -52,7 +67,7 @@ void usrp_deinit (void);
  * 
  * Please refer to UHD documentation for other examples.
  */
-void usrp_set_subdev_args(const char *subdev_specs);
+void usrp_set_subdev_args(const char *subdev_rx, const char *subdev_tx);
 
 /*! 
  * Sets the swap iq option.
@@ -73,6 +88,12 @@ int  usrp_get_receivers(void);
  * Tests the enabled TX function flag
  */
 bool  usrp_is_tx_enabled(void);
+
+/*!
+ * Checks that USRP threads are started
+ */
+bool  usrp_is_started(void);
+
 
 /*!
  * Client side sample rate setter.

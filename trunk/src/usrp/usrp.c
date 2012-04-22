@@ -83,7 +83,14 @@ static const int TRANSMIT_BUFFER_SIZE_BYTES = TRANSMIT_BUFFER_SIZE*2*sizeof(floa
 static int MAX_USRP_RX_BUFFER = 0; //will be initialized
 static int MAX_USRP_TX_BUFFER = 0; //will be initialized
 static bool tx_resampler_init = true;
+static bool usrp_started = false;
 static int tx_resampler_id = -1;
+static bool RECEIVER_CYCLE = false;
+static pthread_mutex_t RECEIVER_CYCLE_lock;
+
+//The Complex zero vector
+static const std::complex<float> CPX_ZERO (0.0, 0.0);
+static std::vector<std::complex<float> > ZERO_CPX_VECTOR;
 
 /*!
  * The queue item
@@ -157,11 +164,8 @@ bool usrp_init (const char *rx_subdev_par, const char *tx_subdev_par)
         //Lock mboard clocks
         usrp.sdev->set_clock_config(uhd::clock_config_t::internal(), 0);        
         
-        char subdev_specs[12] = "";
-        strcpy(subdev_specs, rx_subdev_par);
-        strcat(subdev_specs, " "); strcat(subdev_specs, tx_subdev_par);
         //std::cerr << boost::format("USRP Subdev specs: %s\n") % subdev_specs << std::endl;
-        usrp_set_subdev_args(subdev_specs);            
+        usrp_set_subdev_args(rx_subdev_par, tx_subdev_par);            
         
         //set the USRP rx standard sample rate 256000 for minimum bandwidth.
         usrp.sdev->set_rx_rate(USRP_RX_SAMPLERATE);
@@ -176,9 +180,13 @@ bool usrp_init (const char *rx_subdev_par, const char *tx_subdev_par)
         usrp.dev = usrp.sdev->get_device();
         MAX_USRP_RX_BUFFER = usrp.dev->get_max_recv_samps_per_packet();
         MAX_USRP_TX_BUFFER = usrp.dev->get_max_send_samps_per_packet();
+        
+        ZERO_CPX_VECTOR = std::vector<std::complex<float> >(MAX_USRP_RX_BUFFER, CPX_ZERO);
                 
         setup_rx_queue();
         setup_tx_queue();
+        
+        pthread_mutex_init(&RECEIVER_CYCLE_lock, NULL );
         
         resampler_init();
 
@@ -187,13 +195,14 @@ bool usrp_init (const char *rx_subdev_par, const char *tx_subdev_par)
     return false;
 }
 
+
 void usrp_deinit (void)
 {
   // anything here???
 }
 
 //Configures the RX subdevice
-void usrp_set_rx_subdevice(char *rxspec) 
+void usrp_set_rx_subdevice(const char *rxspec) 
 {
     std::cout << boost::format("Setting RX subdevice spec %s") % rxspec << std::endl;
     uhd::usrp::subdev_spec_t s(rxspec);
@@ -202,7 +211,7 @@ void usrp_set_rx_subdevice(char *rxspec)
 }
 
 //Configures the TX subdevice
-void usrp_set_tx_subdevice(char *txspec) 
+void usrp_set_tx_subdevice(const char *txspec) 
 {    
     std::cout << boost::format("Setting TX subdevice spec %s") % txspec << std::endl;
     uhd::usrp::subdev_spec_t s(txspec);
@@ -210,26 +219,15 @@ void usrp_set_tx_subdevice(char *txspec)
     std::cerr << boost::format("Current TX subdevice is: %s") % usrp.sdev->get_tx_subdev_name() << std::endl;    
 }
 
-void usrp_set_subdev_args(const char *subdevs)
+void usrp_set_subdev_args(const char *subdev_rx, const char *subdev_tx)
 {
-    char largs[10];
-    char* token;
-        
-    strcpy(largs, subdevs);    
-    token=strtok(largs," \r\n");    
-    if(token!=NULL) {
-        usrp_set_rx_subdevice(token);
-        token=strtok(NULL," \r\n");
-        if(token!=NULL) {
-            usrp_set_tx_subdevice(token);
-            usrp.tx_enabled = true;
-        } else {
-            std::cerr << "Only RX spec found. TX not configured."<< std::endl;
-            usrp.tx_enabled = false;
-        }
+    usrp_set_rx_subdevice(subdev_rx);
+    if ((subdev_tx == NULL) || (strlen(subdev_tx)==0)) {
+        std::cerr << "Only RX spec found. TX not configured."<< std::endl;
+        usrp.tx_enabled = false;
     } else {
-        std::cerr << "Missing any USRP subdev specs. Exiting."<< std::endl;
-        exit(1);        
+        usrp_set_tx_subdevice(subdev_tx);
+        usrp.tx_enabled = true;
     }        
 }
 
@@ -288,7 +286,7 @@ void usrp_set_client_rx_rate (int rate)
         std::cerr << boost::format("Invalid client I/Q RX Rate: %d sps. Exiting") % (rate) << std::endl;
         exit(1);
     }
-    std::cout << boost::format("Client I/Q RX Rate: %f sps.") % (rate) << std::endl << std::endl;        
+    std::cout << boost::format("Client I/Q RX Rate: %f sps.") % (rate) << std::endl;     
 
 }
 
@@ -302,10 +300,10 @@ void usrp_set_frequency (double freq)
     //set the rx center frequency
     std::cout << boost::format("Setting USRP RX/TX Freq: %f Mhz...") % (freq/1e6) << std::endl;
     usrp.sdev->set_rx_freq(freq);
-    std::cout << boost::format("Actual USRP RX Freq: %f Mhz...") % (usrp.sdev->get_rx_freq()/1e6) << std::endl << std::endl;
+    std::cout << boost::format("Actual USRP RX Freq: %f Mhz...") % (usrp.sdev->get_rx_freq()/1e6) << std::endl;
     if (usrp.tx_enabled) {
         usrp.sdev->set_tx_freq(freq);
-        std::cout << boost::format("Actual USRP TX Freq: %f Mhz...") % (usrp.sdev->get_rx_freq()/1e6) << std::endl << std::endl;        
+        std::cout << boost::format("Actual USRP TX Freq: %f Mhz...") % (usrp.sdev->get_rx_freq()/1e6) << std::endl;
     }
 }
 
@@ -315,6 +313,7 @@ void *usrp_receiver_thread (void *param)
     uhd::rx_metadata_t md;	    
     std::vector<std::complex<float> > buff(MAX_USRP_RX_BUFFER);       
     int old_state, old_type;
+    QUEUE_BUFFER_ENTRY *item;
 
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);       
@@ -335,19 +334,20 @@ void *usrp_receiver_thread (void *param)
     long int recv_samps = 0;    
     gettimeofday(tod, NULL);
     
-    while (1){		
-                
+    while (1){	
+        
         size_t num_rx_samps = usrp.dev->recv(
                                             &buff.front(), buff.size(), md,
                                             uhd::io_type_t::COMPLEX_FLOAT32,
                                             uhd::device::RECV_MODE_ONE_PACKET
-                                           );
+                                           );                                            
+        
         recv_samps += num_rx_samps;
         //std::cerr << boost::format("%s: received from USRP %d samples\n") % __FUNCTION__, num_rx_samps << std::endl;
                 
         //TIME BECHMARKING
         gettimeofday(tod1, NULL);
-        //std::cerr << boost::format("After recv: %d (SAMPS: %d)|") % (tod1->tv_usec - tod->tv_usec) % num_rx_samps;
+        //std::cerr << boost::format("After recv: %d (SAMPS: %d)|\n") % (tod1->tv_usec - tod->tv_usec) % num_rx_samps;
         
         //handle the error codes
         switch(md.error_code){
@@ -381,7 +381,13 @@ void *usrp_receiver_thread (void *param)
         }
         
         //ENQUEUE The buffer
-        QUEUE_BUFFER_ENTRY *item;
+        
+        pthread_mutex_lock(&RECEIVER_CYCLE_lock); 
+        bool do_add_queue = RECEIVER_CYCLE;
+        pthread_mutex_unlock(&RECEIVER_CYCLE_lock);
+        
+        if (! do_add_queue) continue;
+        
         //Copy of the buffer in a NEW allocated buffer
         std::vector<std::complex<float> > *buff2 = new std::vector<std::complex<float> >(buff);
 
@@ -414,6 +420,14 @@ void *usrp_receiver_thread (void *param)
     return 0;
 }
 
+void usrp_stop_rx_forwarder(void) {
+
+    //Stops the RX forwarder thread
+    pthread_mutex_lock(&RECEIVER_CYCLE_lock); 
+    RECEIVER_CYCLE = false;
+    pthread_mutex_unlock(&RECEIVER_CYCLE_lock); 
+}
+
 //This is the rx samples forwarding thread (private)
 void *usrp_rx_forwarder_thread (void *param)
 {
@@ -424,7 +438,8 @@ void *usrp_rx_forwarder_thread (void *param)
 	//std::cerr << inspect_receiver(pRec) << std::endl;
     
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
-    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);    
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);  
+    RECEIVER_CYCLE = true;
 
     pRec->samples = 0;
     
@@ -444,6 +459,11 @@ void *usrp_rx_forwarder_thread (void *param)
     std::cerr << "Starting the RX Data forwarding thread cycle" << std::endl;              
     
     while(1) {
+    
+        pthread_mutex_lock(&RECEIVER_CYCLE_lock); 
+        bool do_cycle = RECEIVER_CYCLE;
+        pthread_mutex_unlock(&RECEIVER_CYCLE_lock); 
+        if (! do_cycle) break;
         
         //Extract from queue
         //If there is Vector buffer in the queue
@@ -460,6 +480,14 @@ void *usrp_rx_forwarder_thread (void *param)
             usleep(QUEUE_WAIT_TIME);
             continue;
         }  
+        
+        //RX path is disabled: skip the rest
+        if (drop_rx_samples) {
+            //Vector cleanup        
+            delete buff;
+            free(item);            
+            continue;
+        }           
 
         size_t num_rx_samps = buff->size();
         
@@ -480,10 +508,6 @@ void *usrp_rx_forwarder_thread (void *param)
         //Vector cleanup        
         delete buff;
         free(item);
-        
-        if (drop_rx_samples) {
-            continue;
-        }           
                          
         //Rational resampling API here                
         char *rr_msg = NULL;
@@ -519,7 +543,22 @@ void *usrp_rx_forwarder_thread (void *param)
             std::cerr << boost::format("RX Rational resampling error: %s") % rr_msg << std::endl;
         }        
     }
+    release_resampler(resampler_id);
+    fprintf(stderr,"Exiting from USRP RX Forwarder thread\n");
+    
+    return NULL;
 
+}
+
+//Starts the USRP RX forwarder thread
+int usrp_start_rx_forwarder_thread (CLIENT * client) {
+    
+    RECEIVER *pRec = &receiver[client->receiver_num];
+    int rc =pthread_create(&pRec->rx_fwd_thread_id,NULL,usrp_rx_forwarder_thread,(void *)pRec);
+    if (rc!=0)
+        std::cerr << boost::format(
+            "Failed to create USRP RX forwarder thread for rx %d") % pRec->client->receiver_num << std::endl;
+    return rc;     
 }
 
 //This is the transmitting thread (private)
@@ -548,29 +587,30 @@ void *usrp_transmitter_thread (void *param)
         item = TAILQ_FIRST(&tx_audio_iq_stream);                   
         if (item != NULL) {            
             //Take next buffer from the queue
-            //it is a paired vectors [III...I][QQQ...Q] or vice versa
+            //it is standard Vector of complex float, I and Q
             buff = (std::vector<std::complex<float> > *) item->data;
             num_tx_samples = item->data_length;
             TAILQ_REMOVE(&tx_audio_iq_stream, item, entries);                    
             tx_queue_length--;
             pthread_mutex_unlock(&tx_queue_lock);
+            //std::cerr << boost::format("Remove from queue: len %d") % tx_queue_length << std::endl;                                        
+            usrp.dev->send(&buff->front(), num_tx_samples, md,
+                uhd::io_type_t::COMPLEX_FLOAT32,
+                uhd::device::SEND_MODE_ONE_PACKET
+                );                                                              
+            
+            //CLEANUP: buff
+            delete buff;
+            free(item);                    
+            
         } else {
+            //If the queue is empty, then keep the USRP busy with all zeros
+            //made to handle client disconnects
             pthread_mutex_unlock(&tx_queue_lock);
-            usleep(QUEUE_WAIT_TIME);
-            continue;
-        }        
-        
-        //std::cerr << boost::format("Remove from queue: len %d") % tx_queue_length << std::endl;                            
-        
-        usrp.dev->send(&buff->front(), num_tx_samples, md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::SEND_MODE_ONE_PACKET
-            );                        
-        
-        //CLEANUP: audio_data
-        delete buff;
-        free(item);        
-                                                                                                 
+            //buff = new std::vector<std::complex<float> >(ZERO_CPX_VECTOR);
+            //num_tx_samples = MAX_USRP_TX_BUFFER;
+        }                
+                                                                                                                 
         /*
          * NOT USED FOR NOW
          * 
@@ -610,34 +650,34 @@ void *usrp_transmitter_thread (void *param)
     return 0;
 }
 
-bool usrp_start (RECEIVER *pRec)
+//Starts the core USRP communication threads
+bool usrp_start (CLIENT *client)
 {
-    //Creates the IQ samples receiving thread
-    if (pthread_create(&pRec->rx_fwd_thread_id,NULL,usrp_rx_forwarder_thread,(void *)pRec)!=0) {
+    RECEIVER *pRec = &receiver[client->receiver_num];
+    if (pthread_create(&pRec->rx_thread_id,NULL,usrp_receiver_thread,NULL)!=0) {
         std::cerr << boost::format(
-            "Failed to create USRP RX forwarder thread for rx %d") % pRec->client->receiver_num << std::endl;
+            "Failed to create USRP receiver thread for rx %d") % pRec->client->receiver_num << std::endl;
         return false; 
-    } else {
-        sleep(1);
-        if (pthread_create(&pRec->rx_thread_id,NULL,usrp_receiver_thread,NULL)!=0) {
-            std::cerr << boost::format(
-                "Failed to create USRP receiver thread for rx %d") % pRec->client->receiver_num << std::endl;
-            return false; 
-        } else {        
-            std::cerr << "USRP receiver thread started." << std::endl;         
-            if (usrp.tx_enabled) {           
-                //Creates the IQ samples transmitting thread            
-                if (pthread_create(&transmitter.thread_id,NULL,usrp_transmitter_thread,(void *)NULL)!=0) {
-                    std::cerr << boost::format(
-                        "Failed to create USRP transmitter thread for rx %d") % pRec->client->receiver_num << std::endl;
-                    return false; 
-                } else
-                    std::cerr << "USRP transmitter thread started." << std::endl;                                  
-            }             
+    } else {        
+        std::cerr << "USRP receiver thread started." << std::endl;         
+        if (usrp.tx_enabled) {           
+            //Creates the IQ samples transmitting thread            
+            if (pthread_create(&transmitter.thread_id,NULL,usrp_transmitter_thread,(void *)NULL)!=0) {
+                std::cerr << boost::format(
+                    "Failed to create USRP transmitter thread for rx %d") % pRec->client->receiver_num << std::endl;
+                return false; 
+            } else
+                std::cerr << "USRP transmitter thread started." << std::endl;                                  
         }
+        usrp_started = true;
+        
     }
     return true;  
 }
+
+bool usrp_is_started(void) {
+    return usrp_started;
+} 
 
 /* 
  * REMEMBER: the outbuf carries 2 channels: 
@@ -698,11 +738,11 @@ int usrp_process_tx_modulation(float *outbuf, int mox) {
             float im, rl;
             //Fill 1 packet, or less, to be sent IN QUEUE to USRP TX
             unsigned int i;
-        #pragma omp parallel for schedule(static) private(i)
+        //CANNOT USE pragma omp parallel for schedule(static) private(i)
             for (i=0; (i<MAX_USRP_TX_BUFFER) && (acc_tx_samples<output_frames_gen); ++i) {
 
-                resampler_fetch_data(tx_resampler_id, i, &im, &rl);
-                buff[i] = std::complex<float>(im,rl);                                                     
+                resampler_fetch_data(tx_resampler_id, i, &rl, &im);
+                buff[i] = std::complex<float>(rl,im);                                                     
                 num_tx_samples++; acc_tx_samples++;                
             } 
 

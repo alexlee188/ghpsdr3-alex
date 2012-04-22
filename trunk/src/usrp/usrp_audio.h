@@ -1,3 +1,7 @@
+#ifndef _OPENMP
+#define _OPENMP
+#endif
+
 #if !defined __USRP_AUDIO_H__
 #define      __USRP_AUDIO_H__
 
@@ -9,7 +13,7 @@ int usrp_get_server_audio (void);
 /*!
  * Disables the transmission of TX or RX samples
  */
-void usrp_disable_path(char *path); 
+void usrp_disable_path(const char *path); 
 
 
 #endif

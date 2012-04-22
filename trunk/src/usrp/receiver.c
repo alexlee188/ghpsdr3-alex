@@ -105,10 +105,13 @@ const char* attach_receiver(int rx,CLIENT* client) {
     receiver[rx].client=client;
     
     // attempt to open an audio stream 
-	if(usrp_audio_open(usrp_get_client_rx_rate()) == 0)
+	if(usrp_audio_open(usrp_get_client_rx_rate()) == 0) {
 		fprintf(stderr, "Server side audio open, passed USRP sample rate %d\n", usrp_get_client_rx_rate());    		
-
-    sprintf(response,"%s %d",OK, usrp_get_client_rx_rate());
+        sprintf(response,"%s %d",OK, usrp_get_client_rx_rate());
+    }        
+    else
+        sprintf(response,"Error");
+        
     return (response);
 }
 
@@ -125,6 +128,7 @@ const char* detach_receiver(int rx,CLIENT* client) {
         return RECEIVER_NOT_OWNER;
     }
 
+    usrp_stop_rx_forwarder();
     client->receiver_state=RECEIVER_DETACHED;
     receiver[rx].client=(CLIENT*)NULL;
 

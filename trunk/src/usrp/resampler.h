@@ -11,7 +11,8 @@
 #define NO_MORE_RESAMPLERS -1
 #define FAILED_RESAMPLER -2
 
-typedef struct _resampinfo {    
+typedef struct _resampinfo {
+    bool used;
     int max_frames;
     int interp;
     int decim;
@@ -31,6 +32,11 @@ void resampler_init(void);
  * Returns the resampler unique id in a int.
  */
 int resampler_setup_new(int max_frames, int decim, int interp);
+
+/*!
+ * Releases a resampler control data object
+ */ 
+void release_resampler(int r_id);
 
 /*!
  * Loads the input data (2 channels), up to the defined size

@@ -34,7 +34,7 @@ typedef enum {
     TRANSMITTER_DETACHED, TRANSMITTER_ATTACHED
 } TRANSMITTER_STATE;
 
-typedef struct _client {
+typedef struct _client {    
     int socket;
     int address_length;
     struct sockaddr_in address;
@@ -49,7 +49,6 @@ typedef struct _client {
     pthread_mutex_t mox_lock;
 } CLIENT;
 
-
-void* client_thread(void* arg);
+int create_client_thread(CLIENT *client);
 int get_mox(CLIENT* client);
 

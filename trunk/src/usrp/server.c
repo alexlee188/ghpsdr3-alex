@@ -59,8 +59,8 @@ static struct option long_options[] = {
     {"tx-subdev",required_argument, 0, 2},
     {"receivers",required_argument, 0, 3},  //Not handled   
 	{"txmod-to",required_argument, 0, 4},
-	{"reverse-iq",no_argument, 0, 5},
-    {"disable",required_argument, 0, 6},
+	{"reverse-iq",no_argument, 0, 5},    
+    {"disable-path",required_argument, 0, 6},    
 	{"help",no_argument, 0, 7},
 
     {0,0,0,0},
@@ -100,7 +100,7 @@ int main(int argc,char* argv[]) {
 	};
 	//usrp_set_receivers(receivers_par);
     usrp_set_receivers(1); //Forced to 1 in this development stage
-    usrp_set_client_rx_rate(rx_client_rate_par);	
+    usrp_set_client_rx_rate(rx_client_rate_par);
     usrp_disable_path(disable_path);
     if (!usrp_is_tx_enabled()) usrp_disable_path("tx"); //forcing
     usrp_set_server_audio(audio_to);//This always AFTER call to usrp_disable_path()
@@ -110,7 +110,7 @@ int main(int argc,char* argv[]) {
     init_transmitter(); //transmitter
     init_bandscope();  //bandscope
 
-	//Client listener thread start
+	//Client listener thread start: This is where all begins...
     create_listener_thread(); 
 
     while(1) {
@@ -160,25 +160,26 @@ void process_args(int argc,char* argv[]) {
                 reverse_iq = 1;
                 break;
                 
-            case 6: // disable audio path: RX or TX
+			case 6: // disable-path: disabòes one audio path (for test purposes)
                 strncpy(disable_path, optarg, 2);
-                break;
-        
+                break;                
+                
             case 7:
 
             default:
                 fprintf(stderr,"Usage: \n");
-                fprintf(stderr,"  usrp_server -r, --rx-subdev spec (default \"\")\n");
+                fprintf(stderr,"  usrp_server -r, --rx-subdev spec\n");
                 fprintf(stderr,"              -t, --tx-subdev spec (default \"\")\n");                
+                fprintf(stderr,"              --disable-path 'rx' | 'tx'\n");                
                 //fprintf(stderr,"              --receivers N (default 1)\n");
                 fprintf(stderr,"              -s, --samplerate 48000 | 96000 | 192000 (default 48000)\n");
-				fprintf(stderr,"              --txmod-to usrp | card (default usrp)\n");
-				fprintf(stderr,"              --reverse-iq\n");
-                fprintf(stderr,"              --disable RX | TX\n");
+				fprintf(stderr,"              --txmod-to 'usrp' | 'card' (default usrp)\n");
+				fprintf(stderr,"              --reverse-iq\n");                
 				fprintf(stderr,"              --help\n");
                 fprintf(stderr,"\n");
-                fprintf(stderr,"NOTE: 'samplerate' is towards the client (e.g. dspserver)\n");
-                fprintf(stderr,"      'subdev specs are defined in UHD project documentation\n");
+                fprintf(stderr,"NOTE: 'samplerate' is towards the client (i.e. dspserver)\n");
+                fprintf(stderr,"NOTE: rx subdev spec is mandatory\n");
+                fprintf(stderr,"      subdev specs are defined in UHD project documentation\n");
 
                 exit(1);
                 break;

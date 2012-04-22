@@ -85,9 +85,9 @@ void* client_thread(void* arg) {
 
     client->receiver_state=RECEIVER_DETACHED;
     client->transmitter_state=TRANSMITTER_DETACHED;
-    client->receiver_num=-1;
-    set_mox(client,0);
+    client->receiver_num=-1;    
     pthread_mutex_init(&client->mox_lock, NULL );
+    set_mox(client,0);
     
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);    
@@ -105,16 +105,21 @@ void* client_thread(void* arg) {
     }
 	fprintf(stderr,"Exiting DSP client thread loop (Rx%d)...\n",client->receiver_num);
 
+    //GRACEFUL EXIT ON DISCONNECTION
+    set_mox(client,0);
+    
+    if(client->transmitter_state==TRANSMITTER_ATTACHED) {
+        stop_tx_audio(client); //Exits the tx_audio_thread @ transmitter
+        client->transmitter_state=TRANSMITTER_DETACHED;
+    }            
+    sleep(1);
+        
     if(client->receiver_state==RECEIVER_ATTACHED) {
+        detach_receiver(client->receiver_num, client); 
         receiver[client->receiver_num].client=(CLIENT*)NULL;
         client->receiver_state=RECEIVER_DETACHED;
     }
 
-    if(client->transmitter_state==TRANSMITTER_ATTACHED) {
-        client->transmitter_state=TRANSMITTER_DETACHED;
-    }
-
-    set_mox(client,0);
     client->bs_port=-1;
     detach_bandscope(client);
 
@@ -124,12 +129,18 @@ void* client_thread(void* arg) {
     closesocket(client->socket);
 #endif
 
-    fprintf(stderr,"Client Handler: Client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
-
-    //TODO: hanlde graceful USRP threads exit
+    fprintf(stderr,"Client Handler: Client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));    
 
     free(client);
     return 0;
+}
+
+//Creates a client therad for a client
+int create_client_thread(CLIENT *client) {
+ 
+    int rc=pthread_create(&client->thread_id,NULL,client_thread,(void *)client);
+    if(rc!=0) fprintf(stderr, "Listener: pthread_create client_thread failed");        
+    return rc;
 }
 
 const char* parse_command(CLIENT* client,char* command) {
@@ -147,8 +158,10 @@ const char* parse_command(CLIENT* client,char* command) {
                 //COMMAND: 'attach rx#'
                 int rx=atoi(token);
                 const char *resp=attach_receiver(rx,client);
-                if (strncmp(resp, "Error", 5)) return resp;
-                else return attach_transmitter(client, resp);                    
+                if (strcmp(resp, "Error") == 0) 
+                    return resp;
+                else 
+                    return attach_transmitter(client, resp);                    
             }
         } else if(strcmp(token,"detach")==0) {
             //COMMAND: 'detach <side>' 
@@ -177,21 +190,25 @@ const char* parse_command(CLIENT* client,char* command) {
                     token=strtok(NULL," \r\n");
                     if(token!=NULL) {
                         client->iq_port=atoi(token);
-                    }
+                    }                    
                     //NOTE:as it is now the usrp-server, only receiver 0's is supported
                     //then it is the only one to issue 'start' command.
-                    if (usrp_start (&receiver[client->receiver_num]))
-                        fprintf(stderr,"Started USRP for Client %d\n",client->receiver_num);
-                    else {
-                        fprintf(stderr,"USRP threads start FAILED for rx %d\n",client->receiver_num);
-                        exit(1);
+                    if (usrp_start_rx_forwarder_thread(client)!=0) exit(1);
+                    sleep(1); //some settling time...
+                    
+                    //This is executed only once
+                    if (! usrp_is_started()) {
+                        if (usrp_start (client))
+                            fprintf(stderr,"Started USRP for Client %d\n",client->receiver_num);
+                        else {
+                            fprintf(stderr,"USRP threads start FAILED for rx %d\n",client->receiver_num);
+                            exit(1);
+                        }
                     }
                     sleep(1); //some settling time
-                    //Start the server side tx audio stream receiving thread 
-                    if(pthread_create(&client->tx_thread_id,NULL,tx_audio_thread,client)!=0) {
-                        fprintf(stderr,"Failed to create audio thread for rx %d\n",client->receiver_num);
-                        exit(1);
-                    }                    
+                    //Start the server side tx audio stream receiving thread
+                    //Exit program if failed (...?)
+                    if (start_tx_audio_thread(client)!=0) exit(1);
                     
                     return OK;
                 } else if(strcmp(token,"bandscope")==0) {
@@ -255,5 +272,7 @@ const char* parse_command(CLIENT* client,char* command) {
     }
     return INVALID_COMMAND;
 }
+
+    
 
 

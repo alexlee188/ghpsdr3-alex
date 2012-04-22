@@ -6,9 +6,10 @@
 * @date 2012-02-20
 */
 
-#include <semaphore.h>
+
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include <samplerate.h>
 
@@ -18,28 +19,34 @@
 
 SRC_DATA *src_data_objs[MAX_RESAMPLERS];
 RESAMPINFO resampler_info[MAX_RESAMPLERS];
-static int next_id = 0;
-static sem_t setup_semaphore;
+static pthread_mutex_t setup_lock;
 static bool init_ok = false;
 
 void resampler_init(void) {
     if (init_ok) return;
     init_ok = true;
-    sem_init(&setup_semaphore,0,1);    
-    sem_post(&setup_semaphore);
+    pthread_mutex_init(&setup_lock, NULL );
     
-    for (int i=0; i<MAX_RESAMPLERS; i++) 
+    for (int i=0; i<MAX_RESAMPLERS; i++) {
         src_data_objs[i] =(SRC_DATA *)malloc(sizeof(SRC_DATA));
+        resampler_info[i].used = false;
+    }
 }
 
 int resampler_setup_new(int max_frames, int decim, int interp) {
 //int resampler_setup_new(float *buf_in, float *buf_out, int decim, int interp) {
-    
-    int r_id;
-    sem_wait(&setup_semaphore);
-    if (next_id < MAX_RESAMPLERS) {
-        r_id = next_id++;    
         
+    int r_id = NO_MORE_RESAMPLERS;
+    
+    pthread_mutex_lock(&setup_lock);
+    for (int i=0; i < MAX_RESAMPLERS; i++) {
+        if (! resampler_info[i].used) {
+            r_id = i;
+            break;
+        }
+    }
+    if (r_id != NO_MORE_RESAMPLERS) {
+        resampler_info[r_id].used = true;
         resampler_info[r_id].max_frames = max_frames;
         resampler_info[r_id].decim = decim;
         resampler_info[r_id].interp = interp;        
@@ -49,14 +56,17 @@ int resampler_setup_new(int max_frames, int decim, int interp) {
         src_data_objs[r_id]->data_in = (float *)malloc(sizeof(float)*max_frames*CHANNELS);        
         src_data_objs[r_id]->data_out = (float *)malloc(sizeof(float)*max_output_frames*CHANNELS);        
         src_data_objs[r_id]->src_ratio = interp*1.0/decim;
-    } else
-        r_id = NO_MORE_RESAMPLERS;
+    } 
     
     if (src_data_objs[r_id]->data_in == NULL || src_data_objs[r_id]->data_in == NULL)
         r_id = FAILED_RESAMPLER;
         
-    sem_post(&setup_semaphore);
+    pthread_mutex_unlock(&setup_lock);
     return r_id;
+}
+
+void release_resampler(int r_id) {
+    resampler_info[r_id].used = false;
 }
 
 void resampler_load_channels(int r_id, float *ch1, float *ch2) {
