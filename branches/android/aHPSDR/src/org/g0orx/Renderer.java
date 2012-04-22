@@ -47,6 +47,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	private Shader shader;
 	private int _program;
 	private float _cy;
+	private int cy;
 	private float _LO_offset;
 	private float _width = (float)640 / MAX_CL_WIDTH;
 	private float _waterfallLow;
@@ -59,6 +60,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	private int waterfallHigh_location;
 	private int uMVPMatrix_location;
 	private int aPosition_location;
+	private int textureCoord_location;
 	private int spectrumTex;
 
     private ShortBuffer mIndices;
@@ -145,14 +147,16 @@ class Renderer implements GLSurfaceView.Renderer {
         GLES20.glVertexAttribPointer ( aPosition_location, 3, GLES20.GL_FLOAT, 
                                        false, 
                                        5 * 4, mVertices );
+        GLES20.glEnableVertexAttribArray ( aPosition_location);
+        
         // Load the texture coordinate
         mVertices.position(3);
-        GLES20.glVertexAttribPointer ( spectrumTexture_location, 2, GLES20.GL_FLOAT,
+        GLES20.glVertexAttribPointer ( textureCoord_location, 2, GLES20.GL_FLOAT,
                                        false, 
                                        5 * 4, 
                                        mVertices );
-        GLES20.glEnableVertexAttribArray ( aPosition_location);
-        GLES20.glEnableVertexAttribArray ( spectrumTexture_location );
+
+        GLES20.glEnableVertexAttribArray ( textureCoord_location );
         
         // Bind the texture
         GLES20.glActiveTexture ( GLES20.GL_TEXTURE0 );
