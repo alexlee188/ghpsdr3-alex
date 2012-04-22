@@ -14,6 +14,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.util.Log;
+import android.opengl.GLSurfaceView;
 
 public class SpectrumView extends View implements OnTouchListener {
 
@@ -264,12 +265,22 @@ Log.i("SpectrumView","width="+width+" height="+height);
 		waterfallLow=(average/WIDTH)-5;
 		waterfallHigh=waterfallLow+55;
 		
-		renderer.set_cy(cy);
-		renderer.set_width(WIDTH);
-		renderer.set_LO_offset(0);
-		renderer.set_waterfallHigh(waterfallHigh);
-		renderer.set_waterfallLow(waterfallLow);
+		//final int[] r_samples = samples;
 		
+		if (renderer != null && mGLSurfaceView != null){
+            mGLSurfaceView.queueEvent(new Runnable() {
+                // This method will be called on the rendering
+                // thread:
+                public void run() {
+        			renderer.set_cy(cy);
+        			renderer.set_width(WIDTH);
+        			renderer.set_LO_offset(0); // offset should be offset/samplerate * width/MAX_CL_WIDTH
+        			renderer.set_waterfallHigh(waterfallHigh);
+        			renderer.set_waterfallLow(waterfallLow);
+        			//renderer.plotWaterfall(r_samples);		
+                }
+            });
+		}
 		
 		this.postInvalidate();
 	}
@@ -357,6 +368,10 @@ Log.i("SpectrumView","width="+width+" height="+height);
 	
 	public void setRenderer(Renderer renderer){
 		this.renderer = renderer;
+	}
+	
+	public void setGLSurfaceView(GLSurfaceView mGLSurfaceView){
+		this.mGLSurfaceView = mGLSurfaceView;
 	}
 
 	public void scroll(int step) {
@@ -478,8 +493,8 @@ Log.i("SpectrumView","width="+width+" height="+height);
 	private Paint paint;
 
 	private Connection connection;
-	
 	private Renderer renderer;
+	private GLSurfaceView mGLSurfaceView;
 
 	private int WIDTH = 480;
 	private int HEIGHT = 160;
