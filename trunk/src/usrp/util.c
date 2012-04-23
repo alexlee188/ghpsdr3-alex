@@ -80,8 +80,36 @@ void dump_iq_buffer(unsigned char* buffer) {
                 buffer[i+8],buffer[i+9],buffer[i+10],buffer[i+11],buffer[i+12],buffer[i+13],buffer[i+14],buffer[i+15]
                 );
     }
-    fprintf(stderr,"\n");
+    fprintf(stderr,"\n");    
 }
+
+void dump_float_buffer(float* buffer) {
+    int i,j;
+    for (j=0; j<2048; j+=1024) {
+        fprintf(stderr, "Buffer data #%d\n", j);
+        for(i=j;i<(j+1024);i+=8) {
+            fprintf(stderr, "  [%d] %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f\n",
+                    i,
+                    buffer[i],buffer[i+1],buffer[i+2],buffer[i+3],buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7]                
+                    );
+        }
+        fprintf(stderr,"\n");    
+    }
+    fprintf(stderr,"\n");    
+}
+
+void dump_float_buffer_heads(float* buffer) {    
+    for (int i=0; i<2048; i+=1024) {
+        fprintf(stderr, "Buffer data head #%d\n", i);
+        fprintf(stderr, "  [%d] %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f %+7.4f\n",
+                i,
+                buffer[i],buffer[i+1],buffer[i+2],buffer[i+3],buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7]                
+                );
+
+        fprintf(stderr,"\n");    
+    }    
+}
+
 void dump_udp_buffer(unsigned char* buffer) {
     int i;
     fprintf(stderr, "udp ...\n");

@@ -1,4 +1,4 @@
-An attempt at a server for USRP hardware using UHD - Universal Hardware Driver API.
+A gHPSDR3 compliant server for USRP hardware using UHD - Universal Hardware Driver API.
 
 The server program in the ghpsdr3 suite of programs is the the program 
 that forms the interface to the hardware.  One instance of this program 
@@ -6,46 +6,55 @@ must be running to communicate with the USRP hardware.
 
 Currently the server program is a command line program and it has several options.
 
---receivers | -r [1|2|3|4]
+--receivers [1|2|3|4]
 
   receivers (note the plural) is the number of simultaneous receiver you 
 want to monitor from your receiver card.  the use of this option is 
 dependent on the version of the FPGA code you are using.  All versions 
 support one receiver.  Bruce Walkers FPGA code supports 4 receivers.
 Default is 1.
-NOTE: at the current stage, the usrp-server has been tested only with 1 receiver
 
---samplerate [48000|96000|192000]
+NOTE: at the current stage, the usrp-server supports only 1 receiver
+
+--samplerate | -s [48000|96000|192000]
 
   samplerate is the rate at which you want the usrp-server to provide baseband 
-signal samples to its client (dspserver). Note that USRP samplerate is fixed at this 
-stage to 256 KSPS. Alteration of USRP sample rate is not available at this stage
-and may be part of future enhancements.
-Default is 48000.
+signal samples to its client (dspserver).  Default is 48000.
+Note that RX samplerate from USRP is fixed to 256 KSPS.  Alteration of USRP sample rate 
+is not available at this stage and may be part of future enhancements.
 
---subdev | -d SUBDEV_STRING
+--rx-subdev | -r SUBDEV_STRING
+
+--tx-subdev | -t SUBDEV_STRING
  
-  subdev (or -d) option allows to select the USRP daughter board as receiver front
+  subdevice options allow to select the USRP daughter board as receiver and transmitter front
 end. Please refer to UHD documentation for valid selections by SUBDEV_STRING.
 (http://files.ettus.com/uhd_docs/manual/html/general.html#specifying-the-subdevice-to-use)
-Default is "", meaning that UHD will automatically select the first available receiver
-front-end among USRP A and B sides.
+Default is "", meaning that UHD will automatically select the first available receiver 
+or transmitter front-end among USRP A and B sides.
 
+--txmod-to [usrp|card]
+
+  txmod-to option allows selecting the destination of TX path audio IQ samples.
+'usrp' option directs TX IQ samples to USRP
+'card' option directs TX IQ samples to the default audio card
+Default id 'usrp'. This option is for testing purposes.
+  
 --reverse-iq
 
   reverse-iq option, if specified, swaps I and Q streams from the USRP.
 Usually is not needed, may be useful for specific applications
 
---with-audio
+--disable-path [rx|tx]
 
-  with-audio option, if specified, let the usrp-server open a audio stream to the 
-audio subsystem. This is useful for tests, e.g without audio enabled clients.
+  disable-path option, if specified, drops samples of the selectd path.
+If 'rx' is selected, no sample is sent to the client (dspserver)
+If 'tx' is selected, audio samples arriving from the client (dspserver) are dropped 
+and not forwarded to the USRP. This option is for testing purposes.
 
 --help
 
   help displays the short help text.
-
-*** PLEASE READ AT THE END OF THE FILE FOR the TODO LIST ***
 
 1. BUILD
 
@@ -89,14 +98,14 @@ $ uhd_find_devices --args="type=usrp1"
   http://napan.ca/ghpsdr3/index.php/QtRadio_Installation
 
 
-1.3 How to run
+2 HOW TO RUN
 
 We have to run three components: server, dsp processing and graphical user interface.
 At the moment you need to run them in three separate terminal windows in the order shown below:
 
-$ ~/ghpsdr-alex/trunk/src/usrp/usrp_server -d "A:0"
+$ ./usrp_server -r "A:0" -t "A:0"
 
-$ /usr/local/bin/dspserver --lo=0
+$ /usr/local/bin/dspserver
 
 $ /usr/local/bin/QtRadio
 

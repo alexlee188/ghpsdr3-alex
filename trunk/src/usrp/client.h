@@ -24,12 +24,7 @@
 *
 */
 
-#ifndef __linux__
-#include <winsock.h>
-#include "pthread.h"
-#endif
-
-#define AUDIO_PORT 15000
+#define TX_AUDIO_PORT 15000
 
 typedef enum {
     RECEIVER_DETACHED, RECEIVER_ATTACHED
@@ -39,19 +34,21 @@ typedef enum {
     TRANSMITTER_DETACHED, TRANSMITTER_ATTACHED
 } TRANSMITTER_STATE;
 
-typedef struct _client {
+typedef struct _client {    
     int socket;
     int address_length;
     struct sockaddr_in address;
     pthread_t thread_id;
+    pthread_t tx_thread_id;
     RECEIVER_STATE receiver_state;
     TRANSMITTER_STATE transmitter_state;
-    int receiver;
+    int receiver_num;
     int iq_port;
     int bs_port;
     int mox;
+    pthread_mutex_t mox_lock;
 } CLIENT;
 
-
-void* client_thread(void* arg);
+int create_client_thread(CLIENT *client);
+int get_mox(CLIENT* client);
 

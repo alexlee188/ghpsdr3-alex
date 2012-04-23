@@ -28,43 +28,69 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <string.h>
 
-#ifdef __linux__
+  #ifdef __linux__
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
 #include <unistd.h>
-#else
+  #else
+#include <winsock.h>
 #include "pthread.h"
-#endif
-
-#include <string.h>
+  #endif
 
 #include "client.h"
 #include "receiver.h"
 #include "messages.h"
 #include "bandscope.h"
 #include "usrp.h"
-#include "usrp_audio.h"
 #include "transmitter.h"
 
-short audio_port=AUDIO_PORT; // = 15000 as constant
-
 const char* parse_command(CLIENT* client,char* command);
-void* audio_thread(void* arg);
 
+void set_mox(CLIENT* client, int mox) {
+    
+    pthread_mutex_lock(&client->mox_lock);
+    client->mox = mox;
+    pthread_mutex_unlock(&client->mox_lock);    
+}
+
+int get_mox(CLIENT* client) {
+    
+    pthread_mutex_lock(&client->mox_lock);
+    int rv = client->mox;
+    pthread_mutex_unlock(&client->mox_lock);    
+    return rv;
+}
+
+
+int toggle_mox(CLIENT* client) {
+    
+    pthread_mutex_lock(&client->mox_lock);
+    int rv = (client->mox = 1 - client->mox);
+    pthread_mutex_unlock(&client->mox_lock);
+    return rv;
+}
+
+//Client thread for RX IQ stream
 void* client_thread(void* arg) {
     CLIENT* client=(CLIENT*)arg;
+    int old_state, old_type;
     char command[80];
     int bytes_read;
     const char* response;
 
     client->receiver_state=RECEIVER_DETACHED;
     client->transmitter_state=TRANSMITTER_DETACHED;
-    client->receiver=-1;
-    client->mox=0;
+    client->receiver_num=-1;    
+    pthread_mutex_init(&client->mox_lock, NULL );
+    set_mox(client,0);
+    
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);    
 
     while(1) {	
         bytes_read=recv(client->socket,command,sizeof(command),0);
@@ -75,20 +101,25 @@ void* client_thread(void* arg) {
         response=parse_command(client,command);
         send(client->socket,response,strlen(response),0);
 
-        fprintf(stderr,"Response to DSP client (Rx%d): '%s'\n",client->receiver,response);		
+        fprintf(stderr,"Response to DSP client (Rx%d): '%s'\n",client->receiver_num,response);		
     }
-	fprintf(stderr,"Exiting DSP client thread loop (Rx%d)...\n",client->receiver);
+	fprintf(stderr,"Exiting DSP client thread loop (Rx%d)...\n",client->receiver_num);
 
+    //GRACEFUL EXIT ON DISCONNECTION
+    set_mox(client,0);
+    
+    if(client->transmitter_state==TRANSMITTER_ATTACHED) {
+        stop_tx_audio(client); //Exits the tx_audio_thread @ transmitter
+        client->transmitter_state=TRANSMITTER_DETACHED;
+    }            
+    sleep(1);
+        
     if(client->receiver_state==RECEIVER_ATTACHED) {
-        receiver[client->receiver].client=(CLIENT*)NULL;
+        detach_receiver(client->receiver_num, client); 
+        receiver[client->receiver_num].client=(CLIENT*)NULL;
         client->receiver_state=RECEIVER_DETACHED;
     }
 
-    if(client->transmitter_state==TRANSMITTER_ATTACHED) {
-        client->transmitter_state=TRANSMITTER_DETACHED;
-    }
-
-    client->mox=0;
     client->bs_port=-1;
     detach_bandscope(client);
 
@@ -98,17 +129,25 @@ void* client_thread(void* arg) {
     closesocket(client->socket);
 #endif
 
-    fprintf(stderr,"Clint Handler: Client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
+    fprintf(stderr,"Client Handler: Client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));    
 
     free(client);
     return 0;
+}
+
+//Creates a client therad for a client
+int create_client_thread(CLIENT *client) {
+ 
+    int rc=pthread_create(&client->thread_id,NULL,client_thread,(void *)client);
+    if(rc!=0) fprintf(stderr, "Listener: pthread_create client_thread failed");        
+    return rc;
 }
 
 const char* parse_command(CLIENT* client,char* command) {
     
     char* token;
 
-    fprintf(stderr,"parse_command(Rx%d): '%s'\n",client->receiver,command);
+    fprintf(stderr,"parse_command(Rx%d): '%s'\n",client->receiver_num,command);
 
     token=strtok(command," \r\n");
     if(token!=NULL) {
@@ -116,16 +155,13 @@ const char* parse_command(CLIENT* client,char* command) {
 			//COMMAND: 'attach <side>'            
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
-                if(strcmp(token,"tx")==0) {
-					//COMMAND: 'attach tx'
-                    return attach_transmitter(client);
-                } else {
-					//COMMAND: 'attach rx#'
-                    int rx=atoi(token);
-                    return attach_receiver(rx,client);
-                }
-            } else {
-                return INVALID_COMMAND;
+                //COMMAND: 'attach rx#'
+                int rx=atoi(token);
+                const char *resp=attach_receiver(rx,client);
+                if (strcmp(resp, "Error") == 0) 
+                    return resp;
+                else 
+                    return attach_transmitter(client, resp);                    
             }
         } else if(strcmp(token,"detach")==0) {
             //COMMAND: 'detach <side>' 
@@ -154,17 +190,25 @@ const char* parse_command(CLIENT* client,char* command) {
                     token=strtok(NULL," \r\n");
                     if(token!=NULL) {
                         client->iq_port=atoi(token);
+                    }                    
+                    //NOTE:as it is now the usrp-server, only receiver 0's is supported
+                    //then it is the only one to issue 'start' command.
+                    if (usrp_start_rx_forwarder_thread(client)!=0) exit(1);
+                    sleep(1); //some settling time...
+                    
+                    //This is executed only once
+                    if (! usrp_is_started()) {
+                        if (usrp_start (client))
+                            fprintf(stderr,"Started USRP for Client %d\n",client->receiver_num);
+                        else {
+                            fprintf(stderr,"USRP threads start FAILED for rx %d\n",client->receiver_num);
+                            exit(1);
+                        }
                     }
-
-                    // starts the thread to acquire USRP samples
-                    usrp_start (&receiver[client->receiver]);
-                    fprintf(stderr,"Started USRP for RX%d\n",client->receiver);
-
-                    //Start the audio thread 
-                    if(pthread_create(&receiver[client->receiver].audio_thread_id,NULL,audio_thread,client)!=0) {
-                        fprintf(stderr,"Failed to create audio thread for rx %d\n",client->receiver);
-                        exit(1);
-                    }
+                    sleep(1); //some settling time
+                    //Start the server side tx audio stream receiving thread
+                    //Exit program if failed (...?)
+                    if (start_tx_audio_thread(client)!=0) exit(1);
                     
                     return OK;
                 } else if(strcmp(token,"bandscope")==0) {
@@ -206,11 +250,15 @@ const char* parse_command(CLIENT* client,char* command) {
                 // invalid command string
                 return INVALID_COMMAND;
             }
+        } else if(strcmp(token,"mox")==0) {
+            //Toggle the mox
+            int v=toggle_mox(client);
+            fprintf(stderr,"Toggled mox to %d for Client %d\n",v, client->receiver_num);            
+            return OK;
+            
         } else if(strcmp(token,"preamp")==0) {
             return NOT_IMPLEMENTED_COMMAND;
         } else if(strcmp(token,"record")==0) {
-            return NOT_IMPLEMENTED_COMMAND;
-        } else if(strcmp(token,"mox")==0) {
             return NOT_IMPLEMENTED_COMMAND;
         } else if(strcmp(token,"ocoutput")==0) {
             return NOT_IMPLEMENTED_COMMAND;
@@ -225,61 +273,6 @@ const char* parse_command(CLIENT* client,char* command) {
     return INVALID_COMMAND;
 }
 
-//The audio thread, consuming audio returned by the client
-void* audio_thread(void* arg) {
-    CLIENT *client=(CLIENT*)arg;
-    RECEIVER *rx=&receiver[client->receiver];
-    struct sockaddr_in audio;
-    int audio_length;
-    int old_state, old_type;
-    int bytes_read;
-    int on=1;
+    
 
-    fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
-    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);
-
-    rx->audio_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
-    if(rx->audio_socket<0) {
-        perror("Client Handler: create socket failed for server audio socket");
-        exit(1);
-    }
-
-    setsockopt(rx->audio_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-
-    audio_length=sizeof(audio);
-    memset(&audio,0,audio_length);
-    audio.sin_family=AF_INET;
-    audio.sin_addr.s_addr=htonl(INADDR_ANY);
-    audio.sin_port=htons(audio_port+(rx->id*2));
-
-    if(bind(rx->audio_socket,(struct sockaddr*)&audio,audio_length)<0) {
-        perror("Client Handler: bind socket failed for server audio socket");
-        exit(1);
-    }
-
-    fprintf(stderr,"Listening for rx %d audio on port %d\n",rx->id,audio_port+(rx->id*2));
-
-    while(1) {
-        // get audio from a client
-        bytes_read=recvfrom(rx->audio_socket,
-                            rx->output_buffer,
-                            sizeof(rx->output_buffer),
-                            0,
-                            (struct sockaddr*)&audio,
-                            (socklen_t*)&audio_length
-        );
-        //fprintf(stderr,"Audio recv by client: %d bytes\n",bytes_read);
-        if(bytes_read<0) {
-            perror("Client Handler: recvfrom socket failed for audio buffer");
-            exit(1);
-        }
-
-        if (usrp_get_server_audio() == 1) {
-		    //process_ozy_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE],client->mox);	
-		    usrp_process_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE],client->mox);			
-		}
-		
-    }
-}
