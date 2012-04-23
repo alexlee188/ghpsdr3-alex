@@ -160,7 +160,7 @@ void process_args(int argc,char* argv[]) {
                 reverse_iq = 1;
                 break;
                 
-			case 6: // disable-path: disabòes one audio path (for test purposes)
+			case 6: // disable-path: disables one audio path (for test purposes)
                 strncpy(disable_path, optarg, 2);
                 break;                
                 
