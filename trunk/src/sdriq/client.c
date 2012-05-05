@@ -47,6 +47,7 @@
 static int counter = 0;
 
 
+
 struct timespec diff(struct timespec start, struct timespec end)
 {
         struct timespec temp;
@@ -59,7 +60,6 @@ struct timespec diff(struct timespec start, struct timespec end)
         }
         return temp;
 }
-
 
 
 #define SCALE_FACTOR_24B 8388607.0         // 2^24 / 2 - 1 = 8388607.0
@@ -105,7 +105,7 @@ int user_data_callback (SAMPLE_T *pi, SAMPLE_T *pq, int nSamples, void *extra)
         #if 1
         if ((counter++ % 204800) == 0) {
             long double diff_s ;
-            QUISK_SOUND_STATE *pss = get_state ();
+            const QUISK_SOUND_STATE *pss = get_state ();
 
             if (nSamples >0) { 
                 pRec->cfg.ns -= nSamples;
@@ -146,6 +146,17 @@ int user_data_callback (SAMPLE_T *pi, SAMPLE_T *pq, int nSamples, void *extra)
         #if 1
         // when we have enough samples, send them to the client
         if(pRec->samples==BUFFER_SIZE) {
+
+            if (pRec->m_NcoSpurCalActive == false) {
+               int x;
+               for (x=0; x < pRec->samples; ++x) {
+                  pRec->input_buffer[x]             -= pRec->m_NCOSpurOffsetQ;
+                  pRec->input_buffer[x+BUFFER_SIZE] -= pRec->m_NCOSpurOffsetI;
+               }
+            } else {
+               NcoSpurCalibrate (pRec);
+            }
+           
             // send I/Q data to clients
             //fprintf (stderr, "%s: sending data.\n", __FUNCTION__);
             send_IQ_buffer(pRec);
@@ -375,6 +386,14 @@ const char* parse_command(CLIENT* client,char* command) {
             }
         } else if(strcmp(token,"quit")==0) {
             return QUIT_ASAP;
+        } else if(strcmp(token,"hardware?")==0) {
+            return "OK SDR-IQ";
+
+        } else if(strcmp(token,"getserial?")==0) {
+            static char buf[50];
+            snprintf (buf, sizeof(buf), "OK %s", get_serial ());
+            return buf;
+
         } else {
             // invalid command string
             return INVALID_COMMAND;

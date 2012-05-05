@@ -188,9 +188,31 @@ const char* set_random (CLIENT* client, bool)
 
 const char* set_attenuator (CLIENT* client, int new_level_in_db)
 {
-    return NOT_IMPLEMENTED_COMMAND;
+    switch (new_level_in_db) {
+    case 0:
+    case 10:
+    case 20:
+    case 30:
+    case 40:
+        fprintf (stderr, "%s: new attenuator level: %d\n", __FUNCTION__, -(new_level_in_db));
+        hiqsdr_set_attenuator (new_level_in_db);
+        break;
+    default:
+        return INVALID_COMMAND;
+    }
     return OK;
 }
+
+const char* select_antenna (CLIENT* client, int antenna)
+{
+    if (antenna == 0 || antenna == 1) {
+        fprintf (stderr, "%s: new antenna: %d\n", __FUNCTION__, antenna);
+        hiqsdr_set_antenna_input (antenna);
+        return OK;
+    } else
+        return INVALID_COMMAND;
+}
+
 
 void send_IQ_buffer (RECEIVER *pRec) {
     struct sockaddr_in client;

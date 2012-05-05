@@ -265,6 +265,7 @@ void ozy_set_debug(int state);
 int ozySetMox(int state);
 int ozySetOpenCollectorOutputs(char* state);
 void ozy_send(unsigned char* data,int length,char* who);
+int ozySendStarCommand(char *command);
 
 extern int audio_socket;
 extern struct sockaddr_in audio_addr, server_audio_addr;

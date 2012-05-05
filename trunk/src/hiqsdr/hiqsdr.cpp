@@ -58,6 +58,8 @@ struct Hiqsdr {
     int  fwv;
     long long freq;
     long long bw;
+    int  attDb;
+    int  antSel;
 
     // asynch thread for receiving data from hardware
     pthread_t      thread_id;
@@ -90,6 +92,8 @@ int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
    strcpy (hq.ip_addr, hiqsdr_ip);
    hq.freq = hiqsdr_f;
    hq.bw = hiqsdr_bw;
+   hq.attDb  = 0;
+   hq.antSel = 0;
    hq.rx_data_port = 48247;
    hq.ctrl_port    = hq.rx_data_port+1;   
    hq.tx_data_port = hq.rx_data_port+2;
@@ -183,6 +187,11 @@ int hiqsdr_disconnect ()
     return rc;
 }
 
+char *hiqsdr_get_ip_address ()
+{
+    return hq.ip_addr;
+}
+
 int hiqsdr_set_frequency (long long f)
 {
    fprintf (stderr, "%s: %Ld\n", __FUNCTION__, f);
@@ -197,6 +206,75 @@ int hiqsdr_set_bandwidth (long long b)
    hq.bw = b;
    send_command (&hq);
    return 0;
+}
+
+/**
+ *
+ *  3.9 Attenuator setting [15]
+ *   
+ *  The byte 15 controls the attenuator pins 84, 83, 82, 81, 80. Other bits are
+ *  left 0. The attenuator RF2420 (RF Micro Devices) is available at the HiQSDR
+ *  PCB and can be used to reduce the input power level to the onboard LNA. The
+ *  stepsize is 2dB in the range of 0..44dB plus 4dB insertion loss. The stages are
+ *  Bypass, 2dB, 4dB, 8dB, 10dB, 20dB. 
+ *
+ *  Mapping of control byte 15:
+ *
+ *     Bit  attenuation stage Location/Name
+ *      
+ *     0x01      2dB          P84/ATT2dB
+ *     0x02      4dB          P83/ATT4dB
+ *     0x04      8dB          P82/ATT8dB
+ *     0x08     10dB          P81/ATT10dB
+ *     0x10     20dB          P80/ATT20dB
+ *     0xE0        -          not used
+ *      
+ *  Please notice that a controlable preamplier is not included on the frontend
+ *  PCB. A external preamp can be controlled via X1.
+ *
+ */
+
+int convert_attenuator (int attDb)
+{
+    int out = 0;
+
+    if ((attDb - 20) >= 0) {
+        out |= 0x10;
+        attDb -= 20;
+    }
+    if ((attDb - 10) >= 0) {
+        out |= 0x08;
+        attDb -= 10;
+    }
+    if ((attDb - 8) >= 0) {
+        out |= 0x04;
+        attDb -= 8;
+    }
+    if ((attDb - 4) >= 0) {
+        out |= 0x02;
+        attDb -= 4;
+    }
+    if ((attDb - 2) >= 0) {
+        out |= 0x01;
+        attDb -= 2;
+    }
+    return out;
+}
+
+int hiqsdr_set_attenuator (int attDb)
+{
+   hq.attDb = convert_attenuator (attDb);
+   fprintf (stderr, "%s: requested value: %d computed value: %02X\n", __FUNCTION__, attDb, hq.attDb);
+   send_command (&hq);
+   return 0;
+}
+
+int hiqsdr_set_antenna_input (int n)
+{
+    hq.antSel = n == 0 ? 0x00 : 0x01;
+    fprintf (stderr, "%s: antenna: %02X\n", __FUNCTION__, hq.antSel);
+    send_command (&hq);
+    return 0;
 }
 
 int hiqsdr_deinit (void)
@@ -495,13 +573,17 @@ static int send_command (struct Hiqsdr *hiq) {
 
     m.txl = 0;    //Tx output level 0 to 255
 
-    m.txc = 0x02; // = all other operation (e.g. SSB)
+    m.txc = 0x02  //   all other operation (e.g. SSB)
+          | 0x04  //   use the HiQSDR extended IO pins (from FPGA version 1.1 on)
+    ;
     m.rxc = get_decimation(hiq->bw) - 1;
 
-    m.fwv = 1;  // FPGA firmware version
+    m.fwv = 3;  // FPGA firmware version
 
     m.x1  = 0;  // preselector et al.
-    m.att = 0;  // input attenuator
+    m.att = hiq->attDb;   // input attenuator
+
+    m.msc = hiq->antSel;  // select antenna 
 
     m.rfu1 = 0; // not currently used
     m.rfu2 = 0; // not currently used

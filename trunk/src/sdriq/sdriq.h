@@ -70,11 +70,6 @@ void gain_sdriq (int gain_state, int gain);
 void set_decimation (int decimation);
 
 // set the bandwidth
-//
-//
-//
-//
-//
 void set_bandwidth (int nb);
 
 
@@ -82,6 +77,8 @@ typedef int (*SDRIQ_CB)(SAMPLE_T *ii, SAMPLE_T *qq, int bsize, void *data) ;
 
 int sdriq_start_asynch_input (SDRIQ_CB cb, void *pud);
 int sdriq_stop_asynch_input ();
+
+const char *get_serial();
 
 #ifdef __cplusplus
 }

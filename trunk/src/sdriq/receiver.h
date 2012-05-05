@@ -63,6 +63,18 @@ typedef int bool;
 #define true  (1)
 #define false (~true)
 
+
+//NCO spur management commands for ManageNCOSpurOffsets(...)
+typedef enum {
+	NCOSPUR_CMD_SET,
+	NCOSPUR_CMD_STARTCAL,
+	NCOSPUR_CMD_READ
+}  eNCOSPURCMD ;
+
+#define SPUR_CAL_MAXSAMPLES 300000
+
+
+
 typedef struct _receiver {
     int id;
     int audio_socket;
@@ -80,11 +92,15 @@ typedef struct _receiver {
     SDR_IQ_CONFIG cfg;
     int           frame_counter;
 
-    /*
-     * Our tail queue requires a head, this is defined using the
-     * TAILQ_HEAD macro.
-     */
-    TAILQ_HEAD(, tailq_entry) iq_tailq_head;
+    // 
+    // DC offset auto calibration
+    // 
+
+	bool   m_NcoSpurCalActive;	//NCO spur reduction variables
+	long   m_NcoSpurCalCount;
+	double m_NCOSpurOffsetI;
+	double m_NCOSpurOffsetQ;
+
 
 } RECEIVER;
 
@@ -108,4 +124,7 @@ const char* set_dither(CLIENT* client, bool);
 const char* set_random(CLIENT* client, bool);
 const char* set_attenuator(CLIENT* client, int);
 void send_IQ_buffer (RECEIVER *pRec);
+void ManageNCOSpurOffsets( RECEIVER *pRec, eNCOSPURCMD cmd, double* pNCONullValueI,  double* pNCONullValueQ);
+void NcoSpurCalibrate (RECEIVER *pRec);
+
 

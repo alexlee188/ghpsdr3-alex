@@ -307,6 +307,15 @@ const char* parse_command(CLIENT* client,char* command) {
             } else {
                 return INVALID_COMMAND;
             }
+        } else if(strcmp(token,"selectantenna")==0) {
+            // seelect antenna
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+               long antenna = atol(token);
+               return select_antenna (client,antenna);
+            } else {
+                return INVALID_COMMAND;
+            }
         } else if(strcmp(token,"random")==0) {
             // set frequency
             token=strtok(NULL," \r\n");
@@ -346,6 +355,15 @@ const char* parse_command(CLIENT* client,char* command) {
             }
         } else if(strcmp(token,"quit")==0) {
             return QUIT_ASAP;
+
+        } else if(strcmp(token,"hardware?")==0) {
+            return "OK HiQSDR";
+
+        } else if(strcmp(token,"getserial?")==0) {
+            static char buf[50];
+            snprintf (buf, sizeof(buf), "OK %s", hiqsdr_get_ip_address());
+            return buf;
+
         } else {
             // invalid command string
             return INVALID_COMMAND;
