@@ -643,7 +643,8 @@ void UI::connected() {
     // qDebug() << "Command: " << command;
 
     // upon connection, (re)select the audio_device in case it was stopped because of errors
-    audio->select_audio(audio_device, audio_sample_rate, audio_channels, audio_byte_order);
+    // somehow this call stops RTP audio from working
+    if (!useRTP) audio->select_audio(audio_device, audio_sample_rate, audio_channels, audio_byte_order);
 
     // start the audio
     audio_buffers=0;
