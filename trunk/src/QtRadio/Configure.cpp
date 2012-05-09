@@ -125,7 +125,6 @@ Configure::~Configure() {
 void Configure::initAudioDevices(Audio* audio) {
     qDebug() << "Configure: initAudioDevices";
     audio->get_audio_devices(widget.audioDeviceComboBox); // TODO: how to change this to signal/slot
-    slotAudioDeviceChanged(0);
 }
 
 void Configure::initMicDevices(AudioInput* mic) {
