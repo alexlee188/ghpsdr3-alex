@@ -28,17 +28,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef __linux__
+  #ifdef __linux__
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
-#else
+  #else
 #include "pthread.h"
-#endif
-
+  #endif
 #include <string.h>
 
 #include "client.h"
@@ -46,7 +45,6 @@
 
 
 void* listener_thread(void* arg);
-void* client_thread(void* arg);
 char* parse_command(CLIENT* client,char* command);
 
 void create_listener_thread() {
@@ -68,8 +66,12 @@ void* listener_thread(void* arg) {
     //int address_length; // unused
     struct sockaddr_in address;
     CLIENT* client;
+    int old_state, old_type;
     int rc;
     int on=1;
+    
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);    
 
     // create TCP socket to listen on
     s=socket(AF_INET,SOCK_STREAM,0);
@@ -77,7 +79,6 @@ void* listener_thread(void* arg) {
         perror("Listener: listening socket failed");
         exit(1);
     }
-
     setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
     // bind to listening port
@@ -93,8 +94,9 @@ void* listener_thread(void* arg) {
     fprintf(stderr,"Listening for TCP connections on port %d\n",LISTEN_PORT);
 
     while(1) {
-
-        if(listen(s,6)<0) {
+        
+        //Listening is blocking until someone connects
+        if(listen(s,1)<0) {
             perror("Listener: command listen failed");
             exit(1);
         }
@@ -103,6 +105,7 @@ void* listener_thread(void* arg) {
         client->address_length=sizeof(client->address);
         client->iq_port=-1;
 
+        //associates the connected socket to the new client object
         if((client->socket=accept(s,(struct sockaddr*)&client->address,(socklen_t*)&client->address_length))<0) {
             perror("Listener: command accept failed");
             exit(1);
@@ -111,12 +114,8 @@ void* listener_thread(void* arg) {
         //fprintf(stderr,"Client socket %d\n",client->socket);
         fprintf(stderr,"DSP Client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
 
-        rc=pthread_create(&client->thread_id,NULL,client_thread,(void *)client);
-        if(rc<0) {
-            perror("Listener: pthread_create client_thread failed");
-            exit(1);
-        }
-
+        //Exit on client thread failure
+        if(create_client_thread(client) < 0) exit(1);
     }
 	fprintf(stderr,"Exiting Listener thread loop: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
 }

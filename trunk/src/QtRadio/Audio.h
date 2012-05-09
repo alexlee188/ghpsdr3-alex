@@ -130,6 +130,8 @@ public slots:
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void process_audio(char* header,char* buffer,int length);
     void get_audio_devices(QComboBox* comboBox);
+    void clear_decoded_buffer(void);
+    void get_audio_device(QAudioDeviceInfo * device);
     void set_audio_encoding(int enc);
     void set_RTP(bool use);
     void rtp_set_connected(void);

@@ -24,32 +24,50 @@
 *
 */
 
+//Enables the OpenMP compilation
+#ifndef _OPENMP
+#define _OPENMP
+#endif
+
 #if ! defined __USPR_H__
 #define       __USPR_H__
+
+#include <sys/queue.h>
+
 
 /*!
  * Initialises the USRP by means of UHD library.
  * Returns 'true' on success.
  */
-bool usrp_init (const char *subdev_par);
+bool usrp_init (const char *rx_subdev_par, const char *tx_subdev_par);
 
 /*!
- * Starts the main receiving thread
+ * Starts the main USRP handling threads
  */
-bool usrp_start (RECEIVER *);
+bool usrp_start (CLIENT *client);
+
+/*!
+ *Starts the RX sanmples forwarder thread
+ */
+int usrp_start_rx_forwarder_thread (CLIENT *client);
+
+/*!
+ * Causes the RX forwarder thread to exit
+ */ 
+void usrp_stop_rx_forwarder(void);
 
 void usrp_deinit (void);
 
 /*!
  * Subdevice configuration setter.
- * Accepts a standard string for subdevice configuration, for both RX (first) and TX (second)
- * The markup is: SUBDEVICE_SPEC ::= "<RX_SPEC> [<TX_SPEC>]"
+ * Accepts standard strings for subdevice configuration, for both RX (first) and TX (second).
+ * The specs must be separated by a space: "RX_SPEC [TX_SPEC]"
  * TX_SPEC is optional
  * A SPEC is a ursp subdevice definition string like A:0 A.AB etc.
  * 
  * Please refer to UHD documentation for other examples.
  */
-void usrp_set_subdev_args(const char *args);
+void usrp_set_subdev_args(const char *subdev_rx, const char *subdev_tx);
 
 /*! 
  * Sets the swap iq option.
@@ -57,14 +75,25 @@ void usrp_set_subdev_args(const char *args);
 void usrp_set_swap_iq(int);
 
 /*!
- * Receiver count setter
+ * Receiver max count setter
  */
 void usrp_set_receivers(int);
 
 /*!
- * Receiver count getter
+ * Receiver max count getter
  */
 int  usrp_get_receivers(void);
+
+/*!
+ * Tests the enabled TX function flag
+ */
+bool  usrp_is_tx_enabled(void);
+
+/*!
+ * Checks that USRP threads are started
+ */
+bool  usrp_is_started(void);
+
 
 /*!
  * Client side sample rate setter.
@@ -86,5 +115,15 @@ int  usrp_get_client_rx_rate(void);
  * Sets the rf center frequency - in Hz
  */
 void usrp_set_frequency(double freq);
+
+/*!
+ * Process the TX modulation to USRP
+ */ 
+int usrp_process_tx_modulation(float *outbuf, int mox);
+
+/*!
+ * Let the server discard rx samples
+ */
+void usrp_disable_rx_path(void);
 
 #endif

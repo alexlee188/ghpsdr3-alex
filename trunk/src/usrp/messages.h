@@ -28,6 +28,7 @@
 #define BANDSCOPE_NOT_OWNER "Error: Not owner of bandscope"
 
 #define RECEIVER_INVALID "Error: Invalid Receiver"
+#define RECEIVER_SERVER_BUSY "Error: Receiver server busy (too many receivers)"
 #define RECEIVER_IN_USE "Error: Receiver in use"
 #define RECEIVER_NOT_OWNER "Error: Not owner of receiver"
 
@@ -40,6 +41,7 @@
 #define RECEIVER_NOT_ZERO "Error: Client not attached to receiver 0"
 
 #define TRANSMITTER_NOT_ATTACHED "Error: Client does not have a transmitter attached"
+#define TRANSMITTER_NOT_OWNER "Error: Not owner of transmitter"
 
 #define NOT_IMPLEMENTED_COMMAND "Error: Not Implemented Command"
 

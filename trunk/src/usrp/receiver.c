@@ -6,7 +6,6 @@
 * @date 2009-10-13
 */
 
-
 /* Copyright (C)
 * 2009 - John Melton, G0ORX/N6LYT
 * This program is free software; you can redistribute it and/or
@@ -42,7 +41,6 @@
 #include "messages.h"
 #include "usrp.h"
 #include "usrp_audio.h"
-#include "util.h"
 
 #define SMALL_PACKETS
 
@@ -63,6 +61,7 @@ void init_receivers(void) {
 		receiver[i].frequency=1000000;
     }
 
+    //UDP connectionless datagram socket: 1 for all clients
     iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
     if(iq_socket<0) {
         perror("Receiver: create socket failed for iq_socket\n");
@@ -73,7 +72,7 @@ void init_receivers(void) {
     memset(&iq_addr,0,iq_length);
     iq_addr.sin_family=AF_INET;
     iq_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    iq_addr.sin_port=htons(11002);  //Server side socket
+    iq_addr.sin_port=htons(IQ_SERVER_PORT);  //Server side socket
 
     if(bind(iq_socket,(struct sockaddr*)&iq_addr,iq_length)<0) {
         perror("Receiver: bind socket failed for iq socket");
@@ -91,7 +90,7 @@ const char* attach_receiver(int rx,CLIENT* client) {
     //fprintf(stderr,"attach_receiver: rx=%d %s:%d\n",rx,inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
 
     if(rx>=usrp_get_receivers()) {
-        return RECEIVER_INVALID;
+        return RECEIVER_SERVER_BUSY;
     }
 
     if(receiver[rx].client!=(CLIENT *)NULL) {
@@ -100,20 +99,19 @@ const char* attach_receiver(int rx,CLIENT* client) {
     
     //Client data update
     client->receiver_state=RECEIVER_ATTACHED;    
-    client->receiver=rx;
+    client->receiver_num=rx;
     
     //receiver data update
     receiver[rx].client=client;
     
-    // attempt to open an audio stream on a local audio card
-	if (usrp_get_server_audio() == 1) {
-		usrp_audio_open (usrp_get_client_rx_rate());
+    // attempt to open an audio stream 
+	if(usrp_audio_open(usrp_get_client_rx_rate()) == 0) {
 		fprintf(stderr, "Server side audio open, passed USRP sample rate %d\n", usrp_get_client_rx_rate());    		
-	} else {
-		fprintf(stderr, "Server side audio disabled\n");    		
-	}
-
-    sprintf(response,"%s %d",OK, usrp_get_client_rx_rate());
+        sprintf(response,"%s %d",OK, usrp_get_client_rx_rate());
+    }        
+    else
+        sprintf(response,"Error");
+        
     return (response);
 }
 
@@ -130,6 +128,7 @@ const char* detach_receiver(int rx,CLIENT* client) {
         return RECEIVER_NOT_OWNER;
     }
 
+    usrp_stop_rx_forwarder();
     client->receiver_state=RECEIVER_DETACHED;
     receiver[rx].client=(CLIENT*)NULL;
 
@@ -141,14 +140,14 @@ const char* set_frequency(CLIENT* client,long frequency) {
         return CLIENT_DETACHED;
     }
 
-    if(client->receiver<0) {
+    if(client->receiver_num<0) {
         return RECEIVER_INVALID;
     }
 
-    receiver[client->receiver].frequency=frequency;
+    receiver[client->receiver_num].frequency=frequency;
     //fprintf(stderr, "Frequency to be set in USRP=%ld", receiver[client->receiver].frequency);
     usrp_set_frequency(frequency);
-    receiver[client->receiver].frequency_changed=1;
+    receiver[client->receiver_num].frequency_changed=1;
 
     return OK;
 }
@@ -215,7 +214,7 @@ const char* inspect_receiver(RECEIVER* rx) {
 	
     char client_data[60];
 	
-    sprintf(response,"Receiver Instance:\nid:%d\naudio_socket:%d\nfrequency:%ld\n",rx->id,rx->audio_socket,rx->frequency);
+    sprintf(response,"Receiver Instance:\nid:%d\nfrequency:%ld\n",rx->id,rx->frequency);
     if (rx->client!=NULL) {
         sprintf(client_data,"client address:%s\nclient port:%d\n", inet_ntoa(rx->client->address.sin_addr),ntohs(rx->client->address.sin_port));
     } else sprintf(client_data,"NO CLIENT\n");

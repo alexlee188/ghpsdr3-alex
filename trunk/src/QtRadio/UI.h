@@ -293,7 +293,7 @@ private:
 
     Ui::UI widget;
     Audio* audio;
-    int audio_device;
+    QAudioDeviceInfo audio_device;
     int audio_sample_rate;
     int audio_channels;
     int audio_buffers;

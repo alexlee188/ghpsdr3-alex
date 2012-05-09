@@ -24,23 +24,21 @@
 *
 */
 
-#define MAX_RECEIVERS 8
+//The USRP Server can handle 1 receiver only, at this stage.
+#define MAX_RECEIVERS 1
 
-#define BUFFER_SIZE 1024
-
-class USRP;
+#define RECEIVE_BUFFER_SIZE 1024
+#define IQ_SERVER_PORT 11002
 
 typedef struct _receiver {
     int id;
-    int audio_socket;
-    pthread_t audio_thread_id;
     CLIENT* client;
     int frequency_changed;
     long frequency;
-    float input_buffer[BUFFER_SIZE*2];
-    float output_buffer[BUFFER_SIZE*2];
-    int   samples;
-    //USRP *pUsrp; //Commented out by IZ0CEZ
+    pthread_t rx_thread_id;
+    pthread_t rx_fwd_thread_id;
+    float input_buffer[RECEIVE_BUFFER_SIZE*2];
+    int samples;
 } RECEIVER;
 
 extern RECEIVER receiver[MAX_RECEIVERS];
