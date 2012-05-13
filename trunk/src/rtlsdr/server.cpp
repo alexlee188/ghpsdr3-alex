@@ -49,7 +49,7 @@ void print_help()
     "    Allowed options:                                               " << std::endl <<
     "      -s [ --samplerate ] arg (=250000) samplerate in Samples/second" << std::endl <<
     "                                       (250000 | 500000 | 1000000)    " << std::endl <<
-    "      -g [ --gain ] arg gain in dB"                                  << std::endl <<
+    "      -g [ --gain ] gain in dB"                                  << std::endl <<
     "      -h [ --help ]                    print usage message         " << std::endl <<
     "      -d [ --debug ] arg (=0)          debug level                 " << std::endl <<
     std::endl;
@@ -138,7 +138,6 @@ int main(int argc, char* argv[]) {
             //cout << "Device [" << rtlsdr_get_device_name(0) << "] successfully opened. " <<  cfg.rtl << endl;
         }
 
-        #if 1
         int r;
 
         r = rtlsdr_set_sample_rate (cfg.rtl, cfg.sr);
@@ -153,12 +152,17 @@ int main(int argc, char* argv[]) {
         else
             fprintf(stderr, "Tuned to %i Hz.\n", frequency);
 
+        r = rtlsdr_set_tuner_gain_mode(cfg.rtl, 1 /* manual */ );
+        if (r < 0)
+           fprintf(stderr, "WARNING: Failed to set tuner gain mode.\n");
+        else
+           fprintf(stderr, "Tuner gain set in manual mode\n");
+
         r = rtlsdr_set_tuner_gain(cfg.rtl, cfg.gain);
         if (r < 0)
            fprintf(stderr, "WARNING: Failed to set tuner gain.\n");
         else
            fprintf(stderr, "Tuner gain set to %.2f dB.\n", cfg.gain/10.0);
-        #endif
 
 
 
