@@ -18,6 +18,6 @@ if MAKE_RTLSDR
 endif
 
 
-SUBDIRS = trunk/src/softrock trunk/src/DttSP trunk/src/dspserver trunk/src/widget-server trunk/src/server trunk/bin trunk/src/QtRadio trunk/src/pylauncher trunk/src/hiqsdr  trunk/src/sdriq $(PERSEUS_DIR) $(USRP_DIR) $(MAKE_RTLSDR)
+SUBDIRS = trunk/src/softrock trunk/src/DttSP trunk/src/dspserver trunk/src/widget-server trunk/src/server trunk/bin trunk/src/QtRadio trunk/src/pylauncher trunk/src/hiqsdr  trunk/src/sdriq $(PERSEUS_DIR) $(USRP_DIR) $(RTLSDR_DIR)
 
 
