@@ -218,7 +218,10 @@ const char* set_random (CLIENT* client, bool)
 
 const char* set_attenuator (CLIENT* client, int new_level_in_db)
 {
-    return NOT_IMPLEMENTED_COMMAND;
+    int r = rtlsdr_set_tuner_gain(receiver[client->receiver].cfg.rtl, new_level_in_db);
+    if (r < 0) fprintf(stderr, "WARNING: Failed to set tuner gain: %d.\n", r);
+         else
+               fprintf(stderr, "Tuner gain set to %.2f dB.\n", new_level_in_db/10.0);
     return OK;
 }
 
