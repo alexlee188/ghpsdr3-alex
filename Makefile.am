@@ -10,10 +10,14 @@ if MAKE_PERSEUS
 endif
 
 if MAKE_USRP
-   ###### uncomment the following line when usrp come in
    USRP_DIR =  trunk/src/usrp
 endif
 
-SUBDIRS = trunk/src/softrock trunk/src/DttSP trunk/src/dspserver trunk/src/widget-server trunk/src/server trunk/bin trunk/src/QtRadio trunk/src/pylauncher trunk/src/hiqsdr  trunk/src/sdriq $(PERSEUS_DIR) $(USRP_DIR) 
+if MAKE_RTLSDR
+   RTLSDR_DIR =  trunk/src/rtlsdr
+endif
+
+
+SUBDIRS = trunk/src/softrock trunk/src/DttSP trunk/src/dspserver trunk/src/widget-server trunk/src/server trunk/bin trunk/src/QtRadio trunk/src/pylauncher trunk/src/hiqsdr  trunk/src/sdriq $(PERSEUS_DIR) $(USRP_DIR) $(MAKE_RTLSDR)
 
 

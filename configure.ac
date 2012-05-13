@@ -45,7 +45,7 @@ AM_PROG_CC_C_O
 AC_PROG_RANLIB
 
 #
-# Check for user options in order to selectively compile servers
+# Check for user options in order to selectively compile optional servers
 #
 AC_ARG_ENABLE([perseus],
               [  --enable-perseus  enable Perseus SDR server generation],
@@ -55,6 +55,11 @@ AC_ARG_ENABLE([usrp],
               [  --enable-usrp  enable USRP server generation],
               [usrp=${enableval}], [usrp=no]
 )
+AC_ARG_ENABLE([rtlsdr],
+              [  --enable-rtlsdr  enable RTL SDR server generation],
+              [rtlsdr=${enableval}], [rtlsdr=no]
+)
+
 
 #
 # Check for compilation options which affect debugging
@@ -316,8 +321,13 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([floor ftime getcwd gethostbyname gettimeofday inet_ntoa memset pow select socket sqrt strrchr strstr strtol])
 
+#
+# Optionally built sub packages
+#
 
-
+#
+# PERSEUS
+#
 if test "x${perseus}" = xyes; then
     AC_MSG_NOTICE([
 -----------------------------------
@@ -330,6 +340,9 @@ AM_CONDITIONAL([MAKE_PERSEUS], [test "x${perseus}" = xyes])
 AC_CONFIG_FILES([trunk/src/perseus/Makefile])
 
 
+#
+# USRP
+#
 if test "x${usrp}" = xyes; then
     AC_MSG_NOTICE([
 -----------------------------------
@@ -339,10 +352,29 @@ if test "x${usrp}" = xyes; then
     AC_CONFIG_SUBDIRS([trunk/src/usrp])
 fi
 AM_CONDITIONAL([MAKE_USRP], [test "x${usrp}" = xyes])
-#
-# Uncomment the following line when the usrp directory gets populated
-#
 AC_CONFIG_FILES([trunk/src/usrp/Makefile])
+
+
+#
+# RTLSDR (OSMOCOSMO)
+#
+# if rtlsdr lib is present, enable the build even if the user didn't request to do so
+#
+AC_CHECK_LIB([rtlsdr], [rtlsdr_open], [do_rtlsdr=yes], [do_rtlsdr=no])
+
+if test "x${rtlsdr}" = xyes || test "x${do_rtlsdr}" = xyes ; then
+    AC_MSG_NOTICE([
+-----------------------------------
+  RTL SDR enabled.
+-----------------------------------])  
+
+    AC_CONFIG_SUBDIRS([trunk/src/rtlsdr])
+fi
+AM_CONDITIONAL([MAKE_RTLSDR], [test "x${rtlsdr}" = xyes || test "x${do_rtlsdr}" = xyes])
+AC_CONFIG_FILES([trunk/src/rtlsdr/Makefile])
+
+
+
 
 AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
 AC_CONFIG_FILES([Makefile
