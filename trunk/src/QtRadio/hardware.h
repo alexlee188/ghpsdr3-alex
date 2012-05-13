@@ -87,6 +87,24 @@ private slots:
 };
 
 
+class HardwareRtlsdr: public DlgHardware
+{ 
+   Q_OBJECT
+
+public:
+   HardwareRtlsdr (Connection *pC, QWidget *p);
+   ~HardwareRtlsdr ();
+
+private:
+   QSignalMapper *attMapper;
+   int attenuatorVal;
+
+private slots:
+   void attClicked(int state);
+   void processAnswer (QStringList);
+};
+
+
 
 class HardwareFactory {
 public:
