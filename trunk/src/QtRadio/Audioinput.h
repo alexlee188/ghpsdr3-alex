@@ -6,7 +6,13 @@
 #include <QAudioFormat>
 #include <QAudioInput>
 #include <QAudioDeviceInfo>
+
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QComboBox>
+#else
 #include <QtGui/QComboBox>
+#endif
+
 #include <QMutex>
 #include <QQueue>
 
