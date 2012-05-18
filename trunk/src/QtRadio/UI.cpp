@@ -26,7 +26,13 @@
 #include <QDebug>
 #include <QSettings>
 #include <QPainter>
+#include <QtCore>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QMessageBox>
+#else
 #include <QMessageBox>
+#endif
+
 #include <QTimer>
 #include <QThread>
 #include <ortp/ortp.h>

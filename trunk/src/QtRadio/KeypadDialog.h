@@ -1,10 +1,20 @@
 #ifndef KEYPADDIALOG_H
 #define KEYPADDIALOG_H
 
+#include <QtCore>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QDialog>
+#include <QtWidgets/QAbstractButton>
+#include <QtWidgets/QDialogButtonBox>
+#else
 #include <QDialog>
 #include <QAbstractButton>
-#include <QKeyEvent>
 #include <QDialogButtonBox>
+#endif
+
+
+#include <QKeyEvent>
+
 
 namespace Ui {
     class KeypadDialog;

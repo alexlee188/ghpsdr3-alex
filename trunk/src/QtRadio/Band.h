@@ -26,7 +26,13 @@
 #ifndef BAND_H
 #define	BAND_H
 
+#include <QtCore>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QAction>
+#else
 #include <QAction>
+#endif
+
 #include <QObject>
 #include <QSettings>
 #include <QDebug>
