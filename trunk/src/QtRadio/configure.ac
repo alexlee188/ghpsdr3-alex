@@ -1,4 +1,4 @@
-AC_INIT([QtRadio Build], [rxtx-rtp-symm], [andrew att montefusco dott com], [QtRadio])
+AC_INIT([QtRadio Build], [opengl-qt5], [andrew att montefusco dott com], [QtRadio])
 
 
 #AC_CONFIG_AUX_DIR([build-aux])
@@ -35,7 +35,7 @@ AC_SUBST(GITSTR)
 
 
 # QtRadio with Qt.
-AT_WITH_QT([core gui network])
+AT_WITH_QT([core gui network opengl])
 AT_REQUIRE_QT_VERSION(4.0.0, AC_MSG_ERROR([Bad Qt: 4.x required !]))
 
 AC_MSG_RESULT([QT version: $QT_VERSION])

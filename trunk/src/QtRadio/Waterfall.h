@@ -54,6 +54,8 @@
 #include <QPainter>
 #include <QMouseEvent>
 
+#include "Waterfallcl.h"
+
 class Waterfall: public QFrame {
     Q_OBJECT
 public:
@@ -121,6 +123,7 @@ private:
     QImage image;
 
     short LO_offset;
+    float average;
 
     int sampleRate;
     int filterLow;
@@ -130,6 +133,8 @@ private:
     bool subRx;
     int size;
     QString mode;
+
+    Waterfallcl *waterfallcl;
 };
 
 

@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 # Uncomment line below when using QtSDK, comment for  Ubuntu repository ver.
-QT       += core gui network multimedia mobility
+QT       += core gui network multimedia mobility opengl
 
 # Uncomment 2 lines below when using QtSDK, comment for  Ubuntu repository ver.
 CONFIG	+= mobility
@@ -64,11 +64,13 @@ SOURCES += main.cpp\
     Audioinput.cpp\
     servers.cpp \
     G711A.cpp \
-    RTP.cpp
+    RTP.cpp \
+    Waterfallcl.cpp
 
 
 HEADERS  += \ 
     Waterfall.h \
+    Waterfallcl.h \
     USBFilters.h \
     UI.h \
     Spectrum.h \
@@ -114,7 +116,8 @@ HEADERS  += \
     servers.h \
     G711A.h \
     RTP.h \
-    cusdr_queue.h
+    cusdr_queue.h \
+    Waterfallcl.h
 
 FORMS    += \   
     UI.ui \

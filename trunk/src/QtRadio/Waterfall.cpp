@@ -65,9 +65,18 @@ Waterfall::Waterfall(QWidget*& widget) {
   }
     cy = image.height()/2 - 1;
 
+    /*
+    waterfallcl = new Waterfallcl;
+    waterfallcl->setParent(this);
+    waterfallcl->initialize(width()*2,256);
+    waterfallcl->resize(width()*2,height());
+    waterfallcl->setGeometry(QRect(QPoint(0,0),QPoint(width()*2-1,255)));
+    */
+
 }
 
 Waterfall::~Waterfall() {
+    //delete waterfallcl;
 }
 
 void Waterfall::initialize() {
@@ -84,14 +93,17 @@ int Waterfall::getLow() {
 
 void Waterfall::setHigh(int high) {
     waterfallHigh=high;
+    //waterfallcl->setHigh(high);
 }
 
 void Waterfall::setLow(int low) {
     waterfallLow=low;
+    //waterfallcl->setLow(low);
 }
 
 void Waterfall::setAutomatic(bool state) {
     waterfallAutomatic=state;
+    //waterfallcl->setAutomatic(state);
 }
 
 bool Waterfall::getAutomatic() {
@@ -253,6 +265,7 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
         for(i=0;i<width();i++) {
             samples[i] = -(buffer[i] & 0xFF);
         }
+        //waterfallcl->setLO_offset(0.0);
     } else {
         float step=(float)sampleRate/(float)width();
         offset=(int)((float)LO_offset/step);
@@ -263,8 +276,17 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
             if(j>=width()) j%=width();
             samples[i] = -(buffer[j] & 0xFF);
         }
+       GLfloat offset=(float)LO_offset/(float)sampleRate*length/MAX_CL_WIDTH;
+       //waterfallcl->setLO_offset(offset);
     }
     size = length;
+
+    int sum = 0;
+    for(i=0;i<length;i++) sum += -(buffer[j] & 0xFF);
+    average = average * 0.99f + (float)(sum/length) * 0.01f; // running average
+
+    //waterfallcl->updateWaterfall(header, buffer, length);
+
     QTimer::singleShot(0,this,SLOT(updateWaterfall_2()));
 }
 
@@ -272,8 +294,7 @@ void Waterfall::updateWaterfall_2(void){
     int x,y;
 
     if(image.width()!=width() ||
-       (image.height()/2) != (height())) {
-
+       (image.height()/2) != (height())) { 
         qDebug() << "Waterfall::updateWaterfall " << size << "(" << width() << ")," << height();
         image = QImage(width(), height()*2, QImage::Format_RGB32);
         cy = image.height()/2 - 1;
@@ -295,7 +316,7 @@ void Waterfall::updateWaterfall_3(void){
 
 void Waterfall::updateWaterfall_4(void){
     int x;
-    int average=0;
+    int local_average=0;
 
     // draw the new line
     #pragma omp parallel for schedule(static)
@@ -304,12 +325,14 @@ void Waterfall::updateWaterfall_4(void){
         image.setPixel(x,cy,pixel);
         image.setPixel(x,cy+height(),pixel);
         #pragma omp critical
-        average+=samples[x];
+        local_average+=samples[x];
     }
 
     if(waterfallAutomatic) {
-        waterfallLow=(average/size)-10;
+        waterfallLow=(local_average/size)-10;
         waterfallHigh=waterfallLow+60;
+        //waterfallcl->setLow(average - 20);
+        //waterfallcl->setHigh(waterfallHigh);
     }
 
     QTimer::singleShot(0,this,SLOT(repaint()));
