@@ -68,8 +68,6 @@ private:
     bool waterfallAutomatic;
     int cy;
     GLfloat LO_offset;
-    int lastX, lastY;
-    GLfloat zoom, pan;
 };
 
 

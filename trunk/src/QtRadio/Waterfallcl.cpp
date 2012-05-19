@@ -19,9 +19,6 @@
 #include <QDebug>
 #include "Waterfallcl.h"
 
-#define ZOOM_FACTOR (1.0)
-#define PAN_FACTOR (0.0)
-
 Waterfallcl::Waterfallcl(){
     makeCurrent();
 }
@@ -35,10 +32,6 @@ void Waterfallcl::initialize(int wid, int ht){
     data_width = wid;
     data_height = ht;
     cy = MAX_CL_HEIGHT - 1;
-    zoom = ZOOM_FACTOR;
-    pan = PAN_FACTOR;
-
-
 
     QImage t;
     QImage b;
@@ -120,8 +113,6 @@ void Waterfallcl::resizeGL( int width, int height )
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    zoom = ZOOM_FACTOR;
-    pan = PAN_FACTOR;
 }
 
 void Waterfallcl::setGeometry(QRect rect){
