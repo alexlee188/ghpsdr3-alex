@@ -128,14 +128,11 @@ void Waterfallcl::updateWaterfallgl(){
 void Waterfallcl::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glLoadIdentity();
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, spectrumTex);
     float current_line = (float) cy /  MAX_CL_HEIGHT;
     glUniform1f(cy_location, current_line);
-
     GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
 
     glBegin(GL_QUADS);

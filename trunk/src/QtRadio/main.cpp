@@ -30,6 +30,8 @@
 #include <QtGui/QApplication>
 #endif
 
+#include <QtOpenGL>
+#include <QtOpenGL/QGLWidget>
 #include "UI.h"
 
 #include <stdio.h>

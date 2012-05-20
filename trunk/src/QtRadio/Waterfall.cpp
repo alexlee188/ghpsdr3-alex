@@ -23,6 +23,9 @@
 *
 */
 
+// uncomment if you want the 2D waterfall to appear
+//#define WATERFALL_2D
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -54,6 +57,7 @@ Waterfall::Waterfall(QWidget*& widget) {
 
     samples=NULL;
 
+#ifdef WATERFALL_2D
     image = QImage(width()*2, height(), QImage::Format_RGB32);
 
     int x, y;
@@ -62,9 +66,9 @@ Waterfall::Waterfall(QWidget*& widget) {
         for (y = 0; y < image.height(); y++) {
             image.setPixel(x, y, 0xFF000000);
         }
-  }
+    }
     cy = image.height()/2 - 1;
-
+#endif
     waterfallcl = new Waterfallcl;
     //waterfallcl->setParent(this);
 
@@ -115,7 +119,7 @@ void Waterfall::setObjectName(QString name) {
 
 void Waterfall::setGeometry(QRect rect) {
     QFrame::setGeometry(rect);
-
+#ifdef WATERFALL_2D
     qDebug() << "Waterfall::setGeometry: width=" << rect.width() << " height=" << rect.height();
 
     samples = (float*) malloc(rect.width() * sizeof (float));
@@ -132,6 +136,7 @@ void Waterfall::setGeometry(QRect rect) {
             image.setPixel(x, y, 0xFF000000);
         }
     }
+#endif
 }
 
 
@@ -225,21 +230,22 @@ void Waterfall::wheelEvent(QWheelEvent *event) {
 
 
 void Waterfall::paintEvent(QPaintEvent*) {
+#ifdef WATERFALL_2D
     QPainter painter(this);
-
-    //painter.fillRect(0, 0, width(), height(), Qt::black);
 
     painter.drawImage(0,0,image,0,cy,image.width(),image.height()/2,Qt::AutoColor);
     if (cy <= 0) cy = image.height()/2 - 1;
     else cy--;          // "scroll"
+#endif
 }
 
 
 void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     int i,j;
     int version,subversion;
+#ifdef WATERFALL_2D
     int offset;
-
+#endif
     //qDebug() << "updateWaterfall: " << width() << ":" << height();
 
     version=header[1];
@@ -252,20 +258,24 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     } else {
         LO_offset=0;
     }
-
+#ifdef WATERFALL_2D
     if(samples!=NULL) {
         free(samples);
     }
     samples = (float*) malloc(width() * sizeof (float));
+#endif
 
     // rotate spectrum display if LO is not 0
     if(LO_offset==0) {
+#ifdef WATERFALL_2D
         #pragma omp parallel for schedule(static)
         for(i=0;i<width();i++) {
             samples[i] = -(buffer[i] & 0xFF);
         }
+#endif
         waterfallcl->setLO_offset(0.0);
     } else {
+#ifdef WATERFALL_2D
         float step=(float)sampleRate/(float)width();
         offset=(int)((float)LO_offset/step);
         #pragma omp parallel for schedule(static) private(i,j)
@@ -275,6 +285,7 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
             if(j>=width()) j%=width();
             samples[i] = -(buffer[j] & 0xFF);
         }
+#endif
        GLfloat offset=(float)LO_offset/(float)sampleRate*length/MAX_CL_WIDTH;
        waterfallcl->setLO_offset(offset);
     }
@@ -290,8 +301,10 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
 }
 
 void Waterfall::updateWaterfall_2(void){
-    int x,y;
 
+
+#ifdef WATERFALL_2D
+    int x,y;
     if(image.width()!=width() ||
        (image.height()/2) != (height())) { 
         qDebug() << "Waterfall::updateWaterfall " << size << "(" << width() << ")," << height();
@@ -304,6 +317,7 @@ void Waterfall::updateWaterfall_2(void){
             }
         }
     }
+#endif
     QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
 }
 
@@ -314,6 +328,7 @@ void Waterfall::updateWaterfall_3(void){
 
 
 void Waterfall::updateWaterfall_4(void){
+#ifdef WATERFALL_2D
     int x;
     int local_average=0;
 
@@ -326,12 +341,14 @@ void Waterfall::updateWaterfall_4(void){
         #pragma omp critical
         local_average+=samples[x];
     }
-
+#endif
     if(waterfallAutomatic) {
+#ifdef WATERFALL_2D
         waterfallLow=(local_average/size)-10;
         waterfallHigh=waterfallLow+60;
+#endif
         waterfallcl->setLow(average - 10);
-        waterfallcl->setHigh(waterfallHigh);
+        waterfallcl->setHigh(average + 50);
     }
 
     waterfallcl->updateWaterfallgl();
