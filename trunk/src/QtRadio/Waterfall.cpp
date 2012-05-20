@@ -118,8 +118,9 @@ void Waterfall::setObjectName(QString name) {
 }
 
 void Waterfall::setGeometry(QRect rect) {
-    QFrame::setGeometry(rect);
+
 #ifdef WATERFALL_2D
+    QFrame::setGeometry(rect);
     qDebug() << "Waterfall::setGeometry: width=" << rect.width() << " height=" << rect.height();
 
     samples = (float*) malloc(rect.width() * sizeof (float));
