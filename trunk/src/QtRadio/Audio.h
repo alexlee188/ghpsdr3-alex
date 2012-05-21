@@ -45,7 +45,7 @@
 #include "G711A.h"
 #include "cusdr_queue.h"
 
-#define AUDIO_BUFFER_SIZE 1600
+#define AUDIO_BUFFER_SIZE 800
 #define AUDIO_OUTPUT_BUFFER_SIZE (1024*2)
 #define RESAMPLING_BUFFER_SIZE (10600*2)    // 2 channels of 9600 + 10%
 
