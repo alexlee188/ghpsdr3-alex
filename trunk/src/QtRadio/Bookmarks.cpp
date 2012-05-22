@@ -1,7 +1,13 @@
 #include <QDebug>
 
+#include <QtCore>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QAction>
+#include <QtWidgets/QMenu>
+#else
 #include <QAction>
 #include <QMenu>
+#endif
 
 #include "Bookmarks.h"
 

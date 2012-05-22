@@ -1,0 +1,2 @@
+export PATH=/opt/qt5/bin:$PATH
+

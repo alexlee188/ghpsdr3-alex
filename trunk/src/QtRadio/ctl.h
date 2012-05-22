@@ -25,7 +25,13 @@
 #ifndef CTL_H
 #define CTL_H
 
+#include <QtCore>
+
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QFrame>
+#else
 #include <QFrame>
+#endif
 
 namespace Ui {
     class Ctl;

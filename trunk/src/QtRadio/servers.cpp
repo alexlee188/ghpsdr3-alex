@@ -3,7 +3,17 @@
 #include <QNetworkRequest>
 #include <QtDebug>
 #include <QColor>
+
+
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QDialog>
+#else
 #include <QMessageBox>
+#include <QDialog>
+#endif
+
+
 #include "servers.h"
 #include "ui_servers.h"
 #include "UI.h"

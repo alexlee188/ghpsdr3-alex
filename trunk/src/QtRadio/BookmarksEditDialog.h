@@ -1,7 +1,12 @@
 #ifndef BOOKMARKSEDITDIALOG_H
 #define BOOKMARKSEDITDIALOG_H
 
+#include <QtCore>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QDialog>
+#else
 #include <QDialog>
+#endif
 #include <QVector>
 #include <QDebug>
 

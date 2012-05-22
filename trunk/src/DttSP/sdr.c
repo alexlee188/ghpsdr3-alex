@@ -213,9 +213,9 @@ setup_rx (int k, unsigned int thread)
 	rx[thread][k].fm.gen = newFMD (
 		uni[thread].samplerate,			// REAL samprate
 		0.0,							// REAL f_initial
-		-8000.0,						// REAL f_lobound
-		8000.0,							// REAL f_hibound
-		16000.0,						// REAL f_bandwid
+		-40000.0,						// REAL f_lobound
+		40000.0,						// REAL f_hibound
+		80000.0,						// REAL f_bandwid
 		CXBsize (rx[thread][k].buf.o),	// int size
 		CXBbase (rx[thread][k].buf.o),	// COMPLEX *ivec
 		CXBbase (rx[thread][k].buf.o),	// COMPLEX *ovec

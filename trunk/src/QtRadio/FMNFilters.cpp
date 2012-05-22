@@ -28,7 +28,7 @@
 #include "Filters.h"
 
 FMNFilters::FMNFilters() {
-    filters[0].init("16k",-8000,8000);
+    filters[0].init("80k",-40000,40000);
     filters[1].init("12k",-6000,6000);
     filters[2].init("10k",-5000,5000);
     filters[3].init("8k",-4000,4000);

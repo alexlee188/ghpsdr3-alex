@@ -45,7 +45,12 @@
 
 #include <QtCore>
 
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QFrame>
+#else
 #include <QFrame>
+#endif
+
 #include <QPainter>
 #include <QMouseEvent>
 

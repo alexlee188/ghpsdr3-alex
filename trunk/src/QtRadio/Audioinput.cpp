@@ -190,6 +190,11 @@ void AudioInput::slotMicUpdated(QQueue<qint16>* queue){
     emit mic_send_audio(queue);
 }
 
+void AudioInput::setMicEncoding(int encoding){
+    m_audio_encoding = encoding;
+    qDebug() << "Mic encoding changed to " << m_audio_encoding;
+}
+
 
 AudioInfo::AudioInfo(const QAudioFormat &format, QObject *parent)
     :   QIODevice(parent)

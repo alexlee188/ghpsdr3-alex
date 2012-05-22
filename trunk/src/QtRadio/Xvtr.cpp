@@ -1,8 +1,5 @@
 #include <QDebug>
 
-#include <QAction>
-#include <QMenu>
-
 #include "Xvtr.h"
 #include "Mode.h"
 

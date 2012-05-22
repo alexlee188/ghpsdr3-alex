@@ -1,8 +1,13 @@
 #ifndef SERVERS_H
 #define SERVERS_H
 #include <QNetworkReply>
-#include <QDialog>
+#include <QtCore>
 
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QDialog>
+#else
+#include <QDialog>
+#endif
 
 namespace Ui {
     class Servers;

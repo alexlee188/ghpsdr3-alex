@@ -1,8 +1,17 @@
 #ifndef XVTR_H
 #define XVTR_H
 
+#include <QtCore>
 #include <QObject>
+
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QAction>
+#include <QtWidgets/QMenu>
+#else
 #include <QAction>
+#include <QMenu>
+#endif
+
 #include <QString>
 #include <QSettings>
 

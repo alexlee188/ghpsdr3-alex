@@ -26,7 +26,13 @@
 #include <QDebug>
 #include <QSettings>
 #include <QPainter>
+#include <QtCore>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QMessageBox>
+#else
 #include <QMessageBox>
+#endif
+
 #include <QTimer>
 #include <QThread>
 #include <ortp/ortp.h>
@@ -241,6 +247,7 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(waterfallAutomaticChanged(bool)),this,SLOT(waterfallAutomaticChanged(bool)));
     connect(&configure,SIGNAL(encodingChanged(int)),this,SLOT(encodingChanged(int)));
     connect(&configure,SIGNAL(encodingChanged(int)),audio,SLOT(set_audio_encoding(int)));
+    connect(&configure,SIGNAL(micEncodingChanged(int)),audioinput,SLOT(setMicEncoding(int)));
     connect(&configure,SIGNAL(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),this,SLOT(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
     connect(&configure,SIGNAL(micDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),this,SLOT(micDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
 
@@ -2038,7 +2045,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  master 21 Apr 2012");
+                   + getversionstring() +  message + "  master 16 May 2012");
     lastmessage = message;
 
 }
