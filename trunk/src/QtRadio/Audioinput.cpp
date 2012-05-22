@@ -20,11 +20,6 @@ AudioInput::~AudioInput()
 {
 }
 
-void AudioInput::set_audio_encoding(int encoding){
-    m_audio_encoding = encoding;
-    qDebug() << "Mic encoding changed to " << m_audio_encoding;
-}
-
 void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
 
     QList<QAudioDeviceInfo> devices=QAudioDeviceInfo::availableDevices(QAudio::AudioInput);

@@ -117,7 +117,6 @@ signals:
     void micEncodingChanged(int index);
     void get_audio_devices(QComboBox* comboBox);
     void micDeviceChanged(QAudioDeviceInfo info);
-    void micEncodingChanged(int index);
 
     void useRTP(bool state);
 
