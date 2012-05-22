@@ -47,6 +47,8 @@ Configure::Configure() {
     widget.MicOrderComboBox->addItem("BigEndian");
     widget.MicOrderComboBox->setCurrentIndex(0);
     widget.MicChannelsSpinBox->setValue(1);
+    widget.MicEncodingComboBox->addItem("aLaw");
+    widget.MicEncodingComboBox->addItem("Codec 2");
 
     widget.hostComboBox->addItem("127.0.0.1");
     widget.hostComboBox->addItem("g0orx.homelinux.net");
@@ -815,4 +817,9 @@ void Configure::on_spinBox_cwPitch_valueChanged(int arg1)
 {
     qDebug()<<Q_FUNC_INFO<<": The cw pitch is now "<<widget.spinBox_cwPitch->value()<<" Hz and arg1 = "<< arg1;
     emit spinBox_cwPitchChanged(arg1);
+}
+
+void Configure::on_MicEncodingComboBox_currentIndexChanged(int index)
+{
+    emit micEncodingChanged(index);
 }

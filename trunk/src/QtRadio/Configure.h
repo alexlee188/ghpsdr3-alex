@@ -116,6 +116,7 @@ signals:
     void encodingChanged(int index);
     void get_audio_devices(QComboBox* comboBox);
     void micDeviceChanged(QAudioDeviceInfo info);
+    void micEncodingChanged(int index);
 
     void useRTP(bool state);
 
@@ -178,6 +179,8 @@ private slots:
     void on_userpasssave_clicked();
 
     void on_spinBox_cwPitch_valueChanged(int arg1);
+
+    void on_MicEncodingComboBox_currentIndexChanged(int index);
 
 private:
     Ui::Configure widget;
