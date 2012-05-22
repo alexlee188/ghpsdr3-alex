@@ -85,7 +85,8 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
    qint64 bytes_read;
    qint16 v;
-   qint64 bytes_to_read = maxlen > 800 ? 800 : maxlen;
+
+   qint64 bytes_to_read = maxlen > 800 ? 800: maxlen;
    int has_more;
 
    if (useRTP && rtp_connected){

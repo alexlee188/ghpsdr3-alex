@@ -114,6 +114,7 @@ signals:
     void audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian order);
     void micDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian order);
     void encodingChanged(int index);
+    void micEncodingChanged(int index);
     void get_audio_devices(QComboBox* comboBox);
     void micDeviceChanged(QAudioDeviceInfo info);
     void micEncodingChanged(int index);
