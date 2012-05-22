@@ -247,6 +247,7 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(waterfallAutomaticChanged(bool)),this,SLOT(waterfallAutomaticChanged(bool)));
     connect(&configure,SIGNAL(encodingChanged(int)),this,SLOT(encodingChanged(int)));
     connect(&configure,SIGNAL(encodingChanged(int)),audio,SLOT(set_audio_encoding(int)));
+    connect(&configure,SIGNAL(micEncodingChanged(int)),audioinput,SLOT(setMicEncoding(int)));
     connect(&configure,SIGNAL(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),this,SLOT(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
     connect(&configure,SIGNAL(micDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),this,SLOT(micDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
 

@@ -53,6 +53,7 @@ public slots:
     void stateChanged(QAudio::State);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void slotMicUpdated(QQueue<qint16>*);
+    void setMicEncoding(int encoding);
 private:
     QAudioDeviceInfo m_device;
     QAudioFormat m_format;
