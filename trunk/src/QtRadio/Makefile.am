@@ -119,6 +119,7 @@ ctl.h rigctl.h\
 Audioinput.h \
 servers.h \
 G711A.h RTP.h \
+cusdr_queue.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui servers.ui
 
