@@ -997,18 +997,19 @@ void readcb(struct bufferevent *bev, void *ctx){
             gain=atoi(tokens[0]);
             SetRXOutputGain(0,1,(double)gain/100.0);
         } else if(strncmp(cmd,"startaudiostream",16)==0) {
-            int ntok, bufsize, rate, channels;
+            int ntok, bufsize, rate, channels, micEncoding;
             if (slave) {
                 current_item->rtp = connection_tcp;
                 continue;
             }
-            ntok = tokenize_cmd(&saveptr, tokens, 3);
+            ntok = tokenize_cmd(&saveptr, tokens, 4);
 
             /* FIXME: this is super racy */
 
             bufsize = AUDIO_BUFFER_SIZE;
             rate = 8000;
             channels = 1;
+            micEncoding = 0;
 
             if (ntok >= 1) {
                 /* FIXME: validate! */
@@ -1028,16 +1029,24 @@ void readcb(struct bufferevent *bev, void *ctx){
                     channels = 1;
                 }
             }
+            if (ntok >= 4) {
+                micEncoding = atoi(tokens[3]);
+                if (micEncoding != 1 && micEncoding != 2) {
+                    sdr_log(SDR_LOG_INFO, "Invalid mic encoding: %d\n", micEncoding);
+                    micEncoding = 0;
+                }
+            }
 
             sem_wait(&audiostream_sem);
             audiostream_conf.bufsize = bufsize;
             audiostream_conf.samplerate = rate;
             audiostream_conf.channels = channels;
+            audiostream_conf.micEncoding = micEncoding;
             audiostream_conf.age++;
             sem_post(&audiostream_sem);
 
-            sdr_log(SDR_LOG_INFO, "starting audio stream at rate %d channels %d bufsize %d encoding %d\n",
-                    rate, channels, bufsize, encoding);
+            sdr_log(SDR_LOG_INFO, "starting audio stream at rate %d channels %d bufsize %d encoding %d micEncoding %d\n",
+                    rate, channels, bufsize, encoding, micEncoding);
             item->rtp=connection_tcp;
             audio_stream_reset();
             sem_wait(&bufferevent_semaphore);
