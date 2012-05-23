@@ -102,12 +102,8 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static float tx_buffer[TX_BUFFER_SIZE*2];
 static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
-
 // Mic data comes in BITS_SIZE*MIC_NO_OF_FRAMES if micEncoding is Codec 2,
-// or 400 bytes if micEncoding is aLaw
-
 #define MIC_NO_OF_FRAMES 4
-
 #define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
 #define MIC_ALAW_BUFFER_SIZE 58
 
@@ -446,7 +442,6 @@ void spectrum_timer_handler(int sv){            // this is called every 20 ms
 
 void* rtp_tx_thread(void *arg){
     int j;
-    float data_in[TX_BUFFER_SIZE*2];
     float data_out[TX_BUFFER_SIZE*2*24];	// data_in is 8khz (duplicated to stereo) Mic samples.  
 						// May be resampled to 192khz or 24x stereo
     SRC_DATA data;
@@ -465,10 +460,7 @@ void* rtp_tx_thread(void *arg){
 		}
 
             // resample to the sample rate
-                for (j=0; j < TX_BUFFER_SIZE; j++){
-                        data_in[j*2] = data_in[j*2+1] = (float)G711A_decode(item->buf[j])/32767.0;
-                }
-            data.data_in = data_in;
+            data.data_in = (float*) item->buf;
             data.input_frames = TX_BUFFER_SIZE;
             data.data_out = data_out;
             data.output_frames = TX_BUFFER_SIZE*24 ;
@@ -892,7 +884,9 @@ void readcb(struct bufferevent *bev, void *ctx){
         /* Short circuit for mic data, to ensure it's handled as rapidly
          * as possible. */
         if(!slave && strncmp(cmd,"mic", 3)==0){		// This is incoming microphone data, binary data after "mic "
-            memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
+            memcpy(mic_buffer, &message[4], 
+                ((audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ? 
+                MIC_BUFFER_SIZE : MIC_ALAW_BUFFER_SIZE));
             Mic_stream_queue_add();
             continue;
         }
