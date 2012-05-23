@@ -13,36 +13,31 @@ import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.opengl.GLSurfaceView;
+import android.util.AttributeSet;
 import android.util.Log;
 
 public class SpectrumView extends View implements OnTouchListener {
 
-	public SpectrumView(Context context, int width,int height,Connection connection) {
+	public SpectrumView(Context context, int width, int height) {
 		super(context);
-Log.i("SpectrumView","width="+width+" height="+height);
-		this.connection = connection;
+		Log.i("SpectrumView","width="+width+" height="+height);
+		this.connection = null;
 		paint = new Paint();
-		WIDTH=width;
-		HEIGHT=height/2;
+		WIDTH = width;
+		HEIGHT = height;
 		points = new float[WIDTH * 4];
-
-		waterfall = Bitmap.createBitmap(WIDTH, HEIGHT*2,
-				Bitmap.Config.ARGB_8888);
-		//pixels = new int[WIDTH * HEIGHT];
-
-		for (int x = 0; x < WIDTH; x++) {
-			for (int y = 0; y < (HEIGHT*2); y++) {
-				waterfall.setPixel(x, y, Color.BLACK);
-			}
-		}
-		
-		cy = HEIGHT - 1;
-		average=waterfallLow;
+		average= -100;
+		cy = MAX_CL_HEIGHT - 1;
 		this.setOnTouchListener(this);
 	}
 
 	public void setConnection(Connection connection) {
 		this.connection=connection;	
+	}
+	
+	public void setAverage(int a){
+		average = a;
 	}
 	
 	void setSensors(float sensor1,float sensor2,float sensor3) {
@@ -131,12 +126,6 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			paint.setColor(Color.WHITE);
 			canvas.drawLines(points, paint);
 
-			// draw the waterfall
-			{
-				Bitmap subBitmap = Bitmap.createBitmap(waterfall, 0, cy, WIDTH, HEIGHT);
-				canvas.drawBitmap(subBitmap, 1, HEIGHT, paint);
-
-			}
 			// draw the S-Meter
 			int dbm=connection.getMeter();
 			int smeter=dbm+127;
@@ -179,57 +168,41 @@ Log.i("SpectrumView","width="+width+" height="+height);
 			
 			// draw the job buttons
 			paint.setColor(Color.DKGRAY);
-			canvas.drawRect(0, getHeight()-50, 50, getHeight(), paint);
-            canvas.drawRect(getWidth()-50,getHeight()-50,getWidth(),getHeight(),paint);
-            canvas.drawRect(125, getHeight()-50, 200, getHeight(), paint); //kb3omm add 1000's button
-            canvas.drawRect(getWidth()-200,getHeight()-50,getWidth()-125,getHeight(),paint); //kb3omm add 1000's button
+			canvas.drawRect(0, HEIGHT-62, 50, HEIGHT-12, paint);
+            canvas.drawRect(WIDTH-50,HEIGHT-62,WIDTH,HEIGHT-12,paint);
+            canvas.drawRect(125, HEIGHT-62, 200, HEIGHT-12, paint); //kb3omm add 1000's button
+            canvas.drawRect(WIDTH-200,HEIGHT-62,WIDTH-125,HEIGHT-12,paint); //kb3omm add 1000's button
             paint.setColor(Color.WHITE);
             paint.setTextSize(40.0F);
-            canvas.drawText("<", 12, getHeight()-12, paint);
-            canvas.drawText(">", getWidth()-36, getHeight()-12, paint);
-            canvas.drawText("<<", 142, getHeight()-12, paint); //kb3omm add 1000's button
-            canvas.drawText(">>", getWidth()-182, getHeight()-12, paint); //kb3omm add 1000's button
+            canvas.drawText("<", 12, HEIGHT-24, paint);
+            canvas.drawText(">", WIDTH-36, HEIGHT-24, paint);
+            canvas.drawText("<<", 142, HEIGHT-24, paint); //kb3omm add 1000's button
+            canvas.drawText(">>", WIDTH-182, HEIGHT-24, paint); //kb3omm add 1000's button
 			
 		} else {
 			paint.setColor(0xffffffff);
-			canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), paint);
+			canvas.drawRect(0, 0, WIDTH, HEIGHT, paint);
 			paint.setColor(Color.RED);
 			//canvas.drawText("Server is busy - please wait", 20, canvas
-			//		.getHeight() / 2, paint);
-			canvas.drawText(connection.getStatus(), 20, canvas
-					.getHeight() / 2, paint);
+			//		.HEIGHT / 2, paint);
+			canvas.drawText(connection.getStatus(), 20, HEIGHT, paint);
 		}
 	}
 
-	public void plotSpectrum(int[] samples, int filterLow, int filterHigh,
+	public void plotSpectrum(byte[] samples, int filterLow, int filterHigh,
 			int sampleRate, int offset) {
 
 		this.offset=offset;
-		
-		// scroll the waterfall down
-		if(waterfall.isRecycled()) {
-			waterfall = Bitmap.createBitmap(WIDTH, HEIGHT*2,
-					Bitmap.Config.ARGB_8888);
-			for (int x = 0; x < WIDTH; x++) {
-				for (int y = 0; y < (HEIGHT*2); y++) {
-					waterfall.setPixel(x, y, Color.BLACK);
-				}
-			}
-			cy = HEIGHT - 1;
-		}
-		//waterfall.getPixels(pixels, 0, WIDTH, 0, 0, WIDTH, HEIGHT - 1);
-		//waterfall.setPixels(pixels, 0, WIDTH, 0, 1, WIDTH, HEIGHT - 1);
-		if (--cy < 0) cy = HEIGHT - 1;  // "scroll" down one row with fast waterfall algorithm
+		if (--cy < 0) cy = MAX_CL_HEIGHT - 1;  // "scroll" down one row with fast waterfall algorithm
 
 		int p = 0;
 		float sample;
 		float previous = 0.0F;
 
-		average=0;
-		
+		int sum = 0;
 		for (int i = 0; i < WIDTH; i++) {
 			sample = (float) Math
-					.floor(((float) spectrumHigh - (float) samples[i])
+					.floor(((float) spectrumHigh - (float) (-(samples[i] & 0xFF)))
 							* (float) HEIGHT
 							/ (float) (spectrumHigh - spectrumLow));
 			if (i == 0) {
@@ -242,12 +215,9 @@ Log.i("SpectrumView","width="+width+" height="+height);
 
 			points[p++] = (float) i;
 			points[p++] = sample;
-
-			int pixel_value = calculatePixel(samples[i]);
-			waterfall.setPixel(i, cy, pixel_value);
-			waterfall.setPixel(i, cy + HEIGHT, pixel_value);
+			
 			previous = sample;
-			average+=samples[i];
+			sum -= (samples[i] & 0xFF);
 		}
 
 		this.filterLow = filterLow;
@@ -255,91 +225,44 @@ Log.i("SpectrumView","width="+width+" height="+height);
 		filterLeft = (filterLow - (-sampleRate / 2)) * WIDTH / sampleRate;
 		filterRight = (filterHigh - (-sampleRate / 2)) * WIDTH / sampleRate;
 
-		waterfallLow=(average/WIDTH)-5;
-		waterfallHigh=waterfallLow+55;
+		average = (int) ((float)average * 0.98f + (float)sum / WIDTH * 0.02f);
+		waterfallLow= average -15;
+		waterfallHigh=average + 45;
+		
+		
+		if (renderer != null && mGLSurfaceView != null){
+			final byte[] bitmap = new byte[WIDTH*4];	// RBGA
+			for (int i = 0; i < WIDTH; i++){
+				bitmap[i*4] = samples[i];
+			}
+            mGLSurfaceView.queueEvent(new Runnable() {
+                // This method will be called on the rendering
+                // thread:
+                public void run() {
+        			renderer.set_cy(cy);
+        			renderer.set_width(WIDTH);
+        			renderer.set_LO_offset(0); // offset should be offset/samplerate * width/MAX_CL_WIDTH
+        			renderer.set_waterfallHigh(waterfallHigh);
+        			renderer.set_waterfallLow(waterfallLow);	
+        			renderer.plotWaterfall(bitmap);
+                }
+            });
+		}
 		
 		this.postInvalidate();
-	}
-
-	private int calculatePixel(float sample) {
-	/*
-		// simple gray scale
-		int v = ((int) sample - waterfallLow) * 255
-				/ (waterfallHigh - waterfallLow);
-
-		if (v < 0)
-			v = 0;
-		if (v > 255)
-			v = 255;
-
-		int pixel = (255 << 24) + (v << 16) + (v << 8) + v;
-		return pixel;		
-	*/
-		
-		int colorLowR = 0;
-		int colorLowG = 0;
-		int colorLowB = 0;
-		int colorHighR = 255;
-		int colorHighG = 255;
-		int colorHighB = 255;
-		
-	    int R,G,B;
-	    if(sample<waterfallLow) {
-	        R=colorLowR;
-	        G=colorLowG;
-	        B=colorLowB;
-	    } else if(sample>waterfallHigh) {
-	        R=colorHighR;
-	        G=colorHighG;
-	        B=colorHighB;
-	    } else {
-	        float range=waterfallHigh-waterfallLow;
-	        float offset=sample-waterfallLow;
-	        float percent=offset/range;
-	        if(percent<(2.0f/9.0f)) {
-	            float local_percent = percent / (2.0f/9.0f);
-	            R = (int)((1.0f-local_percent)*colorLowR);
-	            G = (int)((1.0f-local_percent)*colorLowG);
-	            B = (int)(colorLowB + local_percent*(255-colorLowB));
-	        } else if(percent<(3.0f/9.0f)) {
-	            float local_percent = (percent - 2.0f/9.0f) / (1.0f/9.0f);
-	            R = 0;
-	            G = (int)(local_percent*255);
-	            B = 255;
-	        } else if(percent<(4.0f/9.0f)) {
-	             float local_percent = (percent - 3.0f/9.0f) / (1.0f/9.0f);
-	             R = 0;
-	             G = 255;
-	             B = (int)((1.0f-local_percent)*255);
-	        } else if(percent<(5.0f/9.0f)) {
-	             float local_percent = (percent - 4.0f/9.0f) / (1.0f/9.0f);
-	             R = (int)(local_percent*255);
-	             G = 255;
-	             B = 0;
-	        } else if(percent<(7.0f/9.0f)) {
-	             float local_percent = (percent - 5.0f/9.0f) / (2.0f/9.0f);
-	             R = 255;
-	             G = (int)((1.0f-local_percent)*255);
-	             B = 0;
-	        } else if(percent<(8.0f/9.0f)) {
-	             float local_percent = (percent - 7.0f/9.0f) / (1.0f/9.0f);
-	             R = 255;
-	             G = 0;
-	             B = (int)(local_percent*255);
-	        } else {
-	             float local_percent = (percent - 8.0f/9.0f) / (1.0f/9.0f);
-	             R = (int)((0.75f + 0.25f*(1.0f-local_percent))*255.0f);
-	             G = (int)(local_percent*255.0f*0.5f);
-	             B = 255;
-	        }
-	    }
-
-	    int pixel = (255 << 24)+(R << 16)+(G << 8) + B;
-	    return pixel;
+		mGLSurfaceView.requestRender();
 	}
 
 	public void setVfoLock() {
 		vfoLocked = !vfoLocked;
+	}
+	
+	public void setRenderer(Renderer renderer){
+		this.renderer = renderer;
+	}
+	
+	public void setGLSurfaceView(GLSurfaceView mGLSurfaceView){
+		this.mGLSurfaceView = mGLSurfaceView;
 	}
 
 	public void scroll(int step) {
@@ -365,28 +288,30 @@ Log.i("SpectrumView","width="+width+" height="+height);
 					moved=false;
 					scroll=false;
 					jog=false;
-					if(startX<=50 && startY>=(getHeight()-50)) {
+					if(startX<=50 && startY>=(HEIGHT-62) && startY <= HEIGHT) {
 						// frequency down 100
 						jog=true;
 						jogAmount=-100;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if(startX>=(getWidth()-50) && startY>=(getHeight()-50)) {
+					} else if(startX>=(WIDTH-50) && startY>=(HEIGHT-62) && startY <= HEIGHT) {
 						// frequency up 100 Hz
 						jog=true;
 						jogAmount=100;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=200) && (startX>=125) && (startY>=(getHeight()-50))) {
+					} else if((startX<=200) && (startX>=125) && (startY>=(HEIGHT-62))
+							&& (startY <= HEIGHT)) {
 						// frequency down 1000 Hz kb3omm added 1k decrement
 						jog=true;
 						jogAmount=-1000;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=(getWidth()-125) && (startX>=(getWidth()-200)) && startY>=(getHeight()-50))) {
+					} else if((startX<=(WIDTH-125)) && (startX>=(WIDTH-200)) 
+							&& (startY>=(HEIGHT-62)) && (startY <= HEIGHT)) {
 						// frequency up 1000 Hz kb3omm added 1k increment
 						jog=true;
 						jogAmount=1000;
@@ -459,13 +384,15 @@ Log.i("SpectrumView","width="+width+" height="+height);
 	private Paint paint;
 
 	private Connection connection;
+	private GLSurfaceView mGLSurfaceView;
+	private Renderer renderer;
 
 	private int WIDTH = 480;
 	private int HEIGHT = 160;
-
+	private final int MAX_CL_HEIGHT = 512;
 	private float[] points;
 
-	Bitmap waterfall;
+	//Bitmap waterfall;
 	//int[] pixels;
 	private int cy;
 	int offset;
@@ -490,7 +417,7 @@ Log.i("SpectrumView","width="+width+" height="+height);
 	private boolean scroll;
 	private boolean jog;
 	
-	private int average;
+	private int average = -100;
 	
 	private Timer timer;
 	private long jogAmount;
