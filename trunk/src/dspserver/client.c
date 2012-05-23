@@ -108,13 +108,14 @@ static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
 #define MIC_NO_OF_FRAMES 4
 
-#if (BITS_SIZE*MIC_NO_OF_FRAMES) > 400
 #define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
-#else
-#define MIC_BUFFER_SIZE   400
-#endif
+#define MIC_ALAW_BUFFER_SIZE 58
 
+#if MIC_BUFFER_SIZE > MIC_ALAW_BUFFER_SIZE
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
+#else
+static unsigned char mic_buffer[MIC_ALAW_BUFFER_SIZE];
+#endif
 
 #define RTP_BUFFER_SIZE 400
 #define RTP_TIMER_NS (RTP_BUFFER_SIZE/8 * 1000000)
@@ -238,11 +239,11 @@ void Mic_stream_queue_add(){
 		sem_post(&mic_semaphore);
 	}
     } else if (audiostream_conf.micEncoding == MIC_ENCODING_ALAW) {
-        bits = malloc(MIC_BUFFER_SIZE);
-        memcpy(bits, mic_buffer, MIC_BUFFER_SIZE);
+        bits = malloc(MIC_ALAW_BUFFER_SIZE);
+        memcpy(bits, mic_buffer, MIC_ALAW_BUFFER_SIZE);
         item = malloc(sizeof(*item));
         item->buf = bits;
-        item->length = MIC_BUFFER_SIZE;
+        item->length = MIC_ALAW_BUFFER_SIZE;
 	sem_wait(&mic_semaphore);
 	TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
 	sem_post(&mic_semaphore);
@@ -445,6 +446,7 @@ void spectrum_timer_handler(int sv){            // this is called every 20 ms
 
 void* rtp_tx_thread(void *arg){
     int j;
+    float data_in[TX_BUFFER_SIZE*2];
     float data_out[TX_BUFFER_SIZE*2*24];	// data_in is 8khz (duplicated to stereo) Mic samples.  
 						// May be resampled to 192khz or 24x stereo
     SRC_DATA data;
@@ -463,7 +465,10 @@ void* rtp_tx_thread(void *arg){
 		}
 
             // resample to the sample rate
-            data.data_in = (float *)item->buf;
+                for (j=0; j < TX_BUFFER_SIZE; j++){
+                        data_in[j*2] = data_in[j*2+1] = (float)G711A_decode(item->buf[j])/32767.0;
+                }
+            data.data_in = data_in;
             data.input_frames = TX_BUFFER_SIZE;
             data.data_out = data_out;
             data.output_frames = TX_BUFFER_SIZE*24 ;
@@ -506,8 +511,14 @@ void *tx_thread(void *arg){
    int tx_buffer_counter = 0;
    int rc;
    int j, i;
+
+#if CODEC2_SAMPLES_PER_FRAME > MIC_ALAW_BUFFER_SIZE
    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
+#else
+   float data_in [MIC_ALAW_BUFFER_SIZE*2];		// stereo
+   float data_out[MIC_ALAW_BUFFER_SIZE*2*24];	        // 192khz/8khz
+#endif
    SRC_DATA data;
    void *mic_codec2 = codec2_create();
 
@@ -522,19 +533,27 @@ void *tx_thread(void *arg){
 		continue;
 		}
 	else {
-	   bits = item->buf;		// each frame is BITS_SIZE long
-	   // process codec2 encoded mic_buffer
-	   codec2_decode(mic_codec2, codec2_buffer, bits);
-	   // mic data is mono, so copy to both right and left channels
-	   #pragma omp parallel for schedule(static) private(j) 
-           for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
-              data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
+           if (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2){
+	           bits = item->buf;	// each frame is BITS_SIZE long for Codec 2
+	           // process codec2 encoded mic_buffer
+	           codec2_decode(mic_codec2, codec2_buffer, bits);
+	           // mic data is mono, so copy to both right and left channels
+	           #pragma omp parallel for schedule(static) private(j) 
+                   for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
+                      data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
+                   }
            }
-
+           else {
+                for (j=0; j < MIC_ALAW_BUFFER_SIZE; j++){
+                        data_in[j*2] = data_in[j*2+1] = (float)G711A_decode(item->buf[j])/32767.0;
+                }
+           }
            data.data_in = data_in;
-           data.input_frames = CODEC2_SAMPLES_PER_FRAME;
+           data.input_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
+                CODEC2_SAMPLES_PER_FRAME : MIC_ALAW_BUFFER_SIZE;
            data.data_out = data_out;
-           data.output_frames = CODEC2_SAMPLES_PER_FRAME*24 ;
+           data.output_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
+                CODEC2_SAMPLES_PER_FRAME*24 : MIC_ALAW_BUFFER_SIZE*24 ;
            data.src_ratio = mic_src_ratio;
            data.end_of_input = 0;
 
