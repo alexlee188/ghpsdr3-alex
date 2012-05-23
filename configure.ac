@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.65])
 
-AC_INIT([ghpsdr3], [rxtx-rtp-symm], [andrew att montefusco dott com])
+AC_INIT([ghpsdr3], [master], [andrew att montefusco dott com])
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST

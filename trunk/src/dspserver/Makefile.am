@@ -18,24 +18,13 @@ dspserver_SOURCES = main.c\
          client.c\
          audiostream.c \
 	 audiostream.h  \
-banal.h        \
 buffer.h       \
-bufvec.h       \
 client.h       \
-complex.h      \
 codec2loc.h    \
-cxops.h        \
-datatypes.h    \
-defs.h         \
-dttspagc.h     \
 dttsp.h        \
-fastrig.h      \
-fromsys.h      \
-iosdr.h        \
 main.h         \
 ozy.h          \
 soundcard.h    \
-splitfields.h  \
 version.h	   \
 register.h	   \
 register.c     \
