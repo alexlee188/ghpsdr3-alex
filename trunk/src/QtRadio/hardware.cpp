@@ -1,6 +1,4 @@
-#include <QWidget> 
 #include <QtGui>
-#include <QDebug>
 
 #include "hardware.h"
 #include "UI.h"

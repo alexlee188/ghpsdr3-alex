@@ -1,8 +1,15 @@
 #if !defined __HARDWARE_H__
 #define __HARDWARE_H__
 
+#include <QDebug>
+#include <QtCore>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QWidget>
+#include <QtWidgets/QRadioButton>
+#else
 #include <QWidget>
 #include <QSignalMapper>
+#endif
 #include "Connection.h"
 
 class HardwareCommProxy 
