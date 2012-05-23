@@ -36,9 +36,13 @@ AC_SUBST(GITSTR)
 
 # QtRadio with Qt.
 AT_WITH_QT([core gui network])
-AT_REQUIRE_QT_VERSION(4.0.0, AC_MSG_ERROR([Bad Qt: 4.x required !]))
+AT_REQUIRE_QT_VERSION(4.0.0, AC_MSG_ERROR([Bad Qt: at least 4.x is required !]))
 
 AC_MSG_RESULT([QT version: $QT_VERSION])
+if test "x${QT_VERSION_MAJOR}" = x5; then
+   AC_MSG_RESULT([QT 5 detected: adding QtWidgets lib])
+   QT_LIBS="$QT_LIBS -lQtWidgets"
+fi
 
 AC_MSG_RESULT([QT_LIBS: $QT_LIBS])
 
