@@ -102,8 +102,18 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static float tx_buffer[TX_BUFFER_SIZE*2];
 static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
+
+// Mic data comes in BITS_SIZE*MIC_NO_OF_FRAMES if micEncoding is Codec 2,
+// or 400 bytes if micEncoding is aLaw
+
 #define MIC_NO_OF_FRAMES 4
+
+#if (BITS_SIZE*MIC_NO_OF_FRAMES) > 400
 #define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
+#else
+#define MIC_BUFFER_SIZE   400
+#endif
+
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
 #define RTP_BUFFER_SIZE 400
@@ -215,6 +225,7 @@ void Mic_stream_queue_add(){
    struct audio_entry *item;
    int i;
 
+   if (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2){
 	for (i=0; i < MIC_NO_OF_FRAMES; i++){
 
 		bits = malloc(BITS_SIZE);
@@ -226,6 +237,16 @@ void Mic_stream_queue_add(){
 		TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
 		sem_post(&mic_semaphore);
 	}
+    } else if (audiostream_conf.micEncoding == MIC_ENCODING_ALAW) {
+        bits = malloc(MIC_BUFFER_SIZE);
+        memcpy(bits, mic_buffer, MIC_BUFFER_SIZE);
+        item = malloc(sizeof(*item));
+        item->buf = bits;
+        item->length = MIC_BUFFER_SIZE;
+	sem_wait(&mic_semaphore);
+	TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
+	sem_post(&mic_semaphore);
+    }
 }
 
 void Mic_stream_queue_free(){
