@@ -238,6 +238,7 @@ void Configure::loadSettings(QSettings* settings) {
     if(settings->contains("encoding")) widget.encodingComboBox->setCurrentIndex(settings->value("encoding").toInt());
     if(settings->contains("byteorder")) widget.byteOrderComboBox->setCurrentIndex(settings->value("byteorder").toInt());
 //    if(settings->contains("mic")) widget.MicComboBox->setCurrentIndex(settings->value("mic").toInt());
+    if(settings->contains("micEncoding")) widget.MicEncodingComboBox->setCurrentIndex(settings->value("micEncoding").toInt());
     if(settings->contains("rtp")) widget.rtpCheckBox->setChecked(settings->value("rtp").toBool());
     widget.spinBox_cwPitch->setValue(settings->value("cwPitch",600).toInt());
     settings->endGroup();
@@ -325,6 +326,7 @@ void Configure::saveSettings(QSettings* settings) {
     settings->setValue("encoding",widget.encodingComboBox->currentIndex());
     settings->setValue("byteorder",widget.byteOrderComboBox->currentIndex());
     settings->setValue("mic",widget.MicComboBox->currentIndex());
+    settings->setValue("micEncoding",widget.MicEncodingComboBox->currentIndex());
     settings->setValue("rtp",widget.rtpCheckBox->checkState());
     settings->setValue("cwPitch",widget.spinBox_cwPitch->value());
     settings->endGroup();

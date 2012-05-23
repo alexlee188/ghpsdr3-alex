@@ -102,8 +102,18 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static float tx_buffer[TX_BUFFER_SIZE*2];
 static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
+
+// Mic data comes in BITS_SIZE*MIC_NO_OF_FRAMES if micEncoding is Codec 2,
+// or 400 bytes if micEncoding is aLaw
+
 #define MIC_NO_OF_FRAMES 4
+
+#if (BITS_SIZE*MIC_NO_OF_FRAMES) > 400
 #define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
+#else
+#define MIC_BUFFER_SIZE   400
+#endif
+
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
 
 #define RTP_BUFFER_SIZE 400
@@ -215,6 +225,7 @@ void Mic_stream_queue_add(){
    struct audio_entry *item;
    int i;
 
+   if (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2){
 	for (i=0; i < MIC_NO_OF_FRAMES; i++){
 
 		bits = malloc(BITS_SIZE);
@@ -226,6 +237,16 @@ void Mic_stream_queue_add(){
 		TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
 		sem_post(&mic_semaphore);
 	}
+    } else if (audiostream_conf.micEncoding == MIC_ENCODING_ALAW) {
+        bits = malloc(MIC_BUFFER_SIZE);
+        memcpy(bits, mic_buffer, MIC_BUFFER_SIZE);
+        item = malloc(sizeof(*item));
+        item->buf = bits;
+        item->length = MIC_BUFFER_SIZE;
+	sem_wait(&mic_semaphore);
+	TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
+	sem_post(&mic_semaphore);
+    }
 }
 
 void Mic_stream_queue_free(){
@@ -997,18 +1018,19 @@ void readcb(struct bufferevent *bev, void *ctx){
             gain=atoi(tokens[0]);
             SetRXOutputGain(0,1,(double)gain/100.0);
         } else if(strncmp(cmd,"startaudiostream",16)==0) {
-            int ntok, bufsize, rate, channels;
+            int ntok, bufsize, rate, channels, micEncoding;
             if (slave) {
                 current_item->rtp = connection_tcp;
                 continue;
             }
-            ntok = tokenize_cmd(&saveptr, tokens, 3);
+            ntok = tokenize_cmd(&saveptr, tokens, 4);
 
             /* FIXME: this is super racy */
 
             bufsize = AUDIO_BUFFER_SIZE;
             rate = 8000;
             channels = 1;
+            micEncoding = 0;
 
             if (ntok >= 1) {
                 /* FIXME: validate! */
@@ -1028,16 +1050,24 @@ void readcb(struct bufferevent *bev, void *ctx){
                     channels = 1;
                 }
             }
+            if (ntok >= 4) {
+                micEncoding = atoi(tokens[3]);
+                if (micEncoding != 1 && micEncoding != 2) {
+                    sdr_log(SDR_LOG_INFO, "Invalid mic encoding: %d\n", micEncoding);
+                    micEncoding = 0;
+                }
+            }
 
             sem_wait(&audiostream_sem);
             audiostream_conf.bufsize = bufsize;
             audiostream_conf.samplerate = rate;
             audiostream_conf.channels = channels;
+            audiostream_conf.micEncoding = micEncoding;
             audiostream_conf.age++;
             sem_post(&audiostream_sem);
 
-            sdr_log(SDR_LOG_INFO, "starting audio stream at rate %d channels %d bufsize %d encoding %d\n",
-                    rate, channels, bufsize, encoding);
+            sdr_log(SDR_LOG_INFO, "starting audio stream at rate %d channels %d bufsize %d encoding %d micEncoding %d\n",
+                    rate, channels, bufsize, encoding, micEncoding);
             item->rtp=connection_tcp;
             audio_stream_reset();
             sem_wait(&bufferevent_semaphore);
