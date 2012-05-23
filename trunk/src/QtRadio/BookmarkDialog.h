@@ -1,6 +1,15 @@
 #ifndef BOOKMARKDIALOG_H
 #define BOOKMARKDIALOG_H
 
+#include <QtCore>
+
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QFrame>
+#include <QtWidgets/QDialog>
+#else
+#include <QFrame>
+#include <QDialog>
+#endif
 #include "ui_Bookmark.h"
 
 class BookmarkDialog : public QDialog {

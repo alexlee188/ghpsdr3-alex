@@ -17,7 +17,6 @@ usrp_server_SOURCES = \
 		bandscope.h \
 		buffer.h \
 		client.h \
-		getopt.h \
 		listener.h \
 		messages.h \
 		receiver.h  transmitter.h  usrp_audio.h  usrp.h  util.h resampler.h

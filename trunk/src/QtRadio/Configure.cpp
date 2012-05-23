@@ -24,7 +24,11 @@
 */
 
 #include <QSettings>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QComboBox>
+#else
 #include <QComboBox>
+#endif
 
 #include "Xvtr.h"
 #include "Configure.h"
@@ -43,6 +47,8 @@ Configure::Configure() {
     widget.MicOrderComboBox->addItem("BigEndian");
     widget.MicOrderComboBox->setCurrentIndex(0);
     widget.MicChannelsSpinBox->setValue(1);
+    widget.MicEncodingComboBox->addItem("aLaw");
+    widget.MicEncodingComboBox->addItem("Codec 2");
 
     widget.hostComboBox->addItem("127.0.0.1");
     widget.hostComboBox->addItem("g0orx.homelinux.net");
@@ -232,6 +238,7 @@ void Configure::loadSettings(QSettings* settings) {
     if(settings->contains("encoding")) widget.encodingComboBox->setCurrentIndex(settings->value("encoding").toInt());
     if(settings->contains("byteorder")) widget.byteOrderComboBox->setCurrentIndex(settings->value("byteorder").toInt());
 //    if(settings->contains("mic")) widget.MicComboBox->setCurrentIndex(settings->value("mic").toInt());
+    if(settings->contains("micEncoding")) widget.MicEncodingComboBox->setCurrentIndex(settings->value("micEncoding").toInt());
     if(settings->contains("rtp")) widget.rtpCheckBox->setChecked(settings->value("rtp").toBool());
     widget.spinBox_cwPitch->setValue(settings->value("cwPitch",600).toInt());
     settings->endGroup();
@@ -319,6 +326,7 @@ void Configure::saveSettings(QSettings* settings) {
     settings->setValue("encoding",widget.encodingComboBox->currentIndex());
     settings->setValue("byteorder",widget.byteOrderComboBox->currentIndex());
     settings->setValue("mic",widget.MicComboBox->currentIndex());
+    settings->setValue("micEncoding",widget.MicEncodingComboBox->currentIndex());
     settings->setValue("rtp",widget.rtpCheckBox->checkState());
     settings->setValue("cwPitch",widget.spinBox_cwPitch->value());
     settings->endGroup();
@@ -811,4 +819,9 @@ void Configure::on_spinBox_cwPitch_valueChanged(int arg1)
 {
     qDebug()<<Q_FUNC_INFO<<": The cw pitch is now "<<widget.spinBox_cwPitch->value()<<" Hz and arg1 = "<< arg1;
     emit spinBox_cwPitchChanged(arg1);
+}
+
+void Configure::on_MicEncodingComboBox_currentIndexChanged(int index)
+{
+    emit micEncodingChanged(index);
 }

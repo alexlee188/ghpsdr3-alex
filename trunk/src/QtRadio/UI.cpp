@@ -26,7 +26,13 @@
 #include <QDebug>
 #include <QSettings>
 #include <QPainter>
+#include <QtCore>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QMessageBox>
+#else
 #include <QMessageBox>
+#endif
+
 #include <QTimer>
 #include <QThread>
 #include <ortp/ortp.h>
@@ -242,6 +248,7 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(waterfallAutomaticChanged(bool)),this,SLOT(waterfallAutomaticChanged(bool)));
     connect(&configure,SIGNAL(encodingChanged(int)),this,SLOT(encodingChanged(int)));
     connect(&configure,SIGNAL(encodingChanged(int)),audio,SLOT(set_audio_encoding(int)));
+    connect(&configure,SIGNAL(micEncodingChanged(int)),audioinput,SLOT(setMicEncoding(int)));
     connect(&configure,SIGNAL(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),this,SLOT(audioDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
     connect(&configure,SIGNAL(micDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)),this,SLOT(micDeviceChanged(QAudioDeviceInfo,int,int,QAudioFormat::Endian)));
 
@@ -542,6 +549,9 @@ void UI::actionConnect() {
     //widget.spectrumFrame->setHost(configure.getHost()); //deleted by gvj
     widget.spectrumFrame->setReceiver(configure.getReceiver());
     isConnected = true;
+
+    // Initialise RxIQMu. Set RxIQMu to disabled, set value and then enable if checked.
+    RxIQspinChanged(configure.getRxIQspinBoxValue());
 }
 
 
@@ -670,7 +680,7 @@ void UI::connected() {
            command.clear(); QTextStream(&command) << "startAudioStream "
                 << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " "
                 << audio_sample_rate << " "
-                << audio_channels;
+                << audio_channels << " " << audioinput->getMicEncoding();
        }
        connection.sendCommand(command);
        qDebug() << "command: " << command;
@@ -806,17 +816,15 @@ void UI::audioBuffer(char* header,char* buffer) {
 
 void UI::micSendAudio(QQueue<qint16>* queue){
     if(useRTP) {
-        qint16 sample;
-        unsigned char e;
-
         while(!queue->isEmpty()) {
-            sample=queue->dequeue();
+            qint16 sample=queue->dequeue();
             if(tuning) sample=0;
-            e=g711a.encode(sample);
+            unsigned char e=g711a.encode(sample);
             mic_encoded_buffer[mic_buffer_count++]=e;
             if(mic_buffer_count >= MIC_BUFFER_SIZE) {
                 if (connection_valid && configure.getTxAllowed()){
                     rtp_send_buffer = (unsigned char*) malloc(MIC_BUFFER_SIZE);
+                    // rtp_send_buffer will be free'd by rtp_send()
                     memcpy(rtp_send_buffer, mic_encoded_buffer, MIC_BUFFER_SIZE);
                     emit rtp_send(rtp_send_buffer,MIC_BUFFER_SIZE);
                 }
@@ -824,7 +832,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
             }
         }
 
-    } else {
+    } else if (audioinput->getMicEncoding() == 1){      // Codec 2
         while(! queue->isEmpty()){
             qint16 sample = queue->dequeue();
             mic_buffer[mic_buffer_count++] = tuning ? 0: sample;
@@ -840,6 +848,21 @@ void UI::micSendAudio(QQueue<qint16>* queue){
                 }
             }
         }
+    } else if (audioinput->getMicEncoding() == 0){      // aLaw
+        while(!queue->isEmpty()) {
+            qint16 sample=queue->dequeue();
+            if(tuning) sample=0;
+            unsigned char e=g711a.encode(sample);
+            mic_encoded_buffer[mic_buffer_count++] = e;
+            if(mic_buffer_count >= MIC_ALAW_BUFFER_SIZE) {
+                if (connection_valid && configure.getTxAllowed()){
+                    connection.sendAudio(MIC_ALAW_BUFFER_SIZE, mic_encoded_buffer);
+                }
+                mic_buffer_count=0;
+            }
+        }
+    } else {
+        qDebug() << "Error - UI: MicEncoding is not 0 nor 1 but " << audioinput->getMicEncoding();
     }
 
 }
@@ -1191,6 +1214,7 @@ void UI::modeChanged(int previousMode,int newMode) {
     }
     qDebug()<<Q_FUNC_INFO<<":  1043: value of band.getFilter after filters.selectFilters has been called = "<<band.getFilter();
     widget.spectrumFrame->setMode(mode.getStringMode());
+    widget.waterfallFrame->setMode(mode.getStringMode());
     command.clear(); QTextStream(&command) << "setMode " << mode.getMode();
     connection.sendCommand(command);
 }
@@ -1953,6 +1977,7 @@ void UI::bookmarkSelected(int entry) {
     if(entry>=0 && entry<bookmarks.count()) {
         Bookmark* bookmark=bookmarks.at(entry);
         FiltersBase* filters;
+//TODO Get rid of message "warning: 'filters' may be used uninitialized in this function"
 
         bookmarksEditDialog->setTitle(bookmark->getTitle());
         bookmarksEditDialog->setBand(band.getStringBand(bookmark->getBand()));
@@ -2044,7 +2069,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  iw0hdv 5 May 2012");
+                   + getversionstring() +  message + "  iw0hdv 23 May 2012");
     lastmessage = message;
 
 }
@@ -2149,7 +2174,7 @@ void UI::pttChange(int caller, bool ptt)
             if(caller==1) { //We have clicked the tune button so switch to AM and set carrier level
                workingMode = mode.getMode(); //Save the current mode for restoration when we finish tuning
                // Set the AM carrier level to match the tune power slider value in a scale 0 to 1.0
-                if (dspversion >= 20120201  & canTX & chkTX){
+                if ((dspversion >= 20120201)  && canTX && chkTX){
                   command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100 <<" "<< configure.thisuser <<" " << configure.thispass;;
                 }else{
                   command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100;
@@ -2160,7 +2185,7 @@ void UI::pttChange(int caller, bool ptt)
             //Mute the receiver audio and freeze the spectrum and waterfall display
             connection.setMuted(true);
             //Key the radio
-            if (dspversion >= 20120201  & canTX & chkTX){
+            if ((dspversion >= 20120201)  && canTX && chkTX){
                command.clear(); QTextStream(&command) << "Mox " << "on " << configure.thisuser <<" " << configure.thispass;
             }else{
                command.clear(); QTextStream(&command) << "Mox " << "on";
@@ -2170,7 +2195,7 @@ void UI::pttChange(int caller, bool ptt)
         } else {    // Going from Tx to Rx .................
             if(caller==1) {
                 //Restore AM carrier level to 0.5 the standard carrier level for AM mode.
-                if (dspversion >= 20120201 & canTX & chkTX){
+                if ((dspversion >= 20120201) && canTX && chkTX){
                     command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << 0.5 <<" " << configure.thisuser <<" " << configure.thispass;
                 }else{
                     command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << 0.5;
@@ -2193,7 +2218,7 @@ void UI::pttChange(int caller, bool ptt)
             //Un-mute the receiver audio
             connection.setMuted(false);
             //Send signal to sdr to go to Rx
-            if (dspversion >= 20120201  & canTX & chkTX){
+            if ((dspversion >= 20120201)  && canTX && chkTX){
                 command.clear(); QTextStream(&command) << "Mox " << "off " << configure.thisuser <<" " << configure.thispass;
             }else{
                 command.clear(); QTextStream(&command) << "Mox " << "off";
@@ -2207,7 +2232,7 @@ void UI::pttChange(int caller, bool ptt)
 void UI::pwrSlider_valueChanged(double pwr)
 {
     QString command;
-    if (dspversion >= 20120201 && canTX & chkTX){
+    if (dspversion >= 20120201 && canTX && chkTX){
        command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << pwr << " " << configure.thisuser << " " << configure.thispass;;
     }else{
        command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << pwr;
@@ -2323,8 +2348,9 @@ void UI::RxIQcheckChanged(bool state)
 void UI::RxIQspinChanged(double num)
 {
     QString command;
+    bool temp;
 
-    //temp = configure.getRxIQcheckboxState();
+    temp = configure.getRxIQcheckboxState();
     // Turn off RXIQMu
     command.clear(); QTextStream(&command) << "SetIQEnable " << "false";
     connection.sendCommand(command);
@@ -2332,6 +2358,11 @@ void UI::RxIQspinChanged(double num)
     if(configure.getRxIQdivCheckBoxState()) num=num/100;
     command.clear(); QTextStream(&command) << "RxIQmuVal " << num;
     connection.sendCommand(command);
+    //If checked to be on, then turn it back on
+    if(temp) {
+        command.clear(); QTextStream(&command) << "SetIQEnable " << "true";
+        connection.sendCommand(command);
+    }
 }
 
 void UI::cwPitchChanged(int arg1)
@@ -2353,9 +2384,8 @@ void UI::setCanTX(bool tx){
 void UI::setChkTX(bool chk){
    chkTX = true;
    infotick2 = 0;
-
 }
-//=======
+
 void UI::testSliderChange(int value)
 {
     QString command;

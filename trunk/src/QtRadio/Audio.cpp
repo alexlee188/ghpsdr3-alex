@@ -85,9 +85,8 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
    qint64 bytes_read;
    qint16 v;
-   qint64 bytes_to_read = maxlen > 800 ? 800 : maxlen; // read in small chunks so this does not hog QThread
-   int has_more;                                       // Now that Audio_playback is running in its own QThread
-                                                       // and RTP also in its own QThread it is no longer an issue
+   qint64 bytes_to_read = maxlen > 800 ? 800: maxlen;
+   int has_more;
 
    if (useRTP && rtp_connected){
        int i;
@@ -373,7 +372,7 @@ void Audio::stateChanged(QAudio::State State){
 	case QAudio::SuspendedState:
             if (audio_output->error() != QAudio::NoError) {
                 qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << State;
-	    audio_output->start(audio_out);
+            //audio_output->start(audio_out);
             break;
             }
         case QAudio::IdleState:

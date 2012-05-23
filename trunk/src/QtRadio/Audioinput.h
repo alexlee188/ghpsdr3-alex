@@ -6,7 +6,13 @@
 #include <QAudioFormat>
 #include <QAudioInput>
 #include <QAudioDeviceInfo>
+
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QComboBox>
+#else
 #include <QtGui/QComboBox>
+#endif
+
 #include <QMutex>
 #include <QQueue>
 
@@ -40,6 +46,7 @@ public:
     AudioInput();
     ~AudioInput();
     void get_audioinput_devices(QComboBox* comboBox);
+    int getMicEncoding(void);
 signals:
     void mic_update_level(qreal level);
     void mic_send_audio(QQueue<qint16>* queue);
@@ -47,6 +54,7 @@ public slots:
     void stateChanged(QAudio::State);
     void select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void slotMicUpdated(QQueue<qint16>*);
+    void setMicEncoding(int encoding);
 private:
     QAudioDeviceInfo m_device;
     QAudioFormat m_format;

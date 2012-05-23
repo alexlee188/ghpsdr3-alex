@@ -4,8 +4,12 @@
 #include <QObject>
 #include <QVector>
 #include <QSettings>
-#include <QAction>
+
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QMenu>
+#else
 #include <QMenu>
+#endif
 
 #include "Bookmark.h"
 #include "Bookmarks.h"

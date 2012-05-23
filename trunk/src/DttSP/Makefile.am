@@ -46,7 +46,6 @@ libDttSP_a_SOURCES = \
 	graphiceq.h \
 	hilbert.c \
 	hilbert.h \
-	iosdr.h \
 	isoband.c \
 	isoband.h \
 	keyer.c \

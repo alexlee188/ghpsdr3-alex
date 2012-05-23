@@ -47,6 +47,11 @@ enum as_encoding {
     ENCODING_ALAW2              = 3
 };
 
+enum as_mic_encoding {
+    MIC_ENCODING_ALAW		= 0,
+    MIC_ENCODING_CODEC2		= 1
+};
+
 #define AUDIO_BUFFER_SIZE 400
 
 struct audio_entry {
@@ -70,6 +75,7 @@ struct audiostream_config {
                                  *   1 = mono
                                  *   2 = stereo                               */
     enum as_encoding encoding;  /**< Wire encoding for the current buffer     */
+    enum as_mic_encoding micEncoding;
     int age;                    /**< Age of the current buffer; incremented on
                                  *   each change to the configuration, reset
                                  *   when a new buffer is allocated           */
