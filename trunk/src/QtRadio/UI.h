@@ -83,6 +83,7 @@
 #define MIC_BUFFER_SIZE 400
 #define MIC_NO_OF_FRAMES 4      // need to ensure this is the same value in dspserver
 #define MIC_ENCODED_BUFFER_SIZE (BITS_SIZE*MIC_NO_OF_FRAMES)
+#define MIC_ALAW_BUFFER_SIZE 58 // limited by the 64 byte TCP message frame
 
 class UI : public QMainWindow {
     Q_OBJECT

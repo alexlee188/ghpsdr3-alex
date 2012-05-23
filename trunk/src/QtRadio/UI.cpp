@@ -843,9 +843,9 @@ void UI::micSendAudio(QQueue<qint16>* queue){
             if(tuning) sample=0;
             unsigned char e=g711a.encode(sample);
             mic_encoded_buffer[mic_buffer_count++] = e;
-            if(mic_buffer_count >= MIC_BUFFER_SIZE) {
+            if(mic_buffer_count >= MIC_ALAW_BUFFER_SIZE) {
                 if (connection_valid && configure.getTxAllowed()){
-                    connection.sendAudio(MIC_BUFFER_SIZE, mic_encoded_buffer);
+                    connection.sendAudio(MIC_ALAW_BUFFER_SIZE, mic_encoded_buffer);
                 }
                 mic_buffer_count=0;
             }
