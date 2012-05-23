@@ -39,7 +39,12 @@ AT_WITH_QT([core gui network])
 AT_REQUIRE_QT_VERSION(4.0.0, AC_MSG_ERROR([Bad Qt: at least 4.x is required !]))
 
 AC_MSG_RESULT([QT version: $QT_VERSION])
-if test "x${QT_VERSION_MAJOR}" = x5; then
+
+
+QTVM=`echo $QT_VERSION | sed 's/\.[[0-9]]*\.[[0-9]]*//g'`
+
+AC_MSG_RESULT([QT version major: $QTVM])
+if test "x${QTVM}" = x5; then
    AC_MSG_RESULT([QT 5 detected: adding QtWidgets lib])
    QT_LIBS="$QT_LIBS -lQtWidgets"
 fi
