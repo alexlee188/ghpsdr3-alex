@@ -224,7 +224,6 @@ void Mic_stream_queue_add(){
 
    if (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2){
 	for (i=0; i < MIC_NO_OF_FRAMES; i++){
-
 		bits = malloc(BITS_SIZE);
 		memcpy(bits, &mic_buffer[i*BITS_SIZE], BITS_SIZE);
 		item = malloc(sizeof(*item));
@@ -235,14 +234,14 @@ void Mic_stream_queue_add(){
 		sem_post(&mic_semaphore);
 	}
     } else if (audiostream_conf.micEncoding == MIC_ENCODING_ALAW) {
-        bits = malloc(MIC_ALAW_BUFFER_SIZE);
-        memcpy(bits, mic_buffer, MIC_ALAW_BUFFER_SIZE);
-        item = malloc(sizeof(*item));
-        item->buf = bits;
-        item->length = MIC_ALAW_BUFFER_SIZE;
-	sem_wait(&mic_semaphore);
-	TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
-	sem_post(&mic_semaphore);
+                bits = malloc(MIC_ALAW_BUFFER_SIZE);
+                memcpy(bits, mic_buffer, MIC_ALAW_BUFFER_SIZE);
+                item = malloc(sizeof(*item));
+                item->buf = bits;
+                item->length = MIC_ALAW_BUFFER_SIZE;
+	        sem_wait(&mic_semaphore);
+	        TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
+	        sem_post(&mic_semaphore);
     }
 }
 

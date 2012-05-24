@@ -8,7 +8,8 @@ include $(srcdir)/build-aux/autotroll.mk
 QtRadio_CXXFLAGS = $(QT_CXXFLAGS) $(AM_CXXFLAGS)
 QtRadio_CPPFLAGS = $(QT_ADDITIONAL_INCLUDE_PATH) $(QT_CPPFLAGS) $(AM_CPPFLAGS) -DGITREV="\"$(GITSTR)\""
 
-QtRadio_LDFLAGS  = $(QT_LDFLAGS) $(LDFLAGS) $(QT_ADDITIONAL_LDFLAG) -lQtOpenGL -lQtWidgets -lGLU
+
+QtRadio_LDFLAGS  = $(QT_LDFLAGS) $(LDFLAGS) $(QT_ADDITIONAL_LDFLAG) -lQtOpenGL -lGLU
 QtRadio_LDADD    = $(QT_LIBS) $(LDADD) $(QtRadio_LDFLAGS)
 
 # For a program:
@@ -123,7 +124,7 @@ Audioinput.h \
 servers.h \
 G711A.h RTP.h \
 Watefallcl.h \
-cuSDR_queue.h \
+cusdr_queue.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui servers.ui
 
