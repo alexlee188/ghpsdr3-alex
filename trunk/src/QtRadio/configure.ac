@@ -35,7 +35,7 @@ AC_SUBST(GITSTR)
 
 
 # QtRadio with Qt.
-AT_WITH_QT([core gui network])
+AT_WITH_QT([core gui network opengl])
 AT_REQUIRE_QT_VERSION(4.0.0, AC_MSG_ERROR([Bad Qt: at least 4.x is required !]))
 
 AC_MSG_RESULT([QT version: $QT_VERSION])
