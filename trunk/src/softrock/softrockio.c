@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/timeb.h>
+#include <libusb-1.0/libusb.h>
 
 #include "softrock.h"
 #include "softrockio.h"
