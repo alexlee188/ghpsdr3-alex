@@ -88,6 +88,17 @@ typedef struct tag_writeblock{
 	unsigned char ControlB_unused[63];
 }WR_BLOCK;
 
+#define IQ_RINGBUF_SIZE		1024
+
+typedef struct tag_ringbuf{
+	float buf[IQ_RINGBUF_SIZE];
+	float *buf_end;
+	float *rp;
+	float *wp;
+	int count;	//values in buf
+	char name[255];
+}RINGBUF;
+
 int softrock_open(void);
 int softrock_close();
 #ifdef PULSEAUDIO

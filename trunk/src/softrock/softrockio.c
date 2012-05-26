@@ -58,6 +58,7 @@ static struct timeb end_time;
 static int sample_count=0;
 WR_BLOCK outRecord[16];
 RD_BLOCK inRecord[16];
+RINGBUF rx_r, rx_l;
 
 #define SAMPLE_RATE 48000   /* the sampling rate */
 #define CHANNELS 2  /* 1 = mono 2 = stereo */
@@ -76,6 +77,75 @@ static PaStream* stream;
 #ifdef DIRECTAUDIO
 static int fd;
 #endif
+
+void InitBuf(RINGBUF *buf, char *namestr)
+{
+	buf->rp = buf;
+	buf->wp = buf;
+	buf->count = 0;
+	buf->buf_end = (char *)buf + IQ_RINGBUF_SIZE*sizeof(float);	
+	strcpy(buf->name, namestr);
+}
+
+void WriteToBuf(RINGBUF *buf, float val)
+{
+	if(buf->count < IQ_RINGBUF_SIZE){
+		*(buf->wp) = val;
+		buf->wp++;
+		if(buf->wp == buf->buf_end) buf->wp = buf;	//wrap up
+		buf->count++;
+	}
+	else{
+		printf("Buffer: %s overrun\n", buf->name);
+	}	
+}
+
+float ReadFromBuf(RINGBUF *buf)
+{	
+	float val;
+
+	if(buf->count > 0){
+		val = *(buf->rp);
+		buf->rp++;		
+		if(buf->rp == buf->buf_end) buf->rp = buf;	//wrap up
+		buf->count--;
+	}
+	else{
+		printf("Buffer: %s underrun\n", buf->name);
+		return 0;
+	}
+
+	return val;
+}
+
+void ReadFile(char *name, unsigned char *buffer, unsigned long *len)
+{
+	FILE *file;
+	unsigned long fileLen;
+
+	//Open file
+	file = fopen(name, "rb");
+	if (!file)
+	{
+		fprintf(stderr, "Unable to open file %s", name);
+		return;
+	}
+
+	//Get file length
+	fseek(file, 0, SEEK_END);
+	fileLen=ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	//Read file contents into buffer
+	fread(buffer, fileLen, 1, file);
+	fclose(file);
+
+	//Do what ever with buffer
+
+	//free(buffer);
+	*len = fileLen;
+}
+
 
 int softrock_open(void) {
 #ifdef DIRECTAUDIO  
