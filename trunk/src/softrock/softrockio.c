@@ -56,7 +56,8 @@ static int timing=0;
 static struct timeb start_time;
 static struct timeb end_time;
 static int sample_count=0;
-
+WR_BLOCK outRecord[16];
+RD_BLOCK inRecord[16];
 
 #define SAMPLE_RATE 48000   /* the sampling rate */
 #define CHANNELS 2  /* 1 = mono 2 = stereo */
