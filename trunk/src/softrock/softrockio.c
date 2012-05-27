@@ -118,11 +118,11 @@ float ReadFromBuf(RINGBUF *buf)
 	return val;
 }
 
-void ReadFile(char *name, unsigned char *buffer, unsigned long *len)
+void ReadFile(char *name, unsigned char **buffer, unsigned long *len)
 {
 	FILE *file;
 	unsigned long fileLen;
-
+	
 	//Open file
 	file = fopen(name, "rb");
 	if (!file)
@@ -135,14 +135,18 @@ void ReadFile(char *name, unsigned char *buffer, unsigned long *len)
 	fseek(file, 0, SEEK_END);
 	fileLen=ftell(file);
 	fseek(file, 0, SEEK_SET);
-
+	
+	//allocate a buffer to keep the binary
+	*buffer = (unsigned char *)malloc(400000);
+	if((*buffer) == NULL){
+    	printf("DEBUG: allocation PROBLEM\n");       
+    }
+	else printf("DEBUG: allocation for binary done ok\n");
+	
 	//Read file contents into buffer
-	fread(buffer, fileLen, 1, file);
+	fread(*buffer, fileLen, 1, file);
 	fclose(file);
 
-	//Do what ever with buffer
-
-	//free(buffer);
 	*len = fileLen;
 }
 
