@@ -1064,9 +1064,9 @@ void readcb(struct bufferevent *bev, void *ctx){
             }
             if (ntok >= 4) {
                 micEncoding = atoi(tokens[3]);
-                if (micEncoding != 1 && micEncoding != 2) {
+                if (micEncoding != MIC_ENCODING_CODEC2 && micEncoding != MIC_ENCODING_ALAW) {
                     sdr_log(SDR_LOG_INFO, "Invalid mic encoding: %d\n", micEncoding);
-                    micEncoding = 0;
+                    micEncoding = MIC_ENCODING_ALAW;
                 }
             }
 
