@@ -649,10 +649,6 @@ void UI::connected() {
     connection.sendCommand(command);
     // qDebug() << "Command: " << command;
 
-    // upon connection, (re)select the audio_device in case it was stopped because of errors
-    // somehow this call stops RTP audio from working
-    if (!useRTP) audio->select_audio(audio_device, audio_sample_rate, audio_channels, audio_byte_order);
-
     // start the audio
     audio_buffers=0;
     actionGain(gain);
@@ -2058,7 +2054,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + " opengl-qt5 23 May 2012");
+                   + getversionstring() +  message + " opengl-qt5 29 May 2012");
 
     lastmessage = message;
 
