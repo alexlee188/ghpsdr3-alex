@@ -21,7 +21,6 @@ public final class R {
         public static final int basic_vs=0x7f040001;
     }
     public static final class string {
-        public static final int app_name=0x7f050001;
-        public static final int hello=0x7f050000;
+        public static final int app_name=0x7f050000;
     }
 }
