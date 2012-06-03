@@ -86,6 +86,38 @@ libusb_device **devs; //pointer to pointer of device, used to retrieve a list of
 libusb_device_handle *usb2sdr_handle; //a device handle
 libusb_context *ctx = NULL; //a libusb session
 
+void ReadFile(char *name, unsigned char **buffer, unsigned long *len)
+{
+	FILE *file;
+	unsigned long fileLen;
+	
+	//Open file
+	file = fopen(name, "rb");
+	if (!file)
+	{
+		fprintf(stderr, "Unable to open file %s", name);
+		return;
+	}
+
+	//Get file length
+	fseek(file, 0, SEEK_END);
+	fileLen=ftell(file);
+	fseek(file, 0, SEEK_SET);
+	
+	//allocate a buffer to keep the binary
+	*buffer = (unsigned char *)malloc(400000);
+	if((*buffer) == NULL){
+    	printf("DEBUG: allocation PROBLEM\n");       
+    }
+	else printf("DEBUG: allocation for binary done ok\n");
+	
+	//Read file contents into buffer
+	fread(*buffer, fileLen, 1, file);
+	fclose(file);
+
+	*len = fileLen;
+}
+
 
 void process_args(int argc,char* argv[]);
 
@@ -101,8 +133,7 @@ int main(int argc,char* argv[]) {
 	unsigned char tmp;
 	unsigned long binlen,i;
 	int actual; //used to find out how many bytes were written
-	char ch;
-
+	
     process_args(argc,argv);
 
     if(si570) {
@@ -115,19 +146,19 @@ int main(int argc,char* argv[]) {
     }
 
 	if(usb2sdr) {
-		printf("usb2sdr selected\n"); //debug
+		//printf("usb2sdr selected\n"); //debug
 		r = libusb_init(&ctx); //initialize the library for the session we just declared
 	    if(r < 0) {
 			printf("Init Error %d\n",r);
 			return 1;
     	}
-		printf("libusb_init ok\n"); //debug
+		//printf("libusb_init ok\n"); //debug
     	libusb_set_debug(ctx, 3); //set verbosity level to 3, as suggested in the documentation
 	    cnt = libusb_get_device_list(ctx, &devs); //get the list of devices
     	if(cnt < 0) {
 			printf("Get Device Error\n");		
     	}
-		printf("libusb_get_device_list ok\n"); //debug
+		//printf("libusb_get_device_list ok\n"); //debug
 		//first check if the USB2SDR is present
 		usb2sdr_handle = libusb_open_device_with_vid_pid(ctx, 0x0451, 0x9099); //USB2SDR id while configured
 		if(usb2sdr_handle == NULL){
@@ -137,6 +168,7 @@ int main(int argc,char* argv[]) {
 			usb2sdr_handle = libusb_open_device_with_vid_pid(ctx, 0x0451, 0x9010); //unconfigured device id
 			if(usb2sdr_handle == NULL){
 				printf("No USB2SDR hardware was found. Please check the USB cable\n");
+				return 0;
 			}
 			else{
 				printf("Found unconfigured USB2SDR board\n");
@@ -185,31 +217,33 @@ int main(int argc,char* argv[]) {
 				free(binFile);
 				libusb_close(usb2sdr_handle); //close the device we opened
 				sleep(3);	//3seconds for the USB2SDR to be detected with its new ID
+				
+				sleep(2);
+				usb2sdr_handle = libusb_open_device_with_vid_pid(ctx, 0x0451, 0x9099); //these are vendorID and productID of loaded USB2SDR
+				if(usb2sdr_handle == NULL){
+					printf("Cannot open USB2SDR");
+					//return 0;
+				}
+				else{
+					printf("USB2SDR found and Opened\n");	
+				}
+				if(libusb_kernel_driver_active(usb2sdr_handle, 0) == 1) { //find out if kernel driver is attached
+					printf("Kernel Driver Active");
+					if(libusb_detach_kernel_driver(usb2sdr_handle, 0) == 0){ //detach it
+						printf("Kernel Driver Detached!");
+					}
+				}
+				r = libusb_claim_interface(usb2sdr_handle, 0); //claim interface 0 (the first) of device (mine had jsut 1)
+				if(r < 0) {
+					printf("Cannot Claim Interface");
+				}
+				printf("Claimed interface 0\n");
 			}//if unconfigured card was opened
 		}
 		else{
 			printf("Found a configured USB2SDR. Ready for action\n");
 		}
-		sleep(2);
-		usb2sdr_handle = libusb_open_device_with_vid_pid(ctx, 0x0451, 0x9099); //these are vendorID and productID of loaded USB2SDR
-		if(usb2sdr_handle == NULL){
-			printf("Cannot open USB2SDR");
-			//return 0;
-		}
-		else{
-			printf("USB2SDR found and Opened\n");	
-		}
-		if(libusb_kernel_driver_active(usb2sdr_handle, 0) == 1) { //find out if kernel driver is attached
-			printf("Kernel Driver Active");
-			if(libusb_detach_kernel_driver(usb2sdr_handle, 0) == 0){ //detach it
-				printf("Kernel Driver Detached!");
-			}
-		}
-		r = libusb_claim_interface(usb2sdr_handle, 0); //claim interface 0 (the first) of device (mine had jsut 1)
-		if(r < 0) {
-			printf("Cannot Claim Interface");
-		}
-		printf("Claimed interface 0\n");
+		
 	}
 
     init_receivers();
