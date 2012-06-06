@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/timeb.h>
+#include <libusb-1.0/libusb.h>
 
 #include "softrock.h"
 #include "softrockio.h"
@@ -55,7 +56,12 @@ static int timing=0;
 static struct timeb start_time;
 static struct timeb end_time;
 static int sample_count=0;
-
+WR_BLOCK outRecord[16];
+RD_BLOCK inRecord[16];
+RINGBUF rx_r, rx_l;
+extern int usb2sdr;
+extern libusb_device_handle *usb2sdr_handle; //a device handle
+extern libusb_context *ctx; //a libusb session
 
 #define SAMPLE_RATE 48000   /* the sampling rate */
 #define CHANNELS 2  /* 1 = mono 2 = stereo */
@@ -74,6 +80,46 @@ static PaStream* stream;
 #ifdef DIRECTAUDIO
 static int fd;
 #endif
+
+void InitBuf(RINGBUF *buf, char *namestr)
+{
+	buf->rp = buf;
+	buf->wp = buf;
+	buf->count = 0;
+	buf->buf_end = (char *)buf + IQ_RINGBUF_SIZE*sizeof(float);	
+	strcpy(buf->name, namestr);
+}
+
+void WriteToBuf(RINGBUF *buf, float val)
+{
+	if(buf->count < IQ_RINGBUF_SIZE){
+		*(buf->wp) = val;
+		buf->wp++;
+		if(buf->wp == buf->buf_end) buf->wp = buf;	//wrap up
+		buf->count++;
+	}
+	else{
+		printf("Buffer: %s overrun\n", buf->name);
+	}	
+}
+
+float ReadFromBuf(RINGBUF *buf)
+{	
+	float val;
+
+	if(buf->count > 0){
+		val = *(buf->rp);
+		buf->rp++;		
+		if(buf->rp == buf->buf_end) buf->rp = buf;	//wrap up
+		buf->count--;
+	}
+	else{
+		printf("Buffer: %s underrun\n", buf->name);
+		return 0;
+	}
+
+	return val;
+}
 
 int softrock_open(void) {
 #ifdef DIRECTAUDIO  
@@ -241,6 +287,9 @@ int softrock_open(void) {
 
 #endif
 
+	InitBuf(&rx_r, "RX_R");
+	InitBuf(&rx_l, "RX_R");
+	printf("my ring buffers are set\n");
     return 0;
 }
 
@@ -274,15 +323,18 @@ int softrock_write(float* left_samples,float* right_samples) {
     float audio_buffer[SAMPLES_PER_BUFFER*2];
 
     rc=0;
+	if(usb2sdr){
+	}
+	else{
+		// interleave samples
+		for(i=0;i<SAMPLES_PER_BUFFER;i++) {
+		    audio_buffer[i*2]=right_samples[i];
+		    audio_buffer[(i*2)+1]=left_samples[i];
+		}
 
-    // interleave samples
-    for(i=0;i<SAMPLES_PER_BUFFER;i++) {
-        audio_buffer[i*2]=right_samples[i];
-        audio_buffer[(i*2)+1]=left_samples[i];
-    }
-
-    rc = pa_simple_write(playback_stream, audio_buffer, sizeof(audio_buffer),&error);
-    if (rc < 0) {if (softrock_get_verbose()) fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n", pa_strerror(error), rc);}
+		rc = pa_simple_write(playback_stream, audio_buffer, sizeof(audio_buffer),&error);
+		if (rc < 0) {if (softrock_get_verbose()) fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n", pa_strerror(error), rc);}
+	}
     return rc;
 }
 
@@ -292,45 +344,187 @@ int softrock_read(float* left_samples,float* right_samples) {
     int i;
     float audio_buffer[SAMPLES_PER_BUFFER*2];
 
+	int e;
+	unsigned long stat_r, stat_w;
+	static unsigned long error_block[16];	
+	int r; //for return values
+	int actual; //used to find out how many bytes were written
+	volatile int blocks,samps;
 
-    if(softrock_get_playback()) {
-        softrock_playback_buffer((char *)audio_buffer,sizeof(audio_buffer));
-    } else {
-        //if (softrock_get_verbose()) fprintf(stderr,"read available=%ld\n",Pa_GetStreamReadAvailable(stream));
-        //ftime(&start_time);
-        rc=pa_simple_read(stream,&audio_buffer[0],sizeof(audio_buffer),&error);
-        if(rc<0) {
-            if (softrock_get_verbose()) fprintf(stderr,"error reading audio_buffer %s (rc=%d)\n", pa_strerror(error),rc);
-        }
-        //ftime(&end_time);
-        //if (softrock_get_verbose()) fprintf(stderr,"read %d bytes in %ld ms\n",sizeof(audio_buffer),((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
-    }
+	if(usb2sdr){
+		r = libusb_bulk_transfer(usb2sdr_handle, (0x81 | LIBUSB_ENDPOINT_IN), (unsigned char*)inRecord, sizeof(inRecord), &actual, 20);
+		if(r == 0 && actual == sizeof(inRecord)){ 
+			//printf("R");
+		}
+		else{
+			printf("Read Error");
+			if(r == LIBUSB_ERROR_TIMEOUT) printf("LIBUSB_ERROR_TIMEOUT");
+			if(r == LIBUSB_ERROR_PIPE) printf("LIBUSB_ERROR_PIPE");
+			if(r == LIBUSB_ERROR_OVERFLOW) printf("LIBUSB_ERROR_OVERFLOW");
+			if(r == LIBUSB_ERROR_NO_DEVICE) printf("LIBUSB_ERROR_NO_DEVICE");
+		}
+		for(blocks=0; blocks<16; blocks++){
+
+			//error checking
+			if(inRecord[blocks].ControlFlagValid == 0xAB){
+				//this is the block that carries the controlinformation
+				if(inRecord[blocks].ReadBadBlocksReportedFromDevice > error_block[blocks]){
+					error_block[blocks] = inRecord[blocks].ReadBadBlocksReportedFromDevice;
+					printf("--> Cyl:%d  Block:%d  R_Errors:%ld\n", i, blocks,inRecord[blocks].ReadBadBlocksReportedFromDevice);
+				}
+				//printf("Cyl:%d Block:%d RunCnt:%d CtrlFlag:0x%X Rerrors:%d Werrors:%d\n",i, blocks, inRecord[blocks].RunningCounter,inRecord[blocks].ControlFlagValid,inRecord[blocks].ReadBadBlocksReportedFromDevice,inRecord[blocks].WriteBadBlocksReportedFromDevice);
+			}
+			for(samps=0;samps<32*4;samps+=4){
+				e=0;
+				e =  (int)(inRecord[blocks].LeftChannelIQSamplePack[samps])<<24;
+				e |= (unsigned char)(inRecord[blocks].LeftChannelIQSamplePack[samps+1])<<16;
+				e |= (unsigned char)(inRecord[blocks].LeftChannelIQSamplePack[samps+2])<<8;
+				e |= (unsigned char)(inRecord[blocks].LeftChannelIQSamplePack[samps+3]);
+				WriteToBuf(&rx_l, e/(2147483648.0));			
+				e=0;
+				e = (int)(inRecord[blocks].RightChannelIQSamplePack[samps])<<24;
+				e |= (unsigned char)(inRecord[blocks].RightChannelIQSamplePack[samps+1])<<16;
+				e |= (unsigned char)(inRecord[blocks].RightChannelIQSamplePack[samps+2])<<8;
+				e |= (unsigned char)(inRecord[blocks].RightChannelIQSamplePack[samps+3]);
+				WriteToBuf(&rx_r, e/(2147483648.0));						
+			}
+		}
+
+		//write record to USB2SDR
+		for(blocks=0; blocks<16; blocks++){
+			for(samps=0;samps<32*4;samps+=4){
+				//e = ReadFromBuf(&tx_l);
+	 			e =  (int)(inRecord[blocks].LeftChannelIQSamplePack[samps])<<24;
+				e |= (unsigned char)(inRecord[blocks].LeftChannelIQSamplePack[samps+1])<<16;
+				e |= (unsigned char)(inRecord[blocks].LeftChannelIQSamplePack[samps+2])<<8;
+				e |= (unsigned char)(inRecord[blocks].LeftChannelIQSamplePack[samps+3]);
+				//left_samples[i] = e/(2147483648.0);//works
+				//*p_rx_l = e/(2147483648.0);
+				//p_rx_l++;
+				e=0;
+				e = (int)(inRecord[blocks].RightChannelIQSamplePack[samps])<<24;
+				e |= (unsigned char)(inRecord[blocks].RightChannelIQSamplePack[samps+1])<<16;
+				e |= (unsigned char)(inRecord[blocks].RightChannelIQSamplePack[samps+2])<<8;
+				e |= (unsigned char)(inRecord[blocks].RightChannelIQSamplePack[samps+3]);
+				//right_samples[i] = e/(2147483648.0);//works
+				//*p_rx_l = e/(2147483648.0);
+				//p_rx_l++;
+				//i++;//works			
+			}
+		}
+		r = libusb_bulk_transfer(usb2sdr_handle, (2 | LIBUSB_ENDPOINT_OUT), (unsigned char*)outRecord, sizeof(outRecord), &actual, 20); //my device's out endpoint was 2, found with trial- the device had 2 endpoints: 2 and 129
+		if(r == 0 && actual == sizeof(outRecord)){ 
+			//printf("W");
+		}
+		else{
+			printf("Write Error");
+			if(r == LIBUSB_ERROR_TIMEOUT) printf("LIBUSB_ERROR_TIMEOUT");
+			if(r == LIBUSB_ERROR_PIPE) printf("LIBUSB_ERROR_PIPE");
+			if(r == LIBUSB_ERROR_OVERFLOW) printf("LIBUSB_ERROR_OVERFLOW");
+			if(r == LIBUSB_ERROR_NO_DEVICE) printf("LIBUSB_ERROR_NO_DEVICE");
+		}
+
+		//the second package 512 samples
+		//read
+		r = libusb_bulk_transfer(usb2sdr_handle, (0x81 | LIBUSB_ENDPOINT_IN), (unsigned char*)inRecord, sizeof(inRecord), &actual, 20);
+		if(r == 0 && actual == sizeof(inRecord)){ 
+			//printf("R");
+		}
+		else{
+			printf("Read Error");
+			if(r == LIBUSB_ERROR_TIMEOUT) printf("LIBUSB_ERROR_TIMEOUT");
+			if(r == LIBUSB_ERROR_PIPE) printf("LIBUSB_ERROR_PIPE");
+			if(r == LIBUSB_ERROR_OVERFLOW) printf("LIBUSB_ERROR_OVERFLOW");
+			if(r == LIBUSB_ERROR_NO_DEVICE) printf("LIBUSB_ERROR_NO_DEVICE");
+		}
+
+		for(blocks=0; blocks<16; blocks++){
+			//error checking
+			if(inRecord[blocks].ControlFlagValid == 0xAB){
+				//this is the block that carries the controlinformation
+				if(inRecord[blocks].ReadBadBlocksReportedFromDevice > error_block[blocks]){
+					error_block[blocks] = inRecord[blocks].ReadBadBlocksReportedFromDevice;
+					printf("--> Cyl:%d  Block:%d  R_Errors:%ld\n", i, blocks,inRecord[blocks].ReadBadBlocksReportedFromDevice);
+				}
+				//printf("Cyl:%d Block:%d RunCnt:%d CtrlFlag:0x%X Rerrors:%d Werrors:%d\n",i, blocks, inRecord[blocks].RunningCounter,inRecord[blocks].ControlFlagValid,inRecord[blocks].ReadBadBlocksReportedFromDevice,inRecord[blocks].WriteBadBlocksReportedFromDevice);
+			}
+			for(samps=0;samps<32*4;samps+=4){
+				e=0;
+				e = (int)(inRecord[blocks].LeftChannelIQSamplePack[samps])<<24;
+				e |= (unsigned char)(inRecord[blocks].LeftChannelIQSamplePack[samps+1])<<16;
+				e |= (unsigned char)(inRecord[blocks].LeftChannelIQSamplePack[samps+2])<<8;
+				e |= (unsigned char)(inRecord[blocks].LeftChannelIQSamplePack[samps+3]);
+				WriteToBuf(&rx_l, e/(2147483648.0));	
+				e=0;
+				e = (int)(inRecord[blocks].RightChannelIQSamplePack[samps])<<24;
+				e |= (unsigned char)(inRecord[blocks].RightChannelIQSamplePack[samps+1])<<16;
+				e |= (unsigned char)(inRecord[blocks].RightChannelIQSamplePack[samps+2])<<8;
+				e |= (unsigned char)(inRecord[blocks].RightChannelIQSamplePack[samps+3]);
+				WriteToBuf(&rx_r, e/(2147483648.0));			
+			}
+		}
 
 
-    // record the I/Q samples
-    if(softrock_get_record()) {
-        softrock_record_buffer((char *)audio_buffer,sizeof(audio_buffer));
-    }
+		//write record to USB2SDR
+		r = libusb_bulk_transfer(usb2sdr_handle, (2 | LIBUSB_ENDPOINT_OUT), (unsigned char*)outRecord, sizeof(outRecord), &actual, 20); //my device's out endpoint was 2, found with trial- the device had 2 endpoints: 2 and 129
+		if(r == 0 && actual == sizeof(outRecord)){ 
+			//printf("W");
+		}
+		else{
+			printf("Write Error");
+			if(r == LIBUSB_ERROR_TIMEOUT) printf("LIBUSB_ERROR_TIMEOUT");
+			if(r == LIBUSB_ERROR_PIPE) printf("LIBUSB_ERROR_PIPE");
+			if(r == LIBUSB_ERROR_OVERFLOW) printf("LIBUSB_ERROR_OVERFLOW");
+			if(r == LIBUSB_ERROR_NO_DEVICE) printf("LIBUSB_ERROR_NO_DEVICE");
+		}
 
-    // de-interleave samples
-    for(i=0;i<SAMPLES_PER_BUFFER;i++) {
-        if(softrock_get_iq()) {
-            left_samples[i]=audio_buffer[i*2];
-            right_samples[i]=audio_buffer[(i*2)+1];
-        } else {
-            right_samples[i]=audio_buffer[i*2];
-            left_samples[i]=audio_buffer[(i*2)+1];
-        }
-        if(timing) {
-            sample_count++;
-            if(sample_count==softrock_get_sample_rate()) {
-                ftime(&end_time);
-                if (softrock_get_verbose()) fprintf(stderr,"%d samples in %ld ms\n",sample_count,((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
-                sample_count=0;
-                ftime(&start_time);
-            }
-        }
-    }
+
+
+	 	for(i=0;i<SAMPLES_PER_BUFFER;i++) {
+			left_samples[i]=ReadFromBuf(&rx_l);
+			right_samples[i]=ReadFromBuf(&rx_r);
+		}
+	}
+	else{
+		if(softrock_get_playback()) {
+		    softrock_playback_buffer((char *)audio_buffer,sizeof(audio_buffer));
+		} else {
+		    //if (softrock_get_verbose()) fprintf(stderr,"read available=%ld\n",Pa_GetStreamReadAvailable(stream));
+		    //ftime(&start_time);
+		    rc=pa_simple_read(stream,&audio_buffer[0],sizeof(audio_buffer),&error);
+		    if(rc<0) {
+		        if (softrock_get_verbose()) fprintf(stderr,"error reading audio_buffer %s (rc=%d)\n", pa_strerror(error),rc);
+		    }
+		    //ftime(&end_time);
+		    //if (softrock_get_verbose()) fprintf(stderr,"read %d bytes in %ld ms\n",sizeof(audio_buffer),((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
+		}
+
+
+		// record the I/Q samples
+		if(softrock_get_record()) {
+		    softrock_record_buffer((char *)audio_buffer,sizeof(audio_buffer));
+		}
+
+		// de-interleave samples
+		for(i=0;i<SAMPLES_PER_BUFFER;i++) {
+		    if(softrock_get_iq()) {
+		        left_samples[i]=audio_buffer[i*2];
+		        right_samples[i]=audio_buffer[(i*2)+1];
+		    } else {
+		        right_samples[i]=audio_buffer[i*2];
+		        left_samples[i]=audio_buffer[(i*2)+1];
+		    }
+		    if(timing) {
+		        sample_count++;
+		        if(sample_count==softrock_get_sample_rate()) {
+		            ftime(&end_time);
+		            if (softrock_get_verbose()) fprintf(stderr,"%d samples in %ld ms\n",sample_count,((end_time.time*1000)+end_time.millitm)-((start_time.time*1000)+start_time.millitm));
+		            sample_count=0;
+		            ftime(&start_time);
+		        }
+		    }
+		}
+	}//not usb2sdr
 
     return rc;
 }

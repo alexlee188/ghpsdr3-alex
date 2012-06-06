@@ -167,6 +167,17 @@ Note that wget is needed for --share to work.
 
 Then you can run QtRadio to connect to the dspserver that is running. 
 
+For USB2SDR user only
+========================
+If you own a USB2SDR board, you will be able to use it with
+the softrock server, by issuing the switch
+
+--usb2sdr 
+
+to the softrock server.
+This is still under development, and will soon be ready for user trials.
+Both RX and TX will be supported.
+
 For sdr-widget user only
 ========================
 As an alternative to softrock server, you can use the widget-server,
