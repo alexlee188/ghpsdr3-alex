@@ -45,6 +45,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		
 		setTitle("aHPSDR: ");
 
+		/*
 		// Create a new GLSurfaceView - this holds the GL Renderer
 		mGLSurfaceView = new GLSurfaceView(this);
 		
@@ -60,7 +61,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		else { // quit if no support - get a better phone! :P
 			this.finish();
 		}
-		
+		*/
 		
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -90,7 +91,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 		spectrumView = new SpectrumView(this, width, height/2, connection);
 		spectrumView.setRenderer(renderer);
-		spectrumView.setGLSurfaceView(mGLSurfaceView);
+		//spectrumView.setGLSurfaceView(mGLSurfaceView);
 		
 		setContentView(spectrumView);
 		//setContentView(mGLSurfaceView);
@@ -151,7 +152,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 	public void onResume() {
 		super.onResume();
-		mGLSurfaceView.onResume();
+		//mGLSurfaceView.onResume();
 		Log.i("AHPSDR", "onResume");
 		//mSensorManager.registerListener(this, mGravity, SensorManager.SENSOR_DELAY_NORMAL);
 		if(connection==null) {
@@ -175,7 +176,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 	public void onPause() {
 		super.onPause();
-		mGLSurfaceView.onPause();
+		//mGLSurfaceView.onPause();
 		Log.i("AHPSDR", "onPause");
 		//mSensorManager.unregisterListener(this);
 		update.close();
