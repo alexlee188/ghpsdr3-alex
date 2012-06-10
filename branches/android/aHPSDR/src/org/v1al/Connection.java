@@ -408,6 +408,10 @@ public class Connection extends Thread {
 	public String getStatus() {
 		return status;
 	}
+	
+	public short getLO_offset(){
+		return LO_offset;
+	}
 
 	private SpectrumView spectrumView;
 

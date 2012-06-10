@@ -85,7 +85,8 @@ public class SpectrumView extends View implements OnTouchListener {
 			long f=connection.getFrequency()-(connection.getSampleRate()/2);
 			String fs;
 			for(int i=0;i<WIDTH;i++) {
-				f=connection.getFrequency()-(connection.getSampleRate()/2)+(long)(hzPerPixel*i);
+				f=connection.getFrequency()-(connection.getSampleRate()/2)+(long)(hzPerPixel*i)
+						- connection.getLO_offset();
 				if(f>0) {
 					if((f%10000)<(long)hzPerPixel) {
 						paint.setColor(Color.YELLOW);
