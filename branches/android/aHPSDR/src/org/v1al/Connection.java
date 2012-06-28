@@ -49,13 +49,13 @@ public class Connection extends Thread {
 		
 		
 		    audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 8000,
-				AudioFormat.CHANNEL_CONFIGURATION_MONO,
+				AudioFormat.CHANNEL_OUT_MONO,
 				AudioFormat.ENCODING_PCM_16BIT, AUDIO_BUFFER_SIZE * 2,
 				AudioTrack.MODE_STREAM);
 		
 		    audioTrack.play();
 		    
-		    sendCommand("setClient aHPSDR(v1.1)");
+		    sendCommand("setClient glSDR (5)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
