@@ -216,6 +216,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		menu.add(0, MENU_DSP, 0, "DSP");
 		menu.add(0, MENU_GAIN, 0, "GAIN");
 		menu.add(0, MENU_FPS, 0, "FPS");
+		menu.add(0, MENU_TX,0,"Tx");
 		menu.add(0, MENU_QUIT, 0, "Quit");
 		return true;
 	}
@@ -476,23 +477,23 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			dialog = builder.create();
 			spectrumView.setAverage(-100);
 			break;
-                case MENU_FREQUENCY:
-                        builder = new AlertDialog.Builder(this);
-                        builder.setTitle("Enter frequency (in Hz):");
-                        final EditText freq = new EditText(this);
-                        builder.setView(freq);
-                        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int whichButton) {
-                                        String value = freq.getText().toString().trim();
-                                        Log.i("Frequency",value);
-                                        connection.setFrequency(Long.parseLong(value));
-                                        dialog.dismiss();
-                                }
-                        });
-                        dialog = builder.create();
-            			spectrumView.setAverage(-100);
-                        //builder.show();
-                        break;
+        case MENU_FREQUENCY:
+                builder = new AlertDialog.Builder(this);
+                builder.setTitle("Enter frequency (in Hz):");
+                final EditText freq = new EditText(this);
+                builder.setView(freq);
+                builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                                String value = freq.getText().toString().trim();
+                                Log.i("Frequency",value);
+                                connection.setFrequency(Long.parseLong(value));
+                                dialog.dismiss();
+                        }
+                });
+                dialog = builder.create();
+    			spectrumView.setAverage(-100);
+                //builder.show();
+                break;
 		case MENU_MODE:
 			builder = new AlertDialog.Builder(this);
 			builder.setTitle("Select a Mode");
@@ -943,6 +944,24 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					});
 			dialog = builder.create();
 			break;
+		case MENU_TX:
+			builder = new AlertDialog.Builder(this);
+			builder.setTitle("Configure Tx");
+			builder.setMultiChoiceItems(txs, tx_state,
+					new DialogInterface.OnMultiChoiceClickListener() {
+						public void onClick(DialogInterface dialog, int item,
+								boolean state) {
+							//
+							switch (item) {
+							case TX_ALLOW:
+								break;
+							}
+
+							dialog.dismiss();
+						}
+					});
+			dialog = builder.create();
+			break;
 		case MENU_GAIN:
 			builder = new AlertDialog.Builder(this);
 			builder.setTitle("Select Gain");
@@ -1023,6 +1042,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int MENU_RECEIVER = 9;
 	public static final int MENU_FREQUENCY = 10;
 	public static final int MENU_SERVERS = 11;
+	public static final int MENU_TX = 12;
 
 	public static final CharSequence[] bands = { "160", "80", "60", "40", "30",
 			"20", "17", "15", "12", "10", "6", "GEN", "WWV" };
@@ -1078,6 +1098,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int DSP_NB = 2;
 
 	private boolean[] dsp_state = { false, false, false };
+	
+	public static final CharSequence[] txs = { "Allow Tx" };
+	public static final int TX_ALLOW = 0;
+	public boolean[] tx_state = { false };
 
 	public static final CharSequence[] gains = { "0", "10", "20", "30", "40",
 			"50", "60", "70", "80", "90", "100" };
