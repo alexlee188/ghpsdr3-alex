@@ -798,7 +798,7 @@ public class Connection extends Thread {
 		}
 		
 	    for(int i=0;i<65536;i++) {
-	        aLawEncode[i]=(byte)(_s2a[i]);
+	       aLawEncode[i]=(byte)(_s2a[i>>4]);
 	    }
 	}
 
