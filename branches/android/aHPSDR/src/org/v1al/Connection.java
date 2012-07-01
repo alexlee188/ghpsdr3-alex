@@ -8,7 +8,10 @@ import java.net.InetSocketAddress;
 
 import android.media.AudioFormat;
 import android.media.AudioManager;
+import android.media.AudioRecord.OnRecordPositionUpdateListener;
 import android.media.AudioTrack;
+import android.media.AudioRecord;
+import android.media.MediaRecorder.AudioSource;
 import android.util.Log;
 
 public class Connection extends Thread {
@@ -55,6 +58,33 @@ public class Connection extends Thread {
 		
 		    audioTrack.play();
 		    
+		    int N = 10 * AudioRecord.getMinBufferSize(8000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
+		    if (N < micBufferSize * 10) N = micBufferSize * 10;
+		    
+		    recorder = new AudioRecord(AudioSource.VOICE_COMMUNICATION, 8000,
+		    				AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, N);
+		    
+		    recorder.setPositionNotificationPeriod(micBufferSize);
+		    final int finalMicBufferSize = micBufferSize;
+		    
+		    OnRecordPositionUpdateListener positionUpdater = new OnRecordPositionUpdateListener () {
+		    	public void onPeriodicNotification(AudioRecord recorder){
+		    		short[] micData = new short[micBufferSize];
+		    		recorder.read(micData, 0, finalMicBufferSize);
+		    		char[] micEncodedData = new char[micBufferSize];
+		    		for (int i = 0; i < micBufferSize; i++) 
+		    				micEncodedData[i] = aLawEncode[micData[i] & 0xFFFF];
+		    		String micDataStr = new String(micEncodedData);
+		    		sendCommand("mic " + micDataStr);
+		    	}
+		    	public void onMarkerReached(AudioRecord recorder){
+		    	}
+		    };
+		    recorder.setRecordPositionUpdateListener(positionUpdater);
+		    recorder.startRecording();
+		    short[] buffer = new short[micBufferSize];
+		    recorder.read(buffer, 0, micBufferSize);  // initiate the first read
+		    
 		    sendCommand("setClient glSDR (5)");
 		    
 		} catch (Exception e) {
@@ -78,6 +108,13 @@ public class Connection extends Thread {
         }
         if(audioTrack!=null) {
             audioTrack.stop();
+            audioTrack.release();
+            audioTrack = null;
+        }
+        if (recorder != null){
+        	recorder.stop();
+        	recorder.release();
+        	recorder = null;
         }
     }
 
@@ -456,6 +493,7 @@ public class Connection extends Thread {
 	private short[] decodedBuffer = new short[AUDIO_BUFFER_SIZE];
 
 	private AudioTrack audioTrack;
+	private AudioRecord recorder;
 	private String status = "";
 
 	public static final int modeLSB = 0;
@@ -474,7 +512,10 @@ public class Connection extends Thread {
 	private static final String[] modes = { "LSB", "USB", "DSB", "CWL", "CWU", "FMN", "AM",
 			"DIGU", "SPEC", "DIGL", "SAM", "DRM" };
 
+	public final int micBufferSize = 58;
+	
 	private static short[] aLawDecode = new short[256];
+	private static char[] aLawEncode = new char[65536];
 
 	static {
 
@@ -494,7 +535,26 @@ public class Connection extends Thread {
 			}
 			aLawDecode[i] = (short) value;
 		}
-
+		
+	    for(int i=0;i<65536;i++) {
+	        short sample=(short)i;
+	
+	        int sign=(sample&0x8000) >> 8;
+	        if(sign != 0){
+	            sample=(short)-sample;
+	            sign=0x80;
+	        }
+	
+	        if(sample > 32635) sample = 32635;
+	
+	        int exp=7;
+	        int expMask;
+	        for(expMask=0x4000;(sample&expMask)==0 && exp>0; exp--, expMask >>= 1) {
+	        }
+	        int mantis = (sample >> ((exp == 0) ? 4 : (exp + 3))) & 0x0f;
+	        char alaw = (char)(sign | exp << 4 | mantis);
+	        aLawEncode[i]=(char)(alaw^0xD5);
+	    }
 	}
 
 }
