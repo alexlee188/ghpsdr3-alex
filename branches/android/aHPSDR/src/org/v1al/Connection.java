@@ -74,8 +74,7 @@ public class Connection extends Thread {
 		    		byte[] micEncodedData = new byte[micBufferSize];
 		    		for (int i = 0; i < micBufferSize; i++) 
 		    				micEncodedData[i] = aLawEncode[micData[i] & 0xFFFF];
-		    		String micDataStr = new String(micEncodedData);
-		    		sendCommand("mic " + micDataStr);
+		    		sendAudio(micEncodedData);
 		    	}
 		    	public void onMarkerReached(AudioRecord recorder){
 		    	}
@@ -353,6 +352,30 @@ public class Connection extends Thread {
 		}
 	}
 
+	public synchronized void sendAudio(byte [] micBuffer){
+		byte[] commandBuffer = new byte[64];
+		commandBuffer[0] = 'm';
+		commandBuffer[1] = 'i';
+		commandBuffer[2] = 'c';
+		commandBuffer[3] = ' ';
+		for (int i = 0; i < micBufferSize; i++){
+				commandBuffer[i + 4] = micBuffer[i];
+			}
+		commandBuffer[63] = 0;
+		
+		if (socket != null) {
+			try {
+				outputStream.write(commandBuffer);
+				outputStream.flush();
+			} catch (IOException e) {
+				Log.e("Connection","sendCommand: IOException: "
+						+ e.getMessage());
+				status=e.toString();
+				connected=false;
+			}
+		}
+	}
+	
 	public void setFrequency(long frequency) {
 		this.frequency = frequency;
 		sendCommand("setFrequency " + frequency);
