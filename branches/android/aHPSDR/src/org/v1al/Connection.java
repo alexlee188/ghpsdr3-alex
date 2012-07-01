@@ -71,7 +71,7 @@ public class Connection extends Thread {
 		    	public void onPeriodicNotification(AudioRecord recorder){
 		    		short[] micData = new short[micBufferSize];
 		    		recorder.read(micData, 0, finalMicBufferSize);
-		    		char[] micEncodedData = new char[micBufferSize];
+		    		byte[] micEncodedData = new byte[micBufferSize];
 		    		for (int i = 0; i < micBufferSize; i++) 
 		    				micEncodedData[i] = aLawEncode[micData[i] & 0xFFFF];
 		    		String micDataStr = new String(micEncodedData);
@@ -85,7 +85,7 @@ public class Connection extends Thread {
 		    short[] buffer = new short[micBufferSize];
 		    recorder.read(buffer, 0, micBufferSize);  // initiate the first read
 		    
-		    sendCommand("setClient glSDR (5)");
+		    sendCommand("setClient glSDR(5)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
@@ -515,7 +515,7 @@ public class Connection extends Thread {
 	public final int micBufferSize = 58;
 	
 	private static short[] aLawDecode = new short[256];
-	private static char[] aLawEncode = new char[65536];
+	private static byte[] aLawEncode = new byte[65536];
 
 	static {
 
@@ -552,8 +552,8 @@ public class Connection extends Thread {
 	        for(expMask=0x4000;(sample&expMask)==0 && exp>0; exp--, expMask >>= 1) {
 	        }
 	        int mantis = (sample >> ((exp == 0) ? 4 : (exp + 3))) & 0x0f;
-	        char alaw = (char)(sign | exp << 4 | mantis);
-	        aLawEncode[i]=(char)(alaw^0xD5);
+	        int alaw = (sign | exp << 4 | mantis) & 0xFF;
+	        aLawEncode[i]=(byte)(alaw^0xD5);
 	    }
 	}
 
