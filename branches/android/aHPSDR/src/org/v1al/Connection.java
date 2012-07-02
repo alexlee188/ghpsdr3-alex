@@ -70,12 +70,14 @@ public class Connection extends Thread {
 		    OnRecordPositionUpdateListener positionUpdater = new OnRecordPositionUpdateListener () {
 		    	public void onPeriodicNotification(AudioRecord recorder){
 		    		for (int j = 0; j < nMicBuffers; j++){
-		    		short[] micData = new short[micBufferSize];
-		    		recorder.read(micData, 0, finalMicBufferSize);
-		    		byte[] micEncodedData = new byte[micBufferSize];
-		    		for (int i = 0; i < micBufferSize; i++) 
-		    				micEncodedData[i] = aLawEncode[micData[i] & 0xFFFF];
-		    		sendAudio(micEncodedData);
+			    		short[] micData = new short[micBufferSize];
+			    		recorder.read(micData, 0, finalMicBufferSize);
+			    		if (allowTx){
+				    		byte[] micEncodedData = new byte[micBufferSize];
+				    		for (int i = 0; i < micBufferSize; i++) 
+				    				micEncodedData[i] = aLawEncode[micData[i] & 0xFFFF];
+				    		sendAudio(micEncodedData);
+				    	}
 		    		}
 		    	}
 		    	
@@ -476,6 +478,10 @@ public class Connection extends Thread {
 	public short getLO_offset(){
 		return LO_offset;
 	}
+	
+	public void setAllowTx(boolean state){
+		allowTx = state;
+	}
 
 	private SpectrumView spectrumView;
 
@@ -541,6 +547,7 @@ public class Connection extends Thread {
 
 	public final int micBufferSize = 58;
 	private final int nMicBuffers = 2;
+	private boolean allowTx = false;
 	
 	private static short[] aLawDecode = new short[256];
 	private static byte[] aLawEncode = new byte[65536];

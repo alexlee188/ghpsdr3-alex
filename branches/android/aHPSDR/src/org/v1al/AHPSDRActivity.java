@@ -954,6 +954,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 							//
 							switch (item) {
 							case TX_ALLOW:
+								connection.setAllowTx(state);
 								break;
 							}
 
