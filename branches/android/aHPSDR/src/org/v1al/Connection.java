@@ -59,30 +59,34 @@ public class Connection extends Thread {
 		    audioTrack.play();
 		    
 		    int N = 10 * AudioRecord.getMinBufferSize(8000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
-		    if (N < micBufferSize * 10) N = micBufferSize * 10;
+		    if (N < micBufferSize * 40) N = micBufferSize * 40; // 40 * 58 = 2320
 		    
 		    recorder = new AudioRecord(AudioSource.VOICE_COMMUNICATION, 8000,
 		    				AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, N);
 		    
-		    recorder.setPositionNotificationPeriod(micBufferSize);
+		    recorder.setPositionNotificationPeriod(micBufferSize * nMicBuffers);
 		    final int finalMicBufferSize = micBufferSize;
 		    
 		    OnRecordPositionUpdateListener positionUpdater = new OnRecordPositionUpdateListener () {
 		    	public void onPeriodicNotification(AudioRecord recorder){
+		    		for (int j = 0; j < nMicBuffers; j++){
 		    		short[] micData = new short[micBufferSize];
 		    		recorder.read(micData, 0, finalMicBufferSize);
 		    		byte[] micEncodedData = new byte[micBufferSize];
 		    		for (int i = 0; i < micBufferSize; i++) 
 		    				micEncodedData[i] = aLawEncode[micData[i] & 0xFFFF];
 		    		sendAudio(micEncodedData);
+		    		}
 		    	}
+		    	
 		    	public void onMarkerReached(AudioRecord recorder){
 		    	}
+		    	
 		    };
 		    recorder.setRecordPositionUpdateListener(positionUpdater);
 		    recorder.startRecording();
-		    short[] buffer = new short[micBufferSize];
-		    recorder.read(buffer, 0, micBufferSize);  // initiate the first read
+		    short[] buffer = new short[micBufferSize*nMicBuffers];
+		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
 		    
 		    sendCommand("setClient glSDR(5)");
 		    
@@ -536,6 +540,7 @@ public class Connection extends Thread {
 			"DIGU", "SPEC", "DIGL", "SAM", "DRM" };
 
 	public final int micBufferSize = 58;
+	private final int nMicBuffers = 2;
 	
 	private static short[] aLawDecode = new short[256];
 	private static byte[] aLawEncode = new byte[65536];
