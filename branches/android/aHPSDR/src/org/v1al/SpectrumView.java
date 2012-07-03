@@ -326,6 +326,7 @@ public class SpectrumView extends View implements OnTouchListener {
 						timer.schedule(new JogTask(), 1000);
 					} else if ((startX>=(WIDTH-50)) && (startY>=100) && startY <=(HEIGHT-100)
 							&& connection.getAllowTx()){
+						jog = true;
 						connection.setMOX(true);
 					}
 				}

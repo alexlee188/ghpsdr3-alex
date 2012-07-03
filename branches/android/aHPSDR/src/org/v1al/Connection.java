@@ -445,7 +445,7 @@ public class Connection extends Thread {
 	public void setMOX(boolean state){
 		if (state) {
 			rxMuted = true;
-			sendCommand("Mox On");
+			sendCommand("Mox on");
 			MOX = true;
 		}
 		else {
