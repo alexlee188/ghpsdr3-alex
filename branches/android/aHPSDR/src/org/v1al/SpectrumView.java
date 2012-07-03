@@ -167,26 +167,31 @@ public class SpectrumView extends View implements OnTouchListener {
 				canvas.drawText(status, 0, 10, paint);
 			}
 			
-			// draw the job buttons
+			// draw the jog and PTT buttons
 			paint.setColor(Color.DKGRAY);
 			canvas.drawRect(0, HEIGHT-62, 50, HEIGHT-12, paint);
             canvas.drawRect(WIDTH-50,HEIGHT-62,WIDTH,HEIGHT-12,paint);
             canvas.drawRect(125, HEIGHT-62, 200, HEIGHT-12, paint); //kb3omm add 1000's button
             canvas.drawRect(WIDTH-200,HEIGHT-62,WIDTH-125,HEIGHT-12,paint); //kb3omm add 1000's button
+            if (connection.getAllowTx())
+            	canvas.drawRect(WIDTH-50, 100, WIDTH, HEIGHT-100, paint);
+                 
             paint.setColor(Color.WHITE);
             paint.setTextSize(40.0F);
             canvas.drawText("<", 12, HEIGHT-24, paint);
             canvas.drawText(">", WIDTH-36, HEIGHT-24, paint);
             canvas.drawText("<<", 142, HEIGHT-24, paint); //kb3omm add 1000's button
             canvas.drawText(">>", WIDTH-182, HEIGHT-24, paint); //kb3omm add 1000's button
-			
+			if (connection.getAllowTx()){
+				canvas.drawText("P", WIDTH-36, 150, paint);
+				canvas.drawText("T", WIDTH-36, 200, paint);
+				if (HEIGHT > 300) canvas.drawText("T", WIDTH-36, 250, paint);
+			}
 		} else {
 			paint.setColor(0xffffffff);
 			canvas.drawRect(0, 0, WIDTH, HEIGHT, paint);
 			paint.setColor(Color.RED);
-			//canvas.drawText("Server is busy - please wait", 20, canvas
-			//		.HEIGHT / 2, paint);
-			canvas.drawText(connection.getStatus(), 20, HEIGHT, paint);
+			canvas.drawText(connection.getStatus(), 20, HEIGHT/2, paint);
 		}
 	}
 
@@ -319,6 +324,9 @@ public class SpectrumView extends View implements OnTouchListener {
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
+					} else if ((startX>=(WIDTH-50)) && (startY>=100) && startY <=(HEIGHT-100)
+							&& connection.getAllowTx()){
+						connection.setMOX(true);
 					}
 				}
 				break;
@@ -360,6 +368,7 @@ public class SpectrumView extends View implements OnTouchListener {
 					} else {
 						jog=false;
 						timer.cancel();
+						if (connection.getAllowTx() && connection.getMOX()) connection.setMOX(false);
 					}
 				}
 				break;

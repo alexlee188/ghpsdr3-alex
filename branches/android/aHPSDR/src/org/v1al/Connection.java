@@ -23,13 +23,6 @@ public class Connection extends Thread {
 
 		this.server = server;
 		this.port = port;
-		
-		//connect();
-
-		// 2.1
-		// audioTrack=new
-		// AudioTrack(AudioManager.STREAM_MUSIC,8000,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT,BUFFER_SIZE*2,AudioTrack.MODE_STREAM);
-
 		System.gc();
 	}
 
@@ -317,6 +310,8 @@ public class Connection extends Thread {
 
 		//Log.i("processAudioBuffer","buffer="+buffer.length);
 		
+		if (rxMuted) return;
+		
 		// decode 8 bit aLaw to 16 bit linear
 		for (int i = 0; i < AUDIO_BUFFER_SIZE; i++) {
 			decodedBuffer[i] = aLawDecode[buffer[i] & 0xFF];
@@ -446,6 +441,23 @@ public class Connection extends Thread {
 	public void getSpectrum_protocol3(int fps){
 		sendCommand("setFPS " + SPECTRUM_BUFFER_SIZE + " " + fps);
 	}
+	
+	public void setMOX(boolean state){
+		if (state) {
+			rxMuted = true;
+			sendCommand("Mox On");
+			MOX = true;
+		}
+		else {
+			sendCommand("Mox off");
+			rxMuted = false;
+			MOX = false;
+		}
+	}
+	
+	public boolean getMOX(){
+		return MOX;
+	}
 
 	public byte[] getSamples() {
 		return samples;
@@ -481,6 +493,10 @@ public class Connection extends Thread {
 	
 	public void setAllowTx(boolean state){
 		allowTx = state;
+	}
+	
+	public boolean getAllowTx(){
+		return allowTx;
 	}
 
 	private SpectrumView spectrumView;
@@ -527,6 +543,8 @@ public class Connection extends Thread {
 
 	private AudioTrack audioTrack;
 	private AudioRecord recorder;
+	private boolean rxMuted = false;
+	private boolean MOX = false;
 	private String status = "";
 
 	public static final int modeLSB = 0;
