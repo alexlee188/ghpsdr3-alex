@@ -368,7 +368,7 @@ public class SpectrumView extends View implements OnTouchListener {
 					    }
 					} else {
 						jog=false;
-						timer.cancel();
+						if (timer != null) timer.cancel();
 						if (connection.getAllowTx() && connection.getMOX()) connection.setMOX(false);
 					}
 				}
