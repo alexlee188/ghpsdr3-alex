@@ -67,8 +67,9 @@ public class Connection extends Thread {
 			    		recorder.read(micData, 0, finalMicBufferSize);
 			    		if (allowTx){
 				    		byte[] micEncodedData = new byte[micBufferSize];
-				    		for (int i = 0; i < micBufferSize; i++) 
-				    				micEncodedData[i] = aLawEncode[micData[i] & 0xFFFF];
+				    		for (int i = 0; i < micBufferSize; i++){
+				    			micEncodedData[i] = aLawEncode[micData[i] & 0xFFFF];
+				    		}
 				    		sendAudio(micEncodedData);
 				    	}
 		    		}
@@ -360,7 +361,7 @@ public class Connection extends Thread {
 		commandBuffer[2] = 'c';
 		commandBuffer[3] = ' ';
 		for (int i = 0; i < micBufferSize; i++){
-				commandBuffer[i + 4] = micBuffer[i];
+				commandBuffer[i + 4] = MOX ? micBuffer[i] : (byte)213;
 			}
 		commandBuffer[63] = 0;
 		
