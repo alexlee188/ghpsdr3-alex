@@ -311,11 +311,10 @@ public class Connection extends Thread {
 
 		//Log.i("processAudioBuffer","buffer="+buffer.length);
 		
-		if (rxMuted) return;
-		
 		// decode 8 bit aLaw to 16 bit linear
 		for (int i = 0; i < AUDIO_BUFFER_SIZE; i++) {
-			decodedBuffer[i] = aLawDecode[buffer[i] & 0xFF];
+			if (MOX) decodedBuffer[i] = 0;
+			else decodedBuffer[i] = aLawDecode[buffer[i] & 0xFF];
 		}
 
 		int waitingToSend = audioSampleCount
@@ -445,13 +444,11 @@ public class Connection extends Thread {
 	
 	public void setMOX(boolean state){
 		if (state) {
-			rxMuted = true;
 			sendCommand("Mox on");
 			MOX = true;
 		}
 		else {
 			sendCommand("Mox off");
-			rxMuted = false;
 			MOX = false;
 		}
 	}
@@ -544,7 +541,6 @@ public class Connection extends Thread {
 
 	private AudioTrack audioTrack;
 	private AudioRecord recorder;
-	private boolean rxMuted = false;
 	private boolean MOX = false;
 	private String status = "";
 
