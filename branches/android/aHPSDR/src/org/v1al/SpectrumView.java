@@ -183,9 +183,8 @@ public class SpectrumView extends View implements OnTouchListener {
             canvas.drawText("<<", 142, HEIGHT-24, paint); //kb3omm add 1000's button
             canvas.drawText(">>", WIDTH-182, HEIGHT-24, paint); //kb3omm add 1000's button
 			if (connection.getAllowTx()){
-				canvas.drawText("P", WIDTH-36, 150, paint);
-				canvas.drawText("T", WIDTH-36, 200, paint);
-				if (HEIGHT > 300) canvas.drawText("T", WIDTH-36, 250, paint);
+				canvas.drawText(connection.getMOX()? "R" : "T", WIDTH-36, 150, paint);
+				canvas.drawText("x", WIDTH-36, 200, paint);
 			}
 		} else {
 			paint.setColor(0xffffffff);
@@ -327,7 +326,8 @@ public class SpectrumView extends View implements OnTouchListener {
 					} else if ((startX>=(WIDTH-50)) && (startY>=100) && startY <=(HEIGHT-100)
 							&& connection.getAllowTx()){
 						jog = true;
-						connection.setMOX(true);
+						if (!connection.getMOX()) connection.setMOX(true);
+						else connection.setMOX(false);
 					}
 				}
 				break;
@@ -369,7 +369,6 @@ public class SpectrumView extends View implements OnTouchListener {
 					} else {
 						jog=false;
 						if (timer != null) timer.cancel();
-						if (connection.getAllowTx() && connection.getMOX()) connection.setMOX(false);
 					}
 				}
 				break;

@@ -216,7 +216,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		menu.add(0, MENU_DSP, 0, "DSP");
 		menu.add(0, MENU_GAIN, 0, "GAIN");
 		menu.add(0, MENU_FPS, 0, "FPS");
-		menu.add(0, MENU_TX,0,"Tx");
+		menu.add(0, MENU_TX,0,"TX");
 		menu.add(0, MENU_QUIT, 0, "Quit");
 		return true;
 	}
