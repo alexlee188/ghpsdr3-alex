@@ -354,35 +354,27 @@ public class Connection extends Thread {
 	}
 
 	public synchronized void sendAudio(byte [] micBuffer){
+		byte[] commandBuffer = new byte[64];
+		commandBuffer[0] = 'm';
+		commandBuffer[1] = 'i';
+		commandBuffer[2] = 'c';
+		commandBuffer[3] = ' ';
+		for (int i = 0; i < micBufferSize; i++){
+				commandBuffer[i + 4] = MOX ? micBuffer[i] : (byte)213;
+			}
+		commandBuffer[63] = 0;
 		
-		final byte[] micBufferFinal = micBuffer;
-		Runnable runnable = new Runnable(){
-			
-		public void run(){
-			byte[] commandBuffer = new byte[64];
-			commandBuffer[0] = 'm';
-			commandBuffer[1] = 'i';
-			commandBuffer[2] = 'c';
-			commandBuffer[3] = ' ';
-			for (int i = 0; i < micBufferSize; i++){
-					commandBuffer[i + 4] = MOX ? micBufferFinal[i] : (byte)213;
-				}
-			commandBuffer[63] = 0;
-			
-			if (socket != null) {
-				try {
-					outputStream.write(commandBuffer);
-					outputStream.flush();
-				} catch (IOException e) {
-					Log.e("Connection","sendCommand: IOException: "
-							+ e.getMessage());
-					status=e.toString();
-					connected=false;
-				}
+		if (socket != null) {
+			try {
+				outputStream.write(commandBuffer);
+				outputStream.flush();
+			} catch (IOException e) {
+				Log.e("Connection","sendCommand: IOException: "
+						+ e.getMessage());
+				status=e.toString();
+				connected=false;
 			}
 		}
-		};
-		new Thread(runnable).start();
 	}
 	
 	public void setFrequency(long frequency) {
