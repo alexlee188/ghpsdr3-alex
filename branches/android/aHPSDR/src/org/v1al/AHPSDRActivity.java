@@ -92,6 +92,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		receiver=prefs.getInt("Receiver", 0);
 		txUser=prefs.getString("txUser", "");
 		txPass=prefs.getString("txPass", "");
+		tx_state[0]=prefs.getBoolean("txAllow", false);
 		
 		DisplayMetrics metrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -136,6 +137,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		editor.putInt("Receiver", receiver);
 		editor.putString("txUser", txUser);
 		editor.putString("txPass", txPass);
+		editor.putBoolean("txAllow", tx_state[0]);
 		editor.commit();
     }
 
@@ -181,6 +183,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		    connection.setFilter(filterLow, filterHigh);
 		    connection.setGain(gain);
 		    connection.setAGC(agc);
+		    connection.setAllowTx(tx_state[0]);
+		    connection.setTxUser(txUser);
+		    connection.setTxPass(txPass);
 		}
 		
 		//update=new Update(connection);
