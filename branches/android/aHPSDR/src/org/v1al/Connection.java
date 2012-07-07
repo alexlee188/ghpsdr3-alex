@@ -444,17 +444,25 @@ public class Connection extends Thread {
 	
 	public void setMOX(boolean state){
 		if (state) {
-			sendCommand("Mox on");
+			sendCommand("Mox on " + txUser + " " + txPass);
 			MOX = true;
 		}
 		else {
-			sendCommand("Mox off");
+			sendCommand("Mox off " + txUser + " " + txPass);
 			MOX = false;
 		}
 	}
 	
 	public boolean getMOX(){
 		return MOX;
+	}
+	
+	public void setTxUser(String User){
+		txUser = User;
+	}
+	
+	public void setTxPass(String Pass){
+		txPass = Pass;
 	}
 
 	public byte[] getSamples() {
@@ -517,6 +525,9 @@ public class Connection extends Thread {
 	private OutputStream outputStream;
 	private boolean running = false;
 	private boolean connected = false;
+	
+	private String txUser = "";
+	private String txPass = "";
 	
 
 	private short LO_offset;

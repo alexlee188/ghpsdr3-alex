@@ -88,8 +88,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		gain=prefs.getInt("gain", 50); // kb3omm set initial gain lower
 		agc=prefs.getInt("AGC", AGC_LONG);
 		fps=prefs.getInt("Fps", FPS_10);
-		server=prefs.getString("Server", "");
+		server=prefs.getString("Server", "192.168.1.12");
 		receiver=prefs.getInt("Receiver", 0);
+		txUser=prefs.getString("txUser", "");
+		txPass=prefs.getString("txPass", "");
 		
 		DisplayMetrics metrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -132,6 +134,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		editor.putInt("Fps", fps);
 		editor.putString("Server", server);
 		editor.putInt("Receiver", receiver);
+		editor.putString("txUser", txUser);
+		editor.putString("txPass", txPass);
 		editor.commit();
     }
 
@@ -216,7 +220,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		menu.add(0, MENU_DSP, 0, "DSP");
 		menu.add(0, MENU_GAIN, 0, "GAIN");
 		menu.add(0, MENU_FPS, 0, "FPS");
-		menu.add(0, MENU_TX,0,"TX");
+		menu.add(0, MENU_TX, 0, "ALLOW TX");
+		menu.add(0, MENU_TX_USER, 0, "TX User Password");
 		menu.add(0, MENU_QUIT, 0, "Quit");
 		return true;
 	}
@@ -963,6 +968,31 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					});
 			dialog = builder.create();
 			break;
+        case MENU_TX_USER:
+            builder = new AlertDialog.Builder(this);
+            builder.setTitle("Enter TX User and Password:");
+            LinearLayout ll = new LinearLayout(this);
+            ll.setOrientation(1); // vertical
+            final EditText user = new EditText(this);
+            final EditText pass = new EditText(this);
+            user.setText(txUser);
+            pass.setText(txPass);
+            ll.addView(user);
+            ll.addView(pass);
+            builder.setView(ll);
+            builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                            txUser = user.getText().toString().trim();
+                            txPass = pass.getText().toString().trim();
+                            connection.setTxUser(txUser);
+                            connection.setTxPass(txPass);
+                            dialog.dismiss();
+                    }
+            });
+            dialog = builder.create();
+			spectrumView.setAverage(-100);
+            //builder.show();
+            break;
 		case MENU_GAIN:
 			builder = new AlertDialog.Builder(this);
 			builder.setTitle("Select Gain");
@@ -1044,6 +1074,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int MENU_FREQUENCY = 10;
 	public static final int MENU_SERVERS = 11;
 	public static final int MENU_TX = 12;
+	public static final int MENU_TX_USER = 13;
 
 	public static final CharSequence[] bands = { "160", "80", "60", "40", "30",
 			"20", "17", "15", "12", "10", "6", "GEN", "WWV" };
@@ -1168,9 +1199,12 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 	private int cwPitch = 600;
 
-	private String server = "g0orx.dyndns.org";
+	private String server = "192.168.1.12";
 	private int BASE_PORT = 8000;
 	private int port = 8000;
+	
+	private String txUser = "";
+	private String txPass = "";
 	
 	private float xAxisLevel=-1.9F;
 	
