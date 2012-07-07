@@ -1247,6 +1247,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                             sdr_log(SDR_LOG_INFO,"Mox on denied because user %s password check failed!\n",thisuser);
                         }
                     }
+                sdr_log(SDR_LOG_INFO,"Mox on denied because no user and password supplied!\n");
                 }else{
                     sdr_log(SDR_LOG_INFO,"mox denied because tx = \"no\"\n");
                 }
