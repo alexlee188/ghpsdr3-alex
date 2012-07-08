@@ -68,7 +68,7 @@ public class Connection extends Thread {
 			    		if (allowTx){
 				    		byte[] micEncodedData = new byte[micBufferSize];
 				    		for (int i = 0; i < micBufferSize; i++){
-				    			micEncodedData[i] = aLawEncode[micData[i] & 0xFFFF];
+				    			micEncodedData[i] = aLawEncode[(micData[i] << micGain) & 0xFFFF];
 				    		}
 				    		sendAudio(micEncodedData);
 				    	}
@@ -504,6 +504,14 @@ public class Connection extends Thread {
 	public boolean getAllowTx(){
 		return allowTx;
 	}
+	
+	public int getMicGain(){
+		return micGain;
+	}
+	
+	public void setMicGain(int gain){
+		micGain = gain;
+	}
 
 	private SpectrumView spectrumView;
 
@@ -573,6 +581,7 @@ public class Connection extends Thread {
 
 	public final int micBufferSize = 58;
 	private final int nMicBuffers = 2;
+	private int micGain = 0;
 	private boolean allowTx = false;
 	
 	private static short[] aLawDecode = new short[256];

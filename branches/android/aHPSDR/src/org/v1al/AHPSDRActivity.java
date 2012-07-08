@@ -85,7 +85,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		frequency=prefs.getLong("Frequency",14200000L);
 		filterLow=prefs.getInt("FilterLow",150);
 		filterHigh=prefs.getInt("FilterHigh", 2850);
-		gain=prefs.getInt("gain", 50); // kb3omm set initial gain lower
+		gain=prefs.getInt("Gain", 5);
+		micgain=prefs.getInt("Micgain", 0);
 		agc=prefs.getInt("AGC", AGC_LONG);
 		fps=prefs.getInt("Fps", FPS_10);
 		server=prefs.getString("Server", "192.168.1.12");
@@ -131,6 +132,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		editor.putInt("FilterLow", connection.getFilterLow());
 		editor.putInt("FilterHigh", connection.getFilterHigh());
 		editor.putInt("Gain", gain);
+		editor.putInt("Micgain", micgain);
 		editor.putInt("AGC", agc);
 		editor.putInt("Fps", fps);
 		editor.putString("Server", server);
@@ -181,18 +183,16 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		    connection.setFrequency(frequency);
 		    connection.setMode(mode);
 		    connection.setFilter(filterLow, filterHigh);
-		    connection.setGain(gain);
+		    connection.setGain(gain*10);
+		    connection.setMicGain(micgain);
 		    connection.setAGC(agc);
 		    connection.setAllowTx(tx_state[0]);
 		    connection.setTxUser(txUser);
 		    connection.setTxPass(txPass);
+			connection.setFps(fps);
+			connection.getSpectrum_protocol3(fps+1);
 		}
-		
-		//update=new Update(connection);
-		//update.setFps(fps);
 		spectrumView.setAverage(-100);
-		connection.setFps(fps);
-		connection.getSpectrum_protocol3(fps+1);
 	}
 
 	public void onPause() {
@@ -227,6 +227,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		menu.add(0, MENU_FPS, 0, "FPS");
 		menu.add(0, MENU_TX, 0, "ALLOW TX");
 		menu.add(0, MENU_TX_USER, 0, "TX User Password");
+		menu.add(0, MENU_MIC_GAIN, 0, "MIC GAIN");
 		menu.add(0, MENU_QUIT, 0, "Quit");
 		return true;
 	}
@@ -273,8 +274,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					connection.setFrequency(frequency);
 					connection.setMode(mode);
 					connection.setFilter(filterLow, filterHigh);
-					connection.setGain(gain);
+					connection.setGain(gain*10);
+					connection.setMicGain(micgain);
 					connection.setAGC(agc);
+				    connection.setAllowTx(tx_state[0]);
 					//update=new Update(connection);					
 					spectrumView.setConnection(connection);
 					spectrumView.setAverage(-100);
@@ -357,8 +360,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
     							connection.setFrequency(frequency);
     							connection.setMode(mode);
     							connection.setFilter(filterLow, filterHigh);
-    							connection.setGain(gain);
-    							connection.setAGC(agc);					
+    							connection.setGain(gain*10);
+    							connection.setAGC(agc);		
+    						    connection.setAllowTx(tx_state[0]);
     							spectrumView.setConnection(connection);
     							spectrumView.setAverage(-100);
     							setTitle("glSDR: "+server+" (rx"+receiver+")");
@@ -394,8 +398,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 							connection.setFrequency(frequency);
 							connection.setMode(mode);
 							connection.setFilter(filterLow, filterHigh);
-							connection.setGain(gain);
-							connection.setAGC(agc);	
+							connection.setGain(gain*10);
+							connection.setMicGain(micgain);
+							connection.setAGC(agc);
+						    connection.setAllowTx(tx_state[0]);
    							spectrumView.setConnection(connection);
 							spectrumView.setAverage(-100);
 							setTitle("glSDR: "+server+" (rx"+receiver+")");
@@ -1005,7 +1011,20 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int item) {
 							gain=item;
-							connection.setGain((gain+1)*10);
+							connection.setGain(gain*10);
+							dialog.dismiss();
+						}
+					});
+			dialog = builder.create();
+			break;
+		case MENU_MIC_GAIN:
+			builder = new AlertDialog.Builder(this);
+			builder.setTitle("Select Mic Gain");
+			builder.setSingleChoiceItems(micgains, micgain,
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int item) {
+							micgain=item;
+							connection.setMicGain(micgain);
 							dialog.dismiss();
 						}
 					});
@@ -1080,6 +1099,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int MENU_SERVERS = 11;
 	public static final int MENU_TX = 12;
 	public static final int MENU_TX_USER = 13;
+	public static final int MENU_MIC_GAIN = 14;
 
 	public static final CharSequence[] bands = { "160", "80", "60", "40", "30",
 			"20", "17", "15", "12", "10", "6", "GEN", "WWV" };
@@ -1143,19 +1163,11 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final CharSequence[] gains = { "0", "10", "20", "30", "40",
 			"50", "60", "70", "80", "90", "100" };
 
-	public int gain = 80;
+	public int gain = 5;
 	
-	public static final int GAIN_0 = 0;
-	public static final int GAIN_10 = 1;
-	public static final int GAIN_20 = 2;
-	public static final int GAIN_30 = 3;
-	public static final int GAIN_40 = 4;
-	public static final int GAIN_50 = 5;
-	public static final int GAIN_60 = 6;
-	public static final int GAIN_70 = 7;
-	public static final int GAIN_80 = 8;
-	public static final int GAIN_90 = 9;
-	public static final int GAIN_100 = 10;
+	public static final CharSequence[] micgains = { "default", "x2", "x4", "x8", "x16", "x32", "x64" };
+
+	public int micgain = 0;
 	
     public static final CharSequence[] fpss = { "1", "2", "3", "4", "5",
 		"6", "7", "8", "9", "10", "11", "12", "13", "14", "15" };
