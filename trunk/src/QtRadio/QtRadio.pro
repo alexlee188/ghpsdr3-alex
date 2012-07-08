@@ -3,17 +3,34 @@
 # Project created by QtCreator 2010-07-05T10:00:09
 #
 #-------------------------------------------------
+#-------------------------------------------------
+# If using the Nokia Qt SDK set _UsingSDK to true
+# or if using Ubuntu repo set _UsingSDK to false
+#-------------------------------------------------
+_UsingSDK = false
 
-# Uncomment line below when using QtSDK, comment for  Ubuntu repository ver.
-QT       += core gui network multimedia mobility opengl
+greaterThan(QT_MAJOR_VERSION, 4) {
+    message("Using Qt5")
+    QT       += core gui widgets multimedia opengl
 
-# Uncomment 2 lines below when using QtSDK, comment for  Ubuntu repository ver.
-CONFIG	+= mobility
-MOBILITY += multimedia
+    INCLUDEPATH += /opt/qt5/include
+    INCLUDEPATH += /opt/qt5/include/QtMultimedia
+    INCLUDEPATH += /opt/qt5/include/QtNetwork
 
-# Comment 2 lines below when using QtSDK, uncomment for  Ubuntu repository ver.
-#INCLUDEPATH += /usr/include/QtMobility
-#INCLUDEPATH += /usr/include/QtMultimediaKit
+} else {
+    $$_UsingSDK {
+        message("Using the Nokia Qt SDK installation")
+        QT       += core gui network multimedia mobility
+        CONFIG   += mobility
+        MOBILITY += multimedia
+    } else {
+        message("Using the Ubuntu Qt Creator installation")
+        CONFIG   += mobility
+        MOBILITY += multimedia
+        INCLUDEPATH += /usr/include/QtMobility
+        INCLUDEPATH += /usr/include/QtMultimediaKit
+    }
+}
 
 TARGET = QtRadio
 TEMPLATE = app
@@ -137,5 +154,5 @@ OTHER_FILES +=
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/release/ 
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/debug/ 
 else:symbian: LIBS += -lcodec2 -lsamplerate
-else:unix: LIBS += -lcodec2 -lsamplerate -lortp
+else:unix: LIBS += -lcodec2 -lsamplerate -lortp -lGLU
 
