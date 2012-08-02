@@ -4,7 +4,7 @@ bin_PROGRAMS = dspserver
 
 noinst_LIBRARIES = libsdrutil.a
 
-dspserver_CFLAGS = -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function -msse -msse3 -ffast-math $(THREAD_DEBUG_CFLAGS)
+dspserver_CFLAGS = -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function -ffast-math $(THREAD_DEBUG_CFLAGS)
 #dspserver_CFLAGS = -g -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function -msse -msse3 -ffast-math -march=core2 
 
 
