@@ -430,6 +430,11 @@ public class Connection extends Thread {
 		sendCommand("setNB " + state);
 	}
 
+	public void setIQCorrection(boolean state) {
+		sendCommand("RxIQmuVal 0.1");
+		sendCommand("setIQEnable " + (state ? "true" : "false"));
+	}
+	
 	public void setGain(int gain) {
 		sendCommand("SetRXOutputGain " + gain);
 	}

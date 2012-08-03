@@ -94,6 +94,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		txUser=prefs.getString("txUser", "");
 		txPass=prefs.getString("txPass", "");
 		tx_state[0]=prefs.getBoolean("txAllow", false);
+		dsp_state[3]=prefs.getBoolean("IQ", false);
 		
 		DisplayMetrics metrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -140,6 +141,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		editor.putString("txUser", txUser);
 		editor.putString("txPass", txPass);
 		editor.putBoolean("txAllow", tx_state[0]);
+		editor.putBoolean("IQ", dsp_state[3]);
 		editor.commit();
     }
 
@@ -185,6 +187,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		    connection.setFilter(filterLow, filterHigh);
 		    connection.setGain(gain*10);
 		    connection.setMicGain(micgain);
+		    connection.setIQCorrection(dsp_state[3]);
 		    connection.setAGC(agc);
 		    connection.setAllowTx(tx_state[0]);
 		    connection.setTxUser(txUser);
@@ -278,6 +281,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					connection.setMicGain(micgain);
 					connection.setAGC(agc);
 				    connection.setAllowTx(tx_state[0]);
+				    connection.setIQCorrection(dsp_state[3]);
 					//update=new Update(connection);					
 					spectrumView.setConnection(connection);
 					spectrumView.setAverage(-100);
@@ -363,6 +367,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
     							connection.setGain(gain*10);
     							connection.setAGC(agc);		
     						    connection.setAllowTx(tx_state[0]);
+    						    connection.setIQCorrection(dsp_state[3]);
     							spectrumView.setConnection(connection);
     							spectrumView.setAverage(-100);
     							setTitle("glSDR: "+server+" (rx"+receiver+")");
@@ -402,6 +407,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 							connection.setMicGain(micgain);
 							connection.setAGC(agc);
 						    connection.setAllowTx(tx_state[0]);
+						    connection.setIQCorrection(dsp_state[3]);
    							spectrumView.setConnection(connection);
 							spectrumView.setAverage(-100);
 							setTitle("glSDR: "+server+" (rx"+receiver+")");
@@ -953,6 +959,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 							case DSP_NB:
 								connection.setNB(state);
 								break;
+							case DSP_IQ:
+								connection.setIQCorrection(state);
+								break;
 							}
 
 							dialog.dismiss();
@@ -1148,13 +1157,14 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int AGC_MEDIUM = 3;
 	public static final int AGC_FAST = 4;
 
-	public static final CharSequence[] dsps = { "NR", "ANF", "NB" };
+	public static final CharSequence[] dsps = { "NR", "ANF", "NB", "IQ CORRECTION" };
 
 	public static final int DSP_NR = 0;
 	public static final int DSP_ANF = 1;
 	public static final int DSP_NB = 2;
+	public static final int DSP_IQ = 3;
 
-	private boolean[] dsp_state = { false, false, false };
+	private boolean[] dsp_state = { false, false, false, false };
 	
 	public static final CharSequence[] txs = { "Allow Tx" };
 	public static final int TX_ALLOW = 0;
