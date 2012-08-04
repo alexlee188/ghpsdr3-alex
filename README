@@ -245,14 +245,21 @@ gcc-multilib package (see https://bugs.launchpad.net/ubuntu/+source/linux/+bug/7
 sudo apt-get install gcc-multilib
 
 
-For other branches I have modified the Makefile of server, softrock and dspserver to use clang if you do:
-
-$ make CC=clang
-
-Otherwise it will use the default gcc
-
 The one big advantage of clang over gcc is the more meaningful error/warning messages and other
 options to help with debugging.
+
+Note that there is a problem with using clang as the linker for hiqsdr.  A temporary fix is to manually change Makefile in hiqsdr in that line:
+
+CXXLD = $(CXX)
+
+to
+
+CXXLD = g++
+
+and then do:
+
+$ make clean
+$ make
 
 
 Autotools building system
