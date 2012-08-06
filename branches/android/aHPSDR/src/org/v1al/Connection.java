@@ -84,7 +84,7 @@ public class Connection extends Thread {
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
 		    
-		    sendCommand("setClient glSDR(5)");
+		    sendCommand("setClient glSDR(6)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
