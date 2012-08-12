@@ -60,6 +60,7 @@ struct Hiqsdr {
     long long bw;
     int  attDb;
     int  antSel;
+    int  preSel;
 
     // asynch thread for receiving data from hardware
     pthread_t      thread_id;
@@ -94,6 +95,7 @@ int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
    hq.bw = hiqsdr_bw;
    hq.attDb  = 0;
    hq.antSel = 0;
+   hq.preSel = 0;
    hq.rx_data_port = 48247;
    hq.ctrl_port    = hq.rx_data_port+1;   
    hq.tx_data_port = hq.rx_data_port+2;
@@ -273,6 +275,29 @@ int hiqsdr_set_antenna_input (int n)
 {
     hq.antSel = n == 0 ? 0x00 : 0x01;
     fprintf (stderr, "%s: antenna: %02X\n", __FUNCTION__, hq.antSel);
+    send_command (&hq);
+    return 0;
+}
+
+
+/*
+  def ChangeBand(self, band):
+    # band is a string: "60", "40", "WWV", etc.
+    self.band = band
+    self.HiQSDR_Connector_X1 &= ~0x0F   # Mask in the last four bits
+    self.HiQSDR_Connector_X1 |= self.conf.HiQSDR_BandDict.get(band, 0) & 0x0F
+    self.SetTxLevel()
+    self.NewUdpStatus()
+
+The BandDict is set up in ~/.quisk_conf.py with
+bandLabels = ['Audio', '160', '80', '40', '30', '20', '17', '15',
+        '12', '10', '6', ('Time',) * len(bandTime)] 
+*/
+
+int hiqsdr_set_preselector (int p)
+{
+    hq.preSel = (p & 0x0F);
+    fprintf (stderr, "%s: preselector: %02X\n", __FUNCTION__, hq.preSel);
     send_command (&hq);
     return 0;
 }
@@ -580,8 +605,8 @@ static int send_command (struct Hiqsdr *hiq) {
 
     m.fwv = 3;  // FPGA firmware version
 
-    m.x1  = 0;  // preselector et al.
-    m.att = hiq->attDb;   // input attenuator
+    m.x1  = hiq->preSel & 0x0F;   // preselector et al.
+    m.att = hiq->attDb;           // input attenuator
 
     m.msc = hiq->antSel;  // select antenna 
 

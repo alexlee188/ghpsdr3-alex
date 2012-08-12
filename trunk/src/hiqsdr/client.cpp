@@ -58,6 +58,25 @@ int user_data_callback(void *buf, int buf_size, void *extra)
 	// The buffer received contains 24-bit signed integer IQ samples (6 bytes per sample)
 	// we save the received IQ samples as 32 bit (msb aligned) integer IQ samples.
 
+/*
+    4 Reception frame format
+
+    The received samples are carried by UDP frames with a total fixed payload size
+    of 1442 bytes. Each sample consists of 3 Bytes I and 3 Bytes Q data. 
+    They are interleaved. 
+
+    The first byte of each UDP frame carries a sequence number that
+    is incremented from frame to frame. It can be used to identify a loss of UDP
+    messages during reception. 
+    The second byte is used for signalling the current status of the reception. 
+     
+        Bit 0 is used as Key indication. If it is 0 the PTT is issued and if it is 1 the PTT is not active. 
+        Bit 1 indicates clipping of the ADC (overrange). 
+        
+    The data format of the samples is little endian (least signicant
+    byte first) with real words at the odd (first) positions and the imaginary words
+    at the even (second) positions.
+*/
 
 	uint8_t	*samplebuf 	= ((uint8_t*)(buf));
     int nSamples 		= (buf_size - 2)/6;      // each sample is a three byte signed integer
@@ -69,19 +88,19 @@ int user_data_callback(void *buf, int buf_size, void *extra)
 
 
     // skip the first two bytes
-    int seq      = *samplebuf++;
-    int adc_clip = ADC_CLIP & (*samplebuf++);
+    int seq      = *samplebuf++;               // frame sequence
+    int adc_clip = ADC_CLIP & (*samplebuf++);  // various flags
 
 
 	RECEIVER *pRec = (RECEIVER *)extra;
 
     // sanity check on frame counter
     if (pRec->frame_counter == -1) {
-        pRec->frame_counter = (seq+1) % 256;
+        pRec->frame_counter = ((seq+1) % 256);
     } else {
-        if (!(seq == (pRec->frame_counter++ % 256 ) )) {
+        if (!(seq == ((pRec->frame_counter++) % 256) )) {
            fprintf (stderr, "WARNING: Expected: %d, found: %d\n", pRec->frame_counter, seq);
-           pRec->frame_counter = seq;
+           pRec->frame_counter = (seq+1) % 256 ;
         } 
     }
 
@@ -313,6 +332,15 @@ const char* parse_command(CLIENT* client,char* command) {
             if(token!=NULL) {
                long antenna = atol(token);
                return select_antenna (client,antenna);
+            } else {
+                return INVALID_COMMAND;
+            }
+        } else if(strcmp(token,"selectpresel")==0) {
+            // seelect antenna
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+               long presel = atol(token);
+               return select_preselector (client,presel);
             } else {
                 return INVALID_COMMAND;
             }

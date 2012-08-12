@@ -214,6 +214,16 @@ const char* select_antenna (CLIENT* client, int antenna)
 }
 
 
+const char* select_preselector (CLIENT* client, int preselector)
+{
+    if (preselector >= 0 && preselector <= 15) {
+        fprintf (stderr, "%s: new preselector: %d\n", __FUNCTION__, preselector);
+        hiqsdr_set_preselector (preselector);
+        return OK;
+    } else
+        return INVALID_COMMAND;
+}
+
 void send_IQ_buffer (RECEIVER *pRec) {
     struct sockaddr_in client;
     int client_length;

@@ -86,10 +86,13 @@ private:
    int attenuatorVal;
    QSignalMapper *antMapper;
    int antennaVal;
+   QSignalMapper *preselMapper;
+   int preselVal;
 
 private slots:
    void attClicked(int state);
    void antClicked(int n);
+   void preselClicked(int n);
    void processAnswer (QStringList);
 };
 
