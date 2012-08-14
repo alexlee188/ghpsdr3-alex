@@ -73,6 +73,8 @@ private slots:
 };
 
 
+class QRadioButton;
+
 class HardwareHiqsdr: public DlgHardware
 { 
    Q_OBJECT
@@ -88,6 +90,7 @@ private:
    int antennaVal;
    QSignalMapper *preselMapper;
    int preselVal;
+   QRadioButton *psel[16];
 
 private slots:
    void attClicked(int state);

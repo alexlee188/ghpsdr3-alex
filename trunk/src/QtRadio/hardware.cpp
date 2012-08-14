@@ -272,7 +272,6 @@ HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC,
     // preselector
     QGroupBox *preselGroupBox = new QGroupBox(tr("Preselector"));
     QVBoxLayout *vpbox = new QVBoxLayout;
-    QRadioButton *psel[16];
 
     for (int i = 0; i < 16; ++i) {
         char s[16];
@@ -346,6 +345,13 @@ HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC,
     att0Db->setChecked(true);              // attenuator 0 dB
     ant0->setChecked(true);
     psel[0]->setChecked(true);
+
+    // update local preselector labels querying the remote server
+    for (int n=0; n < 16; ++n) {
+        QString command;
+        command.clear(); QTextStream(&command) << "*getpreselector? " << n;
+        pConn->sendCommand (command);
+    }
 }
 
 void HardwareHiqsdr :: attClicked(int newVal)
@@ -394,6 +400,16 @@ void HardwareHiqsdr :: processAnswer (QStringList list)
        setWindowTitle(x) ;
     }
 
+    if (list[0] == "*getpreselector?") {
+       // try to set the serial
+       qDebug() << Q_FUNC_INFO << list [1] << list[2] << list[3] ;
+       // change the preselector buttons
+       int x = list[1].toInt() ;
+       
+       if (x >= 0 && x < 16) {
+           psel[x]->setText(list[3]);
+       }
+    }
 }
 
 HardwareHiqsdr :: ~HardwareHiqsdr ()
@@ -633,6 +649,17 @@ void HardwareFactory :: processAnswer (QString a, Connection *pConn, UI *pUI )
            qDebug() << Q_FUNC_INFO<<list[2];
            emit pHwDlg->processAnswer(list);
         }
+     }
+     break;
+
+   case 4:
+     {
+         qDebug() << Q_FUNC_INFO <<list[0] << list[1] << list[2] << list[3];
+         DlgHardware *pHwDlg = pUI->getHwDlg();
+         if (pHwDlg) {
+            //qDebug() << Q_FUNC_INFO<<list[3];
+            emit pHwDlg->processAnswer(list);
+         }
      }
      break;
 

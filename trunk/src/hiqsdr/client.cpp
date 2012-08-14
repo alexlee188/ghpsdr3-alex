@@ -388,9 +388,32 @@ const char* parse_command(CLIENT* client,char* command) {
             return "OK HiQSDR";
 
         } else if(strcmp(token,"getserial?")==0) {
+            // no serial number concept available in HiQSDR, returns instead the IP address
             static char buf[50];
             snprintf (buf, sizeof(buf), "OK %s", hiqsdr_get_ip_address());
             return buf;
+
+        } else if(strcmp(token,"getpreselector?")==0) {
+            // get preselector
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+               long p=atol(token);
+               // preselector query
+               if (p >= 0 && p < 16) {
+                   static char buf[50];
+                   static char pd[BUFSIZ];
+
+                   if (!hiqsdr_get_preselector_desc(p, pd)) {
+                       snprintf (buf, sizeof(buf), "OK %s", pd);
+                       return buf;
+                   } else
+                       return INVALID_COMMAND;
+               } else 
+                   return INVALID_COMMAND;
+            } else {
+                return INVALID_COMMAND;
+            }
+
 
         } else {
             // invalid command string
