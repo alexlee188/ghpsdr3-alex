@@ -269,6 +269,17 @@ HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC,
     vabox->addWidget(ant1);
     antGroupBox->setLayout(vabox);
 
+    // preselector
+    QGroupBox *preselGroupBox = new QGroupBox(tr("Preselector"));
+    QVBoxLayout *vpbox = new QVBoxLayout;
+
+    for (int i = 0; i < 16; ++i) {
+        char s[16];
+        sprintf (s, "%d", i);
+        psel[i] = new QRadioButton(tr(s));
+        vpbox->addWidget(psel[i]);
+    }
+    preselGroupBox->setLayout(vpbox);
 
     // Main layout of dialog
     QHBoxLayout *grid = new QHBoxLayout;
@@ -276,6 +287,7 @@ HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC,
     // add objects
     grid->addWidget (attGroupBox);
     grid->addWidget (antGroupBox);
+    grid->addWidget (preselGroupBox);
 
     // use grid obecjt as main dialog's layout 
     setLayout(grid);
@@ -313,6 +325,14 @@ HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC,
 
     connect(antMapper, SIGNAL(mapped(int)), this, SLOT(antClicked(int)));
 
+    // preselector mapper
+    preselMapper = new QSignalMapper(this);
+    for (int i = 0; i < 16; ++i) {
+        connect(psel[i],  SIGNAL(toggled(bool)), preselMapper, SLOT(map()));
+        preselMapper->setMapping(psel[i], i);
+    }
+    connect(preselMapper, SIGNAL(mapped(int)), this, SLOT(preselClicked(int)));
+
     // update the serial number in title bar
     QString command;
     command.clear(); QTextStream(&command) << "*getserial?";
@@ -324,6 +344,14 @@ HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC,
 
     att0Db->setChecked(true);              // attenuator 0 dB
     ant0->setChecked(true);
+    psel[0]->setChecked(true);
+
+    // update local preselector labels querying the remote server
+    for (int n=0; n < 16; ++n) {
+        QString command;
+        command.clear(); QTextStream(&command) << "*getpreselector? " << n;
+        pConn->sendCommand (command);
+    }
 }
 
 void HardwareHiqsdr :: attClicked(int newVal)
@@ -348,6 +376,17 @@ void HardwareHiqsdr :: antClicked(int n)
    }
 }
 
+void HardwareHiqsdr :: preselClicked(int n)
+{
+   qDebug() << "Preselector: " << n ;
+   if (preselVal != n) {
+      QString command;
+      command.clear(); QTextStream(&command) << "*selectpresel " << n;
+      pConn->sendCommand (command);
+      preselVal = n;
+   }
+}
+
 void HardwareHiqsdr :: processAnswer (QStringList list)
 {
     if (list[0] == "*getserial?") {
@@ -361,6 +400,16 @@ void HardwareHiqsdr :: processAnswer (QStringList list)
        setWindowTitle(x) ;
     }
 
+    if (list[0] == "*getpreselector?") {
+       // try to set the serial
+       qDebug() << Q_FUNC_INFO << list [1] << list[2] << list[3] ;
+       // change the preselector buttons
+       int x = list[1].toInt() ;
+       
+       if (x >= 0 && x < 16) {
+           psel[x]->setText(list[3]);
+       }
+    }
 }
 
 HardwareHiqsdr :: ~HardwareHiqsdr ()
@@ -600,6 +649,17 @@ void HardwareFactory :: processAnswer (QString a, Connection *pConn, UI *pUI )
            qDebug() << Q_FUNC_INFO<<list[2];
            emit pHwDlg->processAnswer(list);
         }
+     }
+     break;
+
+   case 4:
+     {
+         qDebug() << Q_FUNC_INFO <<list[0] << list[1] << list[2] << list[3];
+         DlgHardware *pHwDlg = pUI->getHwDlg();
+         if (pHwDlg) {
+            //qDebug() << Q_FUNC_INFO<<list[3];
+            emit pHwDlg->processAnswer(list);
+         }
      }
      break;
 

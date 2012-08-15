@@ -79,5 +79,6 @@ const char* set_dither(CLIENT* client, bool);
 const char* set_random(CLIENT* client, bool);
 const char* set_attenuator(CLIENT* client, int);
 const char* select_antenna (CLIENT* client, int antenna);
+const char* select_preselector (CLIENT* client, int preselector);
 void send_IQ_buffer (RECEIVER *pRec);
 

@@ -27,6 +27,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -45,6 +46,10 @@ struct AsynchCtxData {
     int run;
 };
 
+struct PreselItem {
+    char *desc;
+};
+
 struct Hiqsdr {
     // network parameters
     char ip_addr[256];
@@ -60,6 +65,9 @@ struct Hiqsdr {
     long long bw;
     int  attDb;
     int  antSel;
+    int  preSel;
+    char *preselDesc[16];
+
 
     // asynch thread for receiving data from hardware
     pthread_t      thread_id;
@@ -79,6 +87,7 @@ static int   send_deactivation (struct Hiqsdr *hiq);
 static int   ping_hardware (struct Hiqsdr *hiq, int tmo_s = 1);
 static void  dump_buffer(unsigned char* buffer, int len /* bytes to dump */) ;
 static int   get_data (struct Hiqsdr *hiq, unsigned char *buffer, int buf_len);
+static int   open_configuration_file (struct Hiqsdr *hiq);
 
 
 int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
@@ -94,9 +103,12 @@ int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
    hq.bw = hiqsdr_bw;
    hq.attDb  = 0;
    hq.antSel = 0;
+   hq.preSel = 0;
    hq.rx_data_port = 48247;
    hq.ctrl_port    = hq.rx_data_port+1;   
    hq.tx_data_port = hq.rx_data_port+2;
+
+   open_configuration_file (&hq);
 
    // setup control socket
    hq.ctrl_socket = socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
@@ -275,6 +287,40 @@ int hiqsdr_set_antenna_input (int n)
     fprintf (stderr, "%s: antenna: %02X\n", __FUNCTION__, hq.antSel);
     send_command (&hq);
     return 0;
+}
+
+
+/*
+  def ChangeBand(self, band):
+    # band is a string: "60", "40", "WWV", etc.
+    self.band = band
+    self.HiQSDR_Connector_X1 &= ~0x0F   # Mask in the last four bits
+    self.HiQSDR_Connector_X1 |= self.conf.HiQSDR_BandDict.get(band, 0) & 0x0F
+    self.SetTxLevel()
+    self.NewUdpStatus()
+
+The BandDict is set up in ~/.quisk_conf.py with
+bandLabels = ['Audio', '160', '80', '40', '30', '20', '17', '15',
+        '12', '10', '6', ('Time',) * len(bandTime)] 
+*/
+
+int hiqsdr_set_preselector (int p)
+{
+    hq.preSel = (p & 0x0F);
+    fprintf (stderr, "%s: preselector: %02X\n", __FUNCTION__, hq.preSel);
+    send_command (&hq);
+    return 0;
+}
+
+
+int hiqsdr_get_preselector_desc (unsigned int p, char *pDesc)
+{
+    if (p < (sizeof(hq.preselDesc)/sizeof(hq.preselDesc[0])) ) {
+        strcpy (pDesc, hq.preselDesc[p]);
+        return 0;
+    } else
+        return -1;
+
 }
 
 int hiqsdr_deinit (void)
@@ -482,6 +528,65 @@ static int get_data (struct Hiqsdr *hiq, unsigned char *buffer, int buf_len)
     }
 }
 
+// create/open/read a preselector configuration file
+static int   open_configuration_file (struct Hiqsdr *hiq)
+{
+    static char  fn [BUFSIZ];
+    FILE *fc;
+    int nr = 0;
+
+    sprintf (fn, "%s/%s", getenv("HOME"), "hiqsdr.conf");
+
+    // preload the data (default values)
+    for (unsigned i=0; i < sizeof(hiq->preselDesc)/sizeof(hiq->preselDesc[0]); ++i) {
+        hiq->preselDesc[i] = 0;
+    }
+
+    if (( fc = fopen (fn, "r")) != 0) {
+
+        while (!feof(fc)) {
+            char line [BUFSIZ];
+            int n;
+            char pd [BUFSIZ];
+
+            if (fgets (line, sizeof(line), fc)) {
+                if (line[0] == '#') continue;
+                if (sscanf(line, "%d!%[^\t\n]\n", &n, pd) == 2) {
+                    if (n >= 0 && n < 16) {
+                        delete hiq->preselDesc[n];
+                        hiq->preselDesc[n] = new char [strlen(pd)+1];
+                        if (hiq->preselDesc[n]) strcpy (hiq->preselDesc[n], pd), ++nr;
+                    }
+
+                }
+            }
+            
+        }
+
+    } else {
+
+        // no file available, create a default
+        fprintf (stderr, "No configuration file found in %s\n", fn);
+
+        if ((fc = fopen (fn, "w+"))) {
+            fprintf (fc, "#\n");
+            fprintf (fc, "# HiQSDR preselector configuration file template\n");
+            fprintf (fc, "#\n");
+            for (unsigned j=0; j<sizeof(hiq->preselDesc)/sizeof(hiq->preselDesc[0]); ++j) {
+                fprintf(fc, "%d!%s\n", j, "not used");
+            }
+            fclose (fc);
+            fprintf (stderr, "Configuration file created at: %s\n", fn);
+        }
+
+    }
+    if (nr) {
+        for (unsigned j=0; j<sizeof(hiq->preselDesc)/sizeof(hiq->preselDesc[0]); ++j) {
+            printf("%d: %s\n", j, hiq->preselDesc[j]);
+        }
+    }
+    return nr;
+}
 
 /*
  * Send command message to hardware
@@ -580,8 +685,8 @@ static int send_command (struct Hiqsdr *hiq) {
 
     m.fwv = 3;  // FPGA firmware version
 
-    m.x1  = 0;  // preselector et al.
-    m.att = hiq->attDb;   // input attenuator
+    m.x1  = hiq->preSel & 0x0F;   // preselector et al.
+    m.att = hiq->attDb;           // input attenuator
 
     m.msc = hiq->antSel;  // select antenna 
 
