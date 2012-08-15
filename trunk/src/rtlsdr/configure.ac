@@ -1,20 +1,19 @@
-#                                               -*- Autoconf -*-
-# Process this file with autoconf to produce a configure script.
+AC_INIT([ghpsdr3-rtlsdr], [1.0], [andrew@montefusco.com], [rtlsdr])
 
-AC_PREREQ([2.65])
-AC_INIT([ghpsdr3-rtlsdr], [1.0], [andrew@montefusco.com])
+#AC_CONFIG_AUX_DIR([build-aux])
+#AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE
+AC_CONFIG_MACRO_DIR([build-aux])
 
-AC_CONFIG_SRCDIR([server.cpp])
-AC_CONFIG_HEADERS([config.h])
+AM_INIT_AUTOMAKE([foreign -Wall])
 
-# Checks for programs.
-AC_PROG_CC
+## -------------------- ##
+## Tool/Compilers setup ##
+## -------------------- ##
+
+# Look for a C++ compiler.
+AC_LANG([C++])
 AC_PROG_CXX
-
-# compiling `bandscope.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.ac'
-AM_PROG_CC_C_O
 
 
 # Checks for libraries.
