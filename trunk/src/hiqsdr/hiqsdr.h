@@ -48,4 +48,6 @@ int hiqsdr_deinit (void);
 
 char *hiqsdr_get_ip_address ();
 
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
+
 #endif

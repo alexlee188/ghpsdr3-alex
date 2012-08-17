@@ -315,7 +315,7 @@ int hiqsdr_set_preselector (int p)
 
 int hiqsdr_get_preselector_desc (unsigned int p, char *pDesc)
 {
-    if (p < (sizeof(hq.preselDesc)/sizeof(hq.preselDesc[0])) ) {
+    if (p < ARRAY_SIZE(hq.preselDesc) ) {
         strcpy (pDesc, hq.preselDesc[p]);
         return 0;
     } else
@@ -435,7 +435,7 @@ const struct BwTbl bw [] = {
 
 static unsigned char get_decimation (int bw_hz)
 {
-    for (unsigned i=0; i < (sizeof(bw)/sizeof(bw[0])); ++i) 
+    for (unsigned i=0; i < ARRAY_SIZE(bw); ++i) 
         if (bw[i].bw == bw_hz)
            return bw[i].code;
     
@@ -538,7 +538,7 @@ static int   open_configuration_file (struct Hiqsdr *hiq)
     sprintf (fn, "%s/%s", getenv("HOME"), "hiqsdr.conf");
 
     // preload the data (default values)
-    for (unsigned i=0; i < sizeof(hiq->preselDesc)/sizeof(hiq->preselDesc[0]); ++i) {
+    for (unsigned i=0; i < ARRAY_SIZE(hiq->preselDesc); ++i) {
         hiq->preselDesc[i] = 0;
     }
 
@@ -572,8 +572,9 @@ static int   open_configuration_file (struct Hiqsdr *hiq)
             fprintf (fc, "#\n");
             fprintf (fc, "# HiQSDR preselector configuration file template\n");
             fprintf (fc, "#\n");
-            for (unsigned j=0; j<sizeof(hiq->preselDesc)/sizeof(hiq->preselDesc[0]); ++j) {
-                fprintf(fc, "%d!%s\n", j, "not used");
+            fprintf(fc, "%d!\"%s\"\n", 0, "FILTER BYPASS");
+            for (unsigned j=1; j<ARRAY_SIZE(hiq->preselDesc); ++j) {
+                fprintf(fc, "%d!\"%s\"\n", j, "not used");
             }
             fclose (fc);
             fprintf (stderr, "Configuration file created at: %s\n", fn);
@@ -581,7 +582,7 @@ static int   open_configuration_file (struct Hiqsdr *hiq)
 
     }
     if (nr) {
-        for (unsigned j=0; j<sizeof(hiq->preselDesc)/sizeof(hiq->preselDesc[0]); ++j) {
+        for (unsigned j=0; j<ARRAY_SIZE(hiq->preselDesc); ++j) {
             printf("%d: %s\n", j, hiq->preselDesc[j]);
         }
     }

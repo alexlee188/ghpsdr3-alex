@@ -404,7 +404,7 @@ const char* parse_command(CLIENT* client,char* command) {
                    static char pd[BUFSIZ];
 
                    if (!hiqsdr_get_preselector_desc(p, pd)) {
-                       snprintf (buf, sizeof(buf), "OK %s", pd);
+                       snprintf (buf, sizeof(buf), "OK \"%s\"", pd);
                        return buf;
                    } else
                        return INVALID_COMMAND;

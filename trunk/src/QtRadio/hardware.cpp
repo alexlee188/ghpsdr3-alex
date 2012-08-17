@@ -610,11 +610,37 @@ DlgHardware * HardwareFactory::Clone(Connection *pConn, const char *pName, QWidg
    return 0;
 }
 
+//
+// http://stackoverflow.com/questions/8215303/how-do-i-remove-trailing-whitespace-in-a-qstring-in-qt-c
+//
+QString &trim( QString & str, char ch ) {
+    
+  if ( str.size() > 0 && str.at(0) == ch) str.remove( 0, 1 );
+  while( str.size() > 0 && str.at( str.size() - 1 ) == ch )
+    str.chop( 1 );
+  return str;
+}
+
 void HardwareFactory :: processAnswer (QString a, Connection *pConn, UI *pUI )
 {      
    QStringList list;
 
-   if (a.length()) list = a.split(QRegExp(" "));
+   //
+   // split the answer in a list of QString's
+   //
+   if (a.length()) {
+      
+      // quoted strings are kept together
+      list = a.split(QRegExp(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)") );
+      
+      QList<QString>::iterator i = list.begin();
+      while (i != list.end()) {
+        QString t = trim(*i, '"'); // trims trailing and leading quotes
+        qDebug() << Q_FUNC_INFO << ": " << qPrintable(t) << endl;
+        *i = t;
+        ++i;
+      }
+   }
 
    switch (list.size()) {
 
@@ -625,11 +651,12 @@ void HardwareFactory :: processAnswer (QString a, Connection *pConn, UI *pUI )
 
    case 1:
      qDebug() << Q_FUNC_INFO << list[0];
-//     pUI->rmHwDlg();          
+     // not currently used
      break;
 
    case 2:
      qDebug() << Q_FUNC_INFO <<list[0] << list[1];
+     // not currently used
      break;
 
    case 3:
@@ -664,7 +691,7 @@ void HardwareFactory :: processAnswer (QString a, Connection *pConn, UI *pUI )
      break;
 
    default:
-     qDebug() << Q_FUNC_INFO<< "FATAL: more than 3: " << a;
+     qDebug() << Q_FUNC_INFO<< "FATAL: more than 4: " << a;
    }
 
 }
