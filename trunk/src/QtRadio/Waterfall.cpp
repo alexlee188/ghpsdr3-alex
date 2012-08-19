@@ -138,6 +138,8 @@ void Waterfall::setGeometry(QRect rect) {
         }
     }
 #endif
+
+    //waterfallcl->setGeometry(0, 512, rect.width(), 512);
 }
 
 
