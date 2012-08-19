@@ -74,7 +74,7 @@ Waterfall::Waterfall(QWidget*& widget) {
 
     waterfallcl->initialize(width()*2,256);
     waterfallcl->resize(width()*2,height());
-    waterfallcl->setGeometry(0, 512, width(), 256 );
+    waterfallcl->setGeometry(0, 512, (width()*19)/10, 256 );
     waterfallcl->show();
 }
 
@@ -138,18 +138,6 @@ void Waterfall::setGeometry(QRect rect) {
         }
     }
 #endif
-}
-
-void Waterfall::saveSettings(QSettings *settings){
-    settings->beginGroup("waterfallgl");
-    settings->setValue("geometry", waterfallcl->saveGeometry());
-    settings->endGroup();
-}
-
-void Waterfall::loadSettings(QSettings *settings){
-    settings->beginGroup("waterfallgl");
-    waterfallcl->restoreGeometry(settings->value("geometry").toByteArray());
-    settings->endGroup();
 }
 
 
