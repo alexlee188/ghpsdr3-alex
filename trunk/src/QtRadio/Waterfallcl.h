@@ -42,7 +42,6 @@ class Waterfallcl : public QGLWidget {
 public:
     Waterfallcl();
     ~Waterfallcl();
-    void setGeometry(QRect rect);
     void initialize(int wid, int ht);
     void setLow(int low);
     void setHigh(int high);

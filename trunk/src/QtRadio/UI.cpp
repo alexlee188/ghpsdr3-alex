@@ -393,6 +393,7 @@ void UI::loadSettings() {
     settings.beginGroup("mainWindow");
     if (configure.getGeometryState()) {
         restoreGeometry(settings.value("geometry").toByteArray());
+        //widget.waterfallFrame->loadSettings(&settings);
     }
     settings.endGroup();
 
@@ -425,6 +426,7 @@ void UI::saveSettings() {
     settings.setValue("geometry", saveGeometry());
     settings.endGroup();
 
+    //widget.waterfallFrame->saveSettings(&settings);
     widget.vfoFrame->writeSettings(&settings);
 }
 

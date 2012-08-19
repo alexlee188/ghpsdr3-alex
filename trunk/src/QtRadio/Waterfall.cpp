@@ -70,11 +70,11 @@ Waterfall::Waterfall(QWidget*& widget) {
     cy = image.height()/2 - 1;
 #endif
     waterfallcl = new Waterfallcl;
-    //waterfallcl->setParent(this);
+    //waterfallcl->setParent(this);  // This hammers the main GUI under qt5
 
     waterfallcl->initialize(width()*2,256);
     waterfallcl->resize(width()*2,height());
-    //waterfallcl->setGeometry(QRect(QPoint(0,0),QPoint(width()*2-1,255)));
+    waterfallcl->setGeometry(0, 512, width(), 256 );
     waterfallcl->show();
 }
 
@@ -138,6 +138,18 @@ void Waterfall::setGeometry(QRect rect) {
         }
     }
 #endif
+}
+
+void Waterfall::saveSettings(QSettings *settings){
+    settings->beginGroup("waterfallgl");
+    settings->setValue("geometry", waterfallcl->saveGeometry());
+    settings->endGroup();
+}
+
+void Waterfall::loadSettings(QSettings *settings){
+    settings->beginGroup("waterfallgl");
+    waterfallcl->restoreGeometry(settings->value("geometry").toByteArray());
+    settings->endGroup();
 }
 
 

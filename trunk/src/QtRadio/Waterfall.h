@@ -81,6 +81,8 @@ public:
     void setFilter(int low,int high);
     void setSubRxState(bool state);
     void setMode(QString m);
+    void loadSettings(QSettings* settings);
+    void saveSettings(QSettings* settings);
 
 signals:
     void frequencyMoved(int steps,int step);

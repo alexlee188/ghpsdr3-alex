@@ -115,11 +115,6 @@ void Waterfallcl::resizeGL( int width, int height )
     glLoadIdentity();
 }
 
-void Waterfallcl::setGeometry(QRect rect){
-    data_width = rect.width();
-    data_height = rect.height();
-    cy = MAX_CL_HEIGHT - 1;
-}
 
 void Waterfallcl::updateWaterfallgl(){
     updateGL();
