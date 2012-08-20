@@ -69,12 +69,13 @@ Waterfall::Waterfall(QWidget*& widget) {
     }
     cy = image.height()/2 - 1;
 #endif
+
     waterfallcl = new Waterfallcl;
     //waterfallcl->setParent(this);  // This hammers the main GUI under qt5
 
     waterfallcl->initialize(width()*2,256);
     waterfallcl->resize(width()*2,height());
-    waterfallcl->setGeometry(0, 512, (width()*19)/10, 256 );
+    //waterfallcl->setGeometry(0, 512, (width()*19)/10, 256 );
     waterfallcl->show();
 }
 
