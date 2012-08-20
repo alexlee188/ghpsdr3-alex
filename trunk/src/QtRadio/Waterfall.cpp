@@ -74,8 +74,10 @@ Waterfall::Waterfall(QWidget*& widget) {
 
     waterfallcl->initialize(width()*2,256);
     waterfallcl->resize(width()*2,height());
-    waterfallcl->setGeometry(0, 512, (width()*19)/10, 256 );
-    //waterfallcl->setParent(this);
+
+    QPoint lefttop  = mapToGlobal(pos());
+    QPoint leftbottom = QPoint(lefttop.x(), lefttop.y()+height());
+    waterfallcl->setGeometry(leftbottom.x(), leftbottom.y(), width()*19/10, height() );
     waterfallcl->show();
 }
 
@@ -140,7 +142,6 @@ void Waterfall::setGeometry(QRect rect) {
     }
 #endif
 
-    //waterfallcl->setGeometry(0, 512, rect.width(), 512);
 }
 
 
