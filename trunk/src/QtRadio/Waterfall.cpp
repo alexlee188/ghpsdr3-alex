@@ -74,7 +74,7 @@ Waterfall::Waterfall(QWidget*& widget) {
 
     waterfallcl->initialize(width()*2,256);
     waterfallcl->resize(width()*2,height());
-    //waterfallcl->setParent(this);  // problems with qt5.  Works with qt4.8.1
+    //waterfallcl->setParent(this);
     waterfallcl->show();
 }
 
@@ -231,7 +231,7 @@ void Waterfall::wheelEvent(QWheelEvent *event) {
 }
 
 
-void Waterfall::paintEvent(QPaintEvent*) {
+void Waterfall::paintEvent(QPaintEvent* event) {
 #ifdef WATERFALL_2D
     QPainter painter(this);
 
