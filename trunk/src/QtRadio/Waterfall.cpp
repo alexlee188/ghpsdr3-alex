@@ -354,7 +354,10 @@ void Waterfall::updateWaterfall_4(void){
     }
 
     waterfallcl->updateWaterfallgl();
+
+#ifdef WATERFALL_2D
     QTimer::singleShot(0,this,SLOT(repaint()));
+#endif
 
 }
 
