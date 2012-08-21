@@ -74,10 +74,7 @@ Waterfall::Waterfall(QWidget*& widget) {
 
     waterfallcl->initialize(width()*2,256);
     waterfallcl->resize(width()*2,height());
-
-    QPoint lefttop  = mapToGlobal(pos());
-    QPoint leftbottom = QPoint(lefttop.x(), lefttop.y()+height());
-    waterfallcl->setGeometry(leftbottom.x(), leftbottom.y(), width()*19/10, height() );
+    //waterfallcl->setParent(this);  // problems with qt5.  Works with qt4.8.1
     waterfallcl->show();
 }
 
