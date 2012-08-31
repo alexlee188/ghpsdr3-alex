@@ -167,8 +167,10 @@ Audio::Audio() {
     qDebug() << "Audio: LittleEndian=" << QAudioFormat::LittleEndian << " BigEndian=" << QAudioFormat::BigEndian;
 
     audio_format.setSampleType(QAudioFormat::SignedInt);
-    audio_format.setFrequency(sampleRate+(sampleRate==8000?SAMPLE_RATE_FUDGE:0));
-    audio_format.setChannels(audio_channels);
+    //audio_format.setFrequency(sampleRate+(sampleRate==8000?SAMPLE_RATE_FUDGE:0));
+    //audio_format.setChannels(audio_channels);
+    audio_format.setSampleRate(sampleRate+(sampleRate==8000?SAMPLE_RATE_FUDGE:0));
+    audio_format.setChannelCount(audio_channels);
     audio_format.setSampleSize(16);
     audio_format.setCodec("audio/pcm");
     audio_format.setByteOrder(audio_byte_order);
@@ -237,11 +239,13 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
             }
         }
 
+        /*
         qDebug() << "    Sample Rates";
         QList<int> sampleRates=device_info.supportedFrequencies();
         for(int j=0;j<sampleRates.size();j++) {
             qDebug() << "        " << sampleRates.at(j);
         }
+        */
 
         qDebug() << "    Sample Sizes";
         QList<int> sampleSizes=device_info.supportedSampleSizes();
@@ -249,11 +253,13 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
             qDebug() << "        " << sampleSizes.at(j);
         }
 
+        /*
         qDebug() << "    Channels";
         QList<int> channels=device_info.supportedChannels();
         for(int j=0;j<channels.size();j++) {
             qDebug() << "        " << channels.at(j);
         }
+        */
 
         comboBox->addItem(device_info.deviceName(),qVariantFromValue(device_info));
         if(i==0) {
@@ -283,7 +289,7 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
     audio_out->start();
     audio_output->start(audio_out);
 
-    audio_processing->set_audio_channels(audio_format.channels());
+    audio_processing->set_audio_channels(audio_format.channelCount());
     audio_processing->set_audio_encoding(audio_encoding);
     audio_processing->set_queue(&decoded_buffer);
 
@@ -291,12 +297,12 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
         qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << audio_output->state();
 
         qDebug() << "Format:";
-        qDebug() << "    sample rate: " << audio_format.frequency();
+        qDebug() << "    sample rate: " << audio_format.sampleRate();
         qDebug() << "    codec: " << audio_format.codec();
         qDebug() << "    byte order: " << audio_format.byteOrder();
         qDebug() << "    sample size: " << audio_format.sampleSize();
         qDebug() << "    sample type: " << audio_format.sampleType();
-        qDebug() << "    channels: " << audio_format.channels();
+        qDebug() << "    channels: " << audio_format.channelCount();
         audio_out->stop();
         delete audio_out;
         delete audio_output;
@@ -320,8 +326,8 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
     }
 
     audio_device=info;
-    audio_format.setFrequency(sampleRate+(sampleRate==8000?SAMPLE_RATE_FUDGE:0));
-    audio_format.setChannels(audio_channels);
+    audio_format.setSampleRate(sampleRate+(sampleRate==8000?SAMPLE_RATE_FUDGE:0));
+    audio_format.setChannelCount(audio_channels);
     audio_format.setByteOrder(audio_byte_order);
 
     if (!audio_device.isFormatSupported(audio_format)) {
@@ -346,19 +352,19 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
     audio_out->start();
     audio_output->start(audio_out);
 
-    audio_processing->set_audio_channels(audio_format.channels());
+    audio_processing->set_audio_channels(audio_format.channelCount());
     audio_processing->set_audio_encoding(audio_encoding);
     audio_processing->set_queue(&decoded_buffer);
 
     if(audio_output->error()!=0) {
         qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << audio_output->state();
         qDebug() << "Format:";
-        qDebug() << "    sample rate: " << audio_format.frequency();
+        qDebug() << "    sample rate: " << audio_format.sampleRate();
         qDebug() << "    codec: " << audio_format.codec();
         qDebug() << "    byte order: " << audio_format.byteOrder();
         qDebug() << "    sample size: " << audio_format.sampleSize();
         qDebug() << "    sample type: " << audio_format.sampleType();
-        qDebug() << "    channels: " << audio_format.channels();
+        qDebug() << "    channels: " << audio_format.channelCount();
         audio_out->stop();
         delete  audio_out;
         delete audio_output;

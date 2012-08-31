@@ -8,8 +8,8 @@ AudioInput::AudioInput()
     m_byte_order=QAudioFormat::LittleEndian;
 
     m_format.setSampleType(QAudioFormat::SignedInt);
-    m_format.setFrequency(m_sampleRate);
-    m_format.setChannels(1);
+    m_format.setSampleRate(m_sampleRate);
+    m_format.setChannelCount(1);
     m_format.setSampleSize(16);
     m_format.setCodec("audio/pcm");
     m_format.setByteOrder(m_byte_order);
@@ -57,11 +57,13 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
             }
         }
 
+        /*
         qDebug() << "    Sample Rates";
         QList<int> sampleRates=device_info.supportedFrequencies();
         for(int j=0;j<sampleRates.size();j++) {
             qDebug() << "        " << sampleRates.at(j);
         }
+        */
 
         qDebug() << "    Sample Sizes";
         QList<int> sampleSizes=device_info.supportedSampleSizes();
@@ -69,11 +71,13 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
             qDebug() << "        " << sampleSizes.at(j);
         }
 
+        /*
         qDebug() << "    Channels";
         QList<int> channels=device_info.supportedChannels();
         for(int j=0;j<channels.size();j++) {
             qDebug() << "        " << channels.at(j);
         }
+        */
 
         if (comboBox != NULL) comboBox->addItem(device_info.deviceName(),qVariantFromValue(device_info));
         if(i==0) {
@@ -98,12 +102,12 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
         qDebug() << "QAudioInput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
 
         qDebug() << "Format:";
-        qDebug() << "    sample rate: " << m_format.frequency();
+        qDebug() << "    sample rate: " << m_format.sampleRate();
         qDebug() << "    codec: " << m_format.codec();
         qDebug() << "    byte order: " << m_format.byteOrder();
         qDebug() << "    sample size: " << m_format.sampleSize();
         qDebug() << "    sample type: " << m_format.sampleType();
-        qDebug() << "    channels: " << m_format.channels();
+        qDebug() << "    channels: " << m_format.channelCount();
         m_input = NULL;
         delete m_audioInput;
 
@@ -132,8 +136,8 @@ void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAu
         delete m_audioInfo;
     }
 
-    m_format.setFrequency(m_sampleRate);
-    m_format.setChannels(m_channels);
+    m_format.setSampleRate(m_sampleRate);
+    m_format.setChannelCount(m_channels);
     m_format.setByteOrder(m_byte_order);
 
     if (!m_device.isFormatSupported(m_format)) {
@@ -153,12 +157,12 @@ void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAu
         qDebug() << "QAudioInput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
 
         qDebug() << "Format:";
-        qDebug() << "    sample rate: " << m_format.frequency();
+        qDebug() << "    sample rate: " << m_format.sampleRate();
         qDebug() << "    codec: " << m_format.codec();
         qDebug() << "    byte order: " << m_format.byteOrder();
         qDebug() << "    sample size: " << m_format.sampleSize();
         qDebug() << "    sample type: " << m_format.sampleType();
-        qDebug() << "    channels: " << m_format.channels();
+        qDebug() << "    channels: " << m_format.channelCount();
         m_input = NULL;
         delete m_audioInput;
         if (m_audioInfo != NULL){
@@ -261,7 +265,7 @@ qint64 AudioInfo::readData(char *data, qint64 maxlen)
      if (m_maxAmplitude) {
          Q_ASSERT(m_format.sampleSize() % 8 == 0);
          const int channelBytes = m_format.sampleSize() / 8;
-         const int sampleBytes = m_format.channels() * channelBytes;
+         const int sampleBytes = m_format.channelCount() * channelBytes;
          Q_ASSERT(len % sampleBytes == 0);
          const int numSamples = len / sampleBytes;
 
@@ -269,7 +273,7 @@ qint64 AudioInfo::readData(char *data, qint64 maxlen)
          const unsigned char *ptr = reinterpret_cast<const unsigned char *>(data);
 
          for (int i = 0; i < numSamples; ++i) {
-             for(int j = 0; j < m_format.channels(); ++j) {
+             for(int j = 0; j < m_format.channelCount(); ++j) {
                  quint16 value = 0;
 
                  v = 0;

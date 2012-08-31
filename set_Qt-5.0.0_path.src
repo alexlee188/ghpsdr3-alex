@@ -1,2 +1,4 @@
-export PATH=/opt/qt5/bin:$PATH
+#export PATH=/opt/qt5/bin:$PATH
+export PATH=/home/alex/Qt5.0.0beta1/Desktop/Qt/5.0.0-beta1/gcc_64/bin:$PATH
+
 
