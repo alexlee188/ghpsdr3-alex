@@ -57,9 +57,7 @@ void Waterfallcl::initialize(int wid, int ht){
     glDepthFunc(GL_LEQUAL);
 
     ShaderProgram = NULL;
-    VertexShader = NULL;
-    FragmentShader = NULL;
-    LoadShader("./Basic.vsh", "./Basic.fsh");
+    LoadShader();
     spectrumTexture_location = glGetUniformLocation(ShaderProgram->programId(), "spectrumTexture");
     cy_location =  glGetUniformLocation(ShaderProgram->programId(), "cy");
     offset_location =  glGetUniformLocation(ShaderProgram->programId(), "offset");
@@ -156,8 +154,52 @@ void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
 
 
 }
+static char const vertexShader[] =
+        "void main()\n"
+        "{\n"
+        "gl_TexCoord[0] = gl_MultiTexCoord0;\n"
+        "gl_Position = ftransform();\n"
+        "}\n";
 
-void Waterfallcl::LoadShader(QString vshader, QString fshader){
+static char const fragmentShader[] =
+        "uniform sampler2D spectrumTexture;\n"
+        "uniform float cy;\n"
+        "uniform float offset;\n"
+        "uniform float width;\n"
+        "uniform float waterfallLow, waterfallHigh;\n"
+        "void main()\n"
+        "{\n"
+            "float y_coord = gl_TexCoord[0].t + cy;\n"
+            "if (y_coord > 1.0) y_coord -= 1.0;\n"
+            "float x_coord = gl_TexCoord[0].s - offset;\n"
+            "if (x_coord < 0.0) x_coord += width;\n"
+            "if (x_coord > width) x_coord -= width;\n"
+            "vec4 value = texture2D(spectrumTexture, vec2(x_coord, y_coord));\n"
+            "float sample = 0.0 - value.r;\n"
+            "float percent = (sample - waterfallLow)/(waterfallHigh-waterfallLow);\n"
+            "if (percent < 0.0) percent = 0.0;\n"
+            "if (percent > 1.0) percent = 1.0;\n"
+            "vec4 texel;\n"
+            "if (percent < (2.0/9.0)) {texel = vec4(0.0, 0.0, percent/(2.0/9.0), 1.0);}\n"
+                "else if (percent < (3.0/9.0)) {texel = vec4(0.0, (percent - (2.0/9.0))/(1.0/9.0), 1.0, 1.0);}\n"
+                "else if (percent < (4.0/9.0)) {\n"
+                "float local_percent = (percent - (3.0/9.0))/(1.0/9.0);\n"
+                "texel = vec4(0.0, (1.0 - local_percent), 1.0, 1.0);\n"
+                 "}\n"
+            "else if (percent < (5.0/9.0)) {texel = vec4((percent - (4.0/9.0))/(1.0/9.0), 1.0, 0.0, 1.0);}\n"
+            "else if (percent < (7.0/9.0)) {\n"
+                "float local_percent = (percent - (5.0/9.0))/(2.0/9.0);\n"
+                "texel = vec4(1.0, (1.0 - local_percent), 0.0, 1.0);\n"
+                "}\n"
+            "else if (percent < (8.0/9.0)){ texel = vec4(1.0, 0.0, (percent - (7.0/9.0))/(1.0/9.0), 1.0);}\n"
+            "else {\n"
+                "float local_percent = (percent - 8.0/9.0)/(1.0/9.0);\n"
+                "texel = vec4(0.75+0.25*(1.0-local_percent), 0.5*local_percent, 1.0, 1.0);\n"
+                "}\n"
+            "gl_FragColor = texel;\n"
+        "}\n";
+
+void Waterfallcl::LoadShader(){
     if(ShaderProgram)
         {
         ShaderProgram->release();
@@ -165,39 +207,15 @@ void Waterfallcl::LoadShader(QString vshader, QString fshader){
         }
     else ShaderProgram = new QGLShaderProgram;
 
-    if(VertexShader)
-        {
-        delete VertexShader;
-        VertexShader = NULL;
-        }
 
-    if(FragmentShader)
-        {
-        delete FragmentShader;
-        FragmentShader = NULL;
-        }
-
-    // load and compile vertex shader
-    QFileInfo vsh(vshader);
-    if(vsh.exists())
-        {
-        VertexShader = new QGLShader(QGLShader::Vertex);
-        if(VertexShader->compileSourceFile(vshader))
-            ShaderProgram->addShader(VertexShader);
-        else qWarning() << "Vertex Shader Error" << VertexShader->log();
-        }
-    else qWarning() << "Vertex Shader source file " << vshader << " not found.";
-
-    // load and compile fragment shader
-    QFileInfo fsh(fshader);
-    if(fsh.exists())
-        {
-        FragmentShader = new QGLShader(QGLShader::Fragment);
-        if(FragmentShader->compileSourceFile(fshader))
-            ShaderProgram->addShader(FragmentShader);
-        else qWarning() << "Fragment Shader Error" << FragmentShader->log();
-        }
-    else qWarning() << "Fragment Shader source file " << fshader << " not found.";
+    if (!ShaderProgram->addShaderFromSourceCode(QGLShader::Vertex, vertexShader)){
+        qWarning() << ShaderProgram->log();
+        qFatal("Fatal");
+    };
+    if (!ShaderProgram->addShaderFromSourceCode(QGLShader::Fragment, fragmentShader)){
+        qWarning() << ShaderProgram->log();
+        qFatal("Fatal");
+    };
 
     if(!ShaderProgram->link())
         {

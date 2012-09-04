@@ -55,9 +55,8 @@ protected:
     void resizeGL( int width, int height );
     void paintGL();
 private:
-    void LoadShader(QString vshader, QString fshader); 
+    void LoadShader(void);
     QGLShaderProgram *ShaderProgram;
-    QGLShader *VertexShader, *FragmentShader;
     GLuint spectrumTexture_location, spectrumTex;
     GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location, width_location;
     int data_width;
