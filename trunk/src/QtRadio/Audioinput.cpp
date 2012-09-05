@@ -8,8 +8,15 @@ AudioInput::AudioInput()
     m_byte_order=QAudioFormat::LittleEndian;
 
     m_format.setSampleType(QAudioFormat::SignedInt);
+
+#if QT_VERSION >= 0x050000
     m_format.setSampleRate(m_sampleRate);
     m_format.setChannelCount(1);
+#else
+    m_format.setFrequency(m_sampleRate);
+    m_format.setChannels(1);
+#endif
+
     m_format.setSampleSize(16);
     m_format.setCodec("audio/pcm");
     m_format.setByteOrder(m_byte_order);
@@ -59,7 +66,13 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
 
 
         qDebug() << "    Sample Rates";
+
+#if QT_VERSION >= 0x050000
         QList<int> sampleRates=device_info.supportedSampleRates();
+#else
+        QList<int> sampleRates=device_info.supportedFrequencies();
+#endif
+
         for(int j=0;j<sampleRates.size();j++) {
             qDebug() << "        " << sampleRates.at(j);
         }
@@ -73,7 +86,13 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
 
 
         qDebug() << "    Channels";
+
+#if QT_VERSION >= 0x050000
         QList<int> channels=device_info.supportedChannelCounts();
+#else
+        QList<int> channels=device_info.supportedChannels();
+#endif
+
         for(int j=0;j<channels.size();j++) {
             qDebug() << "        " << channels.at(j);
         }
@@ -101,12 +120,24 @@ void AudioInput::get_audioinput_devices(QComboBox* comboBox) {
         qDebug() << "QAudioInput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
 
         qDebug() << "Format:";
+
+#if QT_VERSION >= 0x050000
         qDebug() << "    sample rate: " << m_format.sampleRate();
+#else
+        qDebug() << "    sample rate: " << m_format.frequency();
+#endif
+
         qDebug() << "    codec: " << m_format.codec();
         qDebug() << "    byte order: " << m_format.byteOrder();
         qDebug() << "    sample size: " << m_format.sampleSize();
         qDebug() << "    sample type: " << m_format.sampleType();
+
+#if QT_VERSION >= 0x050000
         qDebug() << "    channels: " << m_format.channelCount();
+#else
+        qDebug() << "    channels: " << m_format.channels();
+#endif
+
         m_input = NULL;
         delete m_audioInput;
 
@@ -135,8 +166,15 @@ void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAu
         delete m_audioInfo;
     }
 
+
+#if QT_VERSION >= 0x050000
     m_format.setSampleRate(m_sampleRate);
     m_format.setChannelCount(m_channels);
+#else
+    m_format.setFrequency(m_sampleRate);
+    m_format.setChannels(m_channels);
+#endif
+
     m_format.setByteOrder(m_byte_order);
 
     if (!m_device.isFormatSupported(m_format)) {
@@ -156,12 +194,24 @@ void AudioInput::select_audio(QAudioDeviceInfo info, int rate, int channels, QAu
         qDebug() << "QAudioInput: after start error=" << m_audioInput->error() << " state=" << m_audioInput->state();
 
         qDebug() << "Format:";
+
+#if QT_VERSION >= 0x050000
         qDebug() << "    sample rate: " << m_format.sampleRate();
+#else
+        qDebug() << "    sample rate: " << m_format.frequency();
+#endif
+
         qDebug() << "    codec: " << m_format.codec();
         qDebug() << "    byte order: " << m_format.byteOrder();
         qDebug() << "    sample size: " << m_format.sampleSize();
         qDebug() << "    sample type: " << m_format.sampleType();
+
+#if QT_VERSION >= 0x050000
         qDebug() << "    channels: " << m_format.channelCount();
+#else
+        qDebug() << "    channels: " << m_format.channels();
+#endif
+
         m_input = NULL;
         delete m_audioInput;
         if (m_audioInfo != NULL){
@@ -264,7 +314,13 @@ qint64 AudioInfo::readData(char *data, qint64 maxlen)
      if (m_maxAmplitude) {
          Q_ASSERT(m_format.sampleSize() % 8 == 0);
          const int channelBytes = m_format.sampleSize() / 8;
+
+#if QT_VERSION >= 0x050000
          const int sampleBytes = m_format.channelCount() * channelBytes;
+#else
+         const int sampleBytes = m_format.channels() * channelBytes;
+#endif
+
          Q_ASSERT(len % sampleBytes == 0);
          const int numSamples = len / sampleBytes;
 
@@ -272,7 +328,13 @@ qint64 AudioInfo::readData(char *data, qint64 maxlen)
          const unsigned char *ptr = reinterpret_cast<const unsigned char *>(data);
 
          for (int i = 0; i < numSamples; ++i) {
+
+#if QT_VERSION >= 0x050000
              for(int j = 0; j < m_format.channelCount(); ++j) {
+#else
+             for(int j = 0; j < m_format.channels(); ++j) {
+#endif
+
                  quint16 value = 0;
 
                  v = 0;
