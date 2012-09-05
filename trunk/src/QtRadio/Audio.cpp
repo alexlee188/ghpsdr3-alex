@@ -239,13 +239,12 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
             }
         }
 
-        /*
+
         qDebug() << "    Sample Rates";
-        QList<int> sampleRates=device_info.supportedFrequencies();
+        QList<int> sampleRates=device_info.supportedSampleRates();
         for(int j=0;j<sampleRates.size();j++) {
             qDebug() << "        " << sampleRates.at(j);
         }
-        */
 
         qDebug() << "    Sample Sizes";
         QList<int> sampleSizes=device_info.supportedSampleSizes();
@@ -253,13 +252,12 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
             qDebug() << "        " << sampleSizes.at(j);
         }
 
-        /*
+
         qDebug() << "    Channels";
-        QList<int> channels=device_info.supportedChannels();
+        QList<int> channels=device_info.supportedChannelCounts();
         for(int j=0;j<channels.size();j++) {
             qDebug() << "        " << channels.at(j);
         }
-        */
 
         comboBox->addItem(device_info.deviceName(),qVariantFromValue(device_info));
         if(i==0) {
