@@ -60,6 +60,15 @@ extern "C" {
 #define SPEED_111KHZ              0x07
 #define SPEED_133KHZ              0x08
 #define SPEED_185KHZ              0x09
+#define SPEED_60KHZ		  0x0a
+#define SPEED_80KHZ               0x0b
+#define SPEED_120KHZ              0x0c
+#define SPEED_160KHZ		  0x0d
+#define SPEED_240KHZ		  0x0e
+#define SPEED_320KHZ		  0x0f
+#define SPEED_480KHZ              0x10
+#define SPEED_960KHZ              0x11
+#define SPEED_1920KHZ             0x12
 
 #define MODE_CLASS_E              0x01
 #define MODE_OTHERS               0x00
