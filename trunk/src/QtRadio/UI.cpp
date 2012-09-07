@@ -2414,7 +2414,6 @@ void UI::testButtonClick(bool state)
      qDebug()<<"loffset = "<<loffset;
  }
 
-<<<<<<< HEAD
 //
 // activate remote hardware control panel
 // if invoked with name length == 0, close the hardware dialog deleting the object
@@ -2446,9 +2445,7 @@ void UI :: rmHwDlg()
 }
 
 
-=======
 void UI::on_zoomSpectrumSlider_sliderMoved(int position)
 {
 
 }
->>>>>>> master
