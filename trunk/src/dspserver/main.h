@@ -24,5 +24,5 @@
 * 
 */
 
-const char *version = "20120707;-master"; //YYYYMMDD; text desc
+const char *version = "20120907;-master"; //YYYYMMDD; text desc
 
