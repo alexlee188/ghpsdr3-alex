@@ -2396,3 +2396,8 @@ void UI::testButtonClick(bool state)
      widget.spectrumFrame->setBandLimits(limits.min() + loffset,limits.max()+loffset);
      qDebug()<<"loffset = "<<loffset;
  }
+
+void UI::on_zoomSpectrumSlider_sliderMoved(int position)
+{
+
+}
