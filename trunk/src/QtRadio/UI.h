@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   UI.h
  * Author: John Melton, G0ORX/N6LYT
  *
@@ -283,6 +283,9 @@ signals:
 protected:
 //    void paintEvent(QPaintEvent*);
     void resizeEvent(QResizeEvent *);
+
+private slots:
+    void on_zoomSpectrumSlider_sliderMoved(int position);
 
 private:
     void printWindowTitle(QString message);

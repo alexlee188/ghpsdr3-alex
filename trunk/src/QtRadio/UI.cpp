@@ -2069,7 +2069,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  master 15 Aug 2012");
+                   + getversionstring() +  message + "  iw0hdv 7 Sep 2012");
     lastmessage = message;
 
 }
@@ -2414,6 +2414,7 @@ void UI::testButtonClick(bool state)
      qDebug()<<"loffset = "<<loffset;
  }
 
+<<<<<<< HEAD
 //
 // activate remote hardware control panel
 // if invoked with name length == 0, close the hardware dialog deleting the object
@@ -2445,3 +2446,9 @@ void UI :: rmHwDlg()
 }
 
 
+=======
+void UI::on_zoomSpectrumSlider_sliderMoved(int position)
+{
+
+}
+>>>>>>> master
