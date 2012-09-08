@@ -29,7 +29,7 @@ http://napan.ca/ghpsdr3/index.php/Main_Page
 Active development branch
 =========================
 
-The default master branch has the latest stable code base.  There are experimental branches that various developers are working on.  For example, there is an active development branch rxtx-opencl that aims to implement codes that will make use of any available GPU (in video cards) for both heavy duty computations and for OpenGL graphical display.
+The default master branch has the latest stable code base.  There are experimental branches that various developers are working on.  For example, there is an active development branch, opengl-qt5, that implements codes that make use of the GPU for OpenGL graphical display.
 
 Ubuntu Linux Users
 ==================
@@ -68,35 +68,29 @@ The source for building with QtCreator is available via the win32 branch at:
 
 Building the software in Linux
 ==============================
-You will need Qt4.  Qt4 is available as a package from Ubuntu.  However, it is recommended that you download
-the latest Qt4.8 from Nokia, as there are bugs and issues with Qt4.7.4.
+See:
+
+http://napan.ca/ghpsdr3/index.php/QtRadio_Installation
+
+You will need Qt5.  Currently Qt5 is available as a BETA from a ppa.  See:
+
+http://napan.ca/ghpsdr3/index.php/Developers_Documentation
 
 Note that in addition to Qt, you will need some dev packages to be installed.  For details see:
 
 http://napan.ca/ghpsdr3/index.php/QtRadio_Installation#Installing_compiler_and_autotool
 
-libevent
-========
-You will also need a version of libevent that is newer than what is available from the Ubuntu distribution.  
-Go to synaptic and *completely* remove the stock libevent (v1.4) from Ubuntu.
-
-Building the libevent software
-==============================
-
-http://libevent.org/
-
-libevent-2.0.16-stable.tar.gz
-
-Uncompress and follow the instructions to build and install:
-
-$ ./configure
-$ make
-$ sudo make install
-$ sudo ldconfig
 
 Building the ghpsdr3-alex software
 ==================================
 To build:
+
+Make sure you have set the path to the version of Qt you are using.  E.g. for qt5 from the ppa:
+
+$ export PATH=/opt/qt5/bin:$PATH
+
+
+Then:
 
 $ cd ghpsdr3-alex
 $ autoreconf -i
@@ -107,13 +101,11 @@ $ sudo make install
 Then the executables will be installed in /usr/local/bin.
 
 This will build the default configuration, which is useful for debugging and testing.  However it is not optimized and
-will not run well in slow cpu's etc.
+will not run well with slow cpu's etc.
 
 See the sample confuration shell scripts (which replace the ./configure step above):
 
-alex-avx-conf.sh		for building with i3,i5 and i7 cpu's supporting Advanced Vector Extensions (AVX)
 alex-openmp-conf.sh		for building with i3,i5 and i7 cpu's and OpenMP support
-alex-sse3-conf.sh		for building with SSE3 capable cpu's
 alex-openmp-sse3-conf.sh	for building with SSE3 capable cpu's and OpenMP support
 
 OpenMP code will run on multi-core machines by making use of all the cores.  It will also run on single core machines with a little overhead only.

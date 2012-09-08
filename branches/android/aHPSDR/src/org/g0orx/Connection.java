@@ -16,7 +16,7 @@ public class Connection extends Thread {
 		// Log.i("Connection",server+":"+port);
 		
 		SPECTRUM_BUFFER_SIZE=width;
-		samples = new int[SPECTRUM_BUFFER_SIZE];
+		samples = new byte[SPECTRUM_BUFFER_SIZE];
 
 		this.server = server;
 		this.port = port;
@@ -33,6 +33,10 @@ public class Connection extends Thread {
 	public void setServer(String server) {
 		Log.i("Connection","setServer: "+server);
 		this.server=server;
+	}
+	
+	public void setFps(int fps){
+		this.fps = fps;
 	}
 	
 	public void connect() {
@@ -247,7 +251,7 @@ public class Connection extends Thread {
         // rotate spectrum display if LO is not 0
         if(LO_offset==0) {
         	for (int i = 0; i < SPECTRUM_BUFFER_SIZE; i++) {
-			    samples[i] = -(buffer[i] & 0xFF);
+			    samples[i] = buffer[i];
 		    }
         } else {
             float step=(float)sampleRate/(float)SPECTRUM_BUFFER_SIZE;
@@ -257,7 +261,7 @@ public class Connection extends Thread {
                 j=i-offset;
                 if(j<0) j+=SPECTRUM_BUFFER_SIZE;
                 if(j>=SPECTRUM_BUFFER_SIZE) j%=SPECTRUM_BUFFER_SIZE;
-                samples[i] = -(buffer[j] & 0xFF);
+                samples[i] = buffer[j];
             }
         }
 
@@ -377,7 +381,7 @@ public class Connection extends Thread {
 		sendCommand("setFPS " + SPECTRUM_BUFFER_SIZE + " " + fps);
 	}
 
-	public int[] getSamples() {
+	public byte[] getSamples() {
 		return samples;
 	}
 
@@ -437,12 +441,13 @@ public class Connection extends Thread {
 	private int band;
 	private short meter;
 	private int agc;
+	private int fps;
 
 	private int cwPitch = 600;
 
 	private byte[] commandBuffer = new byte[64];
 
-	private int[] samples;
+	private byte[] samples;
 	private int audioSampleCount;
 	private short[] decodedBuffer = new short[AUDIO_BUFFER_SIZE];
 

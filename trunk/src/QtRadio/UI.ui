@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>985</width>
-    <height>469</height>
+    <width>991</width>
+    <height>470</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,11 +62,11 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="2">
+    <item row="0" column="2" colspan="2">
      <widget class="Ctl" name="ctlFrame">
       <property name="minimumSize">
        <size>
-        <width>230</width>
+        <width>236</width>
         <height>115</height>
        </size>
       </property>
@@ -86,6 +86,18 @@
     </item>
     <item row="1" column="0" colspan="3">
      <widget class="Spectrum" name="spectrumFrame">
+      <property name="minimumSize">
+       <size>
+        <width>927</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>256</height>
+       </size>
+      </property>
       <property name="frameShape">
        <enum>QFrame::StyledPanel</enum>
       </property>
@@ -94,8 +106,42 @@
       </property>
      </widget>
     </item>
+    <item row="1" column="3" rowspan="2">
+     <widget class="QSlider" name="zoomSpectrumSlider">
+      <property name="focusPolicy">
+       <enum>Qt::NoFocus</enum>
+      </property>
+      <property name="maximum">
+       <number>100</number>
+      </property>
+      <property name="singleStep">
+       <number>5</number>
+      </property>
+      <property name="value">
+       <number>0</number>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="tickPosition">
+       <enum>QSlider::TicksBelow</enum>
+      </property>
+     </widget>
+    </item>
     <item row="2" column="0" colspan="3">
      <widget class="Waterfall" name="waterfallFrame">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>927</width>
+        <height>0</height>
+       </size>
+      </property>
       <property name="frameShape">
        <enum>QFrame::StyledPanel</enum>
       </property>
@@ -111,7 +157,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>985</width>
+     <width>991</width>
      <height>25</height>
     </rect>
    </property>

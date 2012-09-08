@@ -649,10 +649,6 @@ void UI::connected() {
     connection.sendCommand(command);
     // qDebug() << "Command: " << command;
 
-    // upon connection, (re)select the audio_device in case it was stopped because of errors
-    // somehow this call stops RTP audio from working
-    if (!useRTP) audio->select_audio(audio_device, audio_sample_rate, audio_channels, audio_byte_order);
-
     // start the audio
     audio_buffers=0;
     actionGain(gain);
@@ -677,7 +673,7 @@ void UI::connected() {
            command.clear(); QTextStream(&command) << "startAudioStream "
                 << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " "
                 << audio_sample_rate << " "
-                << audio_channels;
+                << audio_channels << " " << audioinput->getMicEncoding();
        }
        connection.sendCommand(command);
        qDebug() << "command: " << command;
@@ -805,17 +801,15 @@ void UI::audioBuffer(char* header,char* buffer) {
 
 void UI::micSendAudio(QQueue<qint16>* queue){
     if(useRTP) {
-        qint16 sample;
-        unsigned char e;
-
         while(!queue->isEmpty()) {
-            sample=queue->dequeue();
+            qint16 sample=queue->dequeue();
             if(tuning) sample=0;
-            e=g711a.encode(sample);
+            unsigned char e=g711a.encode(sample);
             mic_encoded_buffer[mic_buffer_count++]=e;
             if(mic_buffer_count >= MIC_BUFFER_SIZE) {
                 if (connection_valid && configure.getTxAllowed()){
                     rtp_send_buffer = (unsigned char*) malloc(MIC_BUFFER_SIZE);
+                    // rtp_send_buffer will be free'd by rtp_send()
                     memcpy(rtp_send_buffer, mic_encoded_buffer, MIC_BUFFER_SIZE);
                     emit rtp_send(rtp_send_buffer,MIC_BUFFER_SIZE);
                 }
@@ -823,7 +817,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
             }
         }
 
-    } else {
+    } else if (audioinput->getMicEncoding() == 1){      // Codec 2
         while(! queue->isEmpty()){
             qint16 sample = queue->dequeue();
             mic_buffer[mic_buffer_count++] = tuning ? 0: sample;
@@ -839,6 +833,21 @@ void UI::micSendAudio(QQueue<qint16>* queue){
                 }
             }
         }
+    } else if (audioinput->getMicEncoding() == 0){      // aLaw
+        while(!queue->isEmpty()) {
+            qint16 sample=queue->dequeue();
+            if(tuning) sample=0;
+            unsigned char e=g711a.encode(sample);
+            mic_encoded_buffer[mic_buffer_count++] = e;
+            if(mic_buffer_count >= MIC_ALAW_BUFFER_SIZE) {
+                if (connection_valid && configure.getTxAllowed()){
+                    connection.sendAudio(MIC_ALAW_BUFFER_SIZE, mic_encoded_buffer);
+                }
+                mic_buffer_count=0;
+            }
+        }
+    } else {
+        qDebug() << "Error - UI: MicEncoding is not 0 nor 1 but " << audioinput->getMicEncoding();
     }
 
 }
@@ -2045,7 +2054,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  master 16 May 2012");
+                   + getversionstring() +  message + "  master 5 Sep 2012");
     lastmessage = message;
 
 }
@@ -2387,3 +2396,14 @@ void UI::testButtonClick(bool state)
      widget.spectrumFrame->setBandLimits(limits.min() + loffset,limits.max()+loffset);
      qDebug()<<"loffset = "<<loffset;
  }
+
+void UI::on_zoomSpectrumSlider_sliderMoved(int position)
+{
+    QString command;
+
+    command.clear(); QTextStream(&command) << "zoom " << position;
+    connection.sendCommand(command);
+
+    widget.spectrumFrame->setZoom(position);
+    widget.waterfallFrame->setZoom(position);
+}

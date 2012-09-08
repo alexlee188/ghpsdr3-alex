@@ -93,8 +93,10 @@ static pthread_t client_thread_id, tx_thread_id, rtp_tx_thread_id;
 #define BASE_PORT 8000
 static int port=BASE_PORT;
 
+// This must match the size declared in DttSP
 #define SAMPLE_BUFFER_SIZE 4096
 static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
+static int zoom = 0;
 
 #define TX_BUFFER_SIZE 1024
 // same as BUFFER_SIZE defined in softrock server
@@ -102,9 +104,16 @@ static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static float tx_buffer[TX_BUFFER_SIZE*2];
 static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
+// Mic data comes in BITS_SIZE*MIC_NO_OF_FRAMES if micEncoding is Codec 2,
 #define MIC_NO_OF_FRAMES 4
 #define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
+#define MIC_ALAW_BUFFER_SIZE 58
+
+#if MIC_BUFFER_SIZE > MIC_ALAW_BUFFER_SIZE
 static unsigned char mic_buffer[MIC_BUFFER_SIZE];
+#else
+static unsigned char mic_buffer[MIC_ALAW_BUFFER_SIZE];
+#endif
 
 #define RTP_BUFFER_SIZE 400
 #define RTP_TIMER_NS (RTP_BUFFER_SIZE/8 * 1000000)
@@ -215,8 +224,8 @@ void Mic_stream_queue_add(){
    struct audio_entry *item;
    int i;
 
+   if (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2){
 	for (i=0; i < MIC_NO_OF_FRAMES; i++){
-
 		bits = malloc(BITS_SIZE);
 		memcpy(bits, &mic_buffer[i*BITS_SIZE], BITS_SIZE);
 		item = malloc(sizeof(*item));
@@ -226,6 +235,16 @@ void Mic_stream_queue_add(){
 		TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
 		sem_post(&mic_semaphore);
 	}
+    } else if (audiostream_conf.micEncoding == MIC_ENCODING_ALAW) {
+                bits = malloc(MIC_ALAW_BUFFER_SIZE);
+                memcpy(bits, mic_buffer, MIC_ALAW_BUFFER_SIZE);
+                item = malloc(sizeof(*item));
+                item->buf = bits;
+                item->length = MIC_ALAW_BUFFER_SIZE;
+	        sem_wait(&mic_semaphore);
+	        TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
+	        sem_post(&mic_semaphore);
+    }
 }
 
 void Mic_stream_queue_free(){
@@ -442,7 +461,7 @@ void* rtp_tx_thread(void *arg){
 		}
 
             // resample to the sample rate
-            data.data_in = (float *)item->buf;
+            data.data_in = (float*) item->buf;
             data.input_frames = TX_BUFFER_SIZE;
             data.data_out = data_out;
             data.output_frames = TX_BUFFER_SIZE*24 ;
@@ -485,8 +504,14 @@ void *tx_thread(void *arg){
    int tx_buffer_counter = 0;
    int rc;
    int j, i;
+
+#if CODEC2_SAMPLES_PER_FRAME > MIC_ALAW_BUFFER_SIZE
    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
+#else
+   float data_in [MIC_ALAW_BUFFER_SIZE*2];		// stereo
+   float data_out[MIC_ALAW_BUFFER_SIZE*2*24];	        // 192khz/8khz
+#endif
    SRC_DATA data;
    void *mic_codec2 = codec2_create();
 
@@ -501,19 +526,27 @@ void *tx_thread(void *arg){
 		continue;
 		}
 	else {
-	   bits = item->buf;		// each frame is BITS_SIZE long
-	   // process codec2 encoded mic_buffer
-	   codec2_decode(mic_codec2, codec2_buffer, bits);
-	   // mic data is mono, so copy to both right and left channels
-	   #pragma omp parallel for schedule(static) private(j) 
-           for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
-              data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
+           if (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2){
+	           bits = item->buf;	// each frame is BITS_SIZE long for Codec 2
+	           // process codec2 encoded mic_buffer
+	           codec2_decode(mic_codec2, codec2_buffer, bits);
+	           // mic data is mono, so copy to both right and left channels
+	           #pragma omp parallel for schedule(static) private(j) 
+                   for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
+                      data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
+                   }
            }
-
+           else {
+                for (j=0; j < MIC_ALAW_BUFFER_SIZE; j++){
+                        data_in[j*2] = data_in[j*2+1] = (float)G711A_decode(item->buf[j])/32767.0;
+                }
+           }
            data.data_in = data_in;
-           data.input_frames = CODEC2_SAMPLES_PER_FRAME;
+           data.input_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
+                CODEC2_SAMPLES_PER_FRAME : MIC_ALAW_BUFFER_SIZE;
            data.data_out = data_out;
-           data.output_frames = CODEC2_SAMPLES_PER_FRAME*24 ;
+           data.output_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
+                CODEC2_SAMPLES_PER_FRAME*24 : MIC_ALAW_BUFFER_SIZE*24 ;
            data.src_ratio = mic_src_ratio;
            data.end_of_input = 0;
 
@@ -712,17 +745,21 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     TAILQ_INSERT_TAIL(&Client_list, item, entries);
     sem_post(&bufferevent_semaphore);
 
+    int client_count = 0;
+    sem_wait(&bufferevent_semaphore);
+    /* NB: Clobbers item */
+    TAILQ_FOREACH(item, &Client_list, entries){
+        client_count++;
+    }
+    sem_post(&bufferevent_semaphore);
+
+    if (client_count == 0) {
+        zoom = 0;
+    }
+
     if (toShareOrNotToShare) {
-        int client_count = 0;
+ 
         char status_buf[32];
-
-        sem_wait(&bufferevent_semaphore);
-        /* NB: Clobbers item */
-        TAILQ_FOREACH(item, &Client_list, entries){
-    	client_count++;
-        }
-        sem_post(&bufferevent_semaphore);
-
         sprintf(status_buf,"%d client(s)", client_count);
         updateStatus(status_buf);
     }
@@ -852,7 +889,9 @@ void readcb(struct bufferevent *bev, void *ctx){
         /* Short circuit for mic data, to ensure it's handled as rapidly
          * as possible. */
         if(!slave && strncmp(cmd,"mic", 3)==0){		// This is incoming microphone data, binary data after "mic "
-            memcpy(mic_buffer, &message[4], MIC_BUFFER_SIZE);
+            memcpy(mic_buffer, &message[4], 
+                ((audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ? 
+                MIC_BUFFER_SIZE : MIC_ALAW_BUFFER_SIZE));
             Mic_stream_queue_add();
             continue;
         }
@@ -997,18 +1036,19 @@ void readcb(struct bufferevent *bev, void *ctx){
             gain=atoi(tokens[0]);
             SetRXOutputGain(0,1,(double)gain/100.0);
         } else if(strncmp(cmd,"startaudiostream",16)==0) {
-            int ntok, bufsize, rate, channels;
+            int ntok, bufsize, rate, channels, micEncoding;
             if (slave) {
                 current_item->rtp = connection_tcp;
                 continue;
             }
-            ntok = tokenize_cmd(&saveptr, tokens, 3);
+            ntok = tokenize_cmd(&saveptr, tokens, 4);
 
             /* FIXME: this is super racy */
 
             bufsize = AUDIO_BUFFER_SIZE;
             rate = 8000;
             channels = 1;
+            micEncoding = 0;
 
             if (ntok >= 1) {
                 /* FIXME: validate! */
@@ -1028,16 +1068,24 @@ void readcb(struct bufferevent *bev, void *ctx){
                     channels = 1;
                 }
             }
+            if (ntok >= 4) {
+                micEncoding = atoi(tokens[3]);
+                if (micEncoding != MIC_ENCODING_CODEC2 && micEncoding != MIC_ENCODING_ALAW) {
+                    sdr_log(SDR_LOG_INFO, "Invalid mic encoding: %d\n", micEncoding);
+                    micEncoding = MIC_ENCODING_ALAW;
+                }
+            }
 
             sem_wait(&audiostream_sem);
             audiostream_conf.bufsize = bufsize;
             audiostream_conf.samplerate = rate;
             audiostream_conf.channels = channels;
+            audiostream_conf.micEncoding = micEncoding;
             audiostream_conf.age++;
             sem_post(&audiostream_sem);
 
-            sdr_log(SDR_LOG_INFO, "starting audio stream at rate %d channels %d bufsize %d encoding %d\n",
-                    rate, channels, bufsize, encoding);
+            sdr_log(SDR_LOG_INFO, "starting audio stream at rate %d channels %d bufsize %d encoding %d micEncoding %d\n",
+                    rate, channels, bufsize, encoding, micEncoding);
             item->rtp=connection_tcp;
             audio_stream_reset();
             sem_wait(&bufferevent_semaphore);
@@ -1204,6 +1252,8 @@ void readcb(struct bufferevent *bev, void *ctx){
                         }else{
                             sdr_log(SDR_LOG_INFO,"Mox on denied because user %s password check failed!\n",thisuser);
                         }
+                    } else{
+                        sdr_log(SDR_LOG_INFO,"Mox on denied because no user and password supplied!\n");
                     }
                 }else{
                     sdr_log(SDR_LOG_INFO,"mox denied because tx = \"no\"\n");
@@ -1353,6 +1403,11 @@ void readcb(struct bufferevent *bev, void *ctx){
                 item->fps = atoi(tokens[1]);
             }
             sem_post(&bufferevent_semaphore);
+        } else if(strncmp(cmd,"zoom",4)==0) {
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            zoom=atoi(tokens[0]);
+            fprintf(stdout,"Zoom value is '%d'\n",zoom);
         } else {
             fprintf(stderr,"Invalid command: token: '%s'\n",cmd);
         }
@@ -1373,33 +1428,12 @@ void client_set_samples(char* client_samples, float* samples,int size) {
 
 // g0orx binary header
 
-/*
-    // first byte is the buffer type
-    client_samples[0]=SPECTRUM_BUFFER;
-    sprintf(&client_samples[1],"%f",HEADER_VERSION);
-
-    // next 6 bytes contain the main rx s meter
-    sprintf(&client_samples[14],"%d",(int)meter);
-
-    // next 6 bytes contain the subrx s meter
-    sprintf(&client_samples[20],"%d",(int)subrx_meter);
-
-    // next 6 bytes contain data length
-    sprintf(&client_samples[26],"%d",size);
-
-    // next 8 bytes contain the sample rate
-    sprintf(&client_samples[32],"%d",sampleRate);
-
-    // next 8 bytes contain the meter - for compatability
-    sprintf(&client_samples[40],"%d",(int)meter);
-*/
-
     client_samples[0]=SPECTRUM_BUFFER;
     client_samples[1]=HEADER_VERSION;
     client_samples[2]=HEADER_SUBVERSION;
     client_samples[3]=(size>>8)&0xFF;  // samples length
     client_samples[4]=size&0xFF;
-    client_samples[5]=((int)meter>>8)&0xFF; // mainn rx meter
+    client_samples[5]=((int)meter>>8)&0xFF; // main rx meter
     client_samples[6]=(int)meter&0xFF;
     client_samples[7]=((int)subrx_meter>>8)&0xFF; // sub rx meter
     client_samples[8]=(int)subrx_meter&0xFF;
@@ -1412,7 +1446,8 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     client_samples[13]=((int)LO_offset>>8)&0xFF; // IF
     client_samples[14]=(int)LO_offset&0xFF;
 
-    slope=(float)SAMPLE_BUFFER_SIZE/(float)size;
+    float zoom_factor = 1.0f + (float)zoom/25.0f;
+    slope=(float)SAMPLE_BUFFER_SIZE/(float)size / zoom_factor;
     if(mox) {
         extras=-82.62103F;
     } else {
@@ -1423,10 +1458,11 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     #pragma omp for schedule(static)
     for(i=0;i<size;i++) {
         max=-10000.0F;
-        lindex=(int)floor((float)i*slope);
-        rindex=(int)floor(((float)i*slope)+slope);
+        lindex=(int)(((float)SAMPLE_BUFFER_SIZE/2 - (float)SAMPLE_BUFFER_SIZE/2.0f/zoom_factor) 
+                + floor((float)i*slope));
+        rindex=(int)floor(lindex+slope);
         if(rindex>SAMPLE_BUFFER_SIZE) rindex=SAMPLE_BUFFER_SIZE;
-        for(j=lindex;j<rindex;j++) {
+        for(j=lindex;j<=rindex;j++) {
             if(samples[j]>max) max=samples[j];
         }
         client_samples[i+BUFFER_HEADER_SIZE]=(unsigned char)-(max+extras);

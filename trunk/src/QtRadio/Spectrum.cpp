@@ -43,6 +43,7 @@ Spectrum::Spectrum(QWidget*& widget) {
     filterHigh=-150;
     mode="LSB";
 
+    zoom = 0;
     subRxFrequency=0LL;
     subRx=FALSE;
 
@@ -187,9 +188,11 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
         if(moved) {
             emit frequencyMoved(move,100);
         } else {
-            float hzPixel = (float) sampleRate / width();  // spectrum resolution: Hz/pixel
+            float zoom_factor = 1.0f + zoom/25.0f;
+            float hzPixel = (float) sampleRate / width() / zoom_factor;  // spectrum resolution: Hz/pixel
             long freqOffsetPixel;
-            long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel)-LO_offset;
+            long long f = frequency - (sampleRate/2/zoom_factor) + (event->pos().x()*hzPixel)
+                    -LO_offset/zoom_factor;
 
             if(subRx) {    
                 freqOffsetPixel = (subRxFrequency-f)/hzPixel;
@@ -289,8 +292,11 @@ void Spectrum::paintEvent(QPaintEvent*) {
     }
 
     // draw filter
-    filterLeft = ((filterLow - (-sampleRate / 2)) * width() / sampleRate)+offset;
-    filterRight = ((filterHigh - (-sampleRate / 2)) * width() / sampleRate)+offset;
+    //filterLeft = ((filterLow - (-sampleRate / 2)) * width() / sampleRate)+offset;
+    //filterRight = ((filterHigh - (-sampleRate / 2)) * width() / sampleRate)+offset;
+    float zoom_factor = 1.0f + zoom/25.0f;
+    filterLeft = offset + width()/2 + (float)filterLow* (float)width()*zoom_factor/(float)sampleRate;
+    filterRight = offset + width()/2 + (float)filterHigh*(float)width()*zoom_factor/(float)sampleRate;
     painter.setBrush(Qt::SolidPattern);
     painter.setOpacity(0.5);
     painter.fillRect(filterLeft,0,filterRight-filterLeft,height(),Qt::gray);
@@ -401,6 +407,10 @@ void Spectrum::paintEvent(QPaintEvent*) {
     }
 }
 
+void Spectrum::setZoom(int value){
+    zoom = value;
+}
+
 void Spectrum::setFrequency(long long f) {
     frequency=f;
     subRxFrequency=f;
@@ -465,15 +475,6 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
     int header_sampleRate;
     int offset;
 
-    //qDebug() << "updateSpectrum: width=" << width() << " height=" << height();
-    //meter = atoi(&header[40]);
-//g0orx binary header
-/*
-    meter = atoi(&header[14]);
-    subrx_meter = atoi(&header[20]);
-    header_sampleRate = atoi(&header[32]);
-*/
-
     version=header[1];
     subversion=header[2];
     meter=((header[5]&0xFF)<<8)+(header[6]&0xFF);
@@ -487,40 +488,36 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
         LO_offset=0;
     }
 
-    // sanity check: changed in order to accomodate DDC hardware
-    if ((header_sampleRate >= 48000) && (header_sampleRate <=500000)){
-        sampleRate = header_sampleRate;
+    sampleRate = header_sampleRate;
 
-        //qDebug() << "updateSpectrum: samplerate=" << sampleRate;
-        if(samples!=NULL) {
-            free(samples);
-        }
-        samples = (float*) malloc(width * sizeof (float));
-
-        // rotate spectrum display if LO is not 0
-        if(LO_offset==0) {
-            for(i=0;i<width;i++) {
-                samples[i] = -(buffer[i] & 0xFF);
-            }
-        } else {
-            float step=(float)sampleRate/(float)width;
-            offset=(int)((float)LO_offset/step);
-            for(i=0;i<width;i++) {
-                j=i-offset;
-                if(j<0) j+=width;
-                if(j>=width) j%=width;
-                samples[i] = -(buffer[j] & 0xFF);
-            }
-        }
-
-        //qDebug() << "updateSpectrum: create plot points";
-        plot.clear();
-        for (i = 0; i < width; i++) {
-            plot << QPoint(i, (int) floor(((float) spectrumHigh - samples[i])*(float) height() / (float) (spectrumHigh - spectrumLow)));
-        }
-        QTimer::singleShot(0,this,SLOT(update()));
-        //this->update();
+    //qDebug() << "updateSpectrum: samplerate=" << sampleRate;
+    if(samples!=NULL) {
+        free(samples);
     }
+    samples = (float*) malloc(width * sizeof (float));
+
+    // do not rotate spectrum display if LO is 0
+    if(LO_offset==0) {
+        for(i=0;i<width;i++) {
+            samples[i] = -(buffer[i] & 0xFF);
+        }
+    } else {
+        float step=(float)sampleRate/(float)width;
+        float offset=((float)LO_offset/step);
+        for(i=0;i<width;i++) {
+            j=i-offset;
+            if(j<0) j+=width;
+            if(j>=width) j%=width;
+            samples[i] = -(buffer[j] & 0xFF);
+        }
+    }
+
+    //qDebug() << "updateSpectrum: create plot points";
+    plot.clear();
+    for (i = 0; i < width; i++) {
+        plot << QPoint(i, (int) floor(((float) spectrumHigh - samples[i])*(float) height() / (float) (spectrumHigh - spectrumLow)));
+    }
+    QTimer::singleShot(0,this,SLOT(update()));
 }
 
 void Spectrum::setSquelch(bool state) {

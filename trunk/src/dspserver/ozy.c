@@ -460,6 +460,33 @@ int make_connection() {
                     case 185185:
                         setSpeed(SPEED_185KHZ);
                         break;
+		    case 60000:
+			setSpeed(SPEED_60KHZ);
+			break;
+		    case 80000:
+                        setSpeed(SPEED_80KHZ);
+                        break;
+                    case 120000:
+                        setSpeed(SPEED_120KHZ);
+                        break;
+                    case 160000:
+                        setSpeed(SPEED_160KHZ);
+                        break;
+                    case 240000:
+                        setSpeed(SPEED_240KHZ);
+                        break;
+		    case 320000:
+			setSpeed(SPEED_320KHZ);
+			break;
+                    case 480000:
+                        setSpeed(SPEED_480KHZ);
+                        break;
+                    case 960000:
+                        setSpeed(SPEED_960KHZ);
+                        break;
+		    case 1920000:
+			setSpeed(SPEED_1920KHZ);
+			break;
                     default:
                         fprintf (stderr, "make_connection: unexpected sample rate %d\n", sampleRate);
                 }
@@ -638,41 +665,86 @@ void setSpeed(int s) {
 fprintf(stderr,"setSpeed %d\n",s);
 fprintf(stderr,"LO_offset %f\n",LO_offset);
     speed=s;
-    if(s==SPEED_48KHZ) {
-        sampleRate=48000;
-        output_sample_increment=1;
-        SetSampleRate((double)sampleRate);
-    } else if(s==SPEED_96KHZ) {
-        sampleRate=96000;
-        output_sample_increment=2;
-        SetSampleRate((double)sampleRate);
-    } else if(s==SPEED_192KHZ) {
-        sampleRate=192000;
-        output_sample_increment=4;
-        SetSampleRate((double)sampleRate);
-    }
-    else {
-        if(s==SPEED_95KHZ) {
-            sampleRate=95000;
-        }
-        if(s==SPEED_125KHZ) {
+    switch (s){
+	case SPEED_48KHZ:
+		sampleRate=48000;
+		output_sample_increment=1;
+		break;
+   	case SPEED_96KHZ:
+		sampleRate=96000;
+		output_sample_increment=2;
+		break;
+    	case SPEED_192KHZ:
+		sampleRate=192000;
+		output_sample_increment=4;
+		break;
+	case SPEED_480KHZ:
+		sampleRate=480000;
+		output_sample_increment=10;
+		break;
+   	case SPEED_960KHZ:
+		sampleRate=960000;
+		output_sample_increment=20;
+		break;
+    	case SPEED_1920KHZ:
+		sampleRate=1920000;
+		output_sample_increment=40;
+		break;
+        case SPEED_95KHZ:
+	    sampleRate=95000;
+	    output_sample_increment = -1;
+	    break;
+	case SPEED_125KHZ:
             sampleRate=125000;
-        }
-        if(s==SPEED_250KHZ) {
+	    output_sample_increment = -1;
+	    break;
+	case SPEED_250KHZ:
             sampleRate=250000;
-        }
-        if(s==SPEED_53KHZ) {
+	    output_sample_increment = -1;
+	    break;
+	case SPEED_53KHZ:
             sampleRate=53333;
-        }
-        if(s==SPEED_111KHZ) {
+	    output_sample_increment = -1;
+	    break;
+	case SPEED_111KHZ:
             sampleRate=111111;
-        }
-        if(s==SPEED_185KHZ) {
+	    output_sample_increment = -1;
+	    break;
+	case SPEED_185KHZ:
             sampleRate=185185;
-        }
-        output_sample_increment=-1;
+            output_sample_increment=-1;
+	    break;
+	case SPEED_60KHZ:
+            sampleRate=60000;
+            output_sample_increment=-1;
+	    break;
+	case SPEED_80KHZ:
+            sampleRate=80000;
+            output_sample_increment=-1;
+	    break;
+	case SPEED_120KHZ:
+            sampleRate=120000;
+            output_sample_increment=-1;
+	    break;
+	case SPEED_160KHZ:
+            sampleRate=160000;
+            output_sample_increment=-1;
+	    break;
+	case SPEED_240KHZ:
+            sampleRate=240000;
+            output_sample_increment=-1;
+	    break;
+	case SPEED_320KHZ:
+            sampleRate=320000;
+            output_sample_increment=-1;
+	    break;
+	default:
+	    sampleRate=48000;
+            output_sample_increment=1;
+	}
+
         SetSampleRate((double)sampleRate);
-    }
+
 	SetRXOsc(0,0, -LO_offset);
 	SetRXOsc(0,1, -LO_offset);
 	SetTXOsc(1, -LO_offset);
