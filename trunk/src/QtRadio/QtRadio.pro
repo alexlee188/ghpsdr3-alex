@@ -4,19 +4,38 @@
 #
 #-------------------------------------------------
 
-# Comment line below when using QtSDK, uncomment for  Ubuntu repository ver.
-#QT       += core gui network multimedia mobility
 
-# Uncomment 2 lines below when using QtSDK, comment for  Ubuntu repository ver.
-CONFIG	+= mobility
-MOBILITY += multimedia
 
-# Comment 2 lines below when using QtSDK, uncomment for  Ubuntu repository ver.
-INCLUDEPATH += /usr/include/QtMobility
-INCLUDEPATH += /usr/include/QtMultimediaKit
+#-------------------------------------------------
+# If using the Nokia Qt SDK set _UsingSDK to true
+# or if using Ubuntu repo set _UsingSDK to false
+#-------------------------------------------------
+_UsingSDK = true
 
-TARGET = QtRadio
-TEMPLATE = app
+greaterThan(QT_MAJOR_VERSION, 4) {
+    message("Using Qt5")
+    QT       += core gui widgets multimedia mobility
+
+    INCLUDEPATH += /opt/qt5/include
+    INCLUDEPATH += /opt/qt5/include/QtMultimedia
+    INCLUDEPATH += /opt/qt5/include/QtNetwork
+
+} else {
+    $$_UsingSDK {
+        message("Using the Nokia Qt SDK installation")
+        QT       += core gui network multimedia mobility
+        CONFIG   += mobility
+        MOBILITY += multimedia
+    } else {
+        message("Using the Ubuntu Qt Creator installation")
+        CONFIG   += mobility
+        MOBILITY += multimedia
+        INCLUDEPATH += /usr/include/QtMobility
+        INCLUDEPATH += /usr/include/QtMultimediaKit
+    }
+}
+
+
 
 
 SOURCES += main.cpp\
