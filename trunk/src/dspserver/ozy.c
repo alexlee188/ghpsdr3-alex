@@ -680,10 +680,10 @@ fprintf(stderr,"LO_offset %f\n",LO_offset);
 		break;
 	case SPEED_480KHZ:
 		sampleRate=480000;
-		output_sample_increment=19;
+		output_sample_increment=10;
 		break;
    	case SPEED_960KHZ:
-		sampleRate=96000;
+		sampleRate=960000;
 		output_sample_increment=20;
 		break;
     	case SPEED_1920KHZ:
