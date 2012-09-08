@@ -77,6 +77,7 @@ public:
 
     void setSampleRate(int r);
     void setFrequency(long long f);
+    void setZoom(int value);
     void setSubRxFrequency(long long f);
     void setFilter(int low,int high);
     void setSubRxState(bool state);
@@ -124,6 +125,7 @@ private:
 
     short LO_offset;
     float average;
+    int zoom;
 
     int sampleRate;
     int filterLow;

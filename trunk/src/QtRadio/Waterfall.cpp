@@ -117,6 +117,10 @@ void Waterfall::setObjectName(QString name) {
     QFrame::setObjectName(name);
 }
 
+void Waterfall::setZoom(int value){
+    zoom = value;
+}
+
 void Waterfall::setGeometry(QRect rect) {
 
 #ifdef WATERFALL_2D
@@ -171,11 +175,12 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
     if(moved) {
         emit frequencyMoved(move,100);
     } else {
-//        float hzPixel = sampleRate/width();  // spectrum resolution: Hz/pixel
-        float hzPixel = (float) sampleRate / width();  // spectrum resolution: Hz/pixel
+        float zoom_factor = 1.0f + zoom/25.0f;
+        float hzPixel = (float) sampleRate / width() / zoom_factor;  // spectrum resolution: Hz/pixel
 
         long freqOffsetPixel;
-        long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel) - LO_offset;
+        long long f = frequency - (sampleRate/2/zoom_factor) + (event->pos().x()*hzPixel)
+                      - LO_offset/zoom_factor;
         if(subRx) {
             freqOffsetPixel = (subRxFrequency-f)/hzPixel;
             if (button == Qt::LeftButton) {
@@ -267,7 +272,7 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     samples = (float*) malloc(width() * sizeof (float));
 #endif
 
-    // rotate spectrum display if LO is not 0
+    // do not rotate spectrum display if LO is 0
     if(LO_offset==0) {
 #ifdef WATERFALL_2D
         #pragma omp parallel for schedule(static)

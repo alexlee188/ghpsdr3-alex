@@ -2403,4 +2403,7 @@ void UI::on_zoomSpectrumSlider_sliderMoved(int position)
 
     command.clear(); QTextStream(&command) << "zoom " << position;
     connection.sendCommand(command);
+
+    widget.spectrumFrame->setZoom(position);
+    widget.waterfallFrame->setZoom(position);
 }
