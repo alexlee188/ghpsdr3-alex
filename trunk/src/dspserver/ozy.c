@@ -114,7 +114,6 @@ unsigned char iq_samples[SPECTRUM_BUFFER_SIZE];
 
 int lt2208ADCOverflow=0;
 
-int speed=0;           // default 48K
 int class=0;           // default other
 int lt2208Dither=1;    // default dither on
 int lt2208Random=1;    // default random 0n
@@ -426,73 +425,11 @@ int make_connection() {
         if(strcmp(token,"OK")==0) {
             token=strtok_r(NULL," ",&saveptr);
             if(token!=NULL) {
+		int sampleRate;
                 result=0;
                 sampleRate=atoi(token);
 		fprintf(stderr,"connect: sampleRate=%d\n",sampleRate);
-                switch(sampleRate) {
-                    case 48000:
-                        setSpeed(SPEED_48KHZ);
-                        break;
-                    case 96000:
-                        setSpeed(SPEED_96KHZ);
-                        break;
-                    case 192000:
-                        setSpeed(SPEED_192KHZ);
-                        break;
-                    case 95000:
-                        setSpeed(SPEED_95KHZ);
-                        break;
-                    case 125000:
-                        setSpeed(SPEED_125KHZ);
-                        break;
-                    case 250000:
-                        setSpeed(SPEED_250KHZ);
-                        break;
-                    case 53333:
-                        setSpeed(SPEED_53KHZ);
-                        break;
-                    case 111111:
-                        setSpeed(SPEED_111KHZ);
-                        break;
-                    case 133333:
-                        setSpeed(SPEED_133KHZ);
-                        break;
-                    case 185185:
-                        setSpeed(SPEED_185KHZ);
-                        break;
-		    case 60000:
-			setSpeed(SPEED_60KHZ);
-			break;
-		    case 80000:
-                        setSpeed(SPEED_80KHZ);
-                        break;
-                    case 120000:
-                        setSpeed(SPEED_120KHZ);
-                        break;
-                    case 160000:
-                        setSpeed(SPEED_160KHZ);
-                        break;
-                    case 240000:
-                        setSpeed(SPEED_240KHZ);
-                        break;
-		    case 320000:
-			setSpeed(SPEED_320KHZ);
-			break;
-                    case 480000:
-                        setSpeed(SPEED_480KHZ);
-                        break;
-                    case 500000:
-                        setSpeed(SPEED_500KHZ);
-                        break;
-                    case 960000:
-                        setSpeed(SPEED_960KHZ);
-                        break;
-		    case 1920000:
-			setSpeed(SPEED_1920KHZ);
-			break;
-                    default:
-                        fprintf (stderr, "make_connection: unexpected sample rate %d\n", sampleRate);
-                }
+		setSpeed (sampleRate);
             } else {
                 fprintf(stderr,"invalid response to connect: %s\n",response);
                 result=1;
@@ -682,89 +619,16 @@ void getSpectrumSamples(char *samples) {
 void setSpeed(int s) {
 fprintf(stderr,"setSpeed %d\n",s);
 fprintf(stderr,"LO_offset %f\n",LO_offset);
-    speed=s;
-    switch (s){
-	case SPEED_48KHZ:
-		sampleRate=48000;
-		output_sample_increment=1;
-		break;
-   	case SPEED_96KHZ:
-		sampleRate=96000;
-		output_sample_increment=2;
-		break;
-    	case SPEED_192KHZ:
-		sampleRate=192000;
-		output_sample_increment=4;
-		break;
-	case SPEED_480KHZ:
-		sampleRate=480000;
-		output_sample_increment=10;
-		break;
-   	case SPEED_960KHZ:
-		sampleRate=960000;
-		output_sample_increment=20;
-		break;
-    	case SPEED_1920KHZ:
-		sampleRate=1920000;
-		output_sample_increment=40;
-		break;
-        case SPEED_95KHZ:
-	    sampleRate=95000;
-	    output_sample_increment = -1;
-	    break;
-	case SPEED_125KHZ:
-            sampleRate=125000;
-	    output_sample_increment = -1;
-	    break;
-	case SPEED_250KHZ:
-            sampleRate=250000;
-	    output_sample_increment = -1;
-	    break;
-	case SPEED_500KHZ:
-	    sampleRate=500000;
-	    output_sample_increment=-1;
-	    break;
-	case SPEED_53KHZ:
-            sampleRate=53333;
-	    output_sample_increment = -1;
-	    break;
-	case SPEED_111KHZ:
-            sampleRate=111111;
-	    output_sample_increment = -1;
-	    break;
-	case SPEED_185KHZ:
-            sampleRate=185185;
-            output_sample_increment=-1;
-	    break;
-	case SPEED_60KHZ:
-            sampleRate=60000;
-            output_sample_increment=-1;
-	    break;
-	case SPEED_80KHZ:
-            sampleRate=80000;
-            output_sample_increment=-1;
-	    break;
-	case SPEED_120KHZ:
-            sampleRate=120000;
-            output_sample_increment=-1;
-	    break;
-	case SPEED_160KHZ:
-            sampleRate=160000;
-            output_sample_increment=-1;
-	    break;
-	case SPEED_240KHZ:
-            sampleRate=240000;
-            output_sample_increment=-1;
-	    break;
-	case SPEED_320KHZ:
-            sampleRate=320000;
-            output_sample_increment=-1;
-	    break;
-	default:
-	    sampleRate=48000;
-            output_sample_increment=1;
-	}
 
+    sampleRate=s;
+
+    if (s % 48000 == 0)
+	output_sample_increment = s / 48000; // s is a multiple of 48000
+    else
+	output_sample_increment = -1;
+
+    fprintf(stderr,"setSpeed: output sample increment: %d\n",output_sample_increment);
+	
         SetSampleRate((double)sampleRate);
 
 	SetRXOsc(0,0, -LO_offset);

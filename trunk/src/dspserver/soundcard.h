@@ -40,7 +40,6 @@
 #define SDR_IQ 9
 
 int soundcard;
-int sampleRate;
 
 float multimeterCalibrationOffset;
 float displayCalibrationOffset;
