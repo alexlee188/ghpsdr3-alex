@@ -1460,9 +1460,9 @@ void client_set_samples(char* client_samples, float* samples,int size) {
         max=-10000.0F;
         lindex=(int)(((float)SAMPLE_BUFFER_SIZE/2 - (float)SAMPLE_BUFFER_SIZE/2.0f/zoom_factor) 
                 + floor((float)i*slope));
-        rindex=(int)floor(((float)i*slope)+slope);
+        rindex=(int)floor(lindex+slope);
         if(rindex>SAMPLE_BUFFER_SIZE) rindex=SAMPLE_BUFFER_SIZE;
-        for(j=lindex;j<rindex;j++) {
+        for(j=lindex;j<=rindex;j++) {
             if(samples[j]>max) max=samples[j];
         }
         client_samples[i+BUFFER_HEADER_SIZE]=(unsigned char)-(max+extras);
