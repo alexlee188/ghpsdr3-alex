@@ -93,9 +93,10 @@ static pthread_t client_thread_id, tx_thread_id, rtp_tx_thread_id;
 #define BASE_PORT 8000
 static int port=BASE_PORT;
 
+// This must match the size declared in DttSP
 #define SAMPLE_BUFFER_SIZE 4096
 static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
-static int zoom;
+static int zoom = 0;
 
 #define TX_BUFFER_SIZE 1024
 // same as BUFFER_SIZE defined in softrock server
@@ -1428,7 +1429,7 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     client_samples[2]=HEADER_SUBVERSION;
     client_samples[3]=(size>>8)&0xFF;  // samples length
     client_samples[4]=size&0xFF;
-    client_samples[5]=((int)meter>>8)&0xFF; // mainn rx meter
+    client_samples[5]=((int)meter>>8)&0xFF; // main rx meter
     client_samples[6]=(int)meter&0xFF;
     client_samples[7]=((int)subrx_meter>>8)&0xFF; // sub rx meter
     client_samples[8]=(int)subrx_meter&0xFF;
