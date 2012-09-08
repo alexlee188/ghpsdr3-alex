@@ -188,9 +188,11 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
         if(moved) {
             emit frequencyMoved(move,100);
         } else {
-            float hzPixel = (float) sampleRate / width();  // spectrum resolution: Hz/pixel
+            float zoom_factor = 1.0f + zoom/25.0f;
+            float hzPixel = (float) sampleRate / width() / zoom_factor;  // spectrum resolution: Hz/pixel
             long freqOffsetPixel;
-            long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel)-LO_offset;
+            long long f = frequency - (sampleRate/2/zoom_factor) + (event->pos().x()*hzPixel)
+                    -LO_offset/zoom_factor;
 
             if(subRx) {    
                 freqOffsetPixel = (subRxFrequency-f)/hzPixel;
