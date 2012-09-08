@@ -481,6 +481,9 @@ int make_connection() {
                     case 480000:
                         setSpeed(SPEED_480KHZ);
                         break;
+                    case 500000:
+                        setSpeed(SPEED_500KHZ);
+                        break;
                     case 960000:
                         setSpeed(SPEED_960KHZ);
                         break;
@@ -716,6 +719,10 @@ fprintf(stderr,"LO_offset %f\n",LO_offset);
 	case SPEED_250KHZ:
             sampleRate=250000;
 	    output_sample_increment = -1;
+	    break;
+	case SPEED_500KHZ:
+	    sampleRate=500000;
+	    output_sample_increment=-1;
 	    break;
 	case SPEED_53KHZ:
             sampleRate=53333;

@@ -65,4 +65,9 @@ command line options:
        
        default off
        will try to determine the Country of incoming connections by IP.
+
+    -- hpsdr
+
+       mandatory for HPSDR Mercury
+
        
