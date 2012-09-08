@@ -292,8 +292,11 @@ void Spectrum::paintEvent(QPaintEvent*) {
     }
 
     // draw filter
-    filterLeft = ((filterLow - (-sampleRate / 2)) * width() / sampleRate)+offset;
-    filterRight = ((filterHigh - (-sampleRate / 2)) * width() / sampleRate)+offset;
+    //filterLeft = ((filterLow - (-sampleRate / 2)) * width() / sampleRate)+offset;
+    //filterRight = ((filterHigh - (-sampleRate / 2)) * width() / sampleRate)+offset;
+    float zoom_factor = 1.0f + zoom/25.0f;
+    filterLeft = offset + width()/2 + (float)filterLow* (float)width()*zoom_factor/(float)sampleRate;
+    filterRight = offset + width()/2 + (float)filterHigh*(float)width()*zoom_factor/(float)sampleRate;
     painter.setBrush(Qt::SolidPattern);
     painter.setOpacity(0.5);
     painter.fillRect(filterLeft,0,filterRight-filterLeft,height(),Qt::gray);
