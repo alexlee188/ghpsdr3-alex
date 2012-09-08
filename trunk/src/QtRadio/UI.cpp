@@ -2399,5 +2399,8 @@ void UI::testButtonClick(bool state)
 
 void UI::on_zoomSpectrumSlider_sliderMoved(int position)
 {
+    QString command;
 
+    command.clear(); QTextStream(&command) << "zoom " << position;
+    connection.sendCommand(command);
 }
