@@ -43,6 +43,7 @@ Spectrum::Spectrum(QWidget*& widget) {
     filterHigh=-150;
     mode="LSB";
 
+    zoom = 0;
     subRxFrequency=0LL;
     subRx=FALSE;
 
@@ -187,9 +188,11 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
         if(moved) {
             emit frequencyMoved(move,100);
         } else {
-            float hzPixel = (float) sampleRate / width();  // spectrum resolution: Hz/pixel
+            float zoom_factor = 1.0f + zoom/25.0f;
+            float hzPixel = (float) sampleRate / width() / zoom_factor;  // spectrum resolution: Hz/pixel
             long freqOffsetPixel;
-            long long f = frequency - (sampleRate/2) + (event->pos().x()*hzPixel)-LO_offset;
+            long long f = frequency - (sampleRate/2/zoom_factor) + (event->pos().x()*hzPixel)
+                    -LO_offset/zoom_factor;
 
             if(subRx) {    
                 freqOffsetPixel = (subRxFrequency-f)/hzPixel;
@@ -401,6 +404,10 @@ void Spectrum::paintEvent(QPaintEvent*) {
     }
 }
 
+void Spectrum::setZoom(int value){
+    zoom = value;
+}
+
 void Spectrum::setFrequency(long long f) {
     frequency=f;
     subRxFrequency=f;
@@ -486,14 +493,14 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
     }
     samples = (float*) malloc(width * sizeof (float));
 
-    // rotate spectrum display if LO is not 0
+    // do not rotate spectrum display if LO is 0
     if(LO_offset==0) {
         for(i=0;i<width;i++) {
             samples[i] = -(buffer[i] & 0xFF);
         }
     } else {
         float step=(float)sampleRate/(float)width;
-        offset=(int)((float)LO_offset/step);
+        float offset=((float)LO_offset/step);
         for(i=0;i<width;i++) {
             j=i-offset;
             if(j<0) j+=width;

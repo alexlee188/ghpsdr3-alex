@@ -745,17 +745,21 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     TAILQ_INSERT_TAIL(&Client_list, item, entries);
     sem_post(&bufferevent_semaphore);
 
+    int client_count = 0;
+    sem_wait(&bufferevent_semaphore);
+    /* NB: Clobbers item */
+    TAILQ_FOREACH(item, &Client_list, entries){
+        client_count++;
+    }
+    sem_post(&bufferevent_semaphore);
+
+    if (client_count == 0) {
+        zoom = 0;
+    }
+
     if (toShareOrNotToShare) {
-        int client_count = 0;
+ 
         char status_buf[32];
-
-        sem_wait(&bufferevent_semaphore);
-        /* NB: Clobbers item */
-        TAILQ_FOREACH(item, &Client_list, entries){
-    	client_count++;
-        }
-        sem_post(&bufferevent_semaphore);
-
         sprintf(status_buf,"%d client(s)", client_count);
         updateStatus(status_buf);
     }
@@ -1449,7 +1453,8 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     client_samples[13]=((int)LO_offset>>8)&0xFF; // IF
     client_samples[14]=(int)LO_offset&0xFF;
 
-    slope=(float)SAMPLE_BUFFER_SIZE/(float)size;
+    float zoom_factor = 1.0f + (float)zoom/25.0f;
+    slope=(float)SAMPLE_BUFFER_SIZE/(float)size / zoom_factor;
     if(mox) {
         extras=-82.62103F;
     } else {
@@ -1460,10 +1465,11 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     #pragma omp for schedule(static)
     for(i=0;i<size;i++) {
         max=-10000.0F;
-        lindex=(int)floor((float)i*slope);
-        rindex=(int)floor(((float)i*slope)+slope);
+        lindex=(int)(((float)SAMPLE_BUFFER_SIZE/2 - (float)SAMPLE_BUFFER_SIZE/2.0f/zoom_factor) 
+                + floor((float)i*slope));
+        rindex=(int)floor(lindex+slope);
         if(rindex>SAMPLE_BUFFER_SIZE) rindex=SAMPLE_BUFFER_SIZE;
-        for(j=lindex;j<rindex;j++) {
+        for(j=lindex;j<=rindex;j++) {
             if(samples[j]>max) max=samples[j];
         }
         client_samples[i+BUFFER_HEADER_SIZE]=(unsigned char)-(max+extras);
