@@ -43,6 +43,7 @@ Spectrum::Spectrum(QWidget*& widget) {
     filterHigh=-150;
     mode="LSB";
 
+    zoom = 0;
     subRxFrequency=0LL;
     subRx=FALSE;
 
@@ -401,6 +402,10 @@ void Spectrum::paintEvent(QPaintEvent*) {
     }
 }
 
+void Spectrum::setZoom(int value){
+    zoom = value;
+}
+
 void Spectrum::setFrequency(long long f) {
     frequency=f;
     subRxFrequency=f;
@@ -486,14 +491,14 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
     }
     samples = (float*) malloc(width * sizeof (float));
 
-    // rotate spectrum display if LO is not 0
+    // do not rotate spectrum display if LO is 0
     if(LO_offset==0) {
         for(i=0;i<width;i++) {
             samples[i] = -(buffer[i] & 0xFF);
         }
     } else {
         float step=(float)sampleRate/(float)width;
-        offset=(int)((float)LO_offset/step);
+        float offset=((float)LO_offset/step);
         for(i=0;i<width;i++) {
             j=i-offset;
             if(j<0) j+=width;

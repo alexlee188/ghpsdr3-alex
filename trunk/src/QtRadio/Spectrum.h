@@ -76,6 +76,7 @@ public:
 
     void setSquelch(bool state);
     void setSquelchVal(float val);
+    void setZoom(int value);
 
 
 signals:
@@ -147,6 +148,7 @@ private:
     Meter* sMeterSub;
 
     short LO_offset;
+    int zoom;
 };
 
 

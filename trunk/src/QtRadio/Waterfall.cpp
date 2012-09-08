@@ -102,6 +102,10 @@ void Waterfall::setObjectName(QString name) {
     QFrame::setObjectName(name);
 }
 
+void Waterfall::setZoom(int value){
+    zoom = value;
+}
+
 void Waterfall::setGeometry(QRect rect) {
     QFrame::setGeometry(rect);
 
@@ -247,7 +251,7 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     }
     samples = (float*) malloc(width() * sizeof (float));
 
-    // rotate spectrum display if LO is not 0
+    // do not rotate spectrum display if LO is 0
     if(LO_offset==0) {
         #pragma omp parallel for schedule(static)
         for(i=0;i<width();i++) {

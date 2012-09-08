@@ -75,6 +75,7 @@ public:
 
     void setSampleRate(int r);
     void setFrequency(long long f);
+    void setZoom(int value);
     void setSubRxFrequency(long long f);
     void setFilter(int low,int high);
     void setSubRxState(bool state);
@@ -121,6 +122,7 @@ private:
     QImage image;
 
     short LO_offset;
+    int zoom;
 
     int sampleRate;
     int filterLow;
