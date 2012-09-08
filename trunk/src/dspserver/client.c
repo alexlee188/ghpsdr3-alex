@@ -95,6 +95,7 @@ static int port=BASE_PORT;
 
 #define SAMPLE_BUFFER_SIZE 4096
 static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
+static int zoom;
 
 #define TX_BUFFER_SIZE 1024
 // same as BUFFER_SIZE defined in softrock server
@@ -1397,6 +1398,11 @@ void readcb(struct bufferevent *bev, void *ctx){
                 item->fps = atoi(tokens[1]);
             }
             sem_post(&bufferevent_semaphore);
+        } else if(strncmp(cmd,"zoom",4)==0) {
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            zoom=atoi(tokens[0]);
+            fprintf(stdout,"Zoom value is '%d'\n",zoom);
         } else {
             fprintf(stderr,"Invalid command: token: '%s'\n",cmd);
         }
@@ -1416,27 +1422,6 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     float extras;
 
 // g0orx binary header
-
-/*
-    // first byte is the buffer type
-    client_samples[0]=SPECTRUM_BUFFER;
-    sprintf(&client_samples[1],"%f",HEADER_VERSION);
-
-    // next 6 bytes contain the main rx s meter
-    sprintf(&client_samples[14],"%d",(int)meter);
-
-    // next 6 bytes contain the subrx s meter
-    sprintf(&client_samples[20],"%d",(int)subrx_meter);
-
-    // next 6 bytes contain data length
-    sprintf(&client_samples[26],"%d",size);
-
-    // next 8 bytes contain the sample rate
-    sprintf(&client_samples[32],"%d",sampleRate);
-
-    // next 8 bytes contain the meter - for compatability
-    sprintf(&client_samples[40],"%d",(int)meter);
-*/
 
     client_samples[0]=SPECTRUM_BUFFER;
     client_samples[1]=HEADER_VERSION;
