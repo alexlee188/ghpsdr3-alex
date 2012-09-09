@@ -24,6 +24,25 @@
 * 
 */
 
-const char *version = "20120908;-iw0hdv"; //YYYYMMDD; text desc
+// version string moved into main.c
 
+#if ! defined __MAIN_H__
+#define __MAIN_H__
+
+#include <sys/param.h>     // for MAXPATHLEN
+
+extern const char *version;
+
+struct dspserver_config {
+    char soundCardName[80];
+    int offset;
+    char share_config_file[MAXPATHLEN];
+    char server_address[256];
+    int thread_debug;
+    int no_correct_iq;
+};
+
+extern struct dspserver_config config;
+
+#endif
 

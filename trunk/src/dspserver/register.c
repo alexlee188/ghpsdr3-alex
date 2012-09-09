@@ -16,11 +16,11 @@
 #include "client.h"
 
 char *dspstatus;
-char *call = "Unknown";
-char *location = "Unknown";
-char *band = "Unknown";
-char *rig = "Unknown";
-char *ant = "Unknown";
+const char *call = "Unknown";
+const char *location = "Unknown";
+const char *band = "Unknown";
+const char *rig = "Unknown";
+const char *ant = "Unknown";
 
 sem_t cfgsem;
 sem_t status_sem;
@@ -42,8 +42,9 @@ char to_hex(char code) {
 /* Returns a url-encoded version of str */
 /* IMPORTANT: be sure to free() the returned string after use */
 /* From geekhideout.com/urlcode.shtml */
-char *url_encode(char *str) {
-  char *pstr = str, *buf = malloc(strlen(str) * 3 + 1), *pbuf = buf;
+char *url_encode(const char *str) {
+  const char *pstr = str;
+  char *buf = malloc(strlen(str) * 3 + 1), *pbuf = buf;
   while (*pstr) {
     if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' || *pstr == '~') 
       *pbuf++ = *pstr;

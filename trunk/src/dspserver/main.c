@@ -79,7 +79,7 @@
 * 
 */
 
-
+const char *version = "20120908;-iw0hdv"; //YYYYMMDD; text desc
 
 // main.c
 
@@ -109,7 +109,7 @@
 #include "G711A.h"
 #include "rtp.h"
 #include "util.h"
-
+#include "main.h"
 
 char propertyPath[128];
 
@@ -124,6 +124,7 @@ enum {
     OPT_SHARECONFIG,
     OPT_LO,
     OPT_HPSDR,
+    OPT_NOCORRECTIQ,
     OPT_DEBUG,
     OPT_THREAD_DEBUG
 };
@@ -139,6 +140,7 @@ struct option longOptions[] = {
     {"shareconfig",required_argument, NULL, OPT_SHARECONFIG},
     {"lo",required_argument, NULL, OPT_LO},
     {"hpsdr",no_argument, NULL, OPT_HPSDR},
+    {"nocorrectiq",no_argument, NULL, OPT_NOCORRECTIQ},
     {"debug",no_argument, NULL, OPT_DEBUG},
 #ifdef THREAD_DEBUG
     {"debug-threads",no_argument, NULL, OPT_THREAD_DEBUG},
@@ -147,14 +149,6 @@ struct option longOptions[] = {
 };
 
 char* shortOptions="";
-
-struct dspserver_config {
-    char soundCardName[80];
-    int offset;
-    char share_config_file[MAXPATHLEN];
-    char server_address[256];
-    int thread_debug;
-};
 
 void signal_shutdown(int signum);
 
@@ -212,6 +206,9 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
             case OPT_HPSDR:
                 ozy_set_hpsdr();
                 break;
+            case OPT_NOCORRECTIQ:
+                config->no_correct_iq = 1;
+                break;
             case OPT_DEBUG:
                 ozy_set_debug(1);
                 break;
@@ -229,6 +226,7 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
                 fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
 		fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
 		fprintf(stderr,"            --hpsdr (if using hpsdr hardware)\n");
+		fprintf(stderr,"            --nocorrectiq (select if using non QSD receivers, like Perseus, HiQSDR, Mercury)\n");
 #ifdef THREAD_DEBUG
                 fprintf(stderr,"            --debug-threads (enable threading assertions)\n");
 #endif /* THREAD_DEBUG */
@@ -250,10 +248,9 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
 */
 /* ----------------------------------------------------------------------------*/
 
-
+struct dspserver_config config;
 
 int main(int argc,char* argv[]) {
-    struct dspserver_config config;
     memset(&config, 0, sizeof(config));
     // Register signal and signal handler
     signal(SIGINT, signal_shutdown);    
