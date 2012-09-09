@@ -24,6 +24,7 @@
 * 
 */
 
-const char *version = "20120908;-opengl-qt5"; //YYYYMMDD; text desc
+const char *version = "20120909;-opengl-qt5"; //YYYYMMDD; text desc
+
 
 

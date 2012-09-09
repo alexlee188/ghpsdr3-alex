@@ -1,3 +1,4 @@
+
 /**
 * @file client.c
 * @brief Handle client connection
@@ -35,18 +36,24 @@
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
-#include <time.h>
-#include <sys/queue.h>
+#include <string>     // c++ std strings
 
-#include "sdriq.h"
+#include "rtl-sdr.h"
 #include "client.h"
 #include "receiver.h"
 #include "messages.h"
 
 
-static int counter = 0;
+
+#define SCALE_FACTOR_24B 8388607.0         // 2^24 / 2 - 1 = 8388607.0
+#define SCALE_FACTOR_32B 2147483647.0      // 2^32 / 2 - 1 = 2147483647.0
+#define SCALE_FACTOR_0   0.0
+#define SCALE_FACTOR_1   1.0
+
+#define ADC_CLIP 0x01
 
 
+static long long counter = 0;
 
 struct timespec diff(struct timespec start, struct timespec end)
 {
@@ -62,50 +69,32 @@ struct timespec diff(struct timespec start, struct timespec end)
 }
 
 
-#define SCALE_FACTOR_24B 8388607.0         // 2^24 / 2 - 1 = 8388607.0
-#define SCALE_FACTOR_32B 2147483647.0      // 2^32 / 2 - 1 = 2147483647.0
-#define SCALE_FACTOR_0   0.0
-#define SCALE_FACTOR_1   1.0
 
-#define ADC_CLIP 0x01
-
-
-int user_data_callback (SAMPLE_T *pi, SAMPLE_T *pq, int nSamples, void *extra)
+void user_data_callback(unsigned char *buf, unsigned int buf_size, void *context)
 {
-	// The buffer received contains 24-bit signed integer IQ samples (6 bytes per sample)
-	// we save the received IQ samples as 32 bit (msb aligned) integer IQ samples.
+	RECEIVER *pRec = (RECEIVER *)context;
 
 
-    // each sample is split into two vector
-    //SAMPLE_T *pi = (SAMPLE_T *) ii;
-    //SAMPLE_T *pq = (SAMPLE_T *) qq;
+	// The buffer received contains 8-bit signed integer IQ samples (2 bytes per sample)
+	uint8_t	*psb    = ((uint8_t*)(buf));
+    int nSamples    = buf_size/2;      
 
 
-    // skip the first two bytes
-    //int seq      = *samplebuf++;
-
-	RECEIVER *pRec = (RECEIVER *)extra;
-
+    // for debug purpose
     if (nSamples >0) { 
         pRec->cfg.ns += nSamples;
     }
 
-    #if 0
-    if (nSamples > 0) {
 
-        fprintf (stderr, "---> %d\n", nSamples);
-        int j;
-        for (j=0; j<5; ++j) fprintf(stderr, "[%f+j%f] ", pi[j], pq[j]);
-        fprintf (stderr, "\n");
-    }
-    #endif
+	for (int k=0; k < nSamples; k++) {
 
-	while (nSamples) {
-
+        //
+        // the following block is for debug only
+        // attempt to compute the real sample rate
+        //
         #if 1
-        if ((counter++ % 204800) == 0) {
+        if ((counter++ % 2048000) == 0) {
             long double diff_s ;
-            const QUISK_SOUND_STATE *pss = get_state ();
 
             if (nSamples >0) { 
                 pRec->cfg.ns -= nSamples;
@@ -118,13 +107,10 @@ int user_data_callback (SAMPLE_T *pi, SAMPLE_T *pq, int nSamples, void *extra)
             fprintf (stderr, "***>>>>>>>>>>> Samples received: %lu, %.3Lf kS/s\n", pRec->cfg.ns, ((double)pRec->cfg.ns / (diff_s)/1E3) );
 
 
-            fprintf (stderr, "***>>>>>>>>>>> Errors: %d overrange: %d poll: %d\n", 
-                     pss->read_error, pss->overrange,pss->data_poll_usec);
-
             fprintf (stderr, "[%s] [%s]\n", pRec->cfg.start, pRec->cfg.stop);
-            fprintf (stderr, "%p %p\n", pi, pq);
+            //fprintf (stderr, "%p %p\n", pi, pq);
             fprintf (stderr, ">>>>>>>>>>>>>> %s: #samples: %d\n", __FUNCTION__, nSamples);  
-            fprintf (stderr, ">>>>>>>>>>>>>> LSB first: i: %08f q: %08f\n", *pi, *pq );  
+            //fprintf (stderr, ">>>>>>>>>>>>>> LSB first: i: %08f q: %08f\n", *pi, *pq );  
             fprintf (stderr, ">>>>>>>>>>>>>> i: %f q: %f\n", 
                      pRec->input_buffer[pRec->samples], pRec->input_buffer[pRec->samples+BUFFER_SIZE]);
             fflush(stderr);
@@ -135,63 +121,59 @@ int user_data_callback (SAMPLE_T *pi, SAMPLE_T *pq, int nSamples, void *extra)
         }
         #endif
 
-        // copy into the output buffer, converting to float
-        pRec->input_buffer[pRec->samples]             = *pq ;
-        pRec->input_buffer[pRec->samples+BUFFER_SIZE] = *pi ;
+        // copy into the output buffer, converting to float and scaling
+        //pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = ((float)(*psb)  - 128.0) * SCALE_FACTOR_24B;       psb++;
+        //pRec->input_buffer[pRec->samples]              = ((float)(*psb)  - 128.0) * SCALE_FACTOR_24B;       psb++;
 
-        pq++, pi++;      // next input sample
-        nSamples--;      // one less
-        pRec->samples++; // next output sample 
+        //
+        // from http://cgit.osmocom.org/cgit/gr-osmosdr/tree/lib/rtl/rtl_source_c.cc
+        //
+        // (float(i & 0xff) - 127.5f) *(1.0f/128.0f),
+        //
+        pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = (float(*psb) - 127.5f) * (1.0f/128.0f);       psb++;
+        pRec->input_buffer[pRec->samples]              = (float(*psb) - 127.5f) * (1.0f/128.0f);       psb++;
 
-        #if 1
+        //
+        // uncomment the following in order to disable the scaling
+        //
+        //pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = ((float)(*psb));   psb++;
+        //pRec->input_buffer[pRec->samples]              = ((float)(*psb));   psb++;
+
+        pRec->samples++; // next sample in output buffer
+
         // when we have enough samples, send them to the client
         if(pRec->samples==BUFFER_SIZE) {
-
-            if (pRec->m_NcoSpurCalActive == false) {
-               int x;
-               for (x=0; x < pRec->samples; ++x) {
-                  pRec->input_buffer[x]             -= pRec->m_NCOSpurOffsetQ;
-                  pRec->input_buffer[x+BUFFER_SIZE] -= pRec->m_NCOSpurOffsetI;
-               }
-            } else {
-               NcoSpurCalibrate (pRec);
-            }
-           
             // send I/Q data to clients
-            //fprintf (stderr, "%s: sending data.\n", __FUNCTION__);
             send_IQ_buffer(pRec);
             pRec->samples=0;      // signal that the output buffer is empty again
         }
-        #else
 
-        // when we have enough samples, send them to the client
-        if(pRec->samples==BUFFER_SIZE) {
-            // send I/Q data to clients
 
-            struct tailq_entry *item;
-
-           /*
-             * Each item we want to add to the tail queue must be
-             * allocated.
-             */
-            item = malloc(sizeof(*item));
-            if (item == NULL) {
-                perror("malloc failed");
-                exit(EXIT_FAILURE);
-            } else {
-                //fprintf(stderr,"%s, inserting\n", __FUNCTION__);
-                memcpy (item->iq_buf, pRec->input_buffer, sizeof (BUFFER));
-                TAILQ_INSERT_TAIL(&(pRec->iq_tailq_head), item, entries);
-
-            }
-            pRec->samples=0;      // signal that the output buffer is empty again
-        }
-        #endif
 	}
-    return 0;
+    return;
 }
 
 
+void *helper_thread (void *arg)
+{
+    RECEIVER *pRec = (RECEIVER *)arg;
+
+    printf(" !!!!!!!!! THREAD: [%p]\n",  pRec->cfg.rtl);
+    while (1) {
+        //int r = rtlsdr_wait_async(receiver[client->receiver].cfg.rtl, user_data_callback, &(receiver[client->receiver]));
+        // int r = rtlsdr_wait_async(pRec->cfg.rtl, user_data_callback, pRec);
+        int r = rtlsdr_read_async(pRec->cfg.rtl, user_data_callback, pRec,
+                                  1,    // buf_num,
+                                  16384  // uint32_t buf_len
+                                  );
+        if ( r < 0) {
+            printf(" !!!!!!!!! wait async input error: [%d]\n", r );
+            fflush (stdout);
+            break;
+        } 
+    }
+    return 0;
+}
 
 
 const char* parse_command(CLIENT* client,char* command);
@@ -242,7 +224,7 @@ const char* parse_command(CLIENT* client,char* command) {
     
     char* token;
 
-    fprintf(stderr,"********* parse_command: '%s'\n",command);
+    fprintf(stderr,"parse_command: '%s'\n",command);
 
     token=strtok(command," \r\n");
     if(token!=NULL) {
@@ -281,21 +263,23 @@ const char* parse_command(CLIENT* client,char* command) {
                     if(token!=NULL) {
                         client->iq_port=atoi(token);
                     }
-                    memset (&receiver[client->receiver].cfg.time_start, 0, sizeof(receiver[client->receiver].cfg.time_start)); 
-                    memset (&receiver[client->receiver].cfg.time_end  , 0, sizeof(receiver[client->receiver].cfg.time_end)); 
-                    memset (&receiver[client->receiver].cfg.time_diff , 0, sizeof(receiver[client->receiver].cfg.time_diff)); 
-                    receiver[client->receiver].cfg.ns = 0L;
-                    printf("*****Starting async data acquisition on receiver %d... CLIENT REQUESTED %d port\n", client->receiver, client->iq_port);
 
-                    (receiver[client->receiver]).samples = 0;
-                 	if ( sdriq_start_asynch_input ( user_data_callback, &(receiver[client->receiver])) < 0 ) {
-                 		printf("start async input error\n" );
-                        return INVALID_COMMAND;
-                 	} else {
-                 		printf("start async input: %s\n", "STARTED");
+                    printf("xxxxxxxxxxxxxxxxxxx Starting async data acquisition... CLIENT REQUESTED %d port\n", client->iq_port);
+
+                    (receiver[client->receiver]).samples = 0; // empties output buffer
+
+                    /* Reset endpoint before we start reading from it (mandatory) */
+                    int r = rtlsdr_reset_buffer(receiver[client->receiver].cfg.rtl);
+                    if (r < 0) fprintf(stderr, "WARNING: Failed to reset buffers.\n");
+
+                    pthread_t thread_id;
+                    // create the thread to listen for TCP connections
+                    r = pthread_create(&thread_id,NULL,helper_thread,&(receiver[client->receiver]));
+                    if( r < 0) {
+                        perror("pthread_create helper_thread failed");
+                        exit(1);
                     }
 
-                    return OK;
                 } else if(strcmp(token,"bandscope")==0) {
                     token=strtok(NULL," \r\n");
                     if(token!=NULL) {
@@ -372,7 +356,8 @@ const char* parse_command(CLIENT* client,char* command) {
                     // try to terminate audio thread
                     close ((receiver[client->receiver]).audio_socket);
                     printf("Quitting...\n");
-                    //hiqsdr_stop_asynch_input ();
+                    //rtlsdr_stop_asynch_input ();
+                    rtlsdr_cancel_async(receiver[client->receiver].cfg.rtl);
                     return OK;
                 } else if(strcmp(token,"bandscope")==0) {
                     client->bs_port=-1;
@@ -386,12 +371,14 @@ const char* parse_command(CLIENT* client,char* command) {
             }
         } else if(strcmp(token,"quit")==0) {
             return QUIT_ASAP;
+
         } else if(strcmp(token,"hardware?")==0) {
-            return "OK SDR-IQ";
+            fprintf (stderr, "*****************************\n");
+            return "OK rtlsdr";
 
         } else if(strcmp(token,"getserial?")==0) {
             static char buf[50];
-            snprintf (buf, sizeof(buf), "OK %s", get_serial ());
+            snprintf (buf, sizeof(buf), "OK N/A");
             return buf;
 
         } else {

@@ -83,6 +83,7 @@ SOURCES += main.cpp\
     G711A.cpp \
     RTP.cpp \
     Waterfallcl.cpp
+    hardware.cpp
 
 
 HEADERS  += \ 
@@ -135,6 +136,7 @@ HEADERS  += \
     RTP.h \
     cusdr_queue.h \
     Waterfallcl.h
+    hardware.h
 
 FORMS    += \   
     UI.ui \

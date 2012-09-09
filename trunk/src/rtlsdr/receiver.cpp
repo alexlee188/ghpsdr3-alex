@@ -32,11 +32,12 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
+#include <string>
 
+#include <rtl-sdr.h>
 #include "messages.h"
 #include "client.h"
 #include "receiver.h"
-#include "sdriq.h"
 
 #define SMALL_PACKETS
 
@@ -51,18 +52,13 @@ static unsigned long sequence=0L;
 
 static int CORE_BANDWIDTH;
 
-void *send_IQ_buffer_from_queue (void *pArg) ;
-
-void init_receivers (SDR_IQ_CONFIG *pCfg) 
+void init_receivers (RtlSdrConfig *pCfg) 
 {
     int i;
     for(i=0;i<MAX_RECEIVERS;i++) {
         receiver[i].client  = (CLIENT*)NULL;
         receiver[i].samples = 0; 
-        receiver[i].m_NcoSpurCalActive = true;
-        receiver[i].m_NcoSpurCalCount  = 0; 
-        receiver[i].m_NCOSpurOffsetI   = 0.0;
-        receiver[i].m_NCOSpurOffsetQ   = 0.0;
+        receiver[i].cfg = *pCfg;
     }
 
     iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
@@ -83,7 +79,6 @@ void init_receivers (SDR_IQ_CONFIG *pCfg)
     }
 
     CORE_BANDWIDTH = pCfg->sr;
-    receiver[0].cfg = *pCfg; 
 
 }
 
@@ -97,16 +92,33 @@ const char* attach_receiver(int rx, CLIENT* client)
     //    return RECEIVER_INVALID;
     //}
 
-    gain_sdriq (0, -20);
-    //gain_sdriq (1, 1);
+    //rtlsdr_connect ();
 
-    freq_sdriq (7050000);
-    set_bandwidth (CORE_BANDWIDTH);
+    //rtlsdr_set_frequency (145000000LL);
+    //rtlsdr_set_samp_rate (CORE_BANDWIDTH);
 
 
-    //hiqsdr_connect ();
-    //hiqsdr_set_frequency (7050000LL);
-    //hiqsdr_set_bandwidth (CORE_BANDWIDTH);
+    int r;
+
+
+    r = rtlsdr_set_sample_rate (receiver[rx].cfg.rtl, receiver[rx].cfg.sr);
+    if (r < 0)
+        fprintf(stderr, "WARNING: Failed to set sample rate.\n");
+
+    int frequency = 145000000;
+
+    r = rtlsdr_set_center_freq (receiver[rx].cfg.rtl, frequency);
+    if (r < 0)
+        fprintf(stderr, "WARNING: Failed to set center freq.\n");
+    else
+        fprintf(stderr, "Tuned to %i Hz.\n", frequency);
+
+    r = rtlsdr_set_tuner_gain(receiver[rx].cfg.rtl, receiver[rx].cfg.gain);
+    if (r < 0)
+       fprintf(stderr, "WARNING: Failed to set tuner gain.\n");
+    else
+       fprintf(stderr, "%p: Tuner gain set to %i dB.\n", receiver[rx].cfg.rtl, receiver[rx].cfg.gain);
+
 
 
     if(receiver[rx].client!=(CLIENT *)NULL) {
@@ -118,8 +130,14 @@ const char* attach_receiver(int rx, CLIENT* client)
     client->receiver=rx;
 
     receiver[rx].frame_counter = -1 ;
+    receiver[rx].dc_average_i  = 0 ;
+    receiver[rx].dc_average_q  = 0 ; 
+    receiver[rx].dc_sum_i      = 0 ; 
+    receiver[rx].dc_sum_q      = 0 ; 
+    receiver[rx].dc_count      = 0 ; 
+    receiver[rx].dc_key_delay  = 0 ; 
 
-    ManageNCOSpurOffsets( &(receiver[rx]), NCOSPUR_CMD_STARTCAL, 0,0);
+
 
     //sprintf(response,"%s %d",OK,ozy_get_sample_rate());
     sprintf(response,"%s %d",OK,CORE_BANDWIDTH);
@@ -139,12 +157,15 @@ const char* detach_receiver (int rx, CLIENT* client) {
     if(receiver[rx].client!=client) {
         return RECEIVER_NOT_OWNER;
     }
-    printf("detach_receiver: ...");
+    fprintf(stderr, "detach_receiver: ...");
 
-    sdriq_stop_asynch_input ();
-    //close_samples ();
+    //rtlsdr_stop_asynch_input ();
+    int r = rtlsdr_cancel_async(receiver[rx].cfg.rtl);
+    if (r < 0)
+       fprintf(stderr, "WARNING: Failed to cancel async: %d.\n", r);
+    else
+       fprintf(stderr, " %p: Async cancelled\n", receiver[rx].cfg.rtl);
 
-    printf(" done.\n");
 
     client->state=RECEIVER_DETACHED;
     receiver[rx].client = (CLIENT*)NULL;
@@ -164,11 +185,10 @@ const char* set_frequency (CLIENT* client, long frequency) {
     receiver[client->receiver].frequency=frequency;
     receiver[client->receiver].frequency_changed=1;
 
-    //fprintf (stderr, "%s: %ld\n", __FUNCTION__, receiver[client->receiver].frequency);
+    fprintf (stderr, "%s: %ld\n", __FUNCTION__, receiver[client->receiver].frequency);
 
-    //hiqsdr_set_frequency (frequency);
-    freq_sdriq (frequency);
-
+//    rtlsdr_set_frequency (frequency);
+    rtlsdr_set_center_freq (receiver[client->receiver].cfg.rtl, frequency);
 
     return OK;
 }
@@ -190,7 +210,7 @@ const char* set_dither (CLIENT* client, bool dither)
     return OK;
 }
 
-const char* set_random (CLIENT* client, bool fRand)
+const char* set_random (CLIENT* client, bool)
 {
     return NOT_IMPLEMENTED_COMMAND;
     return OK;
@@ -198,18 +218,10 @@ const char* set_random (CLIENT* client, bool fRand)
 
 const char* set_attenuator (CLIENT* client, int new_level_in_db)
 {
-    switch (new_level_in_db) {
-    case 0:
-    case 10:
-    case 20:
-    case 30:
-    case 40:
-        fprintf (stderr, "%s: new attenuator level: %d\n", __FUNCTION__, -(new_level_in_db));
-        gain_sdriq (0, -(new_level_in_db));
-        break;
-    default:
-        return INVALID_COMMAND;
-    }
+    int r = rtlsdr_set_tuner_gain(receiver[client->receiver].cfg.rtl, new_level_in_db);
+    if (r < 0) fprintf(stderr, "WARNING: Failed to set tuner gain: %d.\n", r);
+         else
+               fprintf(stderr, "Tuner gain set to %.2f dB.\n", new_level_in_db/10.0);
     return OK;
 }
 
@@ -267,67 +279,3 @@ void send_IQ_buffer (RECEIVER *pRec) {
     }
 }
 
-
-
-/*
- * Called to read/set/start calibration of the NCO Spur Offset value.
- * Excerpted from CuteSDR Copyright (c) 2010 Moe Wheatley
- */
-void ManageNCOSpurOffsets( RECEIVER *pRec, eNCOSPURCMD cmd, double* pNCONullValueI,  double* pNCONullValueQ)
-{
-	pRec->m_NcoSpurCalActive = false;
-	switch(cmd)
-	{
-		case NCOSPUR_CMD_SET:
-			if( (NULL!=pNCONullValueI) && (NULL!=pNCONullValueQ) )
-			{
-				pRec->m_NCOSpurOffsetI = *pNCONullValueI;
-				pRec->m_NCOSpurOffsetQ = *pNCONullValueQ;
-//qDebug()<<"Cal Set"<< m_NCOSpurOffsetI << m_NCOSpurOffsetQ;
-			}
-			break;
-		case NCOSPUR_CMD_STARTCAL:
-			if((pRec->m_NCOSpurOffsetI>10.0) || (pRec->m_NCOSpurOffsetI<-10.0))
-				pRec->m_NCOSpurOffsetI = 0.0;
-			if((pRec->m_NCOSpurOffsetQ>10.0) || (pRec->m_NCOSpurOffsetQ<-10.0))
-				pRec->m_NCOSpurOffsetQ = 0.0;
-			pRec->m_NcoSpurCalCount = 0;
-			pRec->m_NcoSpurCalActive = true;
-//qDebug()<<"Start NCO Cal";
-			break;
-		case NCOSPUR_CMD_READ:
-			if( (NULL!=pNCONullValueI) && (NULL!=pNCONullValueQ) )
-			{
-				*pNCONullValueI = pRec->m_NCOSpurOffsetI;
-				*pNCONullValueQ = pRec->m_NCOSpurOffsetQ;
-//qDebug()<<"Cal Read"<< m_NCOSpurOffsetI << m_NCOSpurOffsetQ;
-			}
-			break;
-		default:
-			break;
-	}
-}
-
-/*
- * Called to calculate the NCO Spur Offset value from the incoming m_DataBuf.
- * Excerpted from CuteSDR (C) Copyright (c) 2010 Moe Wheatley
- */
-void NcoSpurCalibrate (RECEIVER *pRec /* double* pData, qint32 length */ )
-{
-        if( pRec->m_NcoSpurCalCount < SPUR_CAL_MAXSAMPLES) {
-            int j;
-
-            for( j=0 ; j < pRec->samples; j++) {	//calculate average of I and Q data to get individual DC offsets
-               float q = pRec->input_buffer[j]             ;
-               float i = pRec->input_buffer[j+BUFFER_SIZE] ;
-
-               pRec->m_NCOSpurOffsetQ = (1.0-1.0/100000.0)*pRec->m_NCOSpurOffsetQ + (1.0/100000.0)*q;
-               pRec->m_NCOSpurOffsetI = (1.0-1.0/100000.0)*pRec->m_NCOSpurOffsetI + (1.0/100000.0)*i;
-            }
-            pRec->m_NcoSpurCalCount += (pRec->samples/4);
-
-	} else {
-            pRec->m_NcoSpurCalActive = false;
-            fprintf (stderr, "NCO Cal Done");
-	}
-}

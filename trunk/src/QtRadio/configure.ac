@@ -1,6 +1,5 @@
 AC_INIT([QtRadio Build], [opengl-qt5], [andrew att montefusco dott com], [QtRadio])
 
-
 #AC_CONFIG_AUX_DIR([build-aux])
 #AC_CONFIG_MACRO_DIR([m4])
 
@@ -19,9 +18,6 @@ AC_PROG_CXX
 # If you need to create a library, USE libtool:
 AC_PROG_LIBTOOL
 
-# If you happen to have some C code:
-#AC_LANG([C])
-#AC_PROG_CC
 
 #
 # git repository parameters copied in GITSTR in order to display in "About" panel

@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.65])
 
-AC_INIT([ghpsdr3], [master], [andrew att montefusco dott com])
+AC_INIT([ghpsdr3], [iw0hdv], [andrew att montefusco dott com])
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -44,17 +44,6 @@ AM_PROG_CC_C_O
 # library (in DttSP) used but `RANLIB' is undefined:  the usual way to define `RANLIB' is to add `AC_PROG_RANLIB'
 AC_PROG_RANLIB
 
-#
-# Check for user options in order to selectively compile servers
-#
-AC_ARG_ENABLE([perseus],
-              [  --enable-perseus  enable Perseus SDR server generation],
-              [perseus=${enableval}], [perseus=no]
-)
-AC_ARG_ENABLE([usrp],
-              [  --enable-usrp  enable USRP server generation],
-              [usrp=${enableval}], [usrp=no]
-)
 
 #
 # Check for compilation options which affect debugging
@@ -316,35 +305,85 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([floor ftime getcwd gethostbyname gettimeofday inet_ntoa memset pow select socket sqrt strrchr strstr strtol])
 
+#
+# Optionally built sub packages
+#
 
+#
+# PERSEUS
+#
 
-if test "x${perseus}" = xyes; then
+AC_CHECK_LIB([perseus-sdr], [main],  [do_perseus=yes], [do_perseus=no])
+
+if test "x${do_perseus}" = xyes ; then
     AC_MSG_NOTICE([
 -----------------------------------
   Perseus SDR enabled.
 -----------------------------------])  
 
     AC_CONFIG_SUBDIRS([trunk/src/perseus])
+
+    MAKE_PERSEUS="trunk/src/perseus"
+    AC_SUBST([MAKE_PERSEUS])
 fi
-AM_CONDITIONAL([MAKE_PERSEUS], [test "x${perseus}" = xyes])
-AC_CONFIG_FILES([trunk/src/perseus/Makefile])
 
 
-if test "x${usrp}" = xyes; then
+#
+# RTLSDR (OSMOCOSMO)
+#
+# if rtlsdr lib is present, enable the build even if the user didn't request to do so
+#
+
+AC_CHECK_LIB([rtlsdr], [rtlsdr_open], [do_rtlsdr=yes], [do_rtlsdr=no])
+
+if test "x${do_rtlsdr}" = xyes ; then
+    AC_MSG_NOTICE([
+-----------------------------------
+   RTL SDR enabled.
+-----------------------------------])  
+
+    AC_CONFIG_SUBDIRS([trunk/src/rtlsdr])
+
+    MAKE_RTLSDR="trunk/src/rtlsdr"
+    AC_SUBST([MAKE_RTLSDR])
+
+fi
+
+#
+# USRP
+#
+
+have_uhd=no
+AC_LANG_PUSH(C++)
+AC_COMPILE_IFELSE(
+  [AC_LANG_PROGRAM([[#include <uhd/usrp/multi_usrp.hpp>]],[[uhd::device_addr_t hint;]])],
+  [AC_MSG_NOTICE([uhd found])
+   have_uhd=yes
+  ],
+  [AC_MSG_WARN([uhd lib not found])]
+)
+AC_LANG_POP([C++])
+
+if test "x${have_uhd}" = xyes; then
     AC_MSG_NOTICE([
 -----------------------------------
   USRP enabled.
 -----------------------------------])  
 
     AC_CONFIG_SUBDIRS([trunk/src/usrp])
-fi
-AM_CONDITIONAL([MAKE_USRP], [test "x${usrp}" = xyes])
-#
-# Uncomment the following line when the usrp directory gets populated
-#
-AC_CONFIG_FILES([trunk/src/usrp/Makefile])
 
+    MAKE_USRP="trunk/src/usrp"
+    AC_SUBST([MAKE_USRP])
+
+fi
+
+
+#
+# Subpackage QtRadio is unconditionally compiled
+#
 AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
+
+
 AC_CONFIG_FILES([Makefile
                  trunk/src/softrock/Makefile
                  trunk/src/DttSP/Makefile

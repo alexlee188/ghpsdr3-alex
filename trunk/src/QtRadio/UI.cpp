@@ -65,6 +65,7 @@ UI::UI(const QString server) {
 
     widget.setupUi(this);
     servers = 0;
+    pHwDlg = 0;
     meter=-121;
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
@@ -301,6 +302,7 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(spinBox_cwPitchChanged(int)),this,SLOT(cwPitchChanged(int)));
     connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
     connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
+    connect(&connection,SIGNAL(hardware(QString)),this,SLOT(hardware(QString)));
 
     bandscope=NULL;
 
@@ -453,6 +455,7 @@ void UI::closeEvent(QCloseEvent* event) {
        servers->close();   // synchronous call, triggers a closeServer signal (see above)
                            // no needs to delete the object pointed by "servers" 
     }
+    rmHwDlg();
 }
 
 void UI::actionConfigure() {
@@ -649,6 +652,10 @@ void UI::connected() {
     connection.sendCommand(command);
     // qDebug() << "Command: " << command;
 
+    // upon connection, (re)select the audio_device in case it was stopped because of errors
+    // somehow this call stops RTP audio from working
+    if (!useRTP) audio->select_audio(audio_device, audio_sample_rate, audio_channels, audio_byte_order);
+
     // start the audio
     audio_buffers=0;
     actionGain(gain);
@@ -710,6 +717,14 @@ void UI::connected() {
 
     //command.clear(); QTextStream(&command) << "SetDCBlock 1";
     //connection.sendCommand(command);
+
+    //
+    // hardware special command
+    // queries hardware name from remote server 
+    //
+    command.clear(); QTextStream(&command) << "*hardware?";
+    connection.sendCommand(command);
+
 
     // start the spectrum
     //qDebug() << "starting spectrum timer";
@@ -2054,7 +2069,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + " opengl-qt5 5 Sep 2012");
+                   + getversionstring() +  message + " opengl-qt5 9 Sep 2012");
     lastmessage = message;
 
 }
@@ -2389,6 +2404,7 @@ void UI::testButtonClick(bool state)
     qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
 }
 
+
  void UI::resetbandedges(double offset)
  {
      loffset= offset;
@@ -2396,6 +2412,37 @@ void UI::testButtonClick(bool state)
      widget.spectrumFrame->setBandLimits(limits.min() + loffset,limits.max()+loffset);
      qDebug()<<"loffset = "<<loffset;
  }
+
+//
+// activate remote hardware control panel
+// if invoked with name length == 0, close the hardware dialog deleting the object
+// and resetting the pointer to zero
+//
+
+void UI :: hardware (QString answer)
+{
+   HardwareFactory :: processAnswer (answer, &connection, this);
+}
+
+
+void UI :: setHwDlg(DlgHardware *p)
+{
+   if (pHwDlg) {
+      pHwDlg->close(); 
+      delete pHwDlg;
+   }
+   pHwDlg = p;
+}
+
+void UI :: rmHwDlg()
+{
+   if (pHwDlg) {
+      pHwDlg->close(); 
+      delete pHwDlg;
+      pHwDlg = 0;
+   }
+}
+
 
 void UI::on_zoomSpectrumSlider_sliderMoved(int position)
 {
