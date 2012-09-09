@@ -28,13 +28,26 @@ AM_PATH_PYTHON([2.5],, [:])
 #
 case $build_cpu in
 
+    i686)
+      AC_MSG_NOTICE([Platform: ix86 32 bit])
+    ;;
+
     x86_64)
-      AC_MSG_NOTICE([Platform: 64 bit])
+      AC_MSG_NOTICE([Platform: ix86 64 bit])
       LDFLAGS="$LDFLAGS -L/lib64 -L/usr/lib64"
       export LDFLAGS
       AC_MSG_NOTICE([${LDFLAGS}])
     ;;
 
+    armv6l)
+      AC_MSG_NOTICE([Platform: ARM 6])
+      CFLAGS="-O3 -pipe -march=armv6 -mfpu=vfp -mfloat-abi=hard"
+      CXXFLAGS="-O3 -pipe -march=armv6 -mfpu=vfp -mfloat-abi=hard"
+      export CFLAGS
+      export CXXFLAGS
+      AC_MSG_NOTICE([${CFLAGS}])
+      AC_MSG_NOTICE([${CXXFLAGS}])
+    ;;
 
 esac
 
