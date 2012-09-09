@@ -12,9 +12,47 @@ AM_INIT_AUTOMAKE([foreign -Wall])
 ## -------------------- ##
 
 # Look for a C++ compiler.
-AC_LANG([C++])
+AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
 
+#
+# Checking for build cpu
+# and, if 64 bit, add some linking option
+#
+case $build_cpu in
+
+    i686)
+      AC_MSG_NOTICE([Platform: ix86 32 bit])
+      # checks for platform dependent compiler optimizations
+      AX_EXT
+      AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
+      AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+    ;;
+
+    x86_64)
+      AC_MSG_NOTICE([Platform: ix86 64 bit])
+      LDFLAGS="$LDFLAGS -L/lib64 -L/usr/lib64"
+      export LDFLAGS
+      AC_MSG_NOTICE([${LDFLAGS}])      
+      # checks for platform dependent compiler optimizations
+      AX_EXT
+      AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
+      AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+    ;;
+
+    armv6l)
+      AC_MSG_NOTICE([Platform: ARM 6])
+      CFLAGS="-O3 -pipe -march=armv6 -mfpu=vfp -mfloat-abi=hard"
+      CXXFLAGS="-O3 -pipe -march=armv6 -mfpu=vfp -mfloat-abi=hard"
+      export CFLAGS
+      export CXXFLAGS
+      AC_MSG_NOTICE([${CFLAGS}])
+      AC_MSG_NOTICE([${CXXFLAGS}])
+    ;;
+
+esac
 
 # Checks for libraries.
 

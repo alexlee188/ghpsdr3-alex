@@ -27,6 +27,7 @@ case $build_cpu in
       # checks for platform dependent compiler optimizations
       AX_EXT
       AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
+      AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
     ;;
 
     x86_64)
@@ -37,6 +38,7 @@ case $build_cpu in
       # checks for platform dependent compiler optimizations
       AX_EXT
       AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
+      AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
     ;;
 
     armv6l)
