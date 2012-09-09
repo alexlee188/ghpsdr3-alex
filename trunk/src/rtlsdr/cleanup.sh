@@ -18,3 +18,7 @@ rm -f -r Makefile
 rm -f -r Makefile.in
 rm -f -r missing
 rm -f -r stamp-h1
+rm -f -r build-aux/
+rm -f -r libtool
+rm -f -r ltmain.sh
+

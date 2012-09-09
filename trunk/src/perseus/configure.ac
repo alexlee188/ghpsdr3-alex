@@ -13,6 +13,8 @@ AC_CONFIG_MACRO_DIR([build-aux])
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
 
 #
 # Checking for build cpu

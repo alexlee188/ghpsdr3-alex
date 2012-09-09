@@ -12,3 +12,13 @@ rm -f -r install-sh
 rm -f -r missing
 rm -f -r stamp-h1
 rm -f -r usrp*tar.gz
+rm -f -r usrp_server
+rm -f -r libtool
+rm -f -r ltmain.sh
+
+rm -f   build-aux/libtool.m4
+rm -f   build-aux/ltoptions.m4
+rm -f   build-aux/ltsugar.m4
+rm -f   build-aux/ltversion.m4
+rm -f   build-aux/lt~obsolete.m4
+
