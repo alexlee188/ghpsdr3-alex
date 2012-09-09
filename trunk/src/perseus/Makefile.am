@@ -1,5 +1,7 @@
+ACLOCAL_AMFLAGS = -I build-aux
+
 bin_PROGRAMS				    = perseus_server
-perseus_server_CPPFLAGS	= -g -O3 -Wall
+perseus_server_CPPFLAGS	= -g -O3 -Wall @SIMD_FLAGS@
 
 perseus_server_SOURCES = \
                      	bandscope.cpp  \

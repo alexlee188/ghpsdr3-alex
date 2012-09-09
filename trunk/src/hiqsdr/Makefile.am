@@ -4,7 +4,7 @@ hiqsdr_test_CPPFLAGS = -g -D__TEST_MODULE__
 hiqsdr_test_LDADD    = -lrt
 hiqsdr_test_SOURCES  = hiqsdr.cpp hiqsdr.h
 
-hiqsdr_server_CPPFLAGS	= -g -O3 -Wall
+hiqsdr_server_CPPFLAGS	= -g -O3 -Wall @SIMD_FLAGS@
 
 
 hiqsdr_server_SOURCES =			\
