@@ -84,11 +84,15 @@ public class SpectrumView extends View implements OnTouchListener {
 			float hzPerPixel=(float)connection.getSampleRate()/(float)WIDTH;
 			long f=connection.getFrequency()-(connection.getSampleRate()/2);
 			String fs;
+			long lineStep = 10000;
+			if (connection.getSampleRate() > 1000000) lineStep = 100000;
+			else if (connection.getSampleRate() > 400000) lineStep = 50000;
+			else if (connection.getSampleRate() > 200000) lineStep = 20000;
 			for(int i=0;i<WIDTH;i++) {
 				f=connection.getFrequency()-(connection.getSampleRate()/2)+(long)(hzPerPixel*i)
 						- connection.getLO_offset();
 				if(f>0) {
-					if((f%10000)<(long)(hzPerPixel* 1.5f)) {
+					if((f%lineStep)<(long)(hzPerPixel* 1.5f)) {
 						paint.setColor(Color.YELLOW);
 						DashPathEffect dashPath = new DashPathEffect(new float[]{1,4}, 1);
 						paint.setPathEffect(dashPath);
