@@ -476,7 +476,6 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
     int i,j;
     int version,subversion;
     int header_sampleRate;
-    int offset;
 
     version=header[1];
     subversion=header[2];
@@ -499,20 +498,9 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
     }
     samples = (float*) malloc(width * sizeof (float));
 
-    // do not rotate spectrum display if LO is 0
-    if(LO_offset==0) {
-        for(i=0;i<width;i++) {
-            samples[i] = -(buffer[i] & 0xFF);
-        }
-    } else {
-        float step=(float)sampleRate/(float)width;
-        float offset=((float)LO_offset/step);
-        for(i=0;i<width;i++) {
-            j=i-offset;
-            if(j<0) j+=width;
-            if(j>=width) j%=width;
-            samples[i] = -(buffer[j] & 0xFF);
-        }
+    // do not rotate spectrum display.  LO_offset rotation done in dspserver
+    for(i=0;i<width;i++) {
+        samples[i] = -(buffer[i] & 0xFF);
     }
 
     //qDebug() << "updateSpectrum: create plot points";

@@ -1452,10 +1452,8 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     client_samples[12]=sampleRate&0xFF;
 
     // added for header version 2.1
-    //client_samples[13]=((int)LO_offset>>8)&0xFF; // IF
-    //client_samples[14]=(int)LO_offset&0xFF;
-    client_samples[13]=((int)0>>8)&0xFF; // IF set to zero for spectrum data
-    client_samples[14]=(int)0&0xFF;
+    client_samples[13]=((int)LO_offset>>8)&0xFF; // IF
+    client_samples[14]=(int)LO_offset&0xFF;
 
     offset = (float)LO_offset * (float)SAMPLE_BUFFER_SIZE / (float) sampleRate;
     if (LO_offset != 0){
