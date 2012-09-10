@@ -883,6 +883,13 @@ void readcb(struct bufferevent *bev, void *ctx){
         }
         message[bytesRead-1]=0;			// for Linux strings terminating in NULL
 
+        if (message[0] == '*') {
+           fprintf(stderr,"HARDWARE DIRECTED: message: '%s'\n",message);
+           ozySendStarCommand (message);
+           answer_question(message,"slave", bev);
+           continue;
+        } 
+
         cmd=strtok_r(message," ",&saveptr);
         if (cmd == NULL) continue;
 
@@ -1584,12 +1591,15 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 		 sprintf(p,"%f;",LO_offset);
 		 strcat(answer,p);
 		 //fprintf(stderr,"q-loffset: %s\n",answer);
-	}else if (strcmp(message,"q-protocol3") == 0){
+}else if (strcmp(message,"q-protocol3") == 0){
 		 strcat(answer,"q-protocol3:Y");
+        }else if (strstr(message, "OK")) {
+             strcat (answer, message);
 	}else{
 		fprintf(stderr,"Unknown question: %s\n",message);
 		return;
 	}
+
 	answer[0] = '4';  //ANSWER_BUFFER
 	length = strlen(answer) - 3; // 
 	if (length > 99){

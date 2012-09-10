@@ -71,7 +71,7 @@
 #include "ctl.h"
 #include "G711A.h"
 #include "RTP.h"
-
+#include "hardware.h"
 
 #define DSPSERVER_BASE_PORT 8000
 
@@ -102,6 +102,9 @@ public:
     void rigctlSetVFOB();
     void rigctlSetFreq(long long f);
     void rigctlSetMode(int newmode);
+    void setHwDlg(DlgHardware *);
+    DlgHardware * getHwDlg() { return pHwDlg; }
+    void rmHwDlg();
 
 signals:
     void initialize_audio(int length);
@@ -271,6 +274,8 @@ public slots:
     void testButtonClick(bool state);
     void resetbandedges(double offset);
 
+    void hardware (QString);
+
 signals:
     void subRxStateChanged(bool state);
     void set_src_ratio(double ratio);
@@ -357,6 +362,8 @@ private:
     Configure configure;
     Servers *servers;
     int sampleRate;
+
+    DlgHardware *pHwDlg;
 
     Bandscope* bandscope;
 

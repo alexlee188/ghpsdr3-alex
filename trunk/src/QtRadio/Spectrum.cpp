@@ -291,10 +291,9 @@ void Spectrum::paintEvent(QPaintEvent*) {
         return;
     }
 
-    // draw filter
-    //filterLeft = ((filterLow - (-sampleRate / 2)) * width() / sampleRate)+offset;
-    //filterRight = ((filterHigh - (-sampleRate / 2)) * width() / sampleRate)+offset;
     float zoom_factor = 1.0f + zoom/25.0f;
+
+    // draw filter
     filterLeft = offset + width()/2 + (float)filterLow* (float)width()*zoom_factor/(float)sampleRate;
     filterRight = offset + width()/2 + (float)filterHigh*(float)width()*zoom_factor/(float)sampleRate;
     painter.setBrush(Qt::SolidPattern);
@@ -302,6 +301,7 @@ void Spectrum::paintEvent(QPaintEvent*) {
     painter.fillRect(filterLeft,0,filterRight-filterLeft,height(),Qt::gray);
 
     // draw sub rx filter and cursor
+    // TODO: not working under zoom yet
     if(subRx) {
         int cursor=((subRxFrequency-(frequency-(sampleRate/2))) * width() / sampleRate)+offset;
         filterLeft = ((filterLow - (-sampleRate / 2) + (subRxFrequency-frequency)) * width() / sampleRate)+offset;
@@ -332,13 +332,16 @@ void Spectrum::paintEvent(QPaintEvent*) {
     }
     
     // plot the vertical frequency lines
-    float hzPerPixel=(float)sampleRate/(float)width();
-    long long f=(frequency-(sampleRate/2))-LO_offset;
+    float hzPerPixel=(float)sampleRate/(float)width()/zoom_factor;
+    long long lineStep = 10000;
+    if (sampleRate > 1000000) lineStep = 100000;
+    else if (sampleRate > 500000) lineStep = 50000;
+    else if (sampleRate > 200000) lineStep = 20000;
 
     for(int i=0;i<width();i++) {
-        f=frequency-(sampleRate/2)-LO_offset+(long long)(hzPerPixel*(float)i);
+        long long f=frequency-((float)sampleRate/zoom_factor/2.0)-(float)LO_offset/zoom_factor+(long long)(hzPerPixel*(float)i);
         if(f>0) {
-            if((f%10000)<(long long)hzPerPixel) {
+            if((f % lineStep)<(long long)hzPerPixel) {
                 painter.setOpacity(0.5);
                 painter.setPen(QPen(Qt::white, 1,Qt::DotLine));
                 painter.drawLine(i, 0, i, height());
@@ -353,8 +356,8 @@ void Spectrum::paintEvent(QPaintEvent*) {
     }
 
     // draw the band limits
-    long long min_display=frequency-(sampleRate/2);
-    long long max_display=frequency+(sampleRate/2);
+    long long min_display=frequency-((float)sampleRate/zoom_factor/2.0);
+    long long max_display=frequency+((float)sampleRate/zoom_factor/2.0);
     if(band_min!=0LL && band_max!=0LL) {
         int i;
         painter.setPen(QPen(Qt::red, 2));

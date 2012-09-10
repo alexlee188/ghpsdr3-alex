@@ -137,10 +137,11 @@ int main(int argc, char* argv[])
     } else {
         fprintf ( stderr, "%s\n", buf );
 
-        puts( "Press q <ENTER> to exit." );
         init_receivers (&cfg);
         create_listener_thread();
+        fprintf (stderr, "Serial: %s\n", get_serial());
 
+        puts( "Press q <ENTER> to exit." );
         char ch;
         while((ch = getc(stdin)) != EOF) {
             if (ch == 'q') break;

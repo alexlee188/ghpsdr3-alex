@@ -24,54 +24,24 @@
 *
 */
 
+#define MAX_RECEIVERS 1
 
 #define BUFFER_SIZE 1024
 
-#include <sys/queue.h>
-#include "sdriq.h"
+struct RtlSdrConfig {
 
-struct tailq_entry {
-        SAMPLE_T iq_buf[BUFFER_SIZE*2];
+    rtlsdr_dev_t *rtl;
 
-        /*
-         * This holds the pointers to the next and previous entries in
-         * the tail queue.
-         */
-        TAILQ_ENTRY(tailq_entry) entries;
-};
-
-
-#define MAX_RECEIVERS 8
-
-
-typedef 
-struct _SdrIqConfig {
-    char  start [16];
-    char  usb[256];
     int   sr;
-    char  stop [16];
-    
+    int gain;
+
     struct timespec  time_start;
     struct timespec  time_end;
     struct timespec  time_diff;
-
     unsigned long ns;
-} SDR_IQ_CONFIG;
-
-
-typedef int bool;
-#define true  (1)
-#define false (~true)
-
-
-//NCO spur management commands for ManageNCOSpurOffsets(...)
-typedef enum {
-	NCOSPUR_CMD_SET,
-	NCOSPUR_CMD_STARTCAL,
-	NCOSPUR_CMD_READ
-}  eNCOSPURCMD ;
-
-#define SPUR_CAL_MAXSAMPLES 300000
+    char  start [16];
+    char  stop [16];
+};
 
 
 
@@ -79,7 +49,6 @@ typedef struct _receiver {
     int id;
     int audio_socket;
     pthread_t audio_thread_id;
-    pthread_t iq_thread_id;
     CLIENT* client;
     int frequency_changed;
     long frequency;
@@ -89,17 +58,16 @@ typedef struct _receiver {
     //
     // specific to Hiqsdr 
     //
-    SDR_IQ_CONFIG cfg;
-    int           frame_counter;
-
-    // 
-    // DC offset auto calibration
-    // 
-
-	bool   m_NcoSpurCalActive;	//NCO spur reduction variables
-	long   m_NcoSpurCalCount;
-	double m_NCOSpurOffsetI;
-	double m_NCOSpurOffsetQ;
+    RtlSdrConfig cfg;
+    int          frame_counter;
+    // Average DC component in samples  
+    //
+    float dc_average_i;
+    float dc_average_q;
+    float dc_sum_i;
+    float dc_sum_q;
+    int   dc_count;
+    int   dc_key_delay;
 
 
 } RECEIVER;
@@ -113,9 +81,7 @@ typedef struct _buffer {
     unsigned char data[500];
 } BUFFER;
 
-
-
-void init_receivers(SDR_IQ_CONFIG *);
+void init_receivers(RtlSdrConfig *);
 const char* attach_receiver(int rx,CLIENT* client);
 const char* detach_receiver(int rx,CLIENT* client);
 const char* set_frequency(CLIENT* client,long f);
@@ -124,7 +90,4 @@ const char* set_dither(CLIENT* client, bool);
 const char* set_random(CLIENT* client, bool);
 const char* set_attenuator(CLIENT* client, int);
 void send_IQ_buffer (RECEIVER *pRec);
-void ManageNCOSpurOffsets( RECEIVER *pRec, eNCOSPURCMD cmd, double* pNCONullValueI,  double* pNCONullValueQ);
-void NcoSpurCalibrate (RECEIVER *pRec);
-
 

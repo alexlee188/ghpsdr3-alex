@@ -115,6 +115,8 @@ void Connection::disconnect() {
         // tcpSocket=NULL;
 
     }
+    // close the hardware panel, if any
+    emit hardware (QString(""));
 }
 
 void Connection::socketError(QAbstractSocket::SocketError socketError) {
@@ -459,11 +461,15 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                         emit setProtocol3(true);
                         emit setFPS();
                     }
+                } else if (answer[0] == '*') {
+                    qDebug() << "--------------->" << answer;
+                    
+                    emit hardware (QString(answer));
                 }
 
                 //answer.prepend("  Question/Answer ");
                 //emit printStatusBar(answer);
-                //qDebug() << "ANSWER bytes "<< bytes <<" answer "<< ans;
+                qDebug() << "ANSWER bytes "<< bytes <<" answer "<< ans;
                 free(ans);
                 bytes=0;
                 state=READ_HEADER_TYPE;

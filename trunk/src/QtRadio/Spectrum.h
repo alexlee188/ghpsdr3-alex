@@ -117,7 +117,7 @@ private:
     int lastX;
     int moved;
 
-    int sampleRate;
+    long sampleRate;
     short meter;
     int maxMeter;
     int meterCount;

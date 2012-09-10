@@ -1,0 +1,71 @@
+0. RTLSDR SERVER
+================
+
+This file documents an attempt to write a I/Q server for RTLSDR.
+For more information on the hardware, please refer to the web site:
+
+    http://sdr.osmocom.org/trac/wiki/rtl-sdr
+
+A server program, in the ghpsdr3 suite, is the program 
+that forms the interface to the hardware.  One instance of this program 
+must be running to allow the DSP process to communicate with the rtl-sdr hardware.
+
+Currently the rtlsdr-server program is a command line program and it has few options, as follows:
+                                       
+      -s [ --samplerate ] arg (=250000) samplerate in Samples/second
+                                       (250000 | 500000 | 1000000)    
+      -g [ --gain ] arg gain in dB
+      -h [ --help ]                    print usage message         
+      -d [ --debug ] arg (=0)          debug level                 
+
+
+
+0.1 Credits and Acknowledgements
+--------------------------------
+
+The code base was derived (by Alex Lee 9V1AL et al.) from John Melton G0ORX/N6LYT code for HPSDR Ozymandias card.
+
+The code specific for rtlsdr has been written by Andrea Montefusco, IW0HDV (andrew att montefusco dott com),
+thanks to the invaluable support by DL6KBG Oliver Goldenstein, that provided his dongles, Linux PC and Internet connection for the development.
+
+Many thanks too to osmocosmo guys that wrote the precious llibrtlsdr library (sources found at http://cgit.osmocom.org/cgit/rtl-sdr/) that takes care of all gory details in order to manage the device.
+
+
+0.2 Caveats
+-----------
+
+The code here described as to be regarded as highly experimental. Please reports bugs and suggestions on sdr-widget mailing list.
+
+
+
+1. PREREQUISITE
+===============
+
+To build the server, you have to donwload and build the rtl-sdr library.
+
+cd
+git clone git://git.osmocom.org/rtl-sdr.git
+cd rtl-sdr/
+autoreconf -i
+./configure
+make
+sudo ldconfig
+sudo make install
+
+
+
+2. RUN
+======
+
+We have to run three components: server, dsp processing and graphical user interface.
+At the moment you need to run them in three separate terminal windows, strictly in the order shown below:
+
+xterm -e 'rtlsdr-server -d3 -s96000' &
+xterm -e 'dspserver --lo 0' &
+QtRadio &
+
+When the GUI shows up, connect it to the DSP server (Menu Receiver, submenu Connect) and select the
+127.0.0.1 (localhost) server address. That if you are running the trhee pieces altogether in the same machine.
+Elsewhere  use the IP address of the machine where the dspserver is running.
+
+

@@ -102,6 +102,7 @@ signals:
     void resetbandedges(double loffset);
     void setFPS();
     void setProtocol3(bool);
+    void hardware (QString);
 
 private:
     // really not used (and not even implemented)
