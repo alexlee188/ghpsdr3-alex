@@ -272,30 +272,16 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     samples = (float*) malloc(width() * sizeof (float));
 #endif
 
-    // do not rotate spectrum display if LO is 0
-    if(LO_offset==0) {
 #ifdef WATERFALL_2D
+    // do not rotate spectrum display.  It is done by dspserver now
         #pragma omp parallel for schedule(static)
         for(i=0;i<width();i++) {
             samples[i] = -(buffer[i] & 0xFF);
         }
 #endif
-        waterfallcl->setLO_offset(0.0);
-    } else {
-#ifdef WATERFALL_2D
-        float step=(float)sampleRate/(float)width();
-        offset=(int)((float)LO_offset/step);
-        #pragma omp parallel for schedule(static) private(i,j)
-        for(i=0;i<width();i++) {
-            j=i-offset;
-            if(j<0) j+=width();
-            if(j>=width()) j%=width();
-            samples[i] = -(buffer[j] & 0xFF);
-        }
-#endif
-       GLfloat offset=(float)LO_offset/(float)sampleRate*length/MAX_CL_WIDTH;
-       waterfallcl->setLO_offset(offset);
-    }
+
+    waterfallcl->setLO_offset(0.0);
+
     size = length;
 
     int sum = 0;

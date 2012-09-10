@@ -84,7 +84,7 @@ public class Connection extends Thread {
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
 		    
-		    sendCommand("setClient glSDR(7)");
+		    sendCommand("setClient glSDR(8)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
@@ -284,22 +284,13 @@ public class Connection extends Thread {
 
         //Log.i("processSpectrumBuffer","sampeRate="+sampleRate+" meter="+meter+" buffer="+buffer.length);
 
-        // rotate spectrum display if LO is not 0
-        if(LO_offset==0) {
+        float step = (float)sampleRate/(float)SPECTRUM_BUFFER_SIZE;
+        offset = (int)((float)LO_offset/step);
+        
+        // rotate spectrum display is done in dspserver now.  Do not rotate.
         	for (int i = 0; i < SPECTRUM_BUFFER_SIZE; i++) {
 			    samples[i] = buffer[i];
-		    }
-        } else {
-            float step=(float)sampleRate/(float)SPECTRUM_BUFFER_SIZE;
-            offset=(int)((float)LO_offset/step);
-            int j;
-            for(int i=0;i<SPECTRUM_BUFFER_SIZE;i++) {
-                j=i-offset;
-                if(j<0) j+=SPECTRUM_BUFFER_SIZE;
-                if(j>=SPECTRUM_BUFFER_SIZE) j%=SPECTRUM_BUFFER_SIZE;
-                samples[i] = buffer[j];
-            }
-        }
+        	}
 
 		if (spectrumView != null) {
 			spectrumView.plotSpectrum(samples, filterLow, filterHigh,
