@@ -25,9 +25,10 @@ case $build_cpu in
     i686)
       AC_MSG_NOTICE([Platform: ix86 32 bit])
       # checks for platform dependent compiler optimizations
-      AX_EXT
       AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
       AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+      SIMD_FLAGS="$SIMD_FLAGS  -march=native "
+      AC_SUBST(SIMD_FLAGS)
     ;;
 
     x86_64)
@@ -36,9 +37,10 @@ case $build_cpu in
       export LDFLAGS
       AC_MSG_NOTICE([${LDFLAGS}])      
       # checks for platform dependent compiler optimizations
-      AX_EXT
       AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
       AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+      SIMD_FLAGS="$SIMD_FLAGS  -march=native "
+      AC_SUBST(SIMD_FLAGS)
     ;;
 
     armv6l)
@@ -87,6 +89,11 @@ AC_CONFIG_FILES([Makefile])
 
 AC_OUTPUT
 
+#
+# check the compiler option really working
+#
+corw=`gcc -Q --help=target -march=native`
+
 echo \
 "-----------------------------------------------------
 
@@ -100,6 +107,10 @@ Now type 'make @<:@<target>@:>@'
 
     all           - build all binaries
     install       - install everything
+
+Compiler options in use:
+
+${corw}
 
 -----------------------------------------------------"
 

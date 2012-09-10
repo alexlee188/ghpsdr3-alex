@@ -35,10 +35,11 @@ case $build_cpu in
 
     i686)
       AC_MSG_NOTICE([Platform: ix86 32 bit])
-      # checks for platform dependent compiler optimizations
-      AX_EXT
-      AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])      
+      # checks for platform dependent flags and compiler optimizations
+      AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
       AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+      SIMD_FLAGS="$SIMD_FLAGS  -march=native "
+      AC_SUBST(SIMD_FLAGS)    
     ;;
 
     x86_64)
@@ -46,8 +47,11 @@ case $build_cpu in
       LDFLAGS="$LDFLAGS -L/lib64 -L/usr/lib64"
       export LDFLAGS
       AC_MSG_NOTICE([${LDFLAGS}])      
+      # checks for platform dependent flags and compiler optimizations
       AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
       AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+      SIMD_FLAGS="$SIMD_FLAGS  -march=native "
+      AC_SUBST(SIMD_FLAGS)    
     ;;
 
     armv6l)
@@ -421,6 +425,11 @@ AC_CONFIG_FILES([Makefile
 
 AC_OUTPUT
 
+#
+# check the compiler option really working
+#
+corw=`gcc -Q --help=target -march=native`
+
 echo \
 "-----------------------------------------------------
 
@@ -451,5 +460,9 @@ target:        ${target}
 target cpu:    ${target_cpu}
 target vendor: ${target_vendor}
 target os:     ${target_os} 
+
+Compiler options in use:
+
+${corw}
 
 -----------------------------------------------------"
