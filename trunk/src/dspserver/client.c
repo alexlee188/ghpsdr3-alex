@@ -1446,6 +1446,8 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     float max;
     int lindex,rindex;
     float extras;
+    int offset;
+    float rotated_samples[SAMPLE_BUFFER_SIZE];
 
 // g0orx binary header
 
@@ -1467,6 +1469,22 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     client_samples[13]=((int)LO_offset>>8)&0xFF; // IF
     client_samples[14]=(int)LO_offset&0xFF;
 
+    offset = (float)LO_offset * (float)SAMPLE_BUFFER_SIZE / (float) sampleRate;
+    if (LO_offset != 0){
+        #pragma omp parallel for schedule(static) private(i,j)
+        for (i = 0; i < SAMPLE_BUFFER_SIZE; i++){
+                j = i - offset;
+                if (j < 0) j += SAMPLE_BUFFER_SIZE;
+                if (j > SAMPLE_BUFFER_SIZE) j -= SAMPLE_BUFFER_SIZE;
+                rotated_samples[i] = samples[j];
+        }
+    } else {
+        #pragma omp parallel for schedule(static) private(i)
+        for (i = 0; i < SAMPLE_BUFFER_SIZE; i++){
+                rotated_samples[i] = samples[i];
+        }
+    };
+ 
     float zoom_factor = 1.0f + (float)zoom/25.0f;
     slope=(float)SAMPLE_BUFFER_SIZE/(float)size / zoom_factor;
     if(mox) {
@@ -1484,7 +1502,7 @@ void client_set_samples(char* client_samples, float* samples,int size) {
         rindex=(int)floor(lindex+slope);
         if(rindex>SAMPLE_BUFFER_SIZE) rindex=SAMPLE_BUFFER_SIZE;
         for(j=lindex;j<=rindex;j++) {
-            if(samples[j]>max) max=samples[j];
+            if(rotated_samples[j]>max) max=rotated_samples[j];
         }
         client_samples[i+BUFFER_HEADER_SIZE]=(unsigned char)-(max+extras);
     }
