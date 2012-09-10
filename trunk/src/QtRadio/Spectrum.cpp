@@ -294,8 +294,8 @@ void Spectrum::paintEvent(QPaintEvent*) {
     float zoom_factor = 1.0f + zoom/25.0f;
 
     // draw filter
-    filterLeft = offset + width()/2 + (float)filterLow* (float)width()*zoom_factor/(float)sampleRate;
-    filterRight = offset + width()/2 + (float)filterHigh*(float)width()*zoom_factor/(float)sampleRate;
+    filterLeft = width()/2 + (float)(filterLow+LO_offset)* (float)width()*zoom_factor/(float)sampleRate;
+    filterRight = width()/2 + (float)(filterHigh+LO_offset)*(float)width()*zoom_factor/(float)sampleRate;
     painter.setBrush(Qt::SolidPattern);
     painter.setOpacity(0.5);
     painter.fillRect(filterLeft,0,filterRight-filterLeft,height(),Qt::gray);
@@ -339,7 +339,7 @@ void Spectrum::paintEvent(QPaintEvent*) {
     else if (sampleRate > 200000) lineStep = 20000;
 
     for(int i=0;i<width();i++) {
-        long long f=frequency-((float)sampleRate/zoom_factor/2.0)-(float)LO_offset/zoom_factor+(long long)(hzPerPixel*(float)i);
+        long long f=frequency-((float)sampleRate/zoom_factor/2.0)-(float)LO_offset+(long long)(hzPerPixel*(float)i);
         if(f>0) {
             if((f % lineStep)<(long long)hzPerPixel) {
                 painter.setOpacity(0.5);
@@ -373,7 +373,7 @@ void Spectrum::paintEvent(QPaintEvent*) {
 
     // draw cursor
     painter.setPen(QPen(Qt::red, 1));
-    painter.drawLine((width()/2)+offset,0,(width()/2)+offset,height());
+    painter.drawLine((width()/2)+offset*zoom_factor,0,(width()/2)+offset*zoom_factor,height());
 
     // draw the squelch
     if(settingSquelch || showSquelchControl) {
@@ -476,7 +476,6 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
     int i,j;
     int version,subversion;
     int header_sampleRate;
-    int offset;
 
     version=header[1];
     subversion=header[2];
@@ -499,20 +498,9 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
     }
     samples = (float*) malloc(width * sizeof (float));
 
-    // do not rotate spectrum display if LO is 0
-    if(LO_offset==0) {
-        for(i=0;i<width;i++) {
-            samples[i] = -(buffer[i] & 0xFF);
-        }
-    } else {
-        float step=(float)sampleRate/(float)width;
-        float offset=((float)LO_offset/step);
-        for(i=0;i<width;i++) {
-            j=i-offset;
-            if(j<0) j+=width;
-            if(j>=width) j%=width;
-            samples[i] = -(buffer[j] & 0xFF);
-        }
+    // do not rotate spectrum display.  LO_offset rotation done in dspserver
+    for(i=0;i<width;i++) {
+        samples[i] = -(buffer[i] & 0xFF);
     }
 
     //qDebug() << "updateSpectrum: create plot points";
