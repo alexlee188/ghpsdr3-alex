@@ -11,6 +11,7 @@ import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.opengl.GLSurfaceView;
@@ -30,6 +31,7 @@ public class SpectrumView extends View implements OnTouchListener {
 		average= -100;
 		cy = MAX_CL_HEIGHT - 1;
 		this.setOnTouchListener(this);
+		detector = new ScaleGestureDetector(context, new ScaleListener());
 	}
 
 	public void setConnection(Connection connection) {
@@ -59,11 +61,15 @@ public class SpectrumView extends View implements OnTouchListener {
 	
 	protected void onDraw(Canvas canvas) {
 		if (connection.isConnected()) {
+			float zoom_factor = 1f + (scaleFactor - 1f)/25f;
 
 			// draw the filter
 			paint.setColor(Color.GRAY);
 			paint.setTextSize(10.0F);
-			canvas.drawRect(filterLeft+offset, 0, filterRight+offset, HEIGHT, paint);
+			filterLeft = WIDTH/2 + (int)((float)(filterLow)*(float)WIDTH*zoom_factor/(float)connection.getSampleRate());
+			filterRight = WIDTH/2 + (int)((float)(filterHigh)*(float)WIDTH*zoom_factor/(float)connection.getSampleRate());
+			canvas.drawRect(filterLeft+(float)offset*zoom_factor, 0,
+					filterRight+(float)offset*zoom_factor, HEIGHT, paint);
 
 			// plot the spectrum levels
 			paint.setColor(Color.GRAY);
@@ -81,15 +87,17 @@ public class SpectrumView extends View implements OnTouchListener {
 			}
 
 			// plot the vertical frequency markers
-			float hzPerPixel=(float)connection.getSampleRate()/(float)WIDTH;
-			long f=connection.getFrequency()-(connection.getSampleRate()/2);
+			float hzPerPixel=(float)connection.getSampleRate()/(float)WIDTH/zoom_factor;
+			//long f=connection.getFrequency()-(connection.getSampleRate()/2);
 			String fs;
 			long lineStep = 10000;
 			if (connection.getSampleRate() > 1000000) lineStep = 100000;
 			else if (connection.getSampleRate() > 400000) lineStep = 50000;
 			else if (connection.getSampleRate() > 200000) lineStep = 20000;
 			for(int i=0;i<WIDTH;i++) {
-				f=connection.getFrequency()-(connection.getSampleRate()/2)+(long)(hzPerPixel*i)
+				long f=connection.getFrequency()
+						-(long)((float)connection.getSampleRate()/zoom_factor/2f)
+						+(long)(hzPerPixel*i)
 						- connection.getLO_offset();
 				if(f>0) {
 					if((f%lineStep)<(long)(hzPerPixel* 1.5f)) {
@@ -108,7 +116,8 @@ public class SpectrumView extends View implements OnTouchListener {
 
 			// plot the cursor
 			paint.setColor(Color.RED);
-			canvas.drawLine((WIDTH/2)+offset, 0, (WIDTH/2)+offset, HEIGHT, paint);
+			canvas.drawLine((WIDTH/2)+(int)((float)offset*zoom_factor), 0,
+					(WIDTH/2)+(int)((float)offset*zoom_factor), HEIGHT, paint);
 
 			// display the frequency and mode
 			paint.setColor(Color.GREEN);
@@ -232,8 +241,6 @@ public class SpectrumView extends View implements OnTouchListener {
 
 		this.filterLow = filterLow;
 		this.filterHigh = filterHigh;
-		filterLeft = (filterLow - (-sampleRate / 2)) * WIDTH / sampleRate;
-		filterRight = (filterHigh - (-sampleRate / 2)) * WIDTH / sampleRate;
 
 		average = (int) ((float)average * 0.98f + (float)sum / WIDTH * 0.02f);
 		waterfallLow= average -15;
@@ -284,6 +291,7 @@ public class SpectrumView extends View implements OnTouchListener {
 	}
 
 	public boolean onTouch(View view, MotionEvent event) {
+		detector.onTouchEvent(event);
 		if (!vfoLocked) {
 			switch (event.getAction()) {
 			case MotionEvent.ACTION_CANCEL:
@@ -358,17 +366,20 @@ public class SpectrumView extends View implements OnTouchListener {
 				// Log.i("onTouch","ACTION_UP");
 				if (connection.isConnected()) {
 					if(!jog) {
-					    int scrollAmount = (int) ((event.getX() - (WIDTH / 2)) * (connection
-							.getSampleRate() / WIDTH));
+						float zoom_factor = 1f + (scaleFactor - 1f)/25f;
+					    int scrollAmount = (int) ((event.getX() - (WIDTH / 2)) * (int)((float)connection
+							.getSampleRate() / (float)WIDTH / zoom_factor));
 
 					    if (!moved & !scroll) {
 						    // move this frequency to center of filter
 						    if (filterHigh < 0) {
 							    connection.setFrequency(connection.getFrequency()
-											+ (scrollAmount + ((filterHigh - filterLow) / 2)));
+											+ (scrollAmount 
+											+ (int)((float)(filterHigh - filterLow)/zoom_factor/ 2f)));
 						    } else {
 							    connection.setFrequency(connection.getFrequency()
-											+ (scrollAmount - ((filterHigh - filterLow) / 2)));
+											+ (scrollAmount 
+											- (int)((float)(filterHigh - filterLow)/zoom_factor / 2f)));
 						    }
 					    }
 					} else {
@@ -395,6 +406,16 @@ public class SpectrumView extends View implements OnTouchListener {
 	    	timer.schedule(new JogTask(), 250);
 	    }
 	}
+	
+	private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+		@Override
+		public boolean onScale(ScaleGestureDetector detector) {
+		scaleFactor *= detector.getScaleFactor();
+		scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
+		connection.setScaleFactor(scaleFactor);
+		return true;
+		}
+		}
 	
 	private Paint paint;
 
@@ -436,5 +457,10 @@ public class SpectrumView extends View implements OnTouchListener {
 	
 	private Timer timer;
 	private long jogAmount;
+	
+	private float scaleFactor = 1f;
+	private ScaleGestureDetector detector;
+	private static float MIN_ZOOM = 1f;
+	private static float MAX_ZOOM = 100f;
 
 }

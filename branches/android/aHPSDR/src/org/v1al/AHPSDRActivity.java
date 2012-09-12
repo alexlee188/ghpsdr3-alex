@@ -194,6 +194,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		    connection.setTxPass(txPass);
 			connection.setFps(fps);
 			connection.getSpectrum_protocol3(fps+1);
+			connection.setScaleFactor(1f);
 		}
 		spectrumView.setAverage(-100);
 	}
@@ -282,6 +283,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					connection.setAGC(agc);
 				    connection.setAllowTx(tx_state[0]);
 				    connection.setIQCorrection(dsp_state[3]);
+				    connection.setScaleFactor(1f);
 					//update=new Update(connection);					
 					spectrumView.setConnection(connection);
 					spectrumView.setAverage(-100);
@@ -368,6 +370,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
     							connection.setAGC(agc);		
     						    connection.setAllowTx(tx_state[0]);
     						    connection.setIQCorrection(dsp_state[3]);
+    						    connection.setScaleFactor(1f);
     							spectrumView.setConnection(connection);
     							spectrumView.setAverage(-100);
     							setTitle("glSDR: "+server+" (rx"+receiver+")");
@@ -408,6 +411,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 							connection.setAGC(agc);
 						    connection.setAllowTx(tx_state[0]);
 						    connection.setIQCorrection(dsp_state[3]);
+						    connection.setScaleFactor(1f);
    							spectrumView.setConnection(connection);
 							spectrumView.setAverage(-100);
 							setTitle("glSDR: "+server+" (rx"+receiver+")");

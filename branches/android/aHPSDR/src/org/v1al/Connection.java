@@ -84,7 +84,7 @@ public class Connection extends Thread {
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
 		    
-		    sendCommand("setClient glSDR(8)");
+		    sendCommand("setClient glSDR(9)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
@@ -447,6 +447,11 @@ public class Connection extends Thread {
 			sendCommand("Mox off " + txUser + " " + txPass);
 			MOX = false;
 		}
+	}
+	
+	public void setScaleFactor(float scale){
+		int zoom = (int) scale - 1;
+		sendCommand("zoom " + zoom);
 	}
 	
 	public boolean getMOX(){
