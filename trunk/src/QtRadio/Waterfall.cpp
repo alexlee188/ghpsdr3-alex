@@ -163,8 +163,18 @@ void Waterfall::mouseMoveEvent(QMouseEvent* event){
 //    qDebug() << __FUNCTION__ << ": " << event->pos().x() << " move:" << move;
 
     moved=1;
-
-    if (! move==0) emit frequencyMoved(move,100);
+    float zoom_factor = 1.0f + zoom/25.0f;
+    float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
+    int move_step = 100;
+    if (move_ratio > 10.0f) move_step = 1000;
+    if (move_ratio > 10.0f) move_step = 500;
+    else if (move_ratio > 5.0f) move_step = 200;
+    else if (move_ratio > 2.5f) move_step = 100;
+    else if (move_ratio > 1.0f) move_step = 50;
+    else if (move_ratio > 0.5f) move_step = 10;
+    else if (move_ratio > 0.25f) move_step = 5;
+    else move_step = 1;
+    if (! move==0) emit frequencyMoved(move,move_step);
 }
 
 void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
@@ -173,7 +183,17 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
     //qDebug() << __FUNCTION__ << ": " << event->pos().x() << " move:" << move;
 
     if(moved) {
-        emit frequencyMoved(move,100);
+        float zoom_factor = 1.0f + zoom/25.0f;
+        float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
+        int move_step = 100;
+        if (move_ratio > 10.0f) move_step = 500;
+        else if (move_ratio > 5.0f) move_step = 200;
+        else if (move_ratio > 2.5f) move_step = 100;
+        else if (move_ratio > 1.0f) move_step = 50;
+        else if (move_ratio > 0.5f) move_step = 10;
+        else if (move_ratio > 0.25f) move_step = 5;
+        else move_step = 1;
+        emit frequencyMoved(move,move_step);
     } else {
         float zoom_factor = 1.0f + zoom/25.0f;
         float hzPixel = (float) sampleRate / width() / zoom_factor;  // spectrum resolution: Hz/pixel
@@ -228,7 +248,7 @@ void Waterfall::wheelEvent(QWheelEvent *event) {
     } else if (vOfs > 0.50) {
         emit frequencyMoved(event->delta()/8/15,25);
     } else if (vOfs > 0.25) {
-        emit frequencyMoved(event->delta()/8/15,50);
+        emit (event->delta()/8/15,50);
     } else {
         emit frequencyMoved(event->delta()/8/15,100);
     }

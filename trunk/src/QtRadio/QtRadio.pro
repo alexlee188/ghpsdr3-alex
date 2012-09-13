@@ -7,11 +7,19 @@
 # If using the Nokia Qt SDK set _UsingSDK to true
 # or if using Ubuntu repo set _UsingSDK to false
 #-------------------------------------------------
+
+_UsingSDK = true
+
+greaterThan(QT_MAJOR_VERSION, 4) {
+    message("Using Qt5")
+    QT       += core gui widgets multimedia mobility
+}
 _UsingSDK = false
 
 greaterThan(QT_MAJOR_VERSION, 4) {
     message("Using Qt5")
     QT       += core gui widgets multimedia opengl
+
 
     INCLUDEPATH += /opt/qt5/include
     INCLUDEPATH += /opt/qt5/include/QtMultimedia
@@ -32,8 +40,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     }
 }
 
-TARGET = QtRadio
-TEMPLATE = app
+
 
 
 SOURCES += main.cpp\

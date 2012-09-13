@@ -921,7 +921,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                 }
             }
             if (invalid) {
-                sdr_log(SDR_LOG_INFO, "Slave client attempted master command %s\n", cmd);
+                //sdr_log(SDR_LOG_INFO, "Slave client attempted master command %s\n", cmd);
                 continue;
             }
         }
