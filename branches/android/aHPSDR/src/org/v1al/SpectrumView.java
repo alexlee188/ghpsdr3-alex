@@ -350,9 +350,19 @@ public class SpectrumView extends View implements OnTouchListener {
 					if(!jog) {
 					// connection.setStatus("onTouch.ACTION_MOVE: "+(int)event.getX());
 					    int increment = (int) (startX - event.getX());
+					    float zoom_factor = 1f + (scaleFactor - 1f)/25f;
+					    float move_ratio = (float)connection.getSampleRate()/48000f/zoom_factor;
+			            int move_step = 100;
+			            if (move_ratio > 10.0f) move_step = 500;
+			            else if (move_ratio > 5.0f) move_step = 200;
+			            else if (move_ratio > 2.5f) move_step = 100;
+			            else if (move_ratio > 1.0f) move_step = 50;
+			            else if (move_ratio > 0.5f) move_step = 10;
+			            else if (move_ratio > 0.25f) move_step = 5;
+			            else move_step = 1;
 					    if(!scroll) {
 						    connection.setFrequency((long) (((connection.getFrequency() + (increment * (connection
-									.getSampleRate() / WIDTH))))/100)*100); // kb3omm *100/100 min swipe increment 100hz
+									.getSampleRate() / WIDTH))/zoom_factor))/move_step)*move_step);
 					    startX = event.getX();
 	   				    moved=true;
 			            } 
