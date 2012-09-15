@@ -1437,7 +1437,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             zoom=atoi(tokens[0]);
-            fprintf(stdout,"Zoom value is '%d'\n",zoom);
+            //fprintf(stdout,"Zoom value is '%d'\n",zoom);
         } else {
             fprintf(stderr,"Invalid command: token: '%s'\n",cmd);
         }
