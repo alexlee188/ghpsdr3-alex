@@ -80,9 +80,8 @@
 #define AGC_MEDIUM 3
 #define AGC_FAST 4
 
-#define MIC_BUFFER_SIZE 400
+#define MIC_BUFFER_SIZE 400     // make sure it is bigger than codec2_samples_per_frame (max 320)
 #define MIC_NO_OF_FRAMES 4      // need to ensure this is the same value in dspserver
-#define MIC_ENCODED_BUFFER_SIZE (BITS_SIZE*MIC_NO_OF_FRAMES)
 #define MIC_ALAW_BUFFER_SIZE 58 // limited by the 64 byte TCP message frame
 
 class UI : public QMainWindow {
@@ -316,18 +315,12 @@ private:
     AudioInput* audioinput;
     int mic_buffer_count;       // counter of mic_buffer, to encode if reaches CODEC2_SAMPLE_PER_FRAME
     int mic_frame_count;        // counter of mic_buffer, to encode enough frames before sending
-    void * mic_codec2;
+    struct CODEC2 * mic_codec2;
 
-#if CODEC2_SAMPLES_PER_FRAME > MIC_BUFFER_SIZE
-    qint16 mic_buffer[CODEC2_SAMPLES_PER_FRAME];
-#else
+
     qint16 mic_buffer[MIC_BUFFER_SIZE];
-#endif
-#if MIC_ENCODED_BUFFER_SIZE > MIC_BUFFER_SIZE
-    unsigned char mic_encoded_buffer[MIC_ENCODED_BUFFER_SIZE];
-#else
     unsigned char mic_encoded_buffer[MIC_BUFFER_SIZE];
-#endif
+
     unsigned char *rtp_send_buffer;
     long long subRxFrequency;
     Connection connection;
