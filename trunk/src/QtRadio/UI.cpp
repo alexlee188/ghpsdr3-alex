@@ -85,7 +85,7 @@ UI::UI(const QString server) {
     useRTP=configure.getRTP();
     configure.initAudioDevices(audio);
 
-    mic_codec2 = codec2_create();
+    mic_codec2 = codec2_create(CODEC2_MODE_3200);
     audioinput = new AudioInput;
     configure.initMicDevices(audioinput);
 
@@ -833,18 +833,20 @@ void UI::micSendAudio(QQueue<qint16>* queue){
         }
 
     } else if (audioinput->getMicEncoding() == 1){      // Codec 2
+        int samples_per_frame = codec2_samples_per_frame(mic_codec2);
+        int bits_size = codec2_bits_per_frame(mic_codec2)/8;
         while(! queue->isEmpty()){
             qint16 sample = queue->dequeue();
             mic_buffer[mic_buffer_count++] = tuning ? 0: sample;
-            if (mic_buffer_count >= CODEC2_SAMPLES_PER_FRAME) {
+            if (mic_buffer_count >= codec2_samples_per_frame(mic_codec2)) {
                 mic_buffer_count = 0;
                 if (connection_valid && configure.getTxAllowed())
-                    codec2_encode(mic_codec2, &mic_encoded_buffer[mic_frame_count*BITS_SIZE], mic_buffer);
+                    codec2_encode(mic_codec2, &mic_encoded_buffer[mic_frame_count*bits_size], mic_buffer);
                 mic_frame_count++;
                 if (mic_frame_count >= MIC_NO_OF_FRAMES){
                     mic_frame_count = 0;
                     if (connection_valid && configure.getTxAllowed())
-                        connection.sendAudio(MIC_ENCODED_BUFFER_SIZE,mic_encoded_buffer);
+                        connection.sendAudio(samples_per_frame*MIC_NO_OF_FRAMES,mic_encoded_buffer);
                 }
             }
         }

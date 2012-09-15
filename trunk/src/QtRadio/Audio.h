@@ -110,7 +110,7 @@ private:
     SRC_DATA sr_data;
     QHQueue<qint16> queue;
     QHQueue<qint16> *pdecoded_buffer;
-    void* codec2;
+    struct CODEC2 * codec2;
     int audio_channels;
     int audio_encoding;
 };
