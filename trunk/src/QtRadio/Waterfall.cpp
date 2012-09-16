@@ -53,6 +53,7 @@ Waterfall::Waterfall(QWidget*& widget) {
     colorHighB=0;
 
     samples=NULL;
+    zoom = 0;
 
     image = QImage(width()*2, height(), QImage::Format_RGB32);
 
@@ -148,7 +149,6 @@ void Waterfall::mouseMoveEvent(QMouseEvent* event){
     float zoom_factor = 1.0f + zoom/25.0f;
     float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
     int move_step = 100;
-    if (move_ratio > 10.0f) move_step = 1000;
     if (move_ratio > 10.0f) move_step = 500;
     else if (move_ratio > 5.0f) move_step = 200;
     else if (move_ratio > 2.5f) move_step = 100;

@@ -101,6 +101,8 @@ protected:
 
     void wheelEvent(QWheelEvent *event);
 
+public slots:
+    void setAvg(int value);
 private:
     float* samples;
     int spectrumHigh;
@@ -127,6 +129,7 @@ private:
 
     int filterLow;
     int filterHigh;
+    int avg;
     long long frequency;
     QString strFrequency;
     long long subRxFrequency;
