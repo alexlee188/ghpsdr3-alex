@@ -104,6 +104,12 @@ static int zoom = 0;
 static float tx_buffer[TX_BUFFER_SIZE*2];
 static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
 
+static int samples_per_frame, bits_per_frame;
+
+// bits_per_frame is now a variable
+#undef BITS_SIZE
+#define BITS_SIZE   ((bits_per_frame + 7) / 8)
+
 // Mic data comes in BITS_SIZE*MIC_NO_OF_FRAMES if micEncoding is Codec 2,
 #define MIC_NO_OF_FRAMES 4
 #define MIC_BUFFER_SIZE  (BITS_SIZE*MIC_NO_OF_FRAMES)
@@ -500,20 +506,37 @@ void* rtp_tx_thread(void *arg){
 void *tx_thread(void *arg){
    unsigned char *bits;
    struct audio_entry *item;
-   short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
+   // short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
+   short *codec2_buffer;  // samples_per_frame is  now a variable
    int tx_buffer_counter = 0;
    int rc;
    int j, i;
 
-#if CODEC2_SAMPLES_PER_FRAME > MIC_ALAW_BUFFER_SIZE
-   float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
-   float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
-#else
-   float data_in [MIC_ALAW_BUFFER_SIZE*2];		// stereo
-   float data_out[MIC_ALAW_BUFFER_SIZE*2*24];	        // 192khz/8khz
-#endif
+   // #if CODEC2_SAMPLES_PER_FRAME > MIC_ALAW_BUFFER_SIZE
+   //    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
+   //    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
+   // #else
+   //    float data_in [MIC_ALAW_BUFFER_SIZE*2];		// stereo
+   //    float data_out[MIC_ALAW_BUFFER_SIZE*2*24];	        // 192khz/8khz
+   // #endif
+   float *data_in, *data_out;
+
    SRC_DATA data;
-   void *mic_codec2 = codec2_create();
+   void *mic_codec2 = (void *) codec2_create(CODEC2_MODE_3200);
+
+   samples_per_frame = codec2_samples_per_frame( (struct CODEC2 *) mic_codec2 );
+   bits_per_frame = codec2_bits_per_frame( (struct CODEC2 *) mic_codec2 );
+
+   codec2_buffer = (short *) malloc( sizeof( short ) * samples_per_frame );
+
+   if (samples_per_frame > MIC_ALAW_BUFFER_SIZE) {
+     data_in = (float *) malloc( sizeof( float ) * samples_per_frame * 2 );
+     data_out = (float *) malloc( sizeof( float ) * samples_per_frame * 24 );
+   }
+   else {
+     data_in = (float *) malloc( sizeof( float ) * MIC_ALAW_BUFFER_SIZE * 2 );
+     data_out = (float *) malloc( sizeof( float ) * MIC_ALAW_BUFFER_SIZE * 24 );
+   }
 
    sdr_thread_register("tx_thread");
 
@@ -532,7 +555,7 @@ void *tx_thread(void *arg){
 	           codec2_decode(mic_codec2, codec2_buffer, bits);
 	           // mic data is mono, so copy to both right and left channels
 	           #pragma omp parallel for schedule(static) private(j) 
-                   for (j=0; j < CODEC2_SAMPLES_PER_FRAME; j++) {
+                   for (j=0; j < samples_per_frame; j++) {
                       data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
                    }
            }
@@ -543,10 +566,10 @@ void *tx_thread(void *arg){
            }
            data.data_in = data_in;
            data.input_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
-                CODEC2_SAMPLES_PER_FRAME : MIC_ALAW_BUFFER_SIZE;
+                samples_per_frame : MIC_ALAW_BUFFER_SIZE;
            data.data_out = data_out;
            data.output_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
-                CODEC2_SAMPLES_PER_FRAME*24 : MIC_ALAW_BUFFER_SIZE*24 ;
+	     samples_per_frame*24 : MIC_ALAW_BUFFER_SIZE*24 ;
            data.src_ratio = mic_src_ratio;
            data.end_of_input = 0;
 
@@ -921,7 +944,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                 }
             }
             if (invalid) {
-                sdr_log(SDR_LOG_INFO, "Slave client attempted master command %s\n", cmd);
+                //sdr_log(SDR_LOG_INFO, "Slave client attempted master command %s\n", cmd);
                 continue;
             }
         }
@@ -1428,7 +1451,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             zoom=atoi(tokens[0]);
-            fprintf(stdout,"Zoom value is '%d'\n",zoom);
+            //fprintf(stdout,"Zoom value is '%d'\n",zoom);
         } else {
             fprintf(stderr,"Invalid command: token: '%s'\n",cmd);
         }

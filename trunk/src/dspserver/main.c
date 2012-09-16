@@ -298,7 +298,7 @@ int main(int argc,char* argv[]) {
     audio_stream_init(receiver);
     audio_stream_reset();
 
-    codec2 = codec2_create();
+    codec2 = codec2_create(CODEC2_MODE_3200);
     G711A_init();
     ozy_init(config.server_address);
 

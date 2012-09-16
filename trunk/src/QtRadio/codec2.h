@@ -2,10 +2,10 @@
 
   FILE........: codec2.h
   AUTHOR......: David Rowe
-  DATE CREATED: 21/8/2010
+  DATE CREATED: 21 August 2010
 
-  Codec2 fully quantised encoder and decoder functions.  If you want use 
-  codec2, these are the functions you need to call.
+  Codec 2 fully quantised encoder and decoder functions.  If you want use 
+  Codec 2, these are the functions you need to call.
 
 \*---------------------------------------------------------------------------*/
 
@@ -27,25 +27,42 @@
 */
 
 #ifdef __cplusplus
- extern "C" {
- #endif
+  extern "C" {
+#endif
 
 #ifndef __CODEC2__
 #define  __CODEC2__
 
-#define CODEC2_SAMPLES_PER_FRAME 160
-#define CODEC2_BITS_PER_FRAME     50
-#define BITS_SIZE	((CODEC2_BITS_PER_FRAME + 7) / 8)
+/* set up the calling convention for DLL function import/export for
+   WIN32 cross compiling */
 
-void *codec2_create();
-void codec2_destroy(void *codec2_state);
-void codec2_encode(void *codec2_state, unsigned char * bits, short speech_in[]);
-void codec2_decode(void *codec2_state, short speech_out[],
-      const unsigned char * bits);
+#ifdef __CODEC2_WIN32__
+#ifdef __CODEC2_BUILDING_DLL__
+#define CODEC2_WIN32SUPPORT __declspec(dllexport) __stdcall
+#else
+#define CODEC2_WIN32SUPPORT __declspec(dllimport) __stdcall
+#endif
+#else
+#define CODEC2_WIN32SUPPORT
+#endif
+
+#define CODEC2_MODE_3200 0
+#define CODEC2_MODE_2400 1
+#define CODEC2_MODE_1400 2
+#define CODEC2_MODE_1200 3
+
+struct CODEC2;
+
+struct CODEC2 * CODEC2_WIN32SUPPORT codec2_create(int mode);
+void CODEC2_WIN32SUPPORT codec2_destroy(struct CODEC2 *codec2_state);
+void CODEC2_WIN32SUPPORT codec2_encode(struct CODEC2 *codec2_state, unsigned char * bits, short speech_in[]);
+void CODEC2_WIN32SUPPORT codec2_decode(struct CODEC2 *codec2_state, short speech_out[], const unsigned char *bits);
+int  CODEC2_WIN32SUPPORT codec2_samples_per_frame(struct CODEC2 *codec2_state);
+int  CODEC2_WIN32SUPPORT codec2_bits_per_frame(struct CODEC2 *codec2_state);
 
 #endif
 
-
 #ifdef __cplusplus
- }
- #endif
+}
+#endif
+

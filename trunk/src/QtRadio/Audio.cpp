@@ -491,7 +491,7 @@ Audio_processing::Audio_processing(){
     init_decodetable();
     src_ratio = 1.0;
 
-    codec2 = codec2_create();
+    codec2 = codec2_create(CODEC2_MODE_3200);
     pdecoded_buffer = &queue;
 }
 
@@ -603,22 +603,24 @@ void Audio_processing::pcmDecode(char* buffer,int length) {
 
 void Audio_processing::codec2Decode(char* buffer,int length) {
     int i,j,k;
-    short v[CODEC2_SAMPLES_PER_FRAME];
-    unsigned char bits[BITS_SIZE];
+    int samples_per_frame = codec2_samples_per_frame(codec2);
+    short v[samples_per_frame];
+    int bits_size = codec2_bits_per_frame(codec2)/8;
+    unsigned char bits[bits_size];
 
     j = 0;
     k = 0;
     while (j < length) {
-        memcpy(bits,&buffer[j],BITS_SIZE);
+        memcpy(bits,&buffer[j],bits_size);
         codec2_decode(codec2, v, bits);
         #pragma omp parallel for schedule(static)
-        for (i=0; i < CODEC2_SAMPLES_PER_FRAME; i++){
-            buffer_in[i+k*CODEC2_SAMPLES_PER_FRAME]= v[i]/ 32767.0;
+        for (i=0; i < samples_per_frame; i++){
+            buffer_in[i+k*samples_per_frame]= v[i]/ 32767.0;
         }
-        j += BITS_SIZE;
+        j += bits_size;
         k++;
     }
-    resample(k*CODEC2_SAMPLES_PER_FRAME);
+    resample(k*samples_per_frame);
 }
 
 void Audio_processing::init_decodetable() {
