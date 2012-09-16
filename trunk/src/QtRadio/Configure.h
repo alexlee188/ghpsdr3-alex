@@ -59,7 +59,7 @@ public:
     int getSpectrumHigh();
     int getSpectrumLow();
     int getFps();
-
+    int getAvg();
     void setSpectrumHigh(int high);
     void setSpectrumLow(int low);
 
@@ -132,6 +132,7 @@ signals:
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
     void spinBox_cwPitchChanged(int pitch);
+    void avgSpinChanged(int value);
 
 public slots:
     void slotHostChanged(int selection);
@@ -181,6 +182,8 @@ private slots:
     void on_spinBox_cwPitch_valueChanged(int arg1);
 
     void on_MicEncodingComboBox_currentIndexChanged(int index);
+
+    void on_avgSpinBox_valueChanged(int arg1);
 
 private:
     Ui::Configure widget;

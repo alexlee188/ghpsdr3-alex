@@ -25,6 +25,7 @@
 
 #include "Spectrum.h"
 
+#define MAX_WIDTH 4096
 
 Spectrum::Spectrum() {
 }
@@ -41,6 +42,7 @@ Spectrum::Spectrum(QWidget*& widget) {
     spectrumLow=-160;
     filterLow=-3450;
     filterHigh=-150;
+    avg = 0;
     mode="LSB";
 
     zoom = 0;
@@ -67,9 +69,13 @@ Spectrum::Spectrum(QWidget*& widget) {
     settingSquelch=false;
 
     plot.clear();
+
+    samples = (float*) malloc(MAX_WIDTH * sizeof (float));
+    for (int i=0; i < MAX_WIDTH; i++) samples[i] = -120;
 }
 
 Spectrum::~Spectrum() {
+    if (samples != NULL) free(samples);
 }
 
 void Spectrum::setHigh(int high) {
@@ -92,6 +98,9 @@ int Spectrum::getLow() {
     return spectrumLow;
 }
 
+void Spectrum::setAvg(int value){
+    avg = value;
+}
 
 void Spectrum::initialize() {
     QFrame::setVisible(true);
@@ -494,7 +503,7 @@ void Spectrum::setFilter(QString f) {
 }
 
 void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
-    int i,j;
+    int i;
     int version,subversion;
     int header_sampleRate;
 
@@ -513,15 +522,9 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
 
     sampleRate = header_sampleRate;
 
-    //qDebug() << "updateSpectrum: samplerate=" << sampleRate;
-    if(samples!=NULL) {
-        free(samples);
-    }
-    samples = (float*) malloc(width * sizeof (float));
-
     // do not rotate spectrum display.  LO_offset rotation done in dspserver
     for(i=0;i<width;i++) {
-        samples[i] = -(buffer[i] & 0xFF);
+        samples[i] = (float)(samples[i] * avg - (buffer[i] & 0xFF))/(float)(avg+1);
     }
 
     //qDebug() << "updateSpectrum: create plot points";
