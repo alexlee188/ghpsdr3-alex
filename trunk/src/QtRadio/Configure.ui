@@ -35,11 +35,11 @@
      <x>0</x>
      <y>0</y>
      <width>631</width>
-     <height>341</height>
+     <height>361</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>3</number>
    </property>
    <widget class="QWidget" name="Server">
     <attribute name="title">
@@ -672,7 +672,7 @@
      <property name="geometry">
       <rect>
        <x>20</x>
-       <y>150</y>
+       <y>190</y>
        <width>231</width>
        <height>111</height>
       </rect>
@@ -810,6 +810,35 @@
      </property>
      <property name="checked">
       <bool>false</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_34">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>130</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Averaging:</string>
+     </property>
+     <property name="textFormat">
+      <enum>Qt::AutoText</enum>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="avgSpinBox">
+     <property name="geometry">
+      <rect>
+       <x>120</x>
+       <y>130</y>
+       <width>59</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="maximum">
+      <number>20</number>
      </property>
     </widget>
    </widget>

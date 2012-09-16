@@ -225,6 +225,7 @@ void Configure::loadSettings(QSettings* settings) {
 //    if(settings->contains("spectrumHigh"))widget.spectrumHighSpinBox->setValue(settings->value("spectrumHigh",-40).toInt());
 //    if(settings->contains("spectrumLow"))widget.spectrumLowSpinBox->setValue(settings->value("spectrumLow",-160).toInt());
     if(settings->contains("fps"))widget.fpsSpinBox->setValue(settings->value("fps").toInt());
+    if(settings->contains("avg"))widget.avgSpinBox->setValue(settings->value("avg").toInt());
     if(settings->contains("waterfallHigh"))widget.waterfallHighSpinBox->setValue(settings->value("waterfallHigh").toInt());
     if(settings->contains("waterfallLow"))widget.waterfallLowSpinBox->setValue(settings->value("waterfallLow").toInt());
     if(settings->contains("waterfallAutomatic"))widget.waterfallAutomatic->setChecked(settings->value("waterfallAutomatic").toBool());
@@ -314,6 +315,7 @@ void Configure::saveSettings(QSettings* settings) {
     settings->setValue("spectrumHigh",widget.spectrumHighSpinBox->value());
     settings->setValue("spectrumLow",widget.spectrumLowSpinBox->value());
     settings->setValue("fps",widget.fpsSpinBox->value());
+    settings->setValue("avg",widget.avgSpinBox->value());
     settings->setValue("waterfallHigh",widget.waterfallHighSpinBox->value());
     settings->setValue("waterfallLow",widget.waterfallLowSpinBox->value());
     settings->setValue("waterfallAutomatic",widget.waterfallAutomatic->checkState());
@@ -539,6 +541,10 @@ int Configure::getSpectrumLow() {
 
 int Configure::getFps() {
     return widget.fpsSpinBox->value();
+}
+
+int Configure::getAvg(){
+    return widget.avgSpinBox->value();
 }
 
 int Configure::getWaterfallHigh() {
@@ -824,4 +830,9 @@ void Configure::on_spinBox_cwPitch_valueChanged(int arg1)
 void Configure::on_MicEncodingComboBox_currentIndexChanged(int index)
 {
     emit micEncodingChanged(index);
+}
+
+void Configure::on_avgSpinBox_valueChanged(int arg1)
+{
+    emit avgSpinChanged(arg1);
 }

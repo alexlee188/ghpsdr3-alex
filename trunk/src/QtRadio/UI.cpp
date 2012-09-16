@@ -243,6 +243,7 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(spectrumHighChanged(int)),this,SLOT(spectrumHighChanged(int)));
     connect(&configure,SIGNAL(spectrumLowChanged(int)),this,SLOT(spectrumLowChanged(int)));
     connect(&configure,SIGNAL(fpsChanged(int)),this,SLOT(fpsChanged(int)));
+    connect(&configure,SIGNAL(avgSpinChanged(int)),widget.spectrumFrame,SLOT(setAvg(int)));
     connect(&configure,SIGNAL(waterfallHighChanged(int)),this,SLOT(waterfallHighChanged(int)));
     connect(&configure,SIGNAL(waterfallLowChanged(int)),this,SLOT(waterfallLowChanged(int)));
     connect(&configure,SIGNAL(waterfallAutomaticChanged(bool)),this,SLOT(waterfallAutomaticChanged(bool)));
