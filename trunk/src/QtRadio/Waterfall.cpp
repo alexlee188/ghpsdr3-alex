@@ -56,6 +56,7 @@ Waterfall::Waterfall(QWidget*& widget) {
     colorHighB=0;
 
     samples=NULL;
+    zoom = 0;
 
 #ifdef WATERFALL_2D
     image = QImage(width()*2, height(), QImage::Format_RGB32);
@@ -122,11 +123,9 @@ void Waterfall::setZoom(int value){
 }
 
 void Waterfall::setGeometry(QRect rect) {
-
-#ifdef WATERFALL_2D
     QFrame::setGeometry(rect);
-    qDebug() << "Waterfall::setGeometry: width=" << rect.width() << " height=" << rect.height();
-
+    //qDebug() << "Waterfall::setGeometry: width=" << rect.width() << " height=" << rect.height();
+#ifdef WATERFALL_2D
     samples = (float*) malloc(rect.width() * sizeof (float));
 
     // no scroll algorithm needs 2 copies of waterfaull
@@ -166,7 +165,6 @@ void Waterfall::mouseMoveEvent(QMouseEvent* event){
     float zoom_factor = 1.0f + zoom/25.0f;
     float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
     int move_step = 100;
-    if (move_ratio > 10.0f) move_step = 1000;
     if (move_ratio > 10.0f) move_step = 500;
     else if (move_ratio > 5.0f) move_step = 200;
     else if (move_ratio > 2.5f) move_step = 100;
@@ -181,9 +179,9 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
     int move=event->pos().x()-lastX;
     lastX=event->pos().x();
     //qDebug() << __FUNCTION__ << ": " << event->pos().x() << " move:" << move;
-
+    float zoom_factor = 1.0f + zoom/25.0f;
+    float hzPixel = (float) sampleRate / width() / zoom_factor;  // spectrum resolution: Hz/pixel
     if(moved) {
-        float zoom_factor = 1.0f + zoom/25.0f;
         float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
         int move_step = 100;
         if (move_ratio > 10.0f) move_step = 500;
@@ -195,30 +193,27 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
         else move_step = 1;
         emit frequencyMoved(move,move_step);
     } else {
-        float zoom_factor = 1.0f + zoom/25.0f;
-        float hzPixel = (float) sampleRate / width() / zoom_factor;  // spectrum resolution: Hz/pixel
-
         long freqOffsetPixel;
         long long f = frequency - (sampleRate/2/zoom_factor) + (event->pos().x()*hzPixel)
-                      - LO_offset;
+                -LO_offset;
         if(subRx) {
             freqOffsetPixel = (subRxFrequency-f)/hzPixel;
             if (button == Qt::LeftButton) {
-                if((mode!="USB")&&(mode!="LSB")){ // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
+                if((mode!="USB")&&(mode!="LSB")){
                     // set frequency to center of filter
                     if(filterLow<0 && filterHigh<0) {
                         freqOffsetPixel+=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
                     } else if(filterLow>0 && filterHigh>0){
                         freqOffsetPixel-=(((filterHigh-filterLow)/2)-filterHigh)/hzPixel;
                     } else {
-                        // no adjustment
+                    // no adjustment
                     }
-                }
+                } // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
             }
         } else {
             freqOffsetPixel = (f-frequency)/hzPixel; // compute the offset from the central frequency, in pixel
             if (button == Qt::LeftButton) {
-                if((mode!="USB")&&(mode!="LSB")){ // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
+                if((mode!="USB")&&(mode!="LSB")){
                     // set frequency to center of filter
                     if(filterLow<0 && filterHigh<0) {
                     freqOffsetPixel-=(((filterLow-filterHigh)/2)+filterHigh)/hzPixel;
@@ -227,13 +222,12 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
                     } else {
                     // no adjustment if filter extends each side of carrier frequency
                     }
-                }
+                } // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
             }
         }
-
         emit frequencyMoved(-(long long)(freqOffsetPixel*hzPixel)/100,100);
-
     }
+    button = -1;
 }
 
 void Waterfall::wheelEvent(QWheelEvent *event) {

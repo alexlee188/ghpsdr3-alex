@@ -200,13 +200,13 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
     int move=event->pos().x()-lastX;
     lastX=event->pos().x();
     //qDebug() << __FUNCTION__ << ": " << event->pos().x() << " move:" << move;
-
+    float zoom_factor = 1.0f + zoom/25.0f;
+    float hzPixel = (float) sampleRate / width() / zoom_factor;  // spectrum resolution: Hz/pixel
     if(squelch && settingSquelch) {
         button=-1;
         settingSquelch=false;
     } else {
         if(moved) {
-            float zoom_factor = 1.0f + zoom/25.0f;
             float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
             int move_step = 100;
             if (move_ratio > 10.0f) move_step = 500;
@@ -216,14 +216,11 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
             else if (move_ratio > 0.5f) move_step = 10;
             else if (move_ratio > 0.25f) move_step = 5;
             else move_step = 1;
-            emit frequencyMoved(move,move_ratio);
+            emit frequencyMoved(move,move_step);
         } else {
-            float zoom_factor = 1.0f + zoom/25.0f;
-            float hzPixel = (float) sampleRate / width() / zoom_factor;  // spectrum resolution: Hz/pixel
             long freqOffsetPixel;
             long long f = frequency - (sampleRate/2/zoom_factor) + (event->pos().x()*hzPixel)
                     -LO_offset;
-
             if(subRx) {    
                 freqOffsetPixel = (subRxFrequency-f)/hzPixel;
                 if (button == Qt::LeftButton) {
