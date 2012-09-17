@@ -25,6 +25,8 @@
 #include "ui_vfo.h"
 #include <QDebug>
 #include <QKeyEvent>
+#include "powermate.h"
+
 //#include "Band.h"
 //#include "UI.h"
 
@@ -57,6 +59,13 @@ vfo::vfo(QWidget *parent) :
                 this, SLOT(btnGrpClicked(int)));
     connect(ui->hSlider, SIGNAL(valueChanged(int)),
                 this, SLOT(processRIT(int)));
+
+//  Powermate related stuff
+    PmInput *input = new PmInput();
+    connect(input, SIGNAL(pressed()), this, SLOT(press()));
+    connect(input, SIGNAL(released()), this, SLOT(release()));
+    connect(input, SIGNAL(rotated(int)), this, SLOT(increase(int)));
+    input->start();
 }
 
 vfo::~vfo()
@@ -512,19 +521,42 @@ void vfo::keyPressEvent( QKeyEvent * event){
     }
 
 }
+// Powermate stuff begin
 
-void vfo::vfohotkey(QString cmd)
-{
+void vfo::increase(int n) {
+        emit frequencyMoved(vfohotstep, 1);
+	qDebug()<<Q_FUNC_INFO<<": Powermate increased";
+}
+
+void vfo::decrease(int n) {
+        increase(-n);
+	qDebug()<<Q_FUNC_INFO<<": Powermate decreased";
+
+}
+// maybe later used to toggle ptt on off or select vfo stepsize
+void vfo::press() {
+
+	qDebug()<<Q_FUNC_INFO<<": Powermate pressed";
+
+}
+
+void vfo::release() {
+        
+	qDebug()<<Q_FUNC_INFO<<": Powermate released";
+}
+// Powermate stuff end
+
+void vfo::vfohotkey(QString cmd){
     if (cmd.compare("FreqDown") == 0){
         emit frequencyMoved(vfohotstep, -1);
         //qDebug() <<"cmd=" <<cmd;
         return;
-    }
+}
     if (cmd.compare("FreqUp") == 0){
         emit frequencyMoved(vfohotstep, 1);
         //qDebug() <<"cmd=" <<cmd <<"vfohotstep" <<vfohotstep;
         return;
-    }
+}
     static const int mult[7] = {1,10,100,1000,10000,100000,1000000};
     if (cmd.compare("StepUp") == 0  && curstep <6){
         //qDebug() <<"Step Up old =" <<vfohotstep << " curstep" << curstep;
@@ -533,7 +565,7 @@ void vfo::vfohotkey(QString cmd)
         //qDebug() <<"new =" <<vfohotstep;
         setStepMark();
         return;
-    }
+}
     if (cmd.compare("StepUp") == 0  && curstep == 6){
         //qDebug() <<"Step Up Wrap old =" <<vfohotstep << " curstep" << curstep;
         curstep = 0;
@@ -541,7 +573,7 @@ void vfo::vfohotkey(QString cmd)
         //qDebug() <<"new =" <<vfohotstep;
         setStepMark();
         return;
-    }
+}
 
 
     if (cmd.compare("StepDown") == 0  && curstep >0){

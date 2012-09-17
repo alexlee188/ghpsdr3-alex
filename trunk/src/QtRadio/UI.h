@@ -72,6 +72,7 @@
 #include "G711A.h"
 #include "RTP.h"
 #include "hardware.h"
+#include "powermate.h"
 
 #define DSPSERVER_BASE_PORT 8000
 

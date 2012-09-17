@@ -60,6 +60,7 @@
 #include "codec2.h"
 #include "servers.h"
 #include "ctl.h"
+#include "powermate.h"
 
 UI::UI(const QString server) {
 
