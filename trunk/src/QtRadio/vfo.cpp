@@ -2,6 +2,9 @@
  * Author: Graeme Jury, ZL2APV
  *
  * Created on 21 August 2011, 20:00
+ *
+ * Griffin Powermate Vfo Knob support
+ * added by Oliver Goldenstein, DL6KBG
  */
 
 /* Copyright (C)
@@ -523,14 +526,14 @@ void vfo::keyPressEvent( QKeyEvent * event){
 }
 // Powermate stuff begin
 
-void vfo::increase(int n) {
+void vfo::decrease(int n) {
 
 	emit frequencyMoved(vfohotstep, n);
 	qDebug()<<Q_FUNC_INFO<<": Powermate rotated";
 }
 
-void vfo::decrease(int n) {
-        increase(-n);
+void vfo::increase(int n) {
+        decrease(-n);
 }
 // maybe later used to toggle ptt on off or select vfo stepsize
 void vfo::press() {
