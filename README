@@ -289,6 +289,37 @@ The DG8SAQ devices can be set to different USB serial ID's.  Each usb-i2c interf
 
 When you start the softrock server, you can use the --serialid argument to match the USB serial ID of the particular device.
 
+Using QtRadio with the Griffin Powermate Vfo Knob
+=================================================
+
+$ sudo nano -w /etc/udev/rules.d/45-powermate.rules
+
+and add the following:
+
+SUBSYSTEMS=="usb",ATTRS{idVendor}=="077d",ATTRS{idProduct}=="0410",SYMLINK+="powermate",MODE="666"
+
+reboot and do:
+
+$ ls -l /dev/powermate
+
+this should give you:
+
+lrwxrwxrwx 1 root root 13 2011-11-20 10:13 /dev/powermate -> input/event14
+
+next do:
+
+sudo groupadd input
+sudo gpasswd -a your_user_name input
+cd /etc/udev/rules.d/
+
+Create a file called 99-input.rules and put in it:
+
+
+KERNEL=="event*", NAME="input/%k", MODE="660", GROUP="input"
+KERNEL=="js*", NAME="input/%k", MODE="664", GROUP="input"
+
+and reboot.
+
 
 
 
