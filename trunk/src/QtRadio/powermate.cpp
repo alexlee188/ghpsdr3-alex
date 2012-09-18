@@ -87,8 +87,10 @@ void PmInput::processEvent(const input_event& event)
 			break;
 	}
 }
-//set powermate led
-//void PmInput::setLed(const input_event& event)
-//{
-//
-//}
+/* 
+set powermate led
+void PmInput::setLed(const input_event& event)
+{
+
+}
+*/
