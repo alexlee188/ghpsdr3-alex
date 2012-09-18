@@ -92,7 +92,8 @@ SOURCES += main.cpp\
     servers.cpp \
     G711A.cpp \
     RTP.cpp \
-    hardware.cpp
+    hardware.cpp\
+    powermate.cpp
 
 
 HEADERS  += \ 
@@ -143,7 +144,8 @@ HEADERS  += \
     G711A.h \
     RTP.h \
     cusdr_queue.h \
-    hardware.h
+    hardware.h\
+    powermate.h
 
 FORMS    += \   
     UI.ui \
