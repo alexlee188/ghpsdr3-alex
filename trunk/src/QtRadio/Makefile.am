@@ -57,7 +57,8 @@ servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
 Waterfallcl.moc.cpp\
-hardware.moc.cpp
+hardware.moc.cpp \
+powermate.moc.cpp 
 
 	
 nodist_QtRadio_SOURCES = \
@@ -101,8 +102,8 @@ servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
 Waterfallcl.moc.cpp\
-hardware.moc.cpp
-
+hardware.moc.cpp \
+powermate.moc.cpp
 
 QtRadio_SOURCES = \
 About.cpp      BandStackEntry.cpp       Buffer.cpp       DIGUFilters.cpp  Frequency.cpp      Mode.cpp        Waterfall.cpp  \
@@ -117,6 +118,7 @@ servers.cpp\
 G711A.cpp RTP.cpp \
 Waterfallcl.cpp \
 hardware.cpp \
+powermate.cpp \
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  Waterfall.h  \
 Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Spectrum.h    XvtrEntry.h  \
@@ -129,6 +131,7 @@ G711A.h RTP.h \
 Watefallcl.h \
 cusdr_queue.h \
 hardware.h \
+powermate.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui servers.ui
 
@@ -176,7 +179,8 @@ servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
 Waterfallcl.moc.cpp\
-hardware.moc.cpp
+hardware.moc.cpp \
+powermate.moc.cpp
 
 #
 # auxiliary services, git string, icons

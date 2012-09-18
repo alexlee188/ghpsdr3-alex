@@ -60,6 +60,7 @@
 #include "codec2.h"
 #include "servers.h"
 #include "ctl.h"
+#include "powermate.h"
 
 UI::UI(const QString server) {
 
@@ -2072,7 +2073,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + " opengl-qt5 15 Sep 2012");
+                   + getversionstring() +  message + " opengl-qt5 18 Sep 2012");
     lastmessage = message;
 
 }
