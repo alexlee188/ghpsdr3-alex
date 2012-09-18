@@ -23,6 +23,7 @@ class PmInput : public QThread {
 	private:
 		QString devicename;
 		void processEvent(const input_event& event);
+		//void setLed(const input_event& event);// set powermate led
 };
 
 #endif

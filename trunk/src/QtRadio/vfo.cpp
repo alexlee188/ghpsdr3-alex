@@ -527,7 +527,6 @@ void vfo::keyPressEvent( QKeyEvent * event){
 // Powermate stuff begin
 
 void vfo::decrease(int n) {
-
 	emit frequencyMoved(vfohotstep, n);
 	qDebug()<<Q_FUNC_INFO<<": Powermate rotated";
 }
@@ -535,15 +534,15 @@ void vfo::decrease(int n) {
 void vfo::increase(int n) {
         decrease(-n);
 }
-// maybe later used to toggle ptt on off or select vfo stepsize
+// Powermate press emulates arrow up key 
 void vfo::press() {
-
-	qDebug()<<Q_FUNC_INFO<<": Powermate pressed";
+	vfohotkey("StepUp");
+        qDebug()<<Q_FUNC_INFO<<": Powermate pressed";
 
 }
 
 void vfo::release() {
-        
+
 	qDebug()<<Q_FUNC_INFO<<": Powermate released";
 }
 // Powermate stuff end

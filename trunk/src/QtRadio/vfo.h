@@ -75,10 +75,10 @@ private slots:
     void on_pBtnSubRx_clicked();
     void on_toolBtnUp_clicked();
     void on_toolBtnDn_clicked();
-    void press();
-    void release();
-    void increase(int n);
-    void decrease(int n);
+    void press(); // Powermate pressed
+    void release(); // Powermate released
+    void increase(int n); // Powermate increased
+    void decrease(int n); // Powermate decreased
 
 private:
     Ui::vfo *ui;
