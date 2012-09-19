@@ -11,12 +11,6 @@
 # or if using Ubuntu repo set _UsingSDK to false
 #-------------------------------------------------
 
-_UsingSDK = true
-
-greaterThan(QT_MAJOR_VERSION, 4) {
-    message("Using Qt5")
-    QT       += core gui widgets multimedia mobility
-}
 _UsingSDK = false
 
 greaterThan(QT_MAJOR_VERSION, 4) {
@@ -24,10 +18,14 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     QT       += core gui widgets multimedia
 
 
-    INCLUDEPATH += /opt/qt5/include
-    INCLUDEPATH += /opt/qt5/include/QtMultimedia
-    INCLUDEPATH += /opt/qt5/include/QtNetwork
+#    INCLUDEPATH += /opt/qt5/include
+#    INCLUDEPATH += /opt/qt5/include/QtMultimedia
+#    INCLUDEPATH += /opt/qt5/include/QtNetwork
 
+    INCLUDEPATH += /home/gvj/Qt5.0.0beta1/Desktop/Qt/5.0.0-beta1/gcc/include/QtCore
+    INCLUDEPATH += /home/gvj/Qt5.0.0beta1/Desktop/Qt/5.0.0-beta1/gcc/include/QtGui
+    INCLUDEPATH += /home/gvj/Qt5.0.0beta1/Desktop/Qt/5.0.0-beta1/gcc/include/QtWidgets
+    INCLUDEPATH += /home/gvj/Qt5.0.0beta1/Desktop/Qt/5.0.0-beta1/gcc/include/QtMultimedia
 } else {
     $$_UsingSDK {
         message("Using the Nokia Qt SDK installation")
