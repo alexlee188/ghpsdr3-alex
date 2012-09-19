@@ -148,7 +148,7 @@ void Waterfall::mouseMoveEvent(QMouseEvent* event){
     moved=1;
     float zoom_factor = 1.0f + zoom/25.0f;
     float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
-    int move_step = 100;
+    int move_step;
     if (move_ratio > 10.0f) move_step = 500;
     else if (move_ratio > 5.0f) move_step = 200;
     else if (move_ratio > 2.5f) move_step = 100;
@@ -156,7 +156,10 @@ void Waterfall::mouseMoveEvent(QMouseEvent* event){
     else if (move_ratio > 0.5f) move_step = 10;
     else if (move_ratio > 0.25f) move_step = 5;
     else move_step = 1;
-    if (! move==0) emit frequencyMoved(move,move_step);
+    if (! move==0) {
+        if (subRx) emit frequencyMoved(-move,move_step);
+        else emit frequencyMoved(move,move_step);
+    }
 }
 
 void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
@@ -167,7 +170,7 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
     if(moved) {
         float zoom_factor = 1.0f + zoom/25.0f;
         float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
-        int move_step = 100;
+        int move_step;
         if (move_ratio > 10.0f) move_step = 500;
         else if (move_ratio > 5.0f) move_step = 200;
         else if (move_ratio > 2.5f) move_step = 100;
@@ -175,7 +178,8 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
         else if (move_ratio > 0.5f) move_step = 10;
         else if (move_ratio > 0.25f) move_step = 5;
         else move_step = 1;
-        emit frequencyMoved(move,move_step);
+        if (subRx) emit frequencyMoved(-move,move_step);
+        else emit frequencyMoved(move,move_step);
     } else {
         float zoom_factor = 1.0f + zoom/25.0f;
         float hzPixel = (float) sampleRate / width() / zoom_factor;  // spectrum resolution: Hz/pixel
@@ -197,6 +201,7 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
                     }
                 }
             }
+            emit frequencyMoved((long long)(freqOffsetPixel*hzPixel)/100,100);
         } else {
             freqOffsetPixel = (f-frequency)/hzPixel; // compute the offset from the central frequency, in pixel
             if (button == Qt::LeftButton) {
@@ -211,9 +216,8 @@ void Waterfall::mouseReleaseEvent(QMouseEvent* event) {
                     }
                 }
             }
+            emit frequencyMoved(-(long long)(freqOffsetPixel*hzPixel)/100,100);
         }
-
-        emit frequencyMoved(-(long long)(freqOffsetPixel*hzPixel)/100,100);
 
     }
 }
