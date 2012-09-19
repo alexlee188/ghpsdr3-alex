@@ -305,7 +305,8 @@ and add the following:
 
 SUBSYSTEMS=="usb",ATTRS{idVendor}=="077d",ATTRS{idProduct}=="0410",SYMLINK+="powermate",MODE="666"
 
-reboot and do:
+reboot and do: (Or for Ubuntu /Debian sudo service udev restart and uplug and plug the powermate)
+
 
 $ ls -l /dev/powermate
 
@@ -325,7 +326,7 @@ Create a file called 99-input.rules and put in it:
 KERNEL=="event*", NAME="input/%k", MODE="660", GROUP="input"
 KERNEL=="js*", NAME="input/%k", MODE="664", GROUP="input"
 
-and reboot.
+and reboot. (Or for Ubuntu /Debian sudo service udev restart and uplug and plug the powermate)
 
 
 

@@ -1578,7 +1578,8 @@ void UI::frequencyMoved(int increment,int step) {
     if(subRx) {
         long long diff;
         long long frequency = band.getFrequency();
-        f=subRxFrequency+(long long)(increment*step);
+        f=subRxFrequency-(long long)(increment*step);
+//        f=subRxFrequency+(long long)(increment*step);  //Original
         int samplerate = widget.spectrumFrame->samplerate();
         if ((f >= (frequency - (samplerate / 2))) && (f <= (frequency + (samplerate / 2)))) {
             subRxFrequency = f;
