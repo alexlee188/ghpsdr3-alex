@@ -54,7 +54,7 @@ public class Connection extends Thread {
 		    int N = 10 * AudioRecord.getMinBufferSize(8000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
 		    if (N < micBufferSize * 40) N = micBufferSize * 40; // 40 * 58 = 2320
 		    
-		    recorder = new AudioRecord(AudioSource.VOICE_COMMUNICATION, 8000,
+		    recorder = new AudioRecord(AudioSource.MIC, 8000,
 		    				AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, N);
 		    
 		    recorder.setPositionNotificationPeriod(micBufferSize * nMicBuffers);
@@ -84,7 +84,7 @@ public class Connection extends Thread {
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
 		    
-		    sendCommand("setClient glSDR(9)");
+		    sendCommand("setClient glSDR(11)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
