@@ -20,7 +20,7 @@ public class Connection extends Thread {
 		
 		SPECTRUM_BUFFER_SIZE=width;
 		samples = new byte[SPECTRUM_BUFFER_SIZE];
-		for (int i = 0; i < SPECTRUM_BUFFER_SIZE; i++) samples[i] = -120;
+		for (int i = 0; i < SPECTRUM_BUFFER_SIZE; i++) samples[i] = 120;
 		this.server = server;
 		this.port = port;
 		System.gc();
@@ -84,7 +84,7 @@ public class Connection extends Thread {
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
 		    
-		    sendCommand("setClient glSDR(12)");
+		    sendCommand("setClient glSDR(13)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
