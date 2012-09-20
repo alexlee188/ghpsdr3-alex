@@ -89,6 +89,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		micgain=prefs.getInt("Micgain", 0);
 		agc=prefs.getInt("AGC", AGC_LONG);
 		fps=prefs.getInt("Fps", FPS_10);
+		spectrumAverage=prefs.getInt("SpectrumAverage", 0);
 		server=prefs.getString("Server", "192.168.1.12");
 		receiver=prefs.getInt("Receiver", 0);
 		txUser=prefs.getString("txUser", "");
@@ -136,6 +137,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		editor.putInt("Micgain", micgain);
 		editor.putInt("AGC", agc);
 		editor.putInt("Fps", fps);
+		editor.putInt("SpectrumAverage", spectrumAverage);
 		editor.putString("Server", server);
 		editor.putInt("Receiver", receiver);
 		editor.putString("txUser", txUser);
@@ -193,6 +195,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		    connection.setTxUser(txUser);
 		    connection.setTxPass(txPass);
 			connection.setFps(fps);
+			connection.setSpectrumAverage(spectrumAverage);
 			connection.getSpectrum_protocol3(fps+1);
 			connection.setScaleFactor(1f);
 		}
@@ -229,6 +232,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		menu.add(0, MENU_DSP, 0, "DSP");
 		menu.add(0, MENU_GAIN, 0, "GAIN");
 		menu.add(0, MENU_FPS, 0, "FPS");
+		menu.add(0, MENU_SPECTRUM_AVERAGE, 0, "Spectrum Average");
 		menu.add(0, MENU_TX, 0, "ALLOW TX");
 		menu.add(0, MENU_TX_USER, 0, "TX User Password");
 		menu.add(0, MENU_MIC_GAIN, 0, "MIC GAIN");
@@ -287,8 +291,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					//update=new Update(connection);					
 					spectrumView.setConnection(connection);
 					spectrumView.setAverage(-100);
-					//update.setFps(fps);
 					connection.setFps(fps);
+					connection.setSpectrumAverage(spectrumAverage);
 					connection.getSpectrum_protocol3(fps+1);
 					//update.start();
 					setTitle("glSDR: "+server+" (rx"+receiver+")");
@@ -375,6 +379,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
     							spectrumView.setAverage(-100);
     							setTitle("glSDR: "+server+" (rx"+receiver+")");
     							connection.setFps(fps);
+    							connection.setSpectrumAverage(spectrumAverage);
     							connection.getSpectrum_protocol3(fps+1);
     							dialog.dismiss();
     						}
@@ -416,6 +421,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 							spectrumView.setAverage(-100);
 							setTitle("glSDR: "+server+" (rx"+receiver+")");
 							connection.setFps(fps);
+							connection.setSpectrumAverage(spectrumAverage);
 							connection.getSpectrum_protocol3(fps+1);
 							dialog.dismiss();
 						}
@@ -528,6 +534,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 						public void onClick(DialogInterface dialog, int item) {
 							mode=item;
 							connection.setMode(mode);
+							filter = FILTER_5;
 							switch (item) {
 							case MODE_LSB:
 								connection.setFilter(-2850, -150);
@@ -587,6 +594,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 				filters = cwFilters;
 				break;
 			case MODE_FMN:
+				filters = fmFilters;
+				break;
 			case MODE_AM:
 			case MODE_DIGU:
 			case MODE_DIGL:
@@ -624,6 +633,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 												cwPitch + 500);
 										break;
 									case MODE_FMN:
+										connection.setFilter(-40000, 40000);
+										break;
 									case MODE_AM:
 									case MODE_DIGU:
 									case MODE_DIGL:
@@ -1050,8 +1061,20 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int item) {
 							fps=item;
-							//update.setFps(fps+1);
 							connection.getSpectrum_protocol3(fps+1);
+							dialog.dismiss();
+						}
+					});
+			dialog = builder.create();
+			break;
+		case MENU_SPECTRUM_AVERAGE:
+			builder = new AlertDialog.Builder(this);
+			builder.setTitle("Set Spectrum Averaging");
+			builder.setSingleChoiceItems(spectrumAverages, spectrumAverage,
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int item) {
+							spectrumAverage=item;
+							connection.setSpectrumAverage(item);
 							dialog.dismiss();
 						}
 					});
@@ -1113,6 +1136,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int MENU_TX = 12;
 	public static final int MENU_TX_USER = 13;
 	public static final int MENU_MIC_GAIN = 14;
+	public static final int MENU_SPECTRUM_AVERAGE = 15;
 
 	public static final CharSequence[] bands = { "160", "80", "60", "40", "30",
 			"20", "17", "15", "12", "10", "6", "GEN", "WWV" };
@@ -1204,6 +1228,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int FPS_14 = 13;
 	public static final int FPS_15 = 14;
 	
+	public static final CharSequence[] spectrumAverages = { "0", "1", "2", "3", "4", "5"};
+	
+	private int spectrumAverage = 0;
 
 	public static final CharSequence[] ssbFilters = { "5.0k", "4.4k", "3.8k",
 			"3.3k", "2.9k", "2.7k", "2.4k", "2.1k", "1.8k", "1.0k" };
@@ -1211,8 +1238,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			"600", "500", "400", "250", "100", "50", "25" };
 	public static final CharSequence[] amFilters = { "16.0k", "12.0k", "10.0k",
 			"8.0k", "6.6k", "5.2k", "4.0k", "3.1k", "2.9k", "2.0k" };
+	public static final CharSequence[] fmFilters = { "80.0k", "12.0k", "10.0k",
+		"8.0k", "6.6k", "5.2k", "4.0k", "3.1k", "2.9k", "2.0k" };
 
-	private int filter = FILTER_3;
+	private int filter = FILTER_5;
 	
 	private int filterLow=150;
 	private int filterHigh=2875;

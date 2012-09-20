@@ -20,7 +20,7 @@ public class Connection extends Thread {
 		
 		SPECTRUM_BUFFER_SIZE=width;
 		samples = new byte[SPECTRUM_BUFFER_SIZE];
-
+		for (int i = 0; i < SPECTRUM_BUFFER_SIZE; i++) samples[i] = -120;
 		this.server = server;
 		this.port = port;
 		System.gc();
@@ -84,7 +84,7 @@ public class Connection extends Thread {
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
 		    
-		    sendCommand("setClient glSDR(11)");
+		    sendCommand("setClient glSDR(12)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
@@ -289,7 +289,8 @@ public class Connection extends Thread {
         
         // rotate spectrum display is done in dspserver now.  Do not rotate.
         	for (int i = 0; i < SPECTRUM_BUFFER_SIZE; i++) {
-			    samples[i] = buffer[i];
+			    samples[i] = (byte)((((float)samples[i]*(float)spectrumAverage) 
+			    		+ (float)buffer[i])/(float)(spectrumAverage+1));
         	}
 
 		if (spectrumView != null) {
@@ -513,6 +514,10 @@ public class Connection extends Thread {
 	public void setMicGain(int gain){
 		micGain = gain;
 	}
+	
+	public void setSpectrumAverage(int value){
+		spectrumAverage = value;
+	}
 
 	private SpectrumView spectrumView;
 
@@ -550,6 +555,7 @@ public class Connection extends Thread {
 	private short meter;
 	private int agc;
 	private int fps;
+	private int spectrumAverage = 0;
 
 	private int cwPitch = 600;
 
