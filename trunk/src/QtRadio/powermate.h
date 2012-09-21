@@ -1,3 +1,4 @@
+#if !defined(WIN32)
 #ifndef POWERMATE_H
 #define POWERMATE_H
 
@@ -28,3 +29,4 @@ class PmInput : public QThread {
 
 #endif
 
+#endif

@@ -2460,3 +2460,11 @@ void UI::on_zoomSpectrumSlider_sliderMoved(int position)
     widget.spectrumFrame->setZoom(position);
     widget.waterfallFrame->setZoom(position);
 }
+
+void UI::rigSetPTT(int enabled){
+    if (enabled){
+       widget.ctlFrame->RigCtlTX(true);
+    }else{
+       widget.ctlFrame->RigCtlTX(false);
+    }
+}

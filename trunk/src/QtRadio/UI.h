@@ -102,6 +102,7 @@ public:
     void rigctlSetVFOB();
     void rigctlSetFreq(long long f);
     void rigctlSetMode(int newmode);
+    void rigSetPTT(int enabled);
     void setHwDlg(DlgHardware *);
     DlgHardware * getHwDlg() { return pHwDlg; }
     void rmHwDlg();
