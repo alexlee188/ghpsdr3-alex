@@ -181,7 +181,7 @@ void Spectrum::mouseMoveEvent(QMouseEvent* event){
         } else {
             float zoom_factor = 1.0f + zoom/25.0f;
             float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
-            int move_step = 100;
+            int move_step;
             if (move_ratio > 10.0f) move_step = 500;
             else if (move_ratio > 5.0f) move_step = 200;
             else if (move_ratio > 2.5f) move_step = 100;
@@ -190,7 +190,10 @@ void Spectrum::mouseMoveEvent(QMouseEvent* event){
             else if (move_ratio > 0.25f) move_step = 5;
             else move_step = 1;
 
-            if (!move==0) emit frequencyMoved(move,move_step);
+            if (!move==0) {
+                if (subRx) emit frequencyMoved(-move,move_step);
+                else emit frequencyMoved(move,move_step);
+            }
         }
     }
 
@@ -205,10 +208,10 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
         button=-1;
         settingSquelch=false;
     } else {
+        float zoom_factor = 1.0f + zoom/25.0f;
         if(moved) {
-            float zoom_factor = 1.0f + zoom/25.0f;
             float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
-            int move_step = 100;
+            int move_step;
             if (move_ratio > 10.0f) move_step = 500;
             else if (move_ratio > 5.0f) move_step = 200;
             else if (move_ratio > 2.5f) move_step = 100;
@@ -216,9 +219,9 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
             else if (move_ratio > 0.5f) move_step = 10;
             else if (move_ratio > 0.25f) move_step = 5;
             else move_step = 1;
-            emit frequencyMoved(move,move_ratio);
+            if (subRx) emit frequencyMoved(-move,move_ratio);
+            else emit frequencyMoved(move,move_step);
         } else {
-            float zoom_factor = 1.0f + zoom/25.0f;
             float hzPixel = (float) sampleRate / width() / zoom_factor;  // spectrum resolution: Hz/pixel
             long freqOffsetPixel;
             long long f = frequency - (sampleRate/2/zoom_factor) + (event->pos().x()*hzPixel)
@@ -236,8 +239,9 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
                         } else {
                         // no adjustment
                         }
-                    } // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
+                    } // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.      
                 }
+                emit frequencyMoved((long long)(freqOffsetPixel*hzPixel)/100,100);
             } else {
                 freqOffsetPixel = (f-frequency)/hzPixel; // compute the offset from the central frequency, in pixel
                 if (button == Qt::LeftButton) {
@@ -252,8 +256,9 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
                         }
                     } // no adjustment needed if USB or LSB mode so we snap to the carrier frequency.
                 }
+                emit frequencyMoved(-(long long)(freqOffsetPixel*hzPixel)/100,100);
             }
-            emit frequencyMoved(-(long long)(freqOffsetPixel*hzPixel)/100,100);
+
         }
         button = -1;
     }
@@ -323,6 +328,10 @@ void Spectrum::paintEvent(QPaintEvent*) {
 
     float zoom_factor = 1.0f + zoom/25.0f;
 
+    // draw cursor
+    painter.setPen(QPen(Qt::red, 1));
+    painter.drawLine((width()/2)+offset*zoom_factor,0,(width()/2)+offset*zoom_factor,height());
+
     // draw filter
     filterLeft = width()/2 + (float)(filterLow+LO_offset)* (float)width()*zoom_factor/(float)sampleRate;
     filterRight = width()/2 + (float)(filterHigh+LO_offset)*(float)width()*zoom_factor/(float)sampleRate;
@@ -331,11 +340,14 @@ void Spectrum::paintEvent(QPaintEvent*) {
     painter.fillRect(filterLeft,0,filterRight-filterLeft,height(),Qt::gray);
 
     // draw sub rx filter and cursor
-    // TODO: not working under zoom yet
     if(subRx) {
-        int cursor=((subRxFrequency-(frequency-(sampleRate/2))) * width() / sampleRate)+offset;
-        filterLeft = ((filterLow - (-sampleRate / 2) + (subRxFrequency-frequency)) * width() / sampleRate)+offset;
-        filterRight = ((filterHigh - (-sampleRate / 2) + (subRxFrequency-frequency)) * width() / sampleRate)+offset;
+        //int cursor=((subRxFrequency-(frequency-(sampleRate/2))) * width() / sampleRate)+offset;
+        int cursor = width()/2 + (float)(subRxFrequency-frequency+LO_offset)
+                * (float)width()*zoom_factor/(float)sampleRate;
+        filterLeft = width()/2 + (float)(filterLow+LO_offset+subRxFrequency-frequency)
+                * (float)width()*zoom_factor/(float)sampleRate;
+        filterRight = width()/2 + (float)(filterHigh+LO_offset+subRxFrequency-frequency)
+                * (float)width()*zoom_factor/(float)sampleRate;
         painter.setBrush(Qt::SolidPattern);
         painter.setOpacity(0.5);
         painter.fillRect(filterLeft, 0, filterRight - filterLeft, height(), Qt::lightGray);
@@ -400,10 +412,6 @@ void Spectrum::paintEvent(QPaintEvent*) {
             painter.drawLine(i+1,0,i+1,height());
         }
     }
-
-    // draw cursor
-    painter.setPen(QPen(Qt::red, 1));
-    painter.drawLine((width()/2)+offset*zoom_factor,0,(width()/2)+offset*zoom_factor,height());
 
     // draw the squelch
     if(settingSquelch || showSquelchControl) {

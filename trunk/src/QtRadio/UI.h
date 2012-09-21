@@ -72,6 +72,7 @@
 #include "G711A.h"
 #include "RTP.h"
 #include "hardware.h"
+#include "powermate.h"
 
 #define DSPSERVER_BASE_PORT 8000
 
@@ -101,6 +102,7 @@ public:
     void rigctlSetVFOB();
     void rigctlSetFreq(long long f);
     void rigctlSetMode(int newmode);
+    void rigSetPTT(int enabled);
     void setHwDlg(DlgHardware *);
     DlgHardware * getHwDlg() { return pHwDlg; }
     void rmHwDlg();

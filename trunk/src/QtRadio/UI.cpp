@@ -60,6 +60,7 @@
 #include "codec2.h"
 #include "servers.h"
 #include "ctl.h"
+#include "powermate.h"
 
 UI::UI(const QString server) {
 
@@ -553,6 +554,8 @@ void UI::actionConnect() {
 
     // Initialise RxIQMu. Set RxIQMu to disabled, set value and then enable if checked.
     RxIQspinChanged(configure.getRxIQspinBoxValue());
+    widget.zoomSpectrumSlider->setValue(0);
+    on_zoomSpectrumSlider_sliderMoved(0);
 }
 
 
@@ -579,6 +582,8 @@ void UI::actionDisconnect() {
     QuickIP ="";
     spectrumTimer->stop();
     protocol3 = false;
+    widget.zoomSpectrumSlider->setValue(0);
+    on_zoomSpectrumSlider_sliderMoved(0);
 
     connection.disconnect();
     widget.actionConnectToServer->setDisabled(FALSE);
@@ -1577,7 +1582,8 @@ void UI::frequencyMoved(int increment,int step) {
     if(subRx) {
         long long diff;
         long long frequency = band.getFrequency();
-        f=subRxFrequency+(long long)(increment*step);
+        f=subRxFrequency-(long long)(increment*step);
+//        f=subRxFrequency+(long long)(increment*step);  //Original
         int samplerate = widget.spectrumFrame->samplerate();
         if ((f >= (frequency - (samplerate / 2))) && (f <= (frequency + (samplerate / 2)))) {
             subRxFrequency = f;
@@ -2457,4 +2463,12 @@ void UI::on_zoomSpectrumSlider_sliderMoved(int position)
 
     widget.spectrumFrame->setZoom(position);
     widget.waterfallFrame->setZoom(position);
+}
+
+void UI::rigSetPTT(int enabled){
+    if (enabled){
+       widget.ctlFrame->RigCtlTX(true);
+    }else{
+       widget.ctlFrame->RigCtlTX(false);
+    }
 }
