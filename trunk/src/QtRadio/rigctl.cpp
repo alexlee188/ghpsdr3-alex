@@ -100,7 +100,7 @@ void RigCtlSocket::readyRead() {
         } else if (command[0] == 'T') { // set_ptt  no tx yet but this keeps grig and fldigi happy
             int enabled = command.mid(space + 1).toInt();
             qDebug("Rigctl: PTT T : ->%d", enabled);
-            //main->rigSetPTT(enabled);
+            main->rigSetPTT(enabled);
         } else if (command[0] == 'q') { // quit
             conn->close();
             return;
@@ -174,3 +174,4 @@ void RigCtlServer::newConnection() {
         connect(conn, SIGNAL(disconnected()), sock, SLOT(disconnected()));
         connect(conn, SIGNAL(readyRead()), sock, SLOT(readyRead()));
 }
+

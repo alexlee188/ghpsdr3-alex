@@ -28,7 +28,10 @@
 #include "ui_vfo.h"
 #include <QDebug>
 #include <QKeyEvent>
+
+#if !defined(WIN32)
 #include "powermate.h"
+#endif
 
 //#include "Band.h"
 //#include "UI.h"
@@ -63,12 +66,15 @@ vfo::vfo(QWidget *parent) :
     connect(ui->hSlider, SIGNAL(valueChanged(int)),
                 this, SLOT(processRIT(int)));
 
-//  Powermate related stuff
+#if !defined(WIN32)
+    //  Powermate related stuff
     PmInput *input = new PmInput();
     connect(input, SIGNAL(pressed()), this, SLOT(press()));
     connect(input, SIGNAL(released()), this, SLOT(release()));
     connect(input, SIGNAL(rotated(int)), this, SLOT(increase(int)));
     input->start();
+#endif
+
 }
 
 vfo::~vfo()

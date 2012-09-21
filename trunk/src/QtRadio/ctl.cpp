@@ -163,3 +163,11 @@ void Ctl::on_pushButton_toggled(bool checked)
 //    qDebug()<<Q_FUNC_INFO<<":   The state of the pushbutton is "<<checked;
     emit testBtnClick(checked);
 }
+
+void Ctl::RigCtlTX(bool rigctlptt){
+    if (rigctlptt && ui->btnMox->isEnabled()){
+        on_btnMox_clicked(true);
+    }else{
+        on_btnMox_clicked(false);
+    }
+}

@@ -2074,7 +2074,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  master 15 Sep 2012");
+                   + getversionstring() +  message + "  master 20 Sep 2012");
     lastmessage = message;
 
 }
@@ -2459,4 +2459,12 @@ void UI::on_zoomSpectrumSlider_sliderMoved(int position)
 
     widget.spectrumFrame->setZoom(position);
     widget.waterfallFrame->setZoom(position);
+}
+
+void UI::rigSetPTT(int enabled){
+    if (enabled){
+       widget.ctlFrame->RigCtlTX(true);
+    }else{
+       widget.ctlFrame->RigCtlTX(false);
+    }
 }

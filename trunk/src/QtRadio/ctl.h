@@ -46,6 +46,7 @@ public:
     ~Ctl();
     int getTxPwr();
     void clearMoxBtn();
+    void RigCtlTX(bool rigctlptt);
 
 signals:
     void pttChange(int caller, bool ptt);//0 = MOX, 1 = Tune, 2 = VOX, 3 = Extern H'ware
