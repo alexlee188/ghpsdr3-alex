@@ -1,5 +1,6 @@
-<h3>My App</h3>
-Version 1.0<br>
-Copyright 2011<br>
-<b>www.mywebsite.com</b><br><br>
-1-800-555-1234
+<h3>glSDR</h3>
+Version 14<br>
+Copyright 2012 Alex Lee<br>
+<b>http://napan.ca/ghpsdr3/index.php/Main_Page</b><br><br>
+List of servers<br>
+<b>http://qtradio.napan.ca/qtradio/qtradio.pl</b><br><br>
