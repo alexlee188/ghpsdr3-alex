@@ -209,8 +209,8 @@ void init_register(const char *scfile){
 void *doUpdate(void *arg){
     if(toShareOrNotToShare){
         int result;
-        char sCmd[1024];
-        snprintf(sCmd, sizeof(sCmd), "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant,(char *)arg);
+        char sCmd[255];
+        sprintf(sCmd, "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant,(char *)arg);
         result = system(sCmd);
         sem_wait(&status_sem);
         free(dspstatus);
