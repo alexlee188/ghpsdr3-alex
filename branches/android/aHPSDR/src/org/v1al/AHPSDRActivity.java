@@ -348,7 +348,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
                 		i+=9;
                 		i=html.indexOf("</td>",i);
                 		i+=9;
-                		j=html.indexOf("client",i);
+                		j=html.indexOf("lient",i);
+                		j--;
                 		clients = html.substring(i,j);
                         item.add(ip+" ("+call+")"+" "+clients+"client(s)");
                 		i=j; 
