@@ -328,6 +328,8 @@ int hiqsdr_set_preamp (int newstatus)
 {
     if (newstatus != 0) hq.preamp = 1;
                    else hq.preamp = 0;
+    fprintf (stderr, "%s: preamplifier: %02X\n", __FUNCTION__, hq.preamp);
+    send_command (&hq);
     return 0;
 }
 
