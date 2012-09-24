@@ -1083,7 +1083,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 
             if (ntok >= 1) {
                 /* FIXME: validate! */
-                bufsize = atoi(tokens[0]);
+                //bufsize = atoi(tokens[0]);
             }
             if (ntok >= 2) {
                 rate = atoi(tokens[1]);
