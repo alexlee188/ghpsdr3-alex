@@ -42,6 +42,8 @@ int hiqsdr_set_attenuator (int attDb);
 int hiqsdr_set_antenna_input (int n);
 int hiqsdr_set_preselector (int p);
 int hiqsdr_get_preselector_desc(unsigned int p, char *pd);
+int hiqsdr_set_preamp (int newstatus);
+int hiqsdr_get_preamp (void);
 int hiqsdr_start_asynch_input (HIQSDR_CB cb, void *pud);
 int hiqsdr_stop_asynch_input ();
 int hiqsdr_deinit (void);

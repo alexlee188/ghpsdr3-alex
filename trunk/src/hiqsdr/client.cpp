@@ -327,7 +327,7 @@ const char* parse_command(CLIENT* client,char* command) {
                 return INVALID_COMMAND;
             }
         } else if(strcmp(token,"selectantenna")==0) {
-            // seelect antenna
+            // select antenna
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
                long antenna = atol(token);
@@ -336,11 +336,20 @@ const char* parse_command(CLIENT* client,char* command) {
                 return INVALID_COMMAND;
             }
         } else if(strcmp(token,"selectpresel")==0) {
-            // seelect antenna
+            // select preselector
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
                long presel = atol(token);
                return select_preselector (client,presel);
+            } else {
+                return INVALID_COMMAND;
+            }
+        } else if(strcmp(token,"activatepreamp")==0) {
+            // activate preamplifier
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+               long preamp = atol(token);
+               return set_preamp (client,preamp);
             } else {
                 return INVALID_COMMAND;
             }
@@ -414,6 +423,11 @@ const char* parse_command(CLIENT* client,char* command) {
                 return INVALID_COMMAND;
             }
 
+        } else if(strcmp(token,"getpreampstatus?")==0) {
+            // returns preamp status
+            static char buf[50];
+            snprintf (buf, sizeof(buf), "OK %d", hiqsdr_get_preamp ());
+            return buf;
 
         } else {
             // invalid command string

@@ -67,7 +67,7 @@ struct Hiqsdr {
     int  antSel;
     int  preSel;
     char *preselDesc[16];
-
+    int  preamp;   
 
     // asynch thread for receiving data from hardware
     pthread_t      thread_id;
@@ -104,6 +104,7 @@ int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
    hq.attDb  = 0;
    hq.antSel = 0;
    hq.preSel = 0;
+   hq.preamp = 0;
    hq.rx_data_port = 48247;
    hq.ctrl_port    = hq.rx_data_port+1;   
    hq.tx_data_port = hq.rx_data_port+2;
@@ -321,6 +322,18 @@ int hiqsdr_get_preselector_desc (unsigned int p, char *pDesc)
     } else
         return -1;
 
+}
+
+int hiqsdr_set_preamp (int newstatus)
+{
+    if (newstatus != 0) hq.preamp = 1;
+                   else hq.preamp = 0;
+    return 0;
+}
+
+int hiqsdr_get_preamp (void)
+{ 
+    return hq.preamp;
 }
 
 int hiqsdr_deinit (void)
@@ -686,7 +699,10 @@ static int send_command (struct Hiqsdr *hiq) {
 
     m.fwv = 3;  // FPGA firmware version
 
-    m.x1  = hiq->preSel & 0x0F;   // preselector et al.
+    m.x1  = (hiq->preSel & 0x0F)    // preselector et al.
+            |
+            (hiq->preamp & 0x10);   // preamplifier
+ 
     m.att = hiq->attDb;           // input attenuator
 
     m.msc = hiq->antSel;  // select antenna 

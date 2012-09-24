@@ -224,6 +224,16 @@ const char* select_preselector (CLIENT* client, int preselector)
         return INVALID_COMMAND;
 }
 
+const char* set_preamplifier(CLIENT* client, int preamp)
+{
+    if (preamp >= 0 && preamp <= 1) {
+        fprintf (stderr, "%s: new prepreamp: %d\n", __FUNCTION__, preamp);
+        hiqsdr_set_preamp (preamp);
+        return OK;
+    } else
+        return INVALID_COMMAND;
+}
+
 void send_IQ_buffer (RECEIVER *pRec) {
     struct sockaddr_in client;
     int client_length;
