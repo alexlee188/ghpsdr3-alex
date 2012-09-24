@@ -14,6 +14,9 @@
 #include "register.h"
 #include "defs.h"
 #include "client.h"
+#include "util.h"
+
+#define DSP_CMD_BUFSIZE 1024
 
 char *dspstatus;
 char *call = "Unknown";
@@ -59,13 +62,19 @@ char *url_encode(char *str) {
 
 
 void *doReg(){
-    int result;
-    char sCmd[255];
+    int len, result;
+    char sCmd[DSP_CMD_BUFSIZE];
     while(1){
         sem_wait(&status_sem);
-        sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant, dspstatus);
+        len = snprintf(sCmd, sizeof(sCmd),
+                       "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl",
+                       call, location, band, rig, ant, dspstatus);
         sem_post(&status_sem);
-        result = system(sCmd);
+        if (len > sizeof(sCmd)) {
+            sdr_log(SDR_LOG_ERROR, "Registration string was too long\n");
+        } else {
+            result = system(sCmd);
+        }
         sleep(300);  //seconds between web updates
     }
 }
@@ -209,15 +218,21 @@ void init_register(const char *scfile){
 void *doUpdate(void *arg){
     if(toShareOrNotToShare){
         int result;
-        char sCmd[1024];
-        snprintf(sCmd, sizeof(sCmd), "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant,(char *)arg);
+        char sCmd[DSP_CMD_BUFSIZE];
+
+        if (snprintf(sCmd, sizeof(sCmd),
+                    "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl",
+                    call, location, band, rig, ant,(char *)arg) > sizeof(sCmd)) {
+            sdr_log(SDR_LOG_ERROR, "Registration string was too long\n");
+            return NULL;
+        }
         result = system(sCmd);
         sem_wait(&status_sem);
         free(dspstatus);
         dspstatus = arg;
         sem_post(&status_sem);
     }
-    return 0;
+    return NULL;
 }
 
 
@@ -235,10 +250,15 @@ void updateStatus(char *status){
 
 void doRemove(){
 	int result;
-    char sCmd[255];
-    sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=Down'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant);
-	result = system(sCmd);
-    
+    char sCmd[DSP_CMD_BUFSIZE];
+    if (snprintf(sCmd, sizeof(sCmd),
+                "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=Down'  http://qtradio.napan.ca/qtradio/qtradioreg.pl",
+                call, location, band, rig, ant) > sizeof(sCmd)) {
+        sdr_log(SDR_LOG_ERROR, "Registration string was too long\n");
+        return;
+    }
+
+    result = system(sCmd);
 }
 
 void close_register(){
