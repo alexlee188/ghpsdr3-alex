@@ -163,15 +163,6 @@ const char* set_frequency (CLIENT* client, long frequency) {
     return OK;
 }
 
-
-const char* set_preamp (CLIENT* client, bool preamp)
-{
-//  receiver[client->receiver].ppc->preamp = preamp;
-//
-    return NOT_IMPLEMENTED_COMMAND;
-    return OK;
-}
-
 const char* set_dither (CLIENT* client, bool dither)
 {
 //  receiver[client->receiver].ppc->dither = dither;

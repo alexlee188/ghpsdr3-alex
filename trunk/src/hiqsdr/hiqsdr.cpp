@@ -701,7 +701,7 @@ static int send_command (struct Hiqsdr *hiq) {
 
     m.x1  = (hiq->preSel & 0x0F)    // preselector et al.
             |
-            (hiq->preamp & 0x10);   // preamplifier
+            (hiq->preamp ? 0x10 : 0x00);   // preamplifier
  
     m.att = hiq->attDb;           // input attenuator
 

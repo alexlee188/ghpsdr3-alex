@@ -74,7 +74,6 @@ void init_receivers(HiqSdrConfig *);
 const char* attach_receiver(int rx,CLIENT* client);
 const char* detach_receiver(int rx,CLIENT* client);
 const char* set_frequency(CLIENT* client,long f);
-const char* set_preamp(CLIENT* client, bool);
 const char* set_dither(CLIENT* client, bool);
 const char* set_random(CLIENT* client, bool);
 const char* set_attenuator(CLIENT* client, int);

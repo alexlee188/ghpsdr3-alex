@@ -289,20 +289,6 @@ const char* parse_command(CLIENT* client,char* command) {
                 // invalid command string
                 return INVALID_COMMAND;
             }
-        } else if(strcmp(token,"preamp")==0) {
-            // set frequency
-            token=strtok(NULL," \r\n");
-            if(token!=NULL) {
-                if (strcmp(token,"on")==0) {
-                    return set_preamp (client,true);
-                }
-                if (strcmp(token,"off")==0) {
-                    return set_preamp (client,false);
-                }
-                return INVALID_COMMAND;
-            } else {
-                return INVALID_COMMAND;
-            }
         } else if(strcmp(token,"dither")==0) {
             // set frequency
             token=strtok(NULL," \r\n");
