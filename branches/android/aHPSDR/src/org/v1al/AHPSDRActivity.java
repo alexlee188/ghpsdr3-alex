@@ -324,6 +324,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
                 Vector<String>item=new Vector<String>();
                 String ip;
                 String call;
+                String clients;
                 int n=0;
                 int i=0;
                 int j;
@@ -337,7 +338,19 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
                 		i+=4;
                 		j=html.indexOf("</td>",i);
                 		call=html.substring(i,j);
-                		item.add(ip+" ("+call+")");
+
+                		i=j+9;
+                		i=html.indexOf("</td>",i);
+                		i+=9;
+                		i=html.indexOf("</td>",i);
+                		i+=9;
+                		i=html.indexOf("</td>",i);
+                		i+=9;
+                		i=html.indexOf("</td>",i);
+                		i+=9;
+                		j=html.indexOf("client",i);
+                		clients = html.substring(i,j);
+                        item.add(ip+" ("+call+")"+" "+clients+"client(s)");
                 		i=j; 
                 		n++;
                 	}
