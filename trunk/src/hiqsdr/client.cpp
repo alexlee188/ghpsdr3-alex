@@ -349,7 +349,7 @@ const char* parse_command(CLIENT* client,char* command) {
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
                long preamp = atol(token);
-               return set_preamp (client,preamp);
+               return set_preamplifier (client,preamp);
             } else {
                 return INVALID_COMMAND;
             }
