@@ -952,7 +952,6 @@ void readcb(struct bufferevent *bev, void *ctx){
         if(strncmp(cmd,"q",1)==0){	
             answer_question(message,role, bev);
 
-/*
         }else if(strncmp(cmd,"getspectrum",11)==0) {
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
@@ -975,7 +974,6 @@ void readcb(struct bufferevent *bev, void *ctx){
             sem_post(&bufferevent_semaphore);
             sem_post(&spectrum_semaphore);
             free(client_samples);
-*/
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
