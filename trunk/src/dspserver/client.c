@@ -437,7 +437,7 @@ void spectrum_timer_handler(int sv){            // this is called every 20 ms
                     bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
                     sem_post(&spectrum_semaphore);
                     free(client_samples);
-                    item->frame_counter = 50 / item->fps;
+                    item->frame_counter = (item->fps == 0) ? 50 : 50 / item->fps;
                 }
             }
             sem_wait(&bufferevent_semaphore);
@@ -951,6 +951,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 
         if(strncmp(cmd,"q",1)==0){	
             answer_question(message,role, bev);
+
         }else if(strncmp(cmd,"getspectrum",11)==0) {
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
@@ -1082,7 +1083,7 @@ void readcb(struct bufferevent *bev, void *ctx){
 
             if (ntok >= 1) {
                 /* FIXME: validate! */
-                bufsize = atoi(tokens[0]);
+                //bufsize = atoi(tokens[0]);
             }
             if (ntok >= 2) {
                 rate = atoi(tokens[1]);

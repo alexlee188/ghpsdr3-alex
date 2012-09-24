@@ -554,6 +554,8 @@ void UI::actionConnect() {
 
     // Initialise RxIQMu. Set RxIQMu to disabled, set value and then enable if checked.
     RxIQspinChanged(configure.getRxIQspinBoxValue());
+    widget.zoomSpectrumSlider->setValue(0);
+    on_zoomSpectrumSlider_sliderMoved(0);
 }
 
 
@@ -580,6 +582,8 @@ void UI::actionDisconnect() {
     QuickIP ="";
     spectrumTimer->stop();
     protocol3 = false;
+    widget.zoomSpectrumSlider->setValue(0);
+    on_zoomSpectrumSlider_sliderMoved(0);
 
     connection.disconnect();
     widget.actionConnectToServer->setDisabled(FALSE);
