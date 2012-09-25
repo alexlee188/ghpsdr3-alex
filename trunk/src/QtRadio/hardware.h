@@ -74,6 +74,7 @@ private slots:
 
 
 class QRadioButton;
+class QCheckBox;
 
 class HardwareHiqsdr: public DlgHardware
 { 
@@ -91,11 +92,15 @@ private:
    QSignalMapper *preselMapper;
    int preselVal;
    QRadioButton *psel[16];
+   QCheckBox *preamp;
+   int preampVal;
+   
 
 private slots:
    void attClicked(int state);
    void antClicked(int n);
    void preselClicked(int n);
+   void preampChanged(int n);
    void processAnswer (QStringList);
 };
 

@@ -23,7 +23,8 @@
 *
 */
 
- 
+#if !defined(WIN32)
+
 #include <QDebug>
 #include "powermate.h"
 #include <linux/input.h>
@@ -94,3 +95,5 @@ void PmInput::setLed(const input_event& event)
 
 }
 */
+
+#endif

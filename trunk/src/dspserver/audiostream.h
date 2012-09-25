@@ -52,7 +52,7 @@ enum as_mic_encoding {
     MIC_ENCODING_CODEC2		= 1
 };
 
-#define AUDIO_BUFFER_SIZE 400
+#define AUDIO_BUFFER_SIZE 2000
 
 struct audio_entry {
 	unsigned char *buf;

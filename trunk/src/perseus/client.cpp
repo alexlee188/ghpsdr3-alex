@@ -40,6 +40,7 @@
 #include "receiver.h"
 #include "messages.h"
 #include "perseus_audio.h"
+#include "util.h"
 
 
 typedef union {
@@ -415,9 +416,11 @@ void* audio_thread(void* arg) {
         } else {
             if (bytes_read != sizeof(rx->output_buffer)) {
                 fprintf (stderr, "Arrrgh: %d bytes read instead of %d\n", bytes_read, sizeof(rx->output_buffer));
+                hex_dump((char *)rx->output_buffer, bytes_read, "Packet received");
+                //exit(255);
             }
         }
-
+        fprintf (stderr, "%d bytes read from audio socket !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", bytes_read);
         //process_ozy_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
         //rx->ppa->write_3 (rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
         rx->ppa->write_sr (rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);

@@ -13,11 +13,16 @@ AM_INIT_AUTOMAKE
 
 AC_CONFIG_SRCDIR([README])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIR([build-aux])
 
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_MAKE_SET
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+# compiling `client.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.ac'
+AM_PROG_CC_C_O
 
 # Python checks for pylauncher
 AM_PATH_PYTHON([2.5],, [:])
@@ -28,21 +33,41 @@ AM_PATH_PYTHON([2.5],, [:])
 #
 case $build_cpu in
 
-    x86_64)
-      AC_MSG_NOTICE([Platform: 64 bit])
-      LDFLAGS="$LDFLAGS -L/lib64 -L/usr/lib64"
-      export LDFLAGS
-      AC_MSG_NOTICE([${LDFLAGS}])
+    i686)
+      AC_MSG_NOTICE([Platform: ix86 32 bit])
+      # checks for platform dependent flags and compiler optimizations
+      AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
+      AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+      SIMD_FLAGS="$SIMD_FLAGS  -march=native "
+      AC_SUBST(SIMD_FLAGS)    
     ;;
 
+    x86_64)
+      AC_MSG_NOTICE([Platform: ix86 64 bit])
+      LDFLAGS="$LDFLAGS -L/lib64 -L/usr/lib64"
+      export LDFLAGS
+      AC_MSG_NOTICE([${LDFLAGS}])      
+      # checks for platform dependent flags and compiler optimizations
+      AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
+      AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+      SIMD_FLAGS="$SIMD_FLAGS  -march=native "
+      AC_SUBST(SIMD_FLAGS)    
+    ;;
+
+    armv6l)
+      AC_MSG_NOTICE([Platform: ARM 6])
+      CFLAGS="-O3 -pipe -march=armv6 -mfpu=vfp -mfloat-abi=hard"
+      CXXFLAGS="-O3 -pipe -march=armv6 -mfpu=vfp -mfloat-abi=hard"
+      export CFLAGS
+      export CXXFLAGS
+      AC_MSG_NOTICE([${CFLAGS}])
+      AC_MSG_NOTICE([${CXXFLAGS}])
+    ;;
 
 esac
 
-# compiling `client.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.ac'
-AM_PROG_CC_C_O
-
-# library (in DttSP) used but `RANLIB' is undefined:  the usual way to define `RANLIB' is to add `AC_PROG_RANLIB'
-AC_PROG_RANLIB
+dnl # library (in DttSP) used but `RANLIB' is undefined:  the usual way to define `RANLIB' is to add `AC_PROG_RANLIB'
+dnl #AC_PROG_RANLIB
 
 
 #
@@ -411,6 +436,11 @@ AC_CONFIG_FILES([Makefile
 
 AC_OUTPUT
 
+#
+# check the compiler option really working
+#
+corw=`gcc -Q --help=target -march=native`
+
 echo \
 "-----------------------------------------------------
 
@@ -441,5 +471,9 @@ target:        ${target}
 target cpu:    ${target_cpu}
 target vendor: ${target_vendor}
 target os:     ${target_os} 
+
+Compiler options in use:
+
+${corw}
 
 -----------------------------------------------------"

@@ -1,6 +1,6 @@
 bin_PROGRAMS = widget-server
 
-widget_server_CFLAGS = -O3 -std=gnu99
+widget_server_CFLAGS = -O3 -std=gnu99 @SIMD_FLAGS@
 
 widget_server_SOURCES = \
     bandscope.c  \
