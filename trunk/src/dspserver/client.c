@@ -1082,8 +1082,15 @@ void readcb(struct bufferevent *bev, void *ctx){
             micEncoding = 0;
 
             if (ntok >= 1) {
-                /* FIXME: validate! */
-                //bufsize = atoi(tokens[0]);
+                /* FIXME: validate */
+                /* Do not vary buffer size according to buffer size setting from client
+                   as it causes problems when the buffer size set by master is smaller
+                   then slaves */
+                bufsize = atoi(tokens[0]); //atoi guards against tokens[0] being > sizeof integer
+                if (bufsize < AUDIO_BUFFER_SIZE)
+                    bufsize = AUDIO_BUFFER_SIZE;
+                else if (bufsize > 32000)
+                         bufsize = 32000;
             }
             if (ntok >= 2) {
                 rate = atoi(tokens[1]);
