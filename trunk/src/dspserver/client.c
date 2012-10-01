@@ -1088,9 +1088,9 @@ void readcb(struct bufferevent *bev, void *ctx){
                    then slaves */
                 bufsize = atoi(tokens[0]); //atoi guards against tokens[0] being > sizeof integer
                 if (bufsize < AUDIO_BUFFER_SIZE)
-					bufsize = AUDIO_BUFFER_SIZE;
-				if (bufsize > 32000)
-					bufsize = 32000;
+                    bufsize = AUDIO_BUFFER_SIZE;
+                else if (bufsize > 32000)
+                         bufsize = 32000;
             }
             if (ntok >= 2) {
                 rate = atoi(tokens[1]);
