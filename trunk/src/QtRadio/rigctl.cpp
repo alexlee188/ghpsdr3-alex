@@ -72,7 +72,7 @@ void RigCtlSocket::readyRead() {
         if (command[0] == 'f') { // get_freq
             out << main->rigctlGetFreq() << "\n";
             output = true;
-        } else if(cmdlist[0].compare("F") == 0 && cmdlistcnt == 2) { // set_freq
+        } else if(cmdlist[0].compare("F") == 0 && cmdlistcnt == 3) { // set_freq
             QString newf = cmdlist[1];
             main->rigctlSetFreq(atol(newf.toAscii()));
         } else if (command[0] == 'm') { // get_mode
