@@ -94,7 +94,8 @@ int main(int argc,char* argv[]) {
     if(si570) {
         usb_init();
         rc=usbOpenDevice(&handle,0x16C0,"www.obdev.at",0x05DC,"DG8SAQ-I2C",usbSerialID);
-        if(rc!=0) {
+        if(rc!=0) rc=usbOpenDevice(&handle,0x16C0,"widget-factory",0x05DC,"sdr-widget",usbSerialID);
+        if (rc != 0){
             fprintf(stderr,"Cannot open USB device\n");
             exit(1);
         }
