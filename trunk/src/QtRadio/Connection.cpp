@@ -364,7 +364,11 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     //"20120107;-rxtx-rtp"; YYYYMMDD; text desc
                     rx.setPattern(":(\\d+);-(\\S+)");
                     rx.indexIn(answer);
+#if QT_VERSION >= 0x050000
+                    emit setdspversion(rx.cap(1).toLong(),rx.cap(2).toUtf8());
+#else
                     emit setdspversion(rx.cap(1).toLong(),rx.cap(2).toAscii());
+#endif
                     serverver = rx.cap(1).toLong();
                     if (serverver < 20120201){  // tx login start
                        emit setCanTX(true);  //server to old to tell
