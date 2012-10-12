@@ -714,7 +714,11 @@ void HardwareFactory :: processAnswer (QString a, Connection *pConn, UI *pUI )
 
      if (list[0] == "*hardware?") {
         // try to activate an hardware control panel
+#if QT_VERSION >= 0x050000
+        DlgHardware *pHwDlg = HardwareFactory::Clone (pConn, list[2].toUtf8(), 0);
+#else
         DlgHardware *pHwDlg = HardwareFactory::Clone (pConn, list[2].toAscii(), 0);
+#endif
         if (pHwDlg) {
            qDebug() << Q_FUNC_INFO<<list[2];
            pHwDlg->show();
