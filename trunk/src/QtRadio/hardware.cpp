@@ -281,12 +281,27 @@ HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC,
     }
     preselGroupBox->setLayout(vpbox);
 
+   // preamplifier
+    QGroupBox *preampGroupBox = new QGroupBox(tr("Preamplifier"));
+    QVBoxLayout *vpabox = new QVBoxLayout;
+    preamp = new QCheckBox(tr("Pre&amplifier"));
+    vpabox->addWidget(preamp);
+    preampGroupBox->setLayout(vpabox);
+    
+    
     // Main layout of dialog
     QHBoxLayout *grid = new QHBoxLayout;
-
-    // add objects
-    grid->addWidget (attGroupBox);
-    grid->addWidget (antGroupBox);
+    
+    // left sub pane
+    QVBoxLayout *leftsp = new QVBoxLayout;
+    leftsp->addWidget (attGroupBox);
+    leftsp->addWidget (preampGroupBox);
+    leftsp->addWidget (antGroupBox);
+    
+    // add objects to main layout
+    grid->addLayout (leftsp);
+    
+    // add objects to main layout 
     grid->addWidget (preselGroupBox);
 
     // use grid obecjt as main dialog's layout 
@@ -333,6 +348,9 @@ HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC,
     }
     connect(preselMapper, SIGNAL(mapped(int)), this, SLOT(preselClicked(int)));
 
+    // preamplifier event connection
+    connect(preamp, SIGNAL(stateChanged(int)),  this, SLOT(preampChanged(int)));
+ 
     // update the serial number in title bar
     QString command;
     command.clear(); QTextStream(&command) << "*getserial?";
@@ -341,15 +359,23 @@ HardwareHiqsdr :: HardwareHiqsdr (Connection *pC, QWidget *pW): DlgHardware (pC,
     // defaults
     attenuatorVal = -1;
     antennaVal = -1;
+    preampVal = 0;
 
     att0Db->setChecked(true);              // attenuator 0 dB
-    ant0->setChecked(true);
+    ant0->setChecked(true);                // antenna #0
     psel[0]->setChecked(true);
+    preamp->setChecked(false);             // preamplifier off
 
     // update local preselector labels querying the remote server
     for (int n=0; n < 16; ++n) {
         QString command;
         command.clear(); QTextStream(&command) << "*getpreselector? " << n;
+        pConn->sendCommand (command);
+    }
+    // update local preaplifier status querying the remote server
+    {
+        QString command;
+        command.clear(); QTextStream(&command) << "*getpreampstatus?";
         pConn->sendCommand (command);
     }
 }
@@ -387,6 +413,18 @@ void HardwareHiqsdr :: preselClicked(int n)
    }
 }
 
+void HardwareHiqsdr :: preampChanged(int state)
+{
+   qDebug() << "Preamplifier: " << state ;
+
+   if (preampVal != state) {
+      QString command;
+      command.clear(); QTextStream(&command) << "*activatepreamp " << ((state==Qt::Checked) ? 1 : 0);
+      pConn->sendCommand (command);
+      preampVal = state;
+   }
+}
+
 void HardwareHiqsdr :: processAnswer (QStringList list)
 {
     if (list[0] == "*getserial?") {
@@ -408,6 +446,18 @@ void HardwareHiqsdr :: processAnswer (QStringList list)
        
        if (x >= 0 && x < 16) {
            psel[x]->setText(list[3]);
+       }
+    }
+    
+    if (list[0] == "getpreampstatus?") {
+       // try to set the serial
+       qDebug() << Q_FUNC_INFO << list [1] << list[2] << list[3] ;
+       // change the preamp button
+       int x = list[1].toInt() ;
+       
+       if (x >= 0 && x <= 1) {
+           preampVal = x;
+           preamp->setChecked((preampVal == 1) ? true : false);   
        }
     }
 }

@@ -44,7 +44,10 @@ void RigCtlSocket::readyRead() {
         }
 
         QByteArray command(conn->readLine());
-        command.chop(1);
+        // removed command.chop(1); because it is unable to cope with
+        // with more than one character line terminations
+        // i.e. telnet client uses a CR/LF sequence
+        command = command.simplified();
         if (command.size() == 0) {
                 command.append("?");
         }
@@ -117,7 +120,7 @@ void RigCtlSocket::readyRead() {
         } else if (command[0] == 'q') { // quit
             conn->close();
             return;
-        } else if (cmdlist[0].compare("M") == 0 && cmdlistcnt == 3) { // set_mode
+        } else if (cmdlist[0].compare("M") == 0 && cmdlistcnt == 3) { // set_mode, parameter for bandwidth is there but we ignore it
             if (cmdlist[1].compare("USB") == 0 ) {
                main->rigctlSetMode(MODE_USB);
             }else if (cmdlist[1].compare("LSB") == 0) {

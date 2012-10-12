@@ -313,8 +313,8 @@ void tx_init(void){
 	else rc=pthread_detach(tx_thread_id);
 }
 
-void rtp_tx_timer_handler(int);
-void spectrum_timer_handler(int);
+void rtp_tx_timer_handler(union sigval);
+void spectrum_timer_handler(union sigval);
 
 void rtp_tx_init(void){
 	int rc;
@@ -366,7 +366,7 @@ void spectrum_timer_init(void){
 	timer_settime (spectrum_timerid, 0, &value, NULL);
 }
 
-void rtp_tx_timer_handler(int sv){
+void rtp_tx_timer_handler(union sigval usv){
     int i;
     short v;
     float fv;
@@ -407,7 +407,7 @@ void rtp_tx_timer_handler(int sv){
 	}
 }
 
-void spectrum_timer_handler(int sv){            // this is called every 20 ms
+void spectrum_timer_handler(union sigval usv){            // this is called every 20 ms
         client_entry *item;
         
         sem_wait(&bufferevent_semaphore);
@@ -1398,11 +1398,21 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             if(strcmp(tokens[0],"true")==0) {
-                SetCorrectIQEnable(1);
-                sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(1)\n"); 
+                if (config.no_correct_iq == 0) {
+                   SetCorrectIQEnable(1);
+                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(1)\n"); 
+                } else {
+                   SetCorrectIQEnable(0);
+                   sdr_log(SDR_LOG_INFO,"IGNORING (due to --no-correctiq option): setiqenable true, SetCorrectIQEnable(0)\n");
+                }
             } else if(strcmp(tokens[0],"false")==0) {
-                SetCorrectIQEnable(0);
-                sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
+                if (config.no_correct_iq == 0) {
+                   SetCorrectIQEnable(0);
+                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
+                } else {
+                   SetCorrectIQEnable(0);
+                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
+                }
             } else {
                 goto badcommand;
             }
@@ -1425,8 +1435,12 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(cmd,"rxiqmuval",9)==0) {
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
-            sdr_log(SDR_LOG_INFO,"The value of mu sent = '%s'\n",tokens[0]);
-            SetCorrectRXIQMu(0, 0, atof(tokens[0]));
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of mu sent = '%s'\n",tokens[0]);
+                SetCorrectRXIQMu(0, 0, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of mu sent = '%s'\n",tokens[0]);
+            }
         } else if(strncmp(cmd,"setfps",6)==0) {
             if (tokenize_cmd(&saveptr, tokens, 2) != 2)
                 goto badcommand;
