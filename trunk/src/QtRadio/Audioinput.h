@@ -1,6 +1,8 @@
 #ifndef AUDIOINPUT_H
 #define AUDIOINPUT_H
 
+
+
 #include <QObject>
 #include <QtCore>
 #include <QAudioFormat>
@@ -15,6 +17,9 @@
 
 #include <QMutex>
 #include <QQueue>
+
+Q_DECLARE_METATYPE(QQueue<qint16>);
+Q_DECLARE_METATYPE(QQueue<qint16>*);
 
 class AudioInfo : public QIODevice
 {
