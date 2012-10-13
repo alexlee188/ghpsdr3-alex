@@ -10,7 +10,7 @@ bin_PROGRAMS = hpsdr-server
 
 
 
-hpsdr_server_CFLAGS = -std=gnu99 -g -O3 -Wall
+hpsdr_server_CFLAGS = -std=gnu99 -g -O3 -Wall @SIMD_FLAGS@
 
 hpsdr_server_SOURCES = \
     bandscope.c  \

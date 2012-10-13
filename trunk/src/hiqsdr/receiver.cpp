@@ -163,15 +163,6 @@ const char* set_frequency (CLIENT* client, long frequency) {
     return OK;
 }
 
-
-const char* set_preamp (CLIENT* client, bool preamp)
-{
-//  receiver[client->receiver].ppc->preamp = preamp;
-//
-    return NOT_IMPLEMENTED_COMMAND;
-    return OK;
-}
-
 const char* set_dither (CLIENT* client, bool dither)
 {
 //  receiver[client->receiver].ppc->dither = dither;
@@ -219,6 +210,16 @@ const char* select_preselector (CLIENT* client, int preselector)
     if (preselector >= 0 && preselector <= 15) {
         fprintf (stderr, "%s: new preselector: %d\n", __FUNCTION__, preselector);
         hiqsdr_set_preselector (preselector);
+        return OK;
+    } else
+        return INVALID_COMMAND;
+}
+
+const char* set_preamplifier(CLIENT* client, int preamp)
+{
+    if (preamp >= 0 && preamp <= 1) {
+        fprintf (stderr, "%s: new prepreamp: %d\n", __FUNCTION__, preamp);
+        hiqsdr_set_preamp (preamp);
         return OK;
     } else
         return INVALID_COMMAND;

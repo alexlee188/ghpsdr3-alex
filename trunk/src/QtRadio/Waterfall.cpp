@@ -267,7 +267,7 @@ void Waterfall::paintEvent(QPaintEvent* event) {
 
 
 void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
-    int i,j;
+    int i;
     int version,subversion;
 #ifdef WATERFALL_2D
     int offset;
@@ -304,7 +304,7 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     size = length;
 
     int sum = 0;
-    for(i=0;i<length;i++) sum += -(buffer[j] & 0xFF);
+    for(i=0;i<length;i++) sum += -(buffer[i] & 0xFF);
     average = average * 0.99f + (float)(sum/length) * 0.01f; // running average
 
     waterfallcl->updateWaterfall(header, buffer, length);

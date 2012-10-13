@@ -13,3 +13,12 @@ rm -f	depcomp
 rm -f	install-sh
 rm -f	missing
 rm -f	stamp-h1
+rm -f   build-aux/libtool.m4
+rm -f   build-aux/ltoptions.m4
+rm -f   build-aux/ltsugar.m4
+rm -f   build-aux/ltversion.m4
+rm -f   build-aux/lt~obsolete.m4
+rm -f   libtool
+rm -f   ltmain.sh
+rm -f   perseus_server
+
