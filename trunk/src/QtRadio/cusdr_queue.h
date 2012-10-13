@@ -8,7 +8,7 @@
 template<class T> class QHQueue {
 
 public:
-    QHQueue(int maxSize = 1024*8)
+    QHQueue(int maxSize = 1024*32)
 		: m_semFree(maxSize)
 		, m_semUsed(0)
 	{
