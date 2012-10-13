@@ -23,6 +23,24 @@
 *
 */
 
+
+/* Copyright (C) 2012 - Alex Lee, 9V1Al
+* modifications of the original program by John Melton
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Pl
+*/
+
 #include <ortp/rtp.h>
 #ifdef _OPENMP
 #include <omp.h>
@@ -86,6 +104,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
    qint64 bytes_read;
    qint16 v;
    qint64 bytes_to_read = maxlen > 800 ? 800: maxlen;
+   //qint64 bytes_to_read = maxlen;
    int has_more;
 
    if (useRTP && rtp_connected){
@@ -126,7 +145,8 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
    // note both TCP and RTP audio enqueue PCM data in decoded_buffer
    bytes_read = 0;
 
-   if (pdecoded_buffer->isEmpty()) {       // probably not connected or late arrival of packets.  Send silence.
+   if (pdecoded_buffer->isEmpty()) {
+       // probably not connected or late arrival of packets.  Send silence.
        memset(data, 0, bytes_to_read);
        bytes_read = bytes_to_read;
    } else {
@@ -547,16 +567,13 @@ void Audio_processing::resample(int no_of_samples){
     if (pdecoded_buffer->isFull()) {
         src_ratio = 0.9;
     }
-    else if(pdecoded_buffer->count() > 4800) {
-        src_ratio = 0.95;
+    else if(pdecoded_buffer->count() > 800 * 16) {
+        src_ratio = 0.98;
     }
-    else if(pdecoded_buffer->count() > 3200){
-        src_ratio = 0.97;
+    else if(pdecoded_buffer->count() > 800 * 2){
+        src_ratio = 1.0;
     }
-    else if(pdecoded_buffer->count() > 1600){
-        src_ratio = 0.99;
-    }
-    else src_ratio = 1.0;
+    else src_ratio = 1.02;  // buffer low, expand
 
     sr_data.data_in = buffer_in;
     sr_data.data_out = buffer_out;

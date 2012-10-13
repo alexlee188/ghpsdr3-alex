@@ -47,7 +47,7 @@
 
 #define AUDIO_BUFFER_SIZE 800
 #define AUDIO_OUTPUT_BUFFER_SIZE (1024*2)
-#define RESAMPLING_BUFFER_SIZE (10600*2)    // 2 channels of 9600 + 10%
+#define RESAMPLING_BUFFER_SIZE (32000*2)    // 2 channels
 
 #define BIGENDIAN
 // There are problems running at 8000 samples per second on Mac OS X
