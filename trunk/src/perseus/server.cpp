@@ -66,6 +66,7 @@ int main(int argc,char* argv[]) {
         ("dither,t",     value<bool>(&perseusConfig.dither)->default_value(false),     "dither on|off")
         ("preamp,p",     value<bool>(&perseusConfig.preamp)->default_value(false),     "preamplifier on|off")
         ("randomizer,z", value<bool>(&perseusConfig.random)->default_value(false),     "randomizer on|off")
+        ("localaudio,a", value<bool>(&perseusConfig.localaudio)->default_value(false), "local audio on|off")
         ;
     
         variables_map vm;
@@ -83,6 +84,7 @@ int main(int argc,char* argv[]) {
         cout << "DITHER:     " << perseusConfig.dither      << "\n";
         cout << "PREAMP:     " << perseusConfig.preamp      << "\n";
         cout << "RANDOMIZER: " << perseusConfig.random      << "\n";
+        cout << "LOCAL AUDIO:" << perseusConfig.localaudio  << "\n";
 
         perseus_set_debug(debug_level);
 

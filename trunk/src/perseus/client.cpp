@@ -243,9 +243,13 @@ const char* parse_command(CLIENT* client,char* command) {
                         client->iq_port=atoi(token);
                     }
 
-                    if(pthread_create(&receiver[client->receiver].audio_thread_id,NULL,audio_thread,&receiver[client->receiver])!=0) {
-                        fprintf(stderr,"failed to create audio thread for rx %d\n",client->receiver);
-                        exit(1);
+                    if (receiver->ppc->localaudio) {
+                       if(pthread_create(&receiver[client->receiver].audio_thread_id,NULL,audio_thread,&receiver[client->receiver])!=0) {
+                           fprintf(stderr,"failed to create audio thread for rx %d\n",client->receiver);
+                           exit(1);
+                       }
+                    } else {
+                       fprintf(stderr,"Local audio audio thread for rx %d DISABLED as per command line options\n",client->receiver);
                     }
                     printf("***************************Starting async data acquisition... CLIENT REQUESTED %d port\n", client->iq_port);
 
