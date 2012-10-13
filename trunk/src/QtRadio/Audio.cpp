@@ -103,8 +103,8 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
    qint64 bytes_read;
    qint16 v;
-   //qint64 bytes_to_read = maxlen > 800 ? 800: maxlen;
-   qint64 bytes_to_read = maxlen;
+   qint64 bytes_to_read = maxlen > 800 ? 800: maxlen;
+   //qint64 bytes_to_read = maxlen;
    int has_more;
 
    if (useRTP && rtp_connected){
@@ -147,8 +147,8 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
 
    if (pdecoded_buffer->isEmpty()) {
        // probably not connected or late arrival of packets.  Send silence.
-       //memset(data, 0, bytes_to_read);
-       //bytes_read = bytes_to_read;
+       memset(data, 0, bytes_to_read);
+       bytes_read = bytes_to_read;
    } else {
        while ((!pdecoded_buffer->isEmpty()) && (bytes_read < maxlen)){
            v = pdecoded_buffer->dequeue();
@@ -568,12 +568,12 @@ void Audio_processing::resample(int no_of_samples){
         src_ratio = 0.9;
     }
     else if(pdecoded_buffer->count() > 800 * 16) {
-        src_ratio = 0.99;
+        src_ratio = 0.98;
     }
     else if(pdecoded_buffer->count() > 800 * 2){
         src_ratio = 1.0;
     }
-    else src_ratio = 1.01;  // buffer low, expand
+    else src_ratio = 1.02;  // buffer low, expand
 
     sr_data.data_in = buffer_in;
     sr_data.data_out = buffer_out;
