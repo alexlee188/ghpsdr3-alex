@@ -103,7 +103,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
  {
    qint64 bytes_read;
    qint16 v;
-   qint64 bytes_to_read = maxlen > 800 ? 800: maxlen;
+   qint64 bytes_to_read = maxlen > 2000 ? 2000: maxlen;
    //qint64 bytes_to_read = maxlen;
    int has_more;
 
@@ -150,7 +150,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
        memset(data, 0, bytes_to_read);
        bytes_read = bytes_to_read;
    } else {
-       while ((!pdecoded_buffer->isEmpty()) && (bytes_read < maxlen)){
+       while ((!pdecoded_buffer->isEmpty()) && (bytes_read < bytes_to_read)){
            v = pdecoded_buffer->dequeue();
             switch(audio_byte_order) {
             case QAudioFormat::LittleEndian:
@@ -163,6 +163,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
                 break;
             }
         }
+       while (bytes_read < bytes_to_read) data[bytes_read++] = 0;
    }
 
    return bytes_read;
@@ -510,7 +511,6 @@ Audio_processing::Audio_processing(){
     }
     init_decodetable();
     src_ratio = 1.0;
-
     codec2 = codec2_create(CODEC2_MODE_3200);
     pdecoded_buffer = &queue;
 }
@@ -549,11 +549,13 @@ void Audio_processing::set_audio_encoding(int enc){
 
 void Audio_processing::process_audio(char* header,char* buffer,int length) {
 
-    if (audio_encoding == 0) aLawDecode(buffer,length);
-    else if (audio_encoding == 1) pcmDecode(buffer,length);
-    else if (audio_encoding == 2) codec2Decode(buffer,length);
-    else {
-        qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
+    if (pdecoded_buffer->count() < 4000){
+        if (audio_encoding == 0) aLawDecode(buffer,length);
+        else if (audio_encoding == 1) pcmDecode(buffer,length);
+        else if (audio_encoding == 2) codec2Decode(buffer,length);
+        else {
+            qDebug() << "Error: Audio::process_audio:  audio_encoding = " << audio_encoding;
+        }
     }
     if (header != NULL) free(header);
     if (buffer != NULL) free(buffer);
@@ -563,17 +565,6 @@ void Audio_processing::resample(int no_of_samples){
     int i;
     qint16 v;
     int rc;
-
-    if (pdecoded_buffer->isFull()) {
-        src_ratio = 0.9;
-    }
-    else if(pdecoded_buffer->count() > 800 * 16) {
-        src_ratio = 0.98;
-    }
-    else if(pdecoded_buffer->count() > 800 * 2){
-        src_ratio = 1.0;
-    }
-    else src_ratio = 1.02;  // buffer low, expand
 
     sr_data.data_in = buffer_in;
     sr_data.data_out = buffer_out;
@@ -596,26 +587,22 @@ void Audio_processing::resample(int no_of_samples){
 
 void Audio_processing::aLawDecode(char* buffer,int length) {
     int i;
-    short v;
-#pragma omp parallel for schedule(static)
+    qint16 v;
+
     for (i=0; i < length; i++) {
         v=decodetable[buffer[i]&0xFF];
-        buffer_in[i] = (float)v / 32767.0;
+        pdecoded_buffer->enqueue(v);
     }
-    resample(length);
-
 }
 
 void Audio_processing::pcmDecode(char* buffer,int length) {
     int i;
     short v;
-#pragma omp parallel for schedule(static)
+
     for (i=0; i < length; i+=2) {
         v = (buffer[i] & 0xff) | ((buffer[i+1] & 0xff) << 8);
-        buffer_in[i/2] = v / 32767.0;
+        pdecoded_buffer->enqueue(v);
         }
-    resample(length/2);
-
 }
 
 void Audio_processing::codec2Decode(char* buffer,int length) {
@@ -630,14 +617,12 @@ void Audio_processing::codec2Decode(char* buffer,int length) {
     while (j < length) {
         memcpy(bits,&buffer[j],bits_size);
         codec2_decode(codec2, v, bits);
-        #pragma omp parallel for schedule(static)
         for (i=0; i < samples_per_frame; i++){
-            buffer_in[i+k*samples_per_frame]= v[i]/ 32767.0;
+            pdecoded_buffer->enqueue(v[i]);
         }
         j += bits_size;
         k++;
     }
-    resample(k*samples_per_frame);
 }
 
 void Audio_processing::init_decodetable() {
