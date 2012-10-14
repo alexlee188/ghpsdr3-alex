@@ -180,24 +180,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		//mSensorManager.registerListener(this, mGravity, SensorManager.SENSOR_DELAY_NORMAL);
 		if(connection==null) {
 			connection = new Connection(server, BASE_PORT+receiver, width);
-			spectrumView.setConnection(connection);
-			connection.setSpectrumView(spectrumView);
-			connection.connect();
-		    connection.start();
-		    connection.setFrequency(frequency);
-		    connection.setMode(mode);
-		    connection.setFilter(filterLow, filterHigh);
-		    connection.setGain(gain*10);
-		    connection.setMicGain(micgain);
-		    connection.setIQCorrection(dsp_state[3]);
-		    connection.setAGC(agc);
-		    connection.setAllowTx(tx_state[0]);
-		    connection.setTxUser(txUser);
-		    connection.setTxPass(txPass);
-			connection.setFps(fps);
-			connection.setSpectrumAverage(spectrumAverage);
-			connection.getSpectrum_protocol3(fps+1);
-			connection.setScaleFactor(1f);
+			setConnectionDefaults();
 		}
 		spectrumView.setAverage(-100);
 	}
@@ -277,24 +260,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					connection.close();
 					server=value;	
 					connection = new Connection(server, BASE_PORT + receiver,width);
-					connection.setSpectrumView(spectrumView);
-					connection.connect();
-					connection.start();
-					connection.setFrequency(frequency);
-					connection.setMode(mode);
-					connection.setFilter(filterLow, filterHigh);
-					connection.setGain(gain*10);
-					connection.setMicGain(micgain);
-					connection.setAGC(agc);
-				    connection.setAllowTx(tx_state[0]);
-				    connection.setIQCorrection(dsp_state[3]);
-				    connection.setScaleFactor(1f);
-					//update=new Update(connection);					
-					spectrumView.setConnection(connection);
-					spectrumView.setAverage(-100);
-					connection.setFps(fps);
-					connection.setSpectrumAverage(spectrumAverage);
-					connection.getSpectrum_protocol3(fps+1);
+					setConnectionDefaults();
 					//update.start();
 					setTitle("glSDR: "+server+" (rx"+receiver+")");
 					dialog.dismiss();
@@ -379,23 +345,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
     							connection.close();
     							server=servers[item].toString();	
     							connection = new Connection(server, BASE_PORT + receiver,width);
-    							connection.setSpectrumView(spectrumView);
-    							connection.connect();
-    							connection.start();
-    							connection.setFrequency(frequency);
-    							connection.setMode(mode);
-    							connection.setFilter(filterLow, filterHigh);
-    							connection.setGain(gain*10);
-    							connection.setAGC(agc);		
-    						    connection.setAllowTx(tx_state[0]);
-    						    connection.setIQCorrection(dsp_state[3]);
-    						    connection.setScaleFactor(1f);
-    							spectrumView.setConnection(connection);
-    							spectrumView.setAverage(-100);
-    							setTitle("glSDR: "+server+" (rx"+receiver+")");
-    							connection.setFps(fps);
-    							connection.setSpectrumAverage(spectrumAverage);
-    							connection.getSpectrum_protocol3(fps+1);
+    							setConnectionDefaults();
     							dialog.dismiss();
     						}
     			});
@@ -420,24 +370,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 							connection.close();
 							receiver=item;	
 							connection = new Connection(server, BASE_PORT + receiver,width);
-							connection.setSpectrumView(spectrumView);
-							connection.connect();
-							connection.start();
-							connection.setFrequency(frequency);
-							connection.setMode(mode);
-							connection.setFilter(filterLow, filterHigh);
-							connection.setGain(gain*10);
-							connection.setMicGain(micgain);
-							connection.setAGC(agc);
-						    connection.setAllowTx(tx_state[0]);
-						    connection.setIQCorrection(dsp_state[3]);
-						    connection.setScaleFactor(1f);
-   							spectrumView.setConnection(connection);
-							spectrumView.setAverage(-100);
-							setTitle("glSDR: "+server+" (rx"+receiver+")");
-							connection.setFps(fps);
-							connection.setSpectrumAverage(spectrumAverage);
-							connection.getSpectrum_protocol3(fps+1);
+							setConnectionDefaults();
 							dialog.dismiss();
 						}
 					});
@@ -1119,6 +1052,29 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		return (info.reqGlEsVersion >= 0x20000);
 	}
 	
+	private void setConnectionDefaults(){
+		connection.setSpectrumView(spectrumView);
+		connection.connect();
+		connection.start();
+		connection.setFrequency(frequency);
+		connection.setMode(mode);
+		connection.setFilter(filterLow, filterHigh);
+		connection.setGain(gain*10);
+		connection.setMicGain(micgain);
+		connection.setAGC(agc);
+	    connection.setAllowTx(tx_state[0]);
+	    connection.setTxUser(txUser);
+	    connection.setTxPass(txPass);
+	    connection.setIQCorrection(dsp_state[3]);
+	    connection.setScaleFactor(1f);
+		//update=new Update(connection);					
+		spectrumView.setConnection(connection);
+		spectrumView.setAverage(-100);
+		connection.setFps(fps);
+		connection.setSpectrumAverage(spectrumAverage);
+		connection.getSpectrum_protocol3(fps+1);
+		connection.setScaleFactor(1f);
+	}
 	
 	private int width;
 	private int height;

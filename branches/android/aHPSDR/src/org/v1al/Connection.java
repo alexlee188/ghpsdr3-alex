@@ -65,7 +65,7 @@ public class Connection extends Thread {
 		    		for (int j = 0; j < nMicBuffers; j++){
 			    		short[] micData = new short[micBufferSize];
 			    		recorder.read(micData, 0, finalMicBufferSize);
-			    		if (allowTx){
+			    		if (allowTx & MOX){
 				    		byte[] micEncodedData = new byte[micBufferSize];
 				    		for (int i = 0; i < micBufferSize; i++){
 				    			micEncodedData[i] = aLawEncode[(micData[i] << micGain) & 0xFFFF];
@@ -84,7 +84,7 @@ public class Connection extends Thread {
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
 		    
-		    sendCommand("setClient glSDR(17)");
+		    sendCommand("setClient glSDR(18)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
