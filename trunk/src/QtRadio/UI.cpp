@@ -828,7 +828,11 @@ void UI::micSendAudio(QQueue<qint16>* queue){
             unsigned char e=g711a.encode(sample);
             mic_encoded_buffer[mic_buffer_count++]=e;
             if(mic_buffer_count >= MIC_BUFFER_SIZE) {
-                if (connection_valid && configure.getTxAllowed()){
+                // we are going to really send samples only if
+                //  the connection is valid
+                //  the checkbox in GUI is checked
+                //  the server side has Tx capability
+                if (connection_valid && configure.getTxAllowed() && (canTX == true)){
                     rtp_send_buffer = (unsigned char*) malloc(MIC_BUFFER_SIZE);
                     // rtp_send_buffer will be free'd by rtp_send()
                     memcpy(rtp_send_buffer, mic_encoded_buffer, MIC_BUFFER_SIZE);
@@ -851,7 +855,11 @@ void UI::micSendAudio(QQueue<qint16>* queue){
                 mic_frame_count++;
                 if (mic_frame_count >= MIC_NO_OF_FRAMES){
                     mic_frame_count = 0;
-                    if (connection_valid && configure.getTxAllowed())
+                    // we are going to really send samples only if
+                    //  the connection is valid
+                    //  the checkbox in GUI is checked
+                    //  the server side has Tx capability
+                    if (connection_valid && configure.getTxAllowed() && (canTX == true))
                         connection.sendAudio(samples_per_frame*MIC_NO_OF_FRAMES,mic_encoded_buffer);
                 }
             }
@@ -863,7 +871,11 @@ void UI::micSendAudio(QQueue<qint16>* queue){
             unsigned char e=g711a.encode(sample);
             mic_encoded_buffer[mic_buffer_count++] = e;
             if(mic_buffer_count >= MIC_ALAW_BUFFER_SIZE) {
-                if (connection_valid && configure.getTxAllowed()){
+                // we are going to really send samples only if
+                //  the connection is valid
+                //  the checkbox in GUI is checked
+                //  the server side has Tx capability
+                if (connection_valid && configure.getTxAllowed() && (canTX == true)){
                     connection.sendAudio(MIC_ALAW_BUFFER_SIZE, mic_encoded_buffer);
                 }
                 mic_buffer_count=0;
