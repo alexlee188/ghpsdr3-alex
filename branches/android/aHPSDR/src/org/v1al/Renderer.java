@@ -171,7 +171,10 @@ class Renderer implements GLSurfaceView.Renderer {
         // Set the sampler texture unit to 0
         GLES20.glUniform1i (spectrumTexture_location, 0 );
         GLES20.glDrawElements ( GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_SHORT, mIndices );
-
+        
+        GLES20.glDisableVertexAttribArray(aPosition_location);
+        GLES20.glDisableVertexAttribArray(textureCoord_location);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
 	}
 
 	/*
