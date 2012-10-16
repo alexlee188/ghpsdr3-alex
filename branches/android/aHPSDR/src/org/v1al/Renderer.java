@@ -68,15 +68,15 @@ class Renderer implements GLSurfaceView.Renderer {
 	private int aPosition_location;
 	private int textureCoord_location;
 	
-    private ShortBuffer mIndices;
+    	private ShortBuffer mIndices;
     
-	private final short[] mIndicesData =
-	{ 
-        0, 1, 2, 0, 2, 3 
-	};
+    	private final short[] mIndicesData =
+    	{ 
+            0, 1, 2, 0, 2, 3 
+    	};
     
-    private ByteBuffer pixelBuffer = ByteBuffer.allocateDirect(MAX_CL_WIDTH * MAX_CL_HEIGHT * 4);
 
+	
 	/***************************
 	 * CONSTRUCTOR(S)
 	 **************************/
@@ -133,6 +133,7 @@ class Renderer implements GLSurfaceView.Renderer {
 		// Ignore the passed-in GL10 interface, and use the GLES20
 		// class's static methods instead.
 		
+		// Load the vertex position
 		
 		float[] mVerticesData =
 		    { 
@@ -146,7 +147,7 @@ class Renderer implements GLSurfaceView.Renderer {
 		            0.0f, 0.0f // TexCoord 3
 		    };
 		
-		FloatBuffer mVertices;
+	    FloatBuffer mVertices;
 		mVertices = ByteBuffer.allocateDirect(mVerticesData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
 		mVertices.put(mVerticesData).position(0);
 		
@@ -154,14 +155,13 @@ class Renderer implements GLSurfaceView.Renderer {
         GLES20.glVertexAttribPointer ( aPosition_location, 3, GLES20.GL_FLOAT, 
                                        false, 
                                        5 * 4, mVertices );
-        // Load the vertex coordinate
         GLES20.glEnableVertexAttribArray ( aPosition_location);
+        // Load the texture coordinate
         mVertices.position(3);
         GLES20.glVertexAttribPointer ( textureCoord_location, 2, GLES20.GL_FLOAT,
                                        false, 
                                        5 * 4, 
                                        mVertices );
-        // Load the texture coordinate
         GLES20.glEnableVertexAttribArray ( textureCoord_location );
         
         // Bind the texture
@@ -172,11 +172,9 @@ class Renderer implements GLSurfaceView.Renderer {
         GLES20.glUniform1i (spectrumTexture_location, 0 );
         GLES20.glDrawElements ( GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_SHORT, mIndices );
         
-        /*
         GLES20.glDisableVertexAttribArray(aPosition_location);
         GLES20.glDisableVertexAttribArray(textureCoord_location);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-        */
 	}
 
 	/*
@@ -187,8 +185,6 @@ class Renderer implements GLSurfaceView.Renderer {
 		GLES20.glViewport(0, 0, width, height);
 		this.width = width;
 		this.height = height;
-		
-		set_width(width);
 		
 		/*
 		float ratio = (float) width / height;
@@ -255,16 +251,16 @@ class Renderer implements GLSurfaceView.Renderer {
 
 	private int createTexture2D(){
 		int[] textureId = new int[1];
-		
-	    pixelBuffer.position(0);
-	    for (int i = 0; i < MAX_CL_HEIGHT; i++){
-	    	for (int j = 0; j < MAX_CL_WIDTH; j++){
-	    		pixelBuffer.put((byte)0xff);
-	    		pixelBuffer.put((byte)0);
-	    		pixelBuffer.put((byte)0);
-	    		pixelBuffer.put((byte)0);
-	    	}
-	    }
+        ByteBuffer pixelBuffer = ByteBuffer.allocateDirect(MAX_CL_WIDTH * MAX_CL_HEIGHT * 4);
+        pixelBuffer.position(0);
+        for (int i = 0; i < MAX_CL_HEIGHT; i++){
+        	for (int j = 0; j < MAX_CL_WIDTH; j++){
+        		pixelBuffer.put((byte)0xff);
+        		pixelBuffer.put((byte)0);
+        		pixelBuffer.put((byte)0);
+        		pixelBuffer.put((byte)0);
+        	}
+        }
         pixelBuffer.position(0);
         
         //  Generate a texture object
@@ -288,22 +284,13 @@ class Renderer implements GLSurfaceView.Renderer {
 	public void plotWaterfall(final byte[] bitmap) {
 		int width = bitmap.length/4;
 		if (width > MAX_CL_WIDTH) width = MAX_CL_WIDTH;		
-//		ByteBuffer buffer = ByteBuffer.wrap(bitmap);
-
-        pixelBuffer.position(cy * MAX_CL_WIDTH * 4);
-		for (int i = 0; i < width*4; i++){
-			pixelBuffer.put(bitmap[i]);
-		}
-		pixelBuffer.position(0);
+		ByteBuffer buffer = ByteBuffer.wrap(bitmap);
 		try{
 	        // Bind the texture
 	        GLES20.glActiveTexture ( GLES20.GL_TEXTURE0 );
 	        GLES20.glBindTexture ( GLES20.GL_TEXTURE_2D, spectrumTex );
-	        //  Load the texture
-	        GLES20.glTexImage2D ( GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, MAX_CL_WIDTH, 
-	        		MAX_CL_HEIGHT, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, pixelBuffer);
-//			GLES20.glTexSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, cy, width, 1, 
-//				GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buffer);
+			GLES20.glTexSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, cy, width, 1, 
+				GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buffer);
 			//checkGlError("glTexSubImage2D");
 		} catch (Exception e){
 			
