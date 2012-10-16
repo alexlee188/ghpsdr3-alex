@@ -178,7 +178,7 @@ class Renderer implements GLSurfaceView.Renderer {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
 	}
 	*/
-
+	}
 	/*
 	 * Called when viewport is changed
 	 * @see android.opengl.GLSurfaceView$Renderer#onSurfaceChanged(javax.microedition.khronos.opengles.GL10, int, int)
