@@ -8,10 +8,52 @@ AM_INIT_AUTOMAKE
 
 AC_CONFIG_SRCDIR([perseus_audio.cpp])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIR([build-aux])
 
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+
+#
+# Checking for build cpu
+# and, if 64 bit, add some linking option
+#
+case $build_cpu in
+
+    i686)
+      AC_MSG_NOTICE([Platform: ix86 32 bit])
+      # checks for platform dependent compiler optimizations
+      AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
+      AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+      SIMD_FLAGS="$SIMD_FLAGS  -march=native "
+      AC_SUBST(SIMD_FLAGS)
+    ;;
+
+    x86_64)
+      AC_MSG_NOTICE([Platform: ix86 64 bit])
+      LDFLAGS="$LDFLAGS -L/lib64 -L/usr/lib64"
+      export LDFLAGS
+      AC_MSG_NOTICE([${LDFLAGS}])      
+      # checks for platform dependent compiler optimizations
+      AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
+      AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+      SIMD_FLAGS="$SIMD_FLAGS  -march=native "
+      AC_SUBST(SIMD_FLAGS)
+    ;;
+
+    armv6l)
+      AC_MSG_NOTICE([Platform: ARM 6])
+      CFLAGS="-O3 -pipe -march=armv6 -mfpu=vfp -mfloat-abi=hard"
+      CXXFLAGS="-O3 -pipe -march=armv6 -mfpu=vfp -mfloat-abi=hard"
+      export CFLAGS
+      export CXXFLAGS
+      AC_MSG_NOTICE([${CFLAGS}])
+      AC_MSG_NOTICE([${CXXFLAGS}])
+    ;;
+
+esac
 
 # compiling `bandscope.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.ac'
 AM_PROG_CC_C_O
@@ -47,6 +89,11 @@ AC_CONFIG_FILES([Makefile])
 
 AC_OUTPUT
 
+#
+# check the compiler option really working
+#
+corw=`gcc -Q --help=target -march=native`
+
 echo \
 "-----------------------------------------------------
 
@@ -60,6 +107,10 @@ Now type 'make @<:@<target>@:>@'
 
     all           - build all binaries
     install       - install everything
+
+Compiler options in use:
+
+${corw}
 
 -----------------------------------------------------"
 

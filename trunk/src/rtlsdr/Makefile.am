@@ -1,7 +1,9 @@
+ACLOCAL_AMFLAGS = -I build-aux
+
 bin_PROGRAMS = rtlsdr-server 
 # rtlsdr-test
 
-rtlsdr_server_CPPFLAGS	= -g -O3 -Wall
+rtlsdr_server_CPPFLAGS	= -g -O3 -Wall @SIMD_FLAGS@
 
 
 rtlsdr_server_SOURCES =			\

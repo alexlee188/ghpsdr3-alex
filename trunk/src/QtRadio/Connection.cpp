@@ -23,6 +23,24 @@
 *
 */
 
+
+/* Copyright (C) 2012 - Alex Lee, 9V1Al
+* modifications of the original program by John Melton
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Pl
+*/
+
 #include "Connection.h"
 #include <QDebug>
 #include <QRegExp>
@@ -364,7 +382,11 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     //"20120107;-rxtx-rtp"; YYYYMMDD; text desc
                     rx.setPattern(":(\\d+);-(\\S+)");
                     rx.indexIn(answer);
+#if QT_VERSION >= 0x050000
+                    emit setdspversion(rx.cap(1).toLong(),rx.cap(2).toUtf8());
+#else
                     emit setdspversion(rx.cap(1).toLong(),rx.cap(2).toAscii());
+#endif
                     serverver = rx.cap(1).toLong();
                     if (serverver < 20120201){  // tx login start
                        emit setCanTX(true);  //server to old to tell

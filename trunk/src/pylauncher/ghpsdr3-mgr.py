@@ -50,8 +50,8 @@ default_cfg = {
           'status':  { "Cannot locate Ozy": 'abnormally ended',        
                        "Listening for TCP connections on port 11000": 'started',     
                       }                                                              
-
        },
+
       'hpsdr-server': {
           'startCommand': "hpsdr-server --dither off",
           'status':  { "Cannot locate Ozy": 'abnormally ended',        
@@ -59,6 +59,15 @@ default_cfg = {
                       }                                                              
 
       },
+
+      'hiqsdr-server': {
+          'startCommand': "hiqsdr-server -d3 -s96000 --ip 192.168.2.196",
+          'status':  { "Cannot locate HiQSDR": 'abnormally ended',        
+                       "Listening for TCP connections on port 11000": 'started',     
+                      }                                                              
+
+      },
+
       "softrock pmsdr 48kS": {
           "startCommand": "softrock --si570 --qi --samplerate 48000",
           "status": {
@@ -91,14 +100,14 @@ default_cfg = {
                      }
        },
        'dttsp-ddc': {
-          'startCommand': "dspserver --lo 0",
+          'startCommand': "dspserver --lo 0 --nocorrectiq",
           'status':  { "connect failed": 'abnormally ended',     
                        "gHPSDR": 'starting....',
                        "command bound to port": 'running'
                      }
        },
        'dttsp-ddc-delayed': {
-          'startCommand': '/bin/bash -c "sleep 2 ; dspserver --lo 0"',
+          'startCommand': '/bin/bash -c "sleep 2 ; dspserver --lo 0 --nocorrectiq"',
           'status':  { "connect failed": 'abnormally ended',     
                        "gHPSDR": 'starting....',
                        "command bound to port": 'running'
@@ -199,6 +208,11 @@ class MainWin(QMainWindow):
                    'tooltip':  'HPSDR',
                    'shortcut': 'Ctrl+H',
                    'icon':     'hpsdr24.png' 
+              },
+              {    'name':     'hiqsdr',
+                   'tooltip':  'HiQSDR',
+                   'shortcut': 'Ctrl+N',
+                   'icon':     'p24.png' 
               }
     ]
 

@@ -44,7 +44,10 @@ void RigCtlSocket::readyRead() {
         }
 
         QByteArray command(conn->readLine());
-        command.chop(1);
+        // removed command.chop(1); because it is unable to cope with
+        // with more than one character line terminations
+        // i.e. telnet client uses a CR/LF sequence
+        command = command.simplified();
         if (command.size() == 0) {
                 command.append("?");
         }
@@ -74,13 +77,26 @@ void RigCtlSocket::readyRead() {
             output = true;
         } else if(cmdlist[0].compare("F") == 0 && cmdlistcnt == 2) { // set_freq
             QString newf = cmdlist[1];
+#if QT_VERSION >= 0x050000
+            main->rigctlSetFreq(atol(newf.toUtf8()));
+#else
             main->rigctlSetFreq(atol(newf.toAscii()));
+#endif
         } else if (command[0] == 'm') { // get_mode
+#if QT_VERSION >= 0x050000
+            out << main->rigctlGetMode().toUtf8() << "\n";
+            out << main->rigctlGetFilter().toUtf8() << "\n";
+#else
             out << main->rigctlGetMode().toAscii() << "\n";
             out << main->rigctlGetFilter().toAscii() << "\n";
+#endif
             output = true;
         } else if (command[0] == 'v') { // get_vfo
+#if QT_VERSION >= 0x050000
+            out << main->rigctlGetVFO().toUtf8() << "\n";
+#else
             out << main->rigctlGetVFO().toAscii() << "\n";
+#endif
             output = true;
         } else if (command[0] == 'V') { // set_VFO
             QString cmd = command.constData();
@@ -104,7 +120,7 @@ void RigCtlSocket::readyRead() {
         } else if (command[0] == 'q') { // quit
             conn->close();
             return;
-        } else if (cmdlist[0].compare("M") == 0 && cmdlistcnt == 3) { // set_mode
+        } else if (cmdlist[0].compare("M") == 0 && cmdlistcnt == 3) { // set_mode, parameter for bandwidth is there but we ignore it
             if (cmdlist[1].compare("USB") == 0 ) {
                main->rigctlSetMode(MODE_USB);
             }else if (cmdlist[1].compare("LSB") == 0) {

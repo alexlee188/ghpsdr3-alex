@@ -40,6 +40,7 @@
 #include "receiver.h"
 #include "messages.h"
 #include "perseus_audio.h"
+#include "util.h"
 
 
 typedef union {
@@ -63,7 +64,13 @@ static int counter = 0;
 
 // 2^24 / 2 -1 = 8388607.0
 
-#define SCALE_FACTOR 8388607.0
+//#define SCALE_FACTOR 8388607.0
+
+// 2^32 / 2 -1
+
+#define SCALE_FACTOR  2147483647.0
+
+
 
 #define ADC_CLIP 0x00000001
 
@@ -415,9 +422,11 @@ void* audio_thread(void* arg) {
         } else {
             if (bytes_read != sizeof(rx->output_buffer)) {
                 fprintf (stderr, "Arrrgh: %d bytes read instead of %d\n", bytes_read, sizeof(rx->output_buffer));
+                hex_dump((char *)rx->output_buffer, bytes_read, "Packet received");
+                //exit(255);
             }
         }
-
+        fprintf (stderr, "%d bytes read from audio socket !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", bytes_read);
         //process_ozy_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
         //rx->ppa->write_3 (rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
         rx->ppa->write_sr (rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
