@@ -90,7 +90,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		agc=prefs.getInt("AGC", AGC_LONG);
 		fps=prefs.getInt("Fps", FPS_10);
 		spectrumAverage=prefs.getInt("SpectrumAverage", 0);
-		server=prefs.getString("Server", "192.168.1.12");
+		server=prefs.getString("Server", "qtradio.napan.ca");
 		receiver=prefs.getInt("Receiver", 0);
 		txUser=prefs.getString("txUser", "");
 		txPass=prefs.getString("txPass", "");
