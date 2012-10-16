@@ -80,9 +80,7 @@ case $build_cpu in
       export CXXFLAGS
       AC_MSG_NOTICE([${CFLAGS}])
       AC_MSG_NOTICE([${CXXFLAGS}])
-      # no GUI available on ODROID-X
-      have_GUI=no
-    ;;
+     ;;
 
 esac
 
