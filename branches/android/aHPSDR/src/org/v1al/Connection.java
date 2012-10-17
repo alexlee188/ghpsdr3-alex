@@ -456,10 +456,6 @@ public class Connection extends Thread {
 		sendCommand("setFPS " + SPECTRUM_BUFFER_SIZE + " " + fps);
 	}
 	
-	public void askQuestion(String q){
-		sendCommand(q);
-	}
-	
 	public void setMOX(boolean state){
 		if (state) {
 			sendCommand("Mox on " + txUser + " " + txPass);

@@ -1057,6 +1057,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.setSpectrumView(spectrumView);
 		connection.connect();
 		connection.start();
+		connection.sendCommand("q-master");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setFilter(filterLow, filterHigh);
@@ -1075,7 +1076,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.setSpectrumAverage(spectrumAverage);
 		connection.getSpectrum_protocol3(fps+1);
 		connection.setScaleFactor(1f);
-		connection.askQuestion("q-master");
+
 	}
 	
 	private void mySetTitle(){
