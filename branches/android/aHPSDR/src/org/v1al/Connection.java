@@ -132,7 +132,7 @@ public class Connection extends Thread {
 		byte[] audioHeader= new byte[AUDIO_HEADER_SIZE];
 		byte[] spectrumBuffer = new byte[SPECTRUM_BUFFER_SIZE];
 		byte[] audioBuffer = new byte[AUDIO_BUFFER_SIZE];
-		byte[] answerBuffer = new byte[100];
+		byte[] answerBuffer = new byte[101];
         Log.i("Connection","run");
 		if (socket != null) {
 			running=true;
@@ -180,7 +180,8 @@ public class Connection extends Thread {
 						}
 						//Log.i("Connection","AUDIO_HEADER length="+bytes);
 					} else if(buffer_type==ANSWER_BUFFER) {
-						answer_length = Integer.parseInt(version.toString());
+						String length_str = new String(version);
+						answer_length = Integer.valueOf(length_str);
 					} else {
 						status="invalid buffer type";
 						/*
@@ -233,7 +234,7 @@ public class Connection extends Thread {
 							bytes += inputStream.read(answerBuffer, bytes,
 									answer_length - bytes);
 						}
-						processAnswerBuffer(answerBuffer);
+						processAnswerBuffer(answer_length-1, answerBuffer); // remove terminating null
 						break;
 					default:
 						Log.e("Buffer", "Invalid type " + buffer_type);
@@ -330,13 +331,10 @@ public class Connection extends Thread {
 		}
 	}
 	
-	private void processAnswerBuffer(byte[] buffer){
-		try {
-			answer = new String(buffer, "UTF8");
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	private void processAnswerBuffer(int length, byte[] buffer){
+		byte[] answer_buff = new byte[length];
+		for (int i = 0; i < length; i++) answer_buff[i] = buffer[i];
+		answer = new String(answer_buff);
 	}
 
 	public synchronized void sendCommand(String command) {
@@ -561,8 +559,7 @@ public class Connection extends Thread {
 	private static final int ANSWER_BUFFER = 52;	// ascii for '4'
 	
 	private int answer_length = 0;
-	private String answer = "unknown";
-	
+	private String answer = "";
 	private String server;
 	private int port;
 	private Socket socket;

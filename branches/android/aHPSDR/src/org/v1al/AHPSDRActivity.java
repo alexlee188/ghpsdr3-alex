@@ -112,8 +112,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 						ViewGroup.LayoutParams.MATCH_PARENT));
 		addContentView(spectrumView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
 				ViewGroup.LayoutParams.MATCH_PARENT));
-		
-		mySetTitle();
         
 	}
 
@@ -181,6 +179,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		if(connection==null) {
 			connection = new Connection(server, BASE_PORT+receiver, width);
 			setConnectionDefaults();
+			mySetTitle();
 		}
 		spectrumView.setAverage(-100);
 	}
@@ -1076,11 +1075,12 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.setSpectrumAverage(spectrumAverage);
 		connection.getSpectrum_protocol3(fps+1);
 		connection.setScaleFactor(1f);
-		//connection.askQuestion("q-master");
+		connection.askQuestion("q-master");
 	}
 	
 	private void mySetTitle(){
-		setTitle("glSDR: "+server+" (rx"+receiver+")");
+		if (connection != null) qAnswer = connection.getAnswer();
+		setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
 	}
 	
 	private int width;
@@ -1243,7 +1243,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 	private int cwPitch = 600;
 
-	private String server = "192.168.1.12";
+	private String server = "qtradio.napan.ca";
+	private String qAnswer = "";
 	private int BASE_PORT = 8000;
 	private int port = 8000;
 	
