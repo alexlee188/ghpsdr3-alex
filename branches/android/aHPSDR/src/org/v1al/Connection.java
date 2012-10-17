@@ -3,6 +3,7 @@ package org.v1al;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 
@@ -125,8 +126,7 @@ public class Connection extends Thread {
 		int bytes;
 		int bytes_read=0;
 		int buffer_type=0;
-		int version=0;
-		int subversion=0;
+		byte [] version = new byte[2];
 		int header_size=SPECTRUM_HEADER_SIZE_2_0;
 		byte[] spectrumHeader = new byte[SPECTRUM_HEADER_SIZE_2_1]; // largest
 		byte[] audioHeader= new byte[AUDIO_HEADER_SIZE];
@@ -140,16 +140,15 @@ public class Connection extends Thread {
 				try {
 
 			        buffer_type=inputStream.read();
-			        version=inputStream.read();
-			        subversion=inputStream.read();
+			        inputStream.read(version, 0, 2);
 					
 					//Log.i("Connection","buffer_type="+buffer_type);
 					
 					if(buffer_type==SPECTRUM_BUFFER) {
 						bytes = 0;
-						switch(version) {
+						switch(version[0]) {
 						    case 2:
-						    	switch(subversion) {
+						    	switch(version[1]) {
 						    	    case 0:
 						    	    	header_size=SPECTRUM_HEADER_SIZE_2_0;
 						    	    	break;
@@ -181,7 +180,7 @@ public class Connection extends Thread {
 						}
 						//Log.i("Connection","AUDIO_HEADER length="+bytes);
 					} else if(buffer_type==ANSWER_BUFFER) {
-						answer_length = (version - 48) * 10 + (subversion - 48);
+						answer_length = Integer.parseInt(version.toString());
 					} else {
 						status="invalid buffer type";
 						/*
@@ -218,7 +217,7 @@ public class Connection extends Thread {
 							bytes += inputStream.read(spectrumBuffer, bytes,
 									SPECTRUM_BUFFER_SIZE - bytes);
 						}
-						processSpectrumBuffer(version,subversion,spectrumHeader, spectrumBuffer);
+						processSpectrumBuffer(version[0],version[1],spectrumHeader, spectrumBuffer);
 						break;
 					case AUDIO_BUFFER:
 						bytes = 0;
@@ -227,6 +226,14 @@ public class Connection extends Thread {
 									AUDIO_BUFFER_SIZE - bytes);
 						}
 						processAudioBuffer(audioHeader, audioBuffer);
+						break;
+					case ANSWER_BUFFER:
+						bytes = 0;
+						while (bytes != answer_length) {
+							bytes += inputStream.read(answerBuffer, bytes,
+									answer_length - bytes);
+						}
+						processAnswerBuffer(answerBuffer);
 						break;
 					default:
 						Log.e("Buffer", "Invalid type " + buffer_type);
@@ -320,6 +327,15 @@ public class Connection extends Thread {
 					AUDIO_BUFFER_SIZE);
 		} else {
 			Log.d("AudioTrack", "dropping buffer");
+		}
+	}
+	
+	private void processAnswerBuffer(byte[] buffer){
+		try {
+			answer = new String(buffer, "UTF8");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
@@ -442,6 +458,10 @@ public class Connection extends Thread {
 		sendCommand("setFPS " + SPECTRUM_BUFFER_SIZE + " " + fps);
 	}
 	
+	public void askQuestion(String q){
+		sendCommand(q);
+	}
+	
 	public void setMOX(boolean state){
 		if (state) {
 			sendCommand("Mox on " + txUser + " " + txPass);
@@ -521,6 +541,10 @@ public class Connection extends Thread {
 	public void setSpectrumAverage(int value){
 		spectrumAverage = value;
 	}
+	
+	public String getAnswer(){
+		return answer;
+	}
 
 	private SpectrumView spectrumView;
 
@@ -537,7 +561,8 @@ public class Connection extends Thread {
 	private static final int ANSWER_BUFFER = 52;	// ascii for '4'
 	
 	private int answer_length = 0;
-
+	private String answer = "unknown";
+	
 	private String server;
 	private int port;
 	private Socket socket;

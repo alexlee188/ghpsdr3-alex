@@ -113,7 +113,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		addContentView(spectrumView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
 				ViewGroup.LayoutParams.MATCH_PARENT));
 		
-		setTitle("glSDR: "+server+" (rx"+receiver+")");
+		mySetTitle();
         
 	}
 
@@ -262,7 +262,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					connection = new Connection(server, BASE_PORT + receiver,width);
 					setConnectionDefaults();
 					//update.start();
-					setTitle("glSDR: "+server+" (rx"+receiver+")");
+					mySetTitle();
 					dialog.dismiss();
 				}
 			});
@@ -346,6 +346,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
     							server=servers[item].toString();	
     							connection = new Connection(server, BASE_PORT + receiver,width);
     							setConnectionDefaults();
+    							mySetTitle();
     							dialog.dismiss();
     						}
     			});
@@ -371,6 +372,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 							receiver=item;	
 							connection = new Connection(server, BASE_PORT + receiver,width);
 							setConnectionDefaults();
+							mySetTitle();
 							dialog.dismiss();
 						}
 					});
@@ -1074,6 +1076,11 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.setSpectrumAverage(spectrumAverage);
 		connection.getSpectrum_protocol3(fps+1);
 		connection.setScaleFactor(1f);
+		//connection.askQuestion("q-master");
+	}
+	
+	private void mySetTitle(){
+		setTitle("glSDR: "+server+" (rx"+receiver+")");
 	}
 	
 	private int width;
