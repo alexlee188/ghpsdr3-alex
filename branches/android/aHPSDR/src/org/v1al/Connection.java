@@ -125,8 +125,9 @@ public class Connection extends Thread {
 	public void run() {
 		int bytes;
 		int bytes_read=0;
-		int buffer_type=0;
-		byte [] version = new byte[2];
+		byte buffer_type = 0;
+		byte[] buffer_type_array = new byte[1];
+		byte[] version = new byte[2];
 		int header_size=SPECTRUM_HEADER_SIZE_2_0;
 		byte[] spectrumHeader = new byte[SPECTRUM_HEADER_SIZE_2_1]; // largest
 		byte[] audioHeader= new byte[AUDIO_HEADER_SIZE];
@@ -138,12 +139,10 @@ public class Connection extends Thread {
 			running=true;
 			while (running) {
 				try {
-
-			        buffer_type=inputStream.read();
+					inputStream.read(buffer_type_array, 0, 1);
 			        inputStream.read(version, 0, 2);
-					
 					//Log.i("Connection","buffer_type="+buffer_type);
-					
+					buffer_type = buffer_type_array[0];
 					if(buffer_type==SPECTRUM_BUFFER) {
 						bytes = 0;
 						switch(version[0]) {
@@ -182,6 +181,8 @@ public class Connection extends Thread {
 					} else if(buffer_type==ANSWER_BUFFER) {
 						String length_str = new String(version);
 						answer_length = Integer.valueOf(length_str);
+						bytes_read = 0;
+						
 					} else {
 						status="invalid buffer type";
 						/*
@@ -268,7 +269,7 @@ public class Connection extends Thread {
 		return result;
 	}
 	
-	private void processSpectrumBuffer(int version,int subversion,byte[] header, byte[] buffer) {
+	private void processSpectrumBuffer(byte version,byte subversion,byte[] header, byte[] buffer) {
 		int offset=0;
 		
 		meter=getShort(header,2);
@@ -550,9 +551,9 @@ public class Connection extends Thread {
 	private int SPECTRUM_BUFFER_SIZE = 480;
 	static final int AUDIO_BUFFER_SIZE = 2000;
 
-	private static final int SPECTRUM_BUFFER = 0;
-	private static final int AUDIO_BUFFER = 1;
-	private static final int ANSWER_BUFFER = 52;	// ascii for '4'
+	private static final byte SPECTRUM_BUFFER = 0;
+	private static final byte AUDIO_BUFFER = 1;
+	private static final byte ANSWER_BUFFER = '4';
 	
 	private int answer_length = 0;
 	private String answer = "";
