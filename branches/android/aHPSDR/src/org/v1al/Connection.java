@@ -132,6 +132,7 @@ public class Connection extends Thread {
 		byte[] audioHeader= new byte[AUDIO_HEADER_SIZE];
 		byte[] spectrumBuffer = new byte[SPECTRUM_BUFFER_SIZE];
 		byte[] audioBuffer = new byte[AUDIO_BUFFER_SIZE];
+		byte[] answerBuffer = new byte[100];
         Log.i("Connection","run");
 		if (socket != null) {
 			running=true;
@@ -179,6 +180,8 @@ public class Connection extends Thread {
 							bytes+=bytes_read;
 						}
 						//Log.i("Connection","AUDIO_HEADER length="+bytes);
+					} else if(buffer_type==ANSWER_BUFFER) {
+						answer_length = (version - 48) * 10 + (subversion - 48);
 					} else {
 						status="invalid buffer type";
 						/*
@@ -531,6 +534,9 @@ public class Connection extends Thread {
 
 	private static final int SPECTRUM_BUFFER = 0;
 	private static final int AUDIO_BUFFER = 1;
+	private static final int ANSWER_BUFFER = 52;	// ascii for '4'
+	
+	private int answer_length = 0;
 
 	private String server;
 	private int port;
