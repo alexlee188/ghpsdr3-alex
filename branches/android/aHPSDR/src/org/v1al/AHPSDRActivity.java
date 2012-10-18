@@ -40,6 +40,10 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import org.apache.http.util.ByteArrayBuffer;
+import org.v1al.SpectrumView.JogTask;
+
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 import android.util.DisplayMetrics;
 
@@ -1054,6 +1058,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	}
 	
 	private void setConnectionDefaults(){
+		if (timer != null) timer.cancel();
 		connection.setSpectrumView(spectrumView);
 		connection.connect();
 		connection.start();
@@ -1076,14 +1081,30 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.setSpectrumAverage(spectrumAverage);
 		connection.getSpectrum_protocol3(fps+1);
 		connection.setScaleFactor(1f);
-
+		timer = new Timer();
+		timer.schedule(new answerTask(), 1000);
+		//timer.schedule(new titleTask(), 2000);
 	}
 	
 	private void mySetTitle(){
-		if (connection != null) qAnswer = connection.getAnswer();
 		setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
 	}
 	
+	class titleTask extends TimerTask {
+		public void run(){
+			setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
+		}
+	}
+	
+	class answerTask extends TimerTask {
+	    public void run() {
+			if (connection != null){
+				qAnswer = connection.getAnswer();
+			}
+	    }
+	}
+	
+	private Timer timer;
 	private int width;
 	private int height;
 

@@ -182,7 +182,6 @@ public class Connection extends Thread {
 						String length_str = new String(version);
 						answer_length = Integer.valueOf(length_str);
 						bytes_read = 0;
-						
 					} else {
 						status="invalid buffer type";
 						/*
@@ -235,7 +234,7 @@ public class Connection extends Thread {
 							bytes += inputStream.read(answerBuffer, bytes,
 									answer_length - bytes);
 						}
-						processAnswerBuffer(answer_length-1, answerBuffer); // remove terminating null
+						processAnswerBuffer(answer_length, answerBuffer); // remove terminating null
 						break;
 					default:
 						Log.e("Buffer", "Invalid type " + buffer_type);
@@ -556,7 +555,7 @@ public class Connection extends Thread {
 	private static final byte ANSWER_BUFFER = '4';
 	
 	private int answer_length = 0;
-	private String answer = "";
+	private String answer = "unknown";
 	private String server;
 	private int port;
 	private Socket socket;
