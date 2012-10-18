@@ -116,15 +116,33 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 						ViewGroup.LayoutParams.MATCH_PARENT));
 		addContentView(spectrumView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
 				ViewGroup.LayoutParams.MATCH_PARENT));
-        
+		
+		titleTimer = new Timer();
+		titleTimer.schedule(new TimerTask() {			
+			@Override
+			public void run() {
+				TimerMethod();
+			}
+			
+		}, 0, 1000);
 	}
+
+	private void TimerMethod()
+	{
+		//This method is called directly by the timer
+		//and runs in the same thread as the timer.
+
+		//We call the method that will work with the UI
+		//through the runOnUiThread method.
+		//this.runOnUiThread(Timer_Tick);
+	};
 
 	@Override
     protected void onStop(){
         Log.i("AHPSDRActivity","onStop");
         super.onStop();
         
-        //update.close();
+        if (titleTimer != null) titleTimer.cancel();
         connection.close();
 
         SharedPreferences prefs = getSharedPreferences("aHPSDR", 0);
@@ -1082,29 +1100,30 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.getSpectrum_protocol3(fps+1);
 		connection.setScaleFactor(1f);
 		timer = new Timer();
-		timer.schedule(new answerTask(), 1000);
-		//timer.schedule(new titleTask(), 2000);
+		timer.schedule(new answerTask(), 1000, 1000);
 	}
 	
 	private void mySetTitle(){
 		setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
 	}
 	
-	class titleTask extends TimerTask {
+	private Runnable Timer_Tick = new Runnable() {
 		public void run(){
 			setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
 		}
-	}
+	};
 	
 	class answerTask extends TimerTask {
 	    public void run() {
 			if (connection != null){
 				qAnswer = connection.getAnswer();
+				connection.sendCommand("q-master");
 			}
 	    }
 	}
 	
 	private Timer timer;
+	private Timer titleTimer;
 	private int width;
 	private int height;
 
