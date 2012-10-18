@@ -334,7 +334,8 @@ public class Connection extends Thread {
 	private void processAnswerBuffer(int length, byte[] buffer){
 		byte[] answer_buff = new byte[length];
 		for (int i = 0; i < length; i++) answer_buff[i] = buffer[i];
-		answer = new String(answer_buff);
+		String full_string = new String(answer_buff);
+		answer = full_string.substring(9);
 	}
 
 	public synchronized void sendCommand(String command) {

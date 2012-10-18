@@ -15,6 +15,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -117,32 +118,12 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		addContentView(spectrumView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
 				ViewGroup.LayoutParams.MATCH_PARENT));
 		
-		titleTimer = new Timer();
-		titleTimer.schedule(new TimerTask() {			
-			@Override
-			public void run() {
-				TimerMethod();
-			}
-			
-		}, 0, 1000);
 	}
-
-	private void TimerMethod()
-	{
-		//This method is called directly by the timer
-		//and runs in the same thread as the timer.
-
-		//We call the method that will work with the UI
-		//through the runOnUiThread method.
-		//this.runOnUiThread(Timer_Tick);
-	};
 
 	@Override
     protected void onStop(){
         Log.i("AHPSDRActivity","onStop");
         super.onStop();
-        
-        if (titleTimer != null) titleTimer.cancel();
         connection.close();
 
         SharedPreferences prefs = getSharedPreferences("aHPSDR", 0);
@@ -282,7 +263,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					server=value;	
 					connection = new Connection(server, BASE_PORT + receiver,width);
 					setConnectionDefaults();
-					//update.start();
 					mySetTitle();
 					dialog.dismiss();
 				}
@@ -1091,8 +1071,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	    connection.setTxUser(txUser);
 	    connection.setTxPass(txPass);
 	    connection.setIQCorrection(dsp_state[3]);
-	    connection.setScaleFactor(1f);
-		//update=new Update(connection);					
+	    connection.setScaleFactor(1f);					
 		spectrumView.setConnection(connection);
 		spectrumView.setAverage(-100);
 		connection.setFps(fps);
@@ -1105,25 +1084,30 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	
 	private void mySetTitle(){
 		setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
+		mHandler.removeCallbacks(updateTitle);
+		mHandler.postDelayed(updateTitle, 500);
 	}
 	
-	private Runnable Timer_Tick = new Runnable() {
+	private Runnable updateTitle = new Runnable() {
 		public void run(){
 			setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
 		}
 	};
 	
+
 	class answerTask extends TimerTask {
 	    public void run() {
 			if (connection != null){
 				qAnswer = connection.getAnswer();
 				connection.sendCommand("q-master");
+				mHandler.removeCallbacks(updateTitle);
+				mHandler.postDelayed(updateTitle, 500);
 			}
 	    }
 	}
 	
 	private Timer timer;
-	private Timer titleTimer;
+	private Handler mHandler = new Handler();
 	private int width;
 	private int height;
 
