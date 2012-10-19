@@ -1613,7 +1613,7 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 			 strcat(answer," Y");
 		 }
 	}else if (strcmp(message,"q-master") == 0){
-                 sdr_log(SDR_LOG_INFO, "q-master requested...\n");
+                 //sdr_log(SDR_LOG_INFO, "q-master requested...\n");
 		 strcat(answer,"q-master:");
 		 strcat(answer,clienttype);
 	}else if (strcmp(message,"q-info") == 0){
