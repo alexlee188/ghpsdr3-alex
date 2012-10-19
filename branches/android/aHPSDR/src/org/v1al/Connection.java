@@ -85,7 +85,7 @@ public class Connection extends Thread {
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
 		    
-		    sendCommand("setClient glSDR(19)");
+		    sendCommand("setClient glSDR(20)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
@@ -335,7 +335,20 @@ public class Connection extends Thread {
 		byte[] answer_buff = new byte[length];
 		for (int i = 0; i < length; i++) answer_buff[i] = buffer[i];
 		String full_string = new String(answer_buff);
-		answer = full_string.substring(9);
+		if (full_string.indexOf("q-master") == 0){
+			answer = full_string.substring(9);
+			if (answer.indexOf("slave") != -1) isSlave = true;
+			else isSlave = false;
+		}
+		else if (full_string.indexOf("q-info") == 0 && isSlave){
+			int freq_pos = full_string.indexOf(";f;");
+			int mode_pos = full_string.indexOf(";m;");
+			int mode_end_pos = full_string.indexOf(";", mode_pos+3);
+			String freq_string = full_string.substring(freq_pos+3, mode_pos);
+			this.frequency = Integer.valueOf(freq_string);
+			String mode_string = full_string.substring(mode_pos+3, mode_end_pos);
+			this.mode = Integer.valueOf(mode_string);
+		}
 	}
 
 	public synchronized void sendCommand(String command) {
@@ -540,6 +553,10 @@ public class Connection extends Thread {
 	public String getAnswer(){
 		return answer;
 	}
+	
+	public boolean getIsSlave(){
+		return isSlave;
+	}
 
 	private SpectrumView spectrumView;
 
@@ -557,6 +574,7 @@ public class Connection extends Thread {
 	
 	private int answer_length = 0;
 	private String answer = "unknown";
+	private boolean isSlave = false;
 	private String server;
 	private int port;
 	private Socket socket;

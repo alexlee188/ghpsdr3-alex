@@ -1100,6 +1100,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			if (connection != null){
 				qAnswer = connection.getAnswer();
 				connection.sendCommand("q-master");
+				if (connection.getIsSlave() == true){
+					connection.sendCommand("q-info");
+				}
 				mHandler.removeCallbacks(updateTitle);
 				mHandler.postDelayed(updateTitle, 500);
 			}
