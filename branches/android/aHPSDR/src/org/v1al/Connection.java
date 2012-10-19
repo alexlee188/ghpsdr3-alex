@@ -85,7 +85,7 @@ public class Connection extends Thread {
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
 		    
-		    sendCommand("setClient glSDR(20)");
+		    sendCommand("setClient glSDR(21)");
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
@@ -348,6 +348,36 @@ public class Connection extends Thread {
 			this.frequency = Integer.valueOf(freq_string);
 			String mode_string = full_string.substring(mode_pos+3, mode_end_pos);
 			this.mode = Integer.valueOf(mode_string);
+			switch (mode) {
+				case modeLSB:
+					setFilter(-3050, -150);
+					break;
+				case modeUSB:
+					setFilter(150, 3050);
+					break;
+				case modeDSB:
+					setFilter(-2900, 2900);
+					break;
+				case modeCWL:
+					setFilter(-cwPitch - 250,
+							-cwPitch + 250);
+					break;
+				case modeCWU:
+					setFilter(cwPitch - 250,
+							cwPitch + 250);
+					break;
+				case modeFMN:
+				case modeAM:
+				case modeDIGU:
+				case modeDIGL:
+				case modeSAM:
+					setFilter(-3300, 3300);
+					break;
+				case modeSPEC:
+					break;
+				case modeDRM:
+					break;
+			}
 		}
 	}
 
