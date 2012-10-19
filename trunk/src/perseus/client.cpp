@@ -64,7 +64,13 @@ static int counter = 0;
 
 // 2^24 / 2 -1 = 8388607.0
 
-#define SCALE_FACTOR 8388607.0
+//#define SCALE_FACTOR 8388607.0
+
+// 2^32 / 2 -1
+
+#define SCALE_FACTOR  2147483647.0
+
+
 
 #define ADC_CLIP 0x00000001
 
