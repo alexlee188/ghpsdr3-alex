@@ -997,7 +997,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             lastMode=mode;
 			    
             switch (mode){
-            case USB: break;
+            case USB: setTXFilter(1,150,2850); break;
             case LSB: SetTXFilter(1,-2850, -150); break;
             case AM:
             case SAM: SetTXFilter(1, -2850, 2850); break;
