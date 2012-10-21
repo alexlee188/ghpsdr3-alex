@@ -79,7 +79,7 @@
 * 
 */
 
-const char *version = "20120908;-iw0hdv"; //YYYYMMDD; text desc
+const char *version = "20121021;-iw0hdv"; //YYYYMMDD; text desc
 
 // main.c
 
