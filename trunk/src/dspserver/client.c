@@ -97,6 +97,7 @@ static int port=BASE_PORT;
 #define SAMPLE_BUFFER_SIZE 4096
 static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static int zoom = 0;
+static int low,high;            // filter low/high
 
 #define TX_BUFFER_SIZE 1024
 // same as BUFFER_SIZE defined in softrock server
@@ -996,7 +997,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             lastMode=mode;
 			    
             switch (mode){
-            case USB: SetTXFilter(1,150, 2850); break;
+            case USB: SetTXFilter(1,150,2850); break;
             case LSB: SetTXFilter(1,-2850, -150); break;
             case AM:
             case SAM: SetTXFilter(1, -2850, 2850); break;
@@ -1004,7 +1005,6 @@ void readcb(struct bufferevent *bev, void *ctx){
             default: SetTXFilter(1, -4800, 4800);
             }
         } else if(strncmp(cmd,"setfilter",9)==0) {
-            int low,high;
             if (tokenize_cmd(&saveptr, tokens, 2) != 2)
                 goto badcommand;
             low = atoi(tokens[0]);
@@ -1627,8 +1627,17 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 		 sprintf(f,"%lld;m;",lastFreq);
 		 strcat(answer,f);
 		 char m[50];
-		 sprintf(m,"%d;",lastMode);	
-		 strcat(answer,m); 
+		 sprintf(m,"%d;z;",lastMode);	
+		 strcat(answer,m);
+                 char z[50];
+                 sprintf(z,"%d;l;", zoom);
+                 strcat(answer,z);
+                 char l[50];
+                 sprintf(l,"%d;r;", low);       // Rx filter low
+                 strcat(answer,l);              // Rx filter high
+                 char h[50];
+                 sprintf(h,"%d;", high);
+                 strcat(answer,h);
 	}else if (strcmp(message,"q-rtpport") == 0){
 		 strcat(answer,"q-rtpport:");
 		 char p[50];
