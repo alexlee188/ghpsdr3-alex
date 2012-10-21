@@ -28,6 +28,12 @@ AM_PROG_CC_C_O
 AM_PATH_PYTHON([2.5],, [:])
 
 #
+# attempt to build the GUI
+#
+have_GUI=yes
+
+
+#
 # Checking for build cpu
 # and, if 64 bit, add some linking option
 #
@@ -62,7 +68,19 @@ case $build_cpu in
       export CXXFLAGS
       AC_MSG_NOTICE([${CFLAGS}])
       AC_MSG_NOTICE([${CXXFLAGS}])
+      # no GUI available on Raspberry PI
+      have_GUI=no
     ;;
+
+    armv7l)
+      AC_MSG_NOTICE([Platform: ARM 7])
+      CFLAGS="-O3 -pipe -march=armv7 -mfpu=neon -fno-tree-vectorize -fopenmp"
+      CXXFLAGS="-O3 -pipe -march=armv7 -mfpu=neon -fno-tree-vectorize -fopenmp"
+      export CFLAGS
+      export CXXFLAGS
+      AC_MSG_NOTICE([${CFLAGS}])
+      AC_MSG_NOTICE([${CXXFLAGS}])
+     ;;
 
 esac
 
@@ -406,7 +424,16 @@ fi
 #
 # Subpackage QtRadio is unconditionally compiled
 #
-AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
+
+if test "x${have_GUI}" = xyes; then
+    AC_MSG_NOTICE([
+-----------------------------------
+  QtRadio build enabled.
+-----------------------------------])  
+    AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
+    MAKE_QTRADIO="trunk/src/QtRadio"
+    AC_SUBST([MAKE_QTRADIO])
+fi
 
 
 AC_CONFIG_FILES([Makefile
