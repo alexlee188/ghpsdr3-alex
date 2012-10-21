@@ -79,7 +79,7 @@
 * 
 */
 
-const char *version = "20121113;-opengl-qt5"; //YYYYMMDD; text desc
+const char *version = "20121021;-opengl-qt5"; //YYYYMMDD; text desc
 
 // main.c
 
