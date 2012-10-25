@@ -84,8 +84,7 @@ public class Connection extends Thread {
 		    recorder.startRecording();
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
-		    
-		    sendCommand("setClient glSDR(21)");
+
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
@@ -378,6 +377,26 @@ public class Connection extends Thread {
 				case modeDRM:
 					break;
 			}
+			int zoom_pos = full_string.indexOf(";z;");
+			if (zoom_pos != -1){
+				int zoom_end_pos = full_string.indexOf(";", zoom_pos+3);
+				String zoom_string = full_string.substring(zoom_pos+3, zoom_end_pos);
+				zoom = Integer.valueOf(zoom_string);
+				if (zoom < MIN_ZOOM) zoom = MIN_ZOOM;
+				if (zoom > MAX_ZOOM) zoom = MAX_ZOOM;
+			}
+			int low_pos = full_string.indexOf(";l;");
+			if (low_pos != -1){
+				int low_end_pos = full_string.indexOf(";", low_pos+3);
+				String low_string = full_string.substring(low_pos+3, low_end_pos);
+				filterLow = Integer.valueOf(low_string);
+			}
+			int high_pos = full_string.indexOf(";h;");
+			if (high_pos != -1){
+				int high_end_pos = full_string.indexOf(";", high_pos+3);
+				String high_string = full_string.substring(high_pos+3, high_end_pos);
+				filterHigh = Integer.valueOf(high_string);
+			}
 		}
 	}
 
@@ -511,8 +530,12 @@ public class Connection extends Thread {
 		}
 	}
 	
+	public int getScaleFactor(){
+		return zoom+1;
+	}
+	
 	public void setScaleFactor(float scale){
-		int zoom = (int) scale - 1;
+		zoom = (int) scale - 1;
 		sendCommand("zoom " + zoom);
 	}
 	
@@ -631,18 +654,18 @@ public class Connection extends Thread {
 	private int spectrumAverage = 0;
 
 	private int cwPitch = 600;
-
 	private byte[] commandBuffer = new byte[64];
-
 	private byte[] samples;
 	private int audioSampleCount;
 	private short[] decodedBuffer = new short[AUDIO_BUFFER_SIZE];
-
 	private AudioTrack audioTrack;
 	private AudioRecord recorder;
 	private boolean MOX = false;
 	private String status = "";
-
+	
+	private int zoom = 0;
+	private static int MIN_ZOOM = 0;
+	private static int MAX_ZOOM = 99;
 	public static final int modeLSB = 0;
 	public static final int modeUSB = 1;
 	public static final int modeDSB = 2;

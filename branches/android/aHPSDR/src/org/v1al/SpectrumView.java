@@ -61,7 +61,12 @@ public class SpectrumView extends View implements OnTouchListener {
 	
 	protected void onDraw(Canvas canvas) {
 		if (connection.isConnected()) {
-			float zoom_factor = 1f + (scaleFactor - 1f)/25f;
+			float zoom_factor;
+			
+			if (connection.getIsSlave()){
+				scaleFactor = (float)connection.getScaleFactor();
+			}
+			zoom_factor = 1f + (scaleFactor - 1f)/25f;
 
 			// draw the filter
 			paint.setColor(Color.GRAY);

@@ -1061,6 +1061,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.connect();
 		connection.start();
 		connection.sendCommand("q-master");
+	    connection.sendCommand("setClient glSDR(22)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setFilter(filterLow, filterHigh);
@@ -1070,8 +1071,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	    connection.setAllowTx(tx_state[0]);
 	    connection.setTxUser(txUser);
 	    connection.setTxPass(txPass);
-	    connection.setIQCorrection(dsp_state[3]);
-	    connection.setScaleFactor(1f);					
+	    connection.setIQCorrection(dsp_state[3]);					
 		spectrumView.setConnection(connection);
 		spectrumView.setAverage(-100);
 		connection.setFps(fps);
