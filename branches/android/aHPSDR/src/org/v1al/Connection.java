@@ -391,7 +391,7 @@ public class Connection extends Thread {
 				String low_string = full_string.substring(low_pos+3, low_end_pos);
 				filterLow = Integer.valueOf(low_string);
 			}
-			int high_pos = full_string.indexOf(";h;");
+			int high_pos = full_string.indexOf(";r;");
 			if (high_pos != -1){
 				int high_end_pos = full_string.indexOf(";", high_pos+3);
 				String high_string = full_string.substring(high_pos+3, high_end_pos);
