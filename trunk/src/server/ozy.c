@@ -125,7 +125,7 @@ static unsigned char control_out[5]={
   CONFIG_BOTH | MERCURY_122_88MHZ_SOURCE | MERCURY_10MHZ_SOURCE | MIC_SOURCE_PENELOPE | SPEED_96KHZ,
   MODE_OTHERS,
   ALEX_ATTENUATION_0DB | LT2208_GAIN_OFF | LT2208_DITHER_ON | LT2208_RANDOM_ON,
-  SIMPLEX
+  DUPLEX // changed from SIMPLEX in order to avoid Hermes frequency lagging
 };
 
 static int mox=0;
@@ -534,11 +534,11 @@ void write_ozy_output_buffer() {
         ozy_output_buffer[6]=control_out[3];
         ozy_output_buffer[7]=control_out[4];
     } else if(receiver[current_receiver].frequency_changed) {
-        if(receivers==1) {
-            ozy_output_buffer[3]=control_out[0]|0x02;
-        } else {
+        //if(receivers==1) {
+        //    ozy_output_buffer[3]=control_out[0]|0x02;
+        //} else {
             ozy_output_buffer[3]=control_out[0]|((current_receiver+2)<<1);
-        }
+        //}
         ozy_output_buffer[4]=receiver[current_receiver].frequency>>24;
         ozy_output_buffer[5]=receiver[current_receiver].frequency>>16;
         ozy_output_buffer[6]=receiver[current_receiver].frequency>>8;
