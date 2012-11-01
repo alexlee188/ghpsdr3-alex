@@ -134,6 +134,9 @@ AC_SEARCH_LIBS([src_new], [samplerate],[have_samplerate=yes])
 have_ortp=no
 AC_SEARCH_LIBS([ortp_init], [ortp],[have_ortp=yes])
 
+have_gomp=no
+AC_SEARCH_LIBS([omp_get_active_level], [gomp],[have_gomp=yes])
+
 # Checks for header files.
 AC_FUNC_ALLOCA
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h malloc.h netdb.h netinet/in.h stddef.h stdlib.h string.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h sys/timeb.h unistd.h])
@@ -313,6 +316,14 @@ if test "x${have_ortp}" = xno; then
 
 fi
 
+
+if test "x${have_gomp}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The gomp library required to build ghpsdr3.
+-----------------------------------])
+
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
