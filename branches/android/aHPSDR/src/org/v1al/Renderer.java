@@ -197,7 +197,7 @@ class Renderer implements GLSurfaceView.Renderer {
 		// scaling
 		Matrix.setIdentityM(mScaleMatrix, 0);
 		Matrix.scaleM(mScaleMatrix, 0, -1.0f, 1.0f, 1.0f);
-		Matrix.translateM(mScaleMatrix, 0, -this.width, (this.height+120)/2.0f, 0.0f);
+		Matrix.translateM(mScaleMatrix, 0, -this.width, (this.height+100)/2.0f, 0.0f);
 		// Creating MVP matrix
 		Matrix.multiplyMM(mMVPMatrix, 0, mProjMatrix, 0, mScaleMatrix, 0);
 		// send to the shader
