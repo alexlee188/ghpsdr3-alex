@@ -58,7 +58,8 @@ private:
     void LoadShader(void);
     QGLShaderProgram *ShaderProgram;
     GLuint spectrumTexture_location, spectrumTex;
-    GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location, width_location;
+    GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location, width_location; 
+    GLuint aPosition_location, textureCoord_location;
     int data_width;
     int data_height;
     int waterfallHigh;

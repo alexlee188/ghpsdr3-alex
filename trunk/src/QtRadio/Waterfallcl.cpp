@@ -64,6 +64,8 @@ void Waterfallcl::initialize(int wid, int ht){
     waterfallLow_location =  glGetUniformLocation(ShaderProgram->programId(), "waterfallLow");
     waterfallHigh_location =  glGetUniformLocation(ShaderProgram->programId(), "waterfallHigh");
     width_location =  glGetUniformLocation(ShaderProgram->programId(), "width");
+    aPosition_location = glGetAttribLocation(ShaderProgram->programId(),"aPosition");
+    textureCoord_location = glGetAttribLocation(ShaderProgram->programId(), "aTextureCoord");
     glUseProgram(ShaderProgram->programId());
     //Bind to tex unit 0
     glUniform1i(spectrumTexture_location, 0);
@@ -128,6 +130,26 @@ void Waterfallcl::paintGL()
     glUniform1f(cy_location, current_line);
     GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
 
+    /*  // starting to convert opengl to opengles
+        // so that the opengles code can run in low power Single Board Computers
+
+    const GLfloat mVertices[] =  {
+        0.0f, 0.0f,  // Position 0
+        0.0f, 0.0f,  // TexCoord 0
+        data_width, 0.0f,  // Position 1
+        tex_width, 0.0f, // TexCoord 1
+        data_width, MAX_CL_HEIGHT, // Position 2
+        tex_width, 1.0f, // TexCoord 2
+        0.0f, MAX_CL_HEIGHT, // Position 3
+        0.0f, 1.0f // TexCoord 3
+    };
+
+    glVertexAttribPointer(aPosition_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, mVertices);
+    glEnableVertexAttribArray(aPosition_location);
+    glVertexAttribPointer(textureCoord_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, &mVertices[2]);
+    glEnableVertexAttribArray(textureCoord_location);
+    */
+
     glBegin(GL_QUADS);
     // Front Face
     glTexCoord2f(0.0f, 0.0f); glVertex2f(0.0, 0.0);
@@ -155,6 +177,8 @@ void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
 
 }
 static char const vertexShader[] =
+        "attribute vec4 aPosition;\n"
+        "attribute vec2 aTextureCoord;\n"
         "void main()\n"
         "{\n"
         "gl_TexCoord[0] = gl_MultiTexCoord0;\n"
