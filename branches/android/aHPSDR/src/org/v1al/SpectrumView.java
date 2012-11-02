@@ -187,20 +187,20 @@ public class SpectrumView extends View implements OnTouchListener {
 			
 			// draw the jog and PTT buttons
 			paint.setColor(Color.DKGRAY);
-			canvas.drawRect(0, HEIGHT-62, 50, HEIGHT-12, paint);
-            canvas.drawRect(WIDTH-50,HEIGHT-62,WIDTH,HEIGHT-12,paint);
-            canvas.drawRect(125, HEIGHT-62, 200, HEIGHT-12, paint); //kb3omm add 1000's button
-            canvas.drawRect(WIDTH-200,HEIGHT-62,WIDTH-125,HEIGHT-12,paint); //kb3omm add 1000's button
+			canvas.drawRect(0, HEIGHT-66, 50, HEIGHT-16, paint);
+            canvas.drawRect(WIDTH-50,HEIGHT-66,WIDTH,HEIGHT-16,paint);
+            canvas.drawRect(125, HEIGHT-66, 200, HEIGHT-16, paint); //kb3omm add 1000's button
+            canvas.drawRect(WIDTH-200,HEIGHT-66,WIDTH-125,HEIGHT-16,paint); //kb3omm add 1000's button
             if (connection.getAllowTx()){
             	paint.setColor(connection.getMOX()? Color.RED : Color.DKGRAY);
             	canvas.drawRect(WIDTH-50, 100, WIDTH, HEIGHT-100, paint);
             }     
             paint.setColor(Color.WHITE);
             paint.setTextSize(40.0F);
-            canvas.drawText("<", 12, HEIGHT-24, paint);
-            canvas.drawText(">", WIDTH-36, HEIGHT-24, paint);
-            canvas.drawText("<<", 142, HEIGHT-24, paint); //kb3omm add 1000's button
-            canvas.drawText(">>", WIDTH-182, HEIGHT-24, paint); //kb3omm add 1000's button
+            canvas.drawText("<", 12, HEIGHT-28, paint);
+            canvas.drawText(">", WIDTH-36, HEIGHT-28, paint);
+            canvas.drawText("<<", 142, HEIGHT-28, paint); //kb3omm add 1000's button
+            canvas.drawText(">>", WIDTH-182, HEIGHT-28, paint); //kb3omm add 1000's button
 			if (connection.getAllowTx()){
 				canvas.drawText("T", WIDTH-36, 150, paint);
 				canvas.drawText("x", WIDTH-36, 200, paint);
@@ -311,21 +311,21 @@ public class SpectrumView extends View implements OnTouchListener {
 					moved=false;
 					scroll=false;
 					jog=false;
-					if(startX<=50 && startY>=(HEIGHT-62) && startY <= HEIGHT) {
+					if(startX<=50 && startY>=(HEIGHT-66) && startY <= HEIGHT) {
 						// frequency down 100
 						jog=true;
 						jogAmount=-100;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if(startX>=(WIDTH-50) && startY>=(HEIGHT-62) && startY <= HEIGHT) {
+					} else if(startX>=(WIDTH-50) && startY>=(HEIGHT-66) && startY <= HEIGHT) {
 						// frequency up 100 Hz
 						jog=true;
 						jogAmount=100;
 						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=200) && (startX>=125) && (startY>=(HEIGHT-62))
+					} else if((startX<=200) && (startX>=125) && (startY>=(HEIGHT-66))
 							&& (startY <= HEIGHT)) {
 						// frequency down 1000 Hz kb3omm added 1k decrement
 						jog=true;
@@ -334,7 +334,7 @@ public class SpectrumView extends View implements OnTouchListener {
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
 					} else if((startX<=(WIDTH-125)) && (startX>=(WIDTH-200)) 
-							&& (startY>=(HEIGHT-62)) && (startY <= HEIGHT)) {
+							&& (startY>=(HEIGHT-66)) && (startY <= HEIGHT)) {
 						// frequency up 1000 Hz kb3omm added 1k increment
 						jog=true;
 						jogAmount=1000;

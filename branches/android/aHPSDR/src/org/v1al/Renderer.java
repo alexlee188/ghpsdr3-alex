@@ -137,13 +137,13 @@ class Renderer implements GLSurfaceView.Renderer {
 		
 		float[] mVerticesData =
 		    { 
-		            0.0f, 0.0f, 1.0f, // Position 0
+		            0.0f, 0.0f, 0.0f, // Position 0
 		            _width, 0.0f, // TexCoord 0
-		            0.0f, this.height/2.0f, 1.0f, // Position 1
+		            0.0f, this.height/2.0f, 0.0f, // Position 1
 		            _width, 1.0f, // TexCoord 1
-		            this.width, this.height/2.0f, 1.0f, // Position 2
+		            this.width, this.height/2.0f, 0.0f, // Position 2
 		            0.0f, 1.0f, // TexCoord 2
-		            this.width, 0.0f, 1.0f, // Position 3
+		            this.width, 0.0f, 0.0f, // Position 3
 		            0.0f, 0.0f // TexCoord 3
 		    };
 		
@@ -188,24 +188,18 @@ class Renderer implements GLSurfaceView.Renderer {
 		this.width = width;
 		this.height = height;
 		
-		/*
-		float ratio = (float) width / height;
-		Matrix.frustumM(mProjMatrix, 0, -ratio, ratio, -1, 1, 0.5f, 10);
-		*/
-		
 		// Ortho2D Projection
-		mProjMatrix = new float []{ 2.0f/this.width, 0.0f, 0.0f, 0.0f,
-						0.0f, 2.0f/this.height, 0.0f, 0.0f,
-						0.0f, 0.0f, 1.0f, -1.0f,
-						0.0f, 0.0f, 0.0f, 1.0f
+		mProjMatrix = new float []{ 2.0f/this.width, 0.0f, 0.0f, -0.0f,
+						0.0f, -2.0f/this.height, 0.0f, -0.0f,
+						0.0f, 0.0f, 1.0f, 0.0f,
+						-1.0f, 1.0f, 0.0f, 1.0f
 						};
 		// scaling
 		Matrix.setIdentityM(mScaleMatrix, 0);
-		Matrix.scaleM(mScaleMatrix, 0, 7.0f, -5.8f, 1.0f);
-		Matrix.translateM(mScaleMatrix, 0, -this.width/2.0f, this.height/11.0f, 0.0f);
-		Matrix.multiplyMM(mMVPMatrix, 0, mVMatrix, 0, mScaleMatrix, 0);
+		Matrix.scaleM(mScaleMatrix, 0, -1.0f, 1.0f, 1.0f);
+		Matrix.translateM(mScaleMatrix, 0, -this.width, (this.height+120)/2.0f, 0.0f);
 		// Creating MVP matrix
-		Matrix.multiplyMM(mMVPMatrix, 0, mProjMatrix, 0, mMVPMatrix, 0);
+		Matrix.multiplyMM(mMVPMatrix, 0, mProjMatrix, 0, mScaleMatrix, 0);
 		// send to the shader
 		GLES20.glUniformMatrix4fv(uMVPMatrix_location, 1, false, mMVPMatrix, 0);
 	}
@@ -228,7 +222,7 @@ class Renderer implements GLSurfaceView.Renderer {
 		//GLES20.glCullFace(GLES20.GL_BACK); 
 
 		// set the view matrix
-		Matrix.setLookAtM(mVMatrix, 0, 0, 0, -5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+		//Matrix.setLookAtM(mVMatrix, 0, 0, 0, -5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 		
 		GLES20.glUseProgram(0);
 		shader = new Shader(vShader, fShader, mContext);
