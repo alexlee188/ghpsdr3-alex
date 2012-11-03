@@ -25,7 +25,6 @@
 #include <QImage>
 #include <QMouseEvent>
 #include <QDebug>
-#include <GL/glu.h>
 #include <GL/gl.h>
 #include <QtOpenGL>
 #include <QtOpenGL/QGLBuffer>
@@ -34,7 +33,7 @@
 #include <QGLShader>
 
 #define MAX_CL_WIDTH 2048
-#define MAX_CL_HEIGHT 512
+#define MAX_CL_HEIGHT 1024
 
 class Waterfallcl : public QGLWidget {
     Q_OBJECT
@@ -60,6 +59,7 @@ private:
     GLuint spectrumTexture_location, spectrumTex;
     GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location, width_location; 
     GLuint aPosition_location, textureCoord_location;
+    GLuint uMVPMatrix_location;
     int data_width;
     int data_height;
     int waterfallHigh;

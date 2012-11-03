@@ -17,6 +17,11 @@
 */
 
 #include <QDebug>
+#include <glm/glm.hpp>
+// glm::translate, glm::rotate, glm::scale, glm::perspective
+#include <glm/gtc/matrix_transform.hpp>
+// glm::value_ptr
+#include <glm/gtc/type_ptr.hpp>
 #include "Waterfallcl.h"
 
 Waterfallcl::Waterfallcl(){
@@ -66,6 +71,7 @@ void Waterfallcl::initialize(int wid, int ht){
     width_location =  glGetUniformLocation(ShaderProgram->programId(), "width");
     aPosition_location = glGetAttribLocation(ShaderProgram->programId(),"aPosition");
     textureCoord_location = glGetAttribLocation(ShaderProgram->programId(), "aTextureCoord");
+    uMVPMatrix_location = glGetUniformLocation(ShaderProgram->programId(), "uMVPMatrix");
     glUseProgram(ShaderProgram->programId());
     //Bind to tex unit 0
     glUniform1i(spectrumTexture_location, 0);
@@ -102,17 +108,7 @@ void Waterfallcl::resizeGL( int width, int height )
     data_height = height;
 
     height = height?height:1;
-
     glViewport( 0, 0, (GLint)width, (GLint)height );
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(0, width, 0, height);
-    glScalef(1.0, -1.0, 1.0);
-    glTranslatef(0, -height, 0);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
 }
 
 
@@ -130,15 +126,30 @@ void Waterfallcl::paintGL()
     glUniform1f(cy_location, current_line);
     GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
 
-    /*  // starting to convert opengl to opengles
-        // so that the opengles code can run in low power Single Board Computers
+    glUniform1f(width_location, tex_width);
+
+    // Ortho2D projection
+    glm::mat4 mProjMatrix = glm::mat4 ( 2.0f/data_width, 0.0f, 0.0f, -0.0f,
+                            0.0f, -2.0f/data_height, 0.0f, -0.0f,
+                            0.0f, 0.0f, 1.0f, 0.0f,
+                            -1.0f, 1.0f, 0.0f, 1.0f
+                            );
+
+    //glm::mat4 mTranslate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+    //glm::mat4 mModel = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+    glm::mat4 mMVPMatrix = mProjMatrix;
+
+    glUniformMatrix4fv(uMVPMatrix_location, 1, false, glm::value_ptr(mMVPMatrix));
+
+      // starting to convert opengl to opengles
+      // so that the opengles code can run in low power Single Board Computers
 
     const GLfloat mVertices[] =  {
         0.0f, 0.0f,  // Position 0
         0.0f, 0.0f,  // TexCoord 0
-        data_width, 0.0f,  // Position 1
+        (float)data_width, 0.0f,  // Position 1
         tex_width, 0.0f, // TexCoord 1
-        data_width, MAX_CL_HEIGHT, // Position 2
+        (float)data_width, MAX_CL_HEIGHT, // Position 2
         tex_width, 1.0f, // TexCoord 2
         0.0f, MAX_CL_HEIGHT, // Position 3
         0.0f, 1.0f // TexCoord 3
@@ -148,41 +159,37 @@ void Waterfallcl::paintGL()
     glEnableVertexAttribArray(aPosition_location);
     glVertexAttribPointer(textureCoord_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, &mVertices[2]);
     glEnableVertexAttribArray(textureCoord_location);
-    */
 
-    glBegin(GL_QUADS);
-    // Front Face
-    glTexCoord2f(0.0f, 0.0f); glVertex2f(0.0, 0.0);
-    glTexCoord2f(tex_width, 0.0f); glVertex2f(data_width, 0.0);
-    glTexCoord2f(tex_width, 1.0f); glVertex2f(data_width, MAX_CL_HEIGHT);
-    glTexCoord2f(0.0f, 1.0f); glVertex2f(0.0, MAX_CL_HEIGHT);
-    glEnd();
+    const GLshort mIndices[] =
+    {
+        0, 1, 2, 0, 2, 3
+    };
 
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
 }
 
 void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
-    data_width = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
+    int data_length = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
     if (cy-- <= 0) cy = MAX_CL_HEIGHT - 1;
 
     unsigned char data[MAX_CL_WIDTH][4];
-    for (int i = 0; i < data_width; i++){
+    for (int i = 0; i < data_length; i++){
         data[i][0] = buffer[i];
     }
 
-    glUniform1f(width_location, (float)width/MAX_CL_WIDTH);
     // Update Texture
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)data);
-
-
 }
 static char const vertexShader[] =
         "attribute vec4 aPosition;\n"
         "attribute vec2 aTextureCoord;\n"
+        "uniform mat4 uMVPMatrix;\n"
+        "varying vec2 vTextureCoord;\n"
         "void main()\n"
         "{\n"
-        "gl_TexCoord[0] = gl_MultiTexCoord0;\n"
-        "gl_Position = ftransform();\n"
+        "vTextureCoord = aTextureCoord;\n"
+        "gl_Position = uMVPMatrix * aPosition;\n"
         "}\n";
 
 static char const fragmentShader[] =
@@ -191,11 +198,12 @@ static char const fragmentShader[] =
         "uniform float offset;\n"
         "uniform float width;\n"
         "uniform float waterfallLow, waterfallHigh;\n"
+        "varying vec2 vTextureCoord;\n"
         "void main()\n"
         "{\n"
-            "float y_coord = gl_TexCoord[0].t + cy;\n"
+            "float y_coord = vTextureCoord.t + cy;\n"
             "if (y_coord > 1.0) y_coord -= 1.0;\n"
-            "float x_coord = gl_TexCoord[0].s - offset;\n"
+            "float x_coord = vTextureCoord.s - offset;\n"
             "if (x_coord < 0.0) x_coord += width;\n"
             "if (x_coord > width) x_coord -= width;\n"
             "vec4 value = texture2D(spectrumTexture, vec2(x_coord, y_coord));\n"
