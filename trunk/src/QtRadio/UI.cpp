@@ -287,6 +287,7 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(slaveSetFreq(long long)),this,SLOT(frequencyChanged(long long)));
     connect(&connection,SIGNAL(slaveSetMode(int)),this,SLOT(slaveSetMode(int)));
     connect(&connection,SIGNAL(slaveSetFilter(int,int)),this,SLOT(slaveSetFilter(int,int)));
+    connect(&connection,SIGNAL(slaveSetZoom(int)),this,SLOT(slaveSetZoom(int)));
     connect(&connection,SIGNAL(setdspversion(long, QString)),this,SLOT(setdspversion(long, QString)));
     connect(this,SIGNAL(HideTX(bool)),widget.ctlFrame,SLOT(HideTX(bool)));
     connect(&connection,SIGNAL(setservername(QString)),this,SLOT(setservername(QString)));
@@ -614,6 +615,8 @@ void UI::connected() {
     // let them know who we are
     command.clear(); QTextStream(&command) << "setClient QtRadio";
     connection.sendCommand(command);
+
+    connection.sendCommand("q-server");
 
     // send initial settings
     frequency=band.getFrequency();
@@ -2078,9 +2081,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-
-                   + getversionstring() +  message + "  master 14 Oct 2012");
-
+                   + getversionstring() +  message + "  master 4 Nov 2012");
     lastmessage = message;
 
 }
@@ -2153,6 +2154,12 @@ void UI::slaveSetMode(int m)
 void UI::slaveSetFilter(int low, int high){
     widget.spectrumFrame->setFilter(low,high);
     widget.waterfallFrame->setFilter(low,high);
+}
+
+void UI::slaveSetZoom(int position){
+    widget.zoomSpectrumSlider->setValue(position);
+    widget.spectrumFrame->setZoom(position);
+    widget.waterfallFrame->setZoom(position);
 }
 
 void UI::getBandFrequency()
