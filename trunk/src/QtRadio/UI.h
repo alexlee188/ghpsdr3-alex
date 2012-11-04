@@ -261,7 +261,7 @@ public slots:
     void printStatusBar(QString message);
  //   void setRemote(char* host,int port);
     void slaveSetMode(int newmode);
-    void slaveSetSlave(int slave); // 0 = slave
+    void slaveSetFilter(int l, int r);
     void setdspversion(long dspversion, QString dspversiontxt);
     void setChkTX(bool chk);
     void setservername(QString sname);
@@ -386,7 +386,6 @@ private:
     bool useRTP;
 
     int tuning;
-    int slave;  // 0 = slave mode
     int infotick;
     int infotick2;
     long dspversion;

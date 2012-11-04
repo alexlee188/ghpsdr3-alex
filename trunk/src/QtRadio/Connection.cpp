@@ -419,11 +419,11 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     //qDebug() << "q-master:" << answer;
                     if (answer.contains("slave")){
                         amSlave = true;
-                        sendCommand("q-info");  // we are a slave so lets see where master is tuned
+                        emit printStatusBar("  ...Slave Mode... ");
                     }else{
                         amSlave = false;
+                        emit printStatusBar("  ...Master Mode... ");
                     }
-                    if (serverver >= 20120201)  sendCommand("q-server");
                 }else if(answer.contains("q-rtpport")){
                     rx.setPattern("rtpport:(\\d+);");
                     rx.indexIn(answer);
@@ -444,36 +444,32 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     rx.indexIn(answer);
                     double loffset= rx.cap(1).toDouble();
                     emit resetbandedges(loffset);
-                }else if(answer.contains("q-info")){
 
-                    rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+)");// q-info:0;f;14008750;m;4;
+                }else if(answer.contains("q-info")){
+                    rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+);z;(\\d+);l;(\\d+);r;(\\d+)");// q-info:0;f;14008750;m;4;
                     rx.indexIn(answer);
-                    QString slave = rx.cap(1);
                     QString f = rx.cap(2);
-                    QString m =rx.cap(3);
+                    QString m = rx.cap(3);
+                    QString z = rx.cap(4);
+                    QString l = rx.cap(5);
+                    QString r = rx.cap(6);
                     long long newf = f.toLongLong();
                     int newmode = m.toInt();
-                    int newslave = slave.toInt();
-                    //qDebug() << "emit Freq  f is =" << newf <<";";
-                    emit slaveSetSlave(newslave);
-                    if(newf != lastFreq ){
-                      emit slaveSetFreq(newf);
+                    int zoom = z.toInt();
+                    int left = l.toInt();
+                    int right = r.toInt();
+                    qDebug() << "emit Freq  f is =" << newf <<";";
+                    if (newf != 0 && left != 0 && right != 0){
+                        emit slaveSetFreq(newf);
+                        emit slaveSetFilter(left, right);
                     }
                     if(newmode != lastMode){
                       emit slaveSetMode(newmode);
                     }
-                    if(newslave != lastSlave){
-                       if(newslave == 0){
-                         emit printStatusBar("  ...Slave Mode... ");
-                       }else{
-                         emit printStatusBar("  ...Master Mode... ");
-                         amSlave = false;
-                         sendCommand("q-server");
-                       }
-                    }
+
+
                     lastFreq = newf;
                     lastMode = newmode;
-                    lastSlave = newslave;
 
                 } else if (answer.contains("q-protocol3")){
                     rx.setPattern("([YN])$");
@@ -544,6 +540,9 @@ void Connection::freeBuffers(char* header,char* buffer) {
     if (buffer != NULL) free(buffer);
 }
 
+bool Connection::getSlave(){
+    return amSlave;
+}
 
 // added by gvj
 void Connection::setMuted(bool muteState)
