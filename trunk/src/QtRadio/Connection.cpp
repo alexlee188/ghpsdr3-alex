@@ -449,7 +449,7 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+);z;(\\d+);l;(\\d+);r;(\\d+)");// q-info:0;f;14008750;m;4;
                     rx.indexIn(answer);
                     QString f = rx.cap(2);
-                    QString m =rx.cap(3);
+                    QString m = rx.cap(3);
                     QString z = rx.cap(4);
                     QString l = rx.cap(5);
                     QString r = rx.cap(6);
@@ -459,12 +459,14 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     int left = l.toInt();
                     int right = r.toInt();
                     //qDebug() << "emit Freq  f is =" << newf <<";";
-                    if(newf != lastFreq ){
-                      emit slaveSetFreq(newf);
-                    }
+                    emit slaveSetFreq(newf);
+
                     if(newmode != lastMode){
                       emit slaveSetMode(newmode);
                     }
+
+                    emit slaveSetFilter(left, right);
+
                     lastFreq = newf;
                     lastMode = newmode;
 

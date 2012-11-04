@@ -286,6 +286,7 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(printStatusBar(QString)),this,SLOT(printStatusBar(QString)));
     connect(&connection,SIGNAL(slaveSetFreq(long long)),this,SLOT(frequencyChanged(long long)));
     connect(&connection,SIGNAL(slaveSetMode(int)),this,SLOT(slaveSetMode(int)));
+    connect(&connection,SIGNAL(slaveSetFilter(int,int)),this,SLOT(slaveSetFilter(int,int)));
     connect(&connection,SIGNAL(setdspversion(long, QString)),this,SLOT(setdspversion(long, QString)));
     connect(this,SIGNAL(HideTX(bool)),widget.ctlFrame,SLOT(HideTX(bool)));
     connect(&connection,SIGNAL(setservername(QString)),this,SLOT(setservername(QString)));
@@ -1569,7 +1570,6 @@ void UI::frequencyChanged(long long f) {
     widget.spectrumFrame->setFrequency(frequency);
     widget.vfoFrame->setFrequency(frequency);
     widget.waterfallFrame->setFrequency(frequency);
-    printStatusBar(" ... Using VFO");
 }
 
 void UI::frequencyMoved(int increment,int step) {
@@ -2148,6 +2148,11 @@ void UI::rigctlSetMode(int newmode)
 void UI::slaveSetMode(int m)
 {
     rigctlSetMode(m);
+}
+
+void UI::slaveSetFilter(int low, int high){
+    widget.spectrumFrame->setFilter(low,high);
+    widget.waterfallFrame->setFilter(low,high);
 }
 
 void UI::getBandFrequency()

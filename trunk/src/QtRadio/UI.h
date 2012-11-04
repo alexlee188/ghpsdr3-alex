@@ -261,6 +261,7 @@ public slots:
     void printStatusBar(QString message);
  //   void setRemote(char* host,int port);
     void slaveSetMode(int newmode);
+    void slaveSetFilter(int l, int r);
     void setdspversion(long dspversion, QString dspversiontxt);
     void setChkTX(bool chk);
     void setservername(QString sname);
