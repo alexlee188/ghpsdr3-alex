@@ -458,14 +458,15 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     int zoom = z.toInt();
                     int left = l.toInt();
                     int right = r.toInt();
-                    //qDebug() << "emit Freq  f is =" << newf <<";";
-                    emit slaveSetFreq(newf);
-
+                    qDebug() << "emit Freq  f is =" << newf <<";";
+                    if (newf != 0 && left != 0 && right != 0){
+                        emit slaveSetFreq(newf);
+                        emit slaveSetFilter(left, right);
+                    }
                     if(newmode != lastMode){
                       emit slaveSetMode(newmode);
                     }
 
-                    emit slaveSetFilter(left, right);
 
                     lastFreq = newf;
                     lastMode = newmode;
