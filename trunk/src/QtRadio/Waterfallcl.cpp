@@ -16,12 +16,14 @@
 * Foundation, Inc., 59 Temple Pl
 */
 
-#include <QDebug>
+//#include <QDebug>
+/*
 #include <glm/glm.hpp>
 // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include <glm/gtc/matrix_transform.hpp>
 // glm::value_ptr
 #include <glm/gtc/type_ptr.hpp>
+*/
 #include "Waterfallcl.h"
 
 Waterfallcl::Waterfallcl(){
@@ -57,7 +59,7 @@ void Waterfallcl::initialize(int wid, int ht){
 #endif
 
     glEnable(GL_TEXTURE_2D);
-    glShadeModel(GL_SMOOTH);
+    //glShadeModel(GL_SMOOTH);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
@@ -76,7 +78,7 @@ void Waterfallcl::initialize(int wid, int ht){
     //Bind to tex unit 0
     glUniform1i(spectrumTexture_location, 0);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClearDepth(1.0f);
+    //glClearDepth(1.0f);
 
 }
 
@@ -119,7 +121,6 @@ void Waterfallcl::updateWaterfallgl(){
 void Waterfallcl::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, spectrumTex);
     float current_line = (float) cy /  MAX_CL_HEIGHT;
@@ -128,7 +129,14 @@ void Waterfallcl::paintGL()
 
     glUniform1f(width_location, tex_width);
 
+    GLfloat mMVPMatrix[] = {2.0f/data_width, 0.0f, 0.0f, -0.0f,
+                           0.0f, -2.0f/data_height, 0.0f, -0.0f,
+                           0.0f, 0.0f, 1.0f, 0.0f,
+                           -1.0f, 1.0f, 0.0f, 1.0f
+                           };
     // Ortho2D projection
+
+    /*
     glm::mat4 mProjMatrix = glm::mat4 ( 2.0f/data_width, 0.0f, 0.0f, -0.0f,
                             0.0f, -2.0f/data_height, 0.0f, -0.0f,
                             0.0f, 0.0f, 1.0f, 0.0f,
@@ -138,8 +146,10 @@ void Waterfallcl::paintGL()
     //glm::mat4 mTranslate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
     //glm::mat4 mModel = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
     glm::mat4 mMVPMatrix = mProjMatrix;
+    */
 
-    glUniformMatrix4fv(uMVPMatrix_location, 1, false, glm::value_ptr(mMVPMatrix));
+    //glUniformMatrix4fv(uMVPMatrix_location, 1, false, glm::value_ptr(mMVPMatrix));
+    glUniformMatrix4fv(uMVPMatrix_location, 1, false, mMVPMatrix);
 
       // starting to convert opengl to opengles
       // so that the opengles code can run in low power Single Board Computers
