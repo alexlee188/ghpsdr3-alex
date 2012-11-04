@@ -96,7 +96,6 @@ UI::UI(const QString server) {
 
     isConnected = false;
     modeFlag = false;
-    slave = 1; //start as master
     infotick = 0;
     infotick2 = 0;
     dspversion = 0;
@@ -287,7 +286,6 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(printStatusBar(QString)),this,SLOT(printStatusBar(QString)));
     connect(&connection,SIGNAL(slaveSetFreq(long long)),this,SLOT(frequencyChanged(long long)));
     connect(&connection,SIGNAL(slaveSetMode(int)),this,SLOT(slaveSetMode(int)));
-    connect(&connection,SIGNAL(slaveSetSlave(int)),this,SLOT(slaveSetSlave(int)));
     connect(&connection,SIGNAL(setdspversion(long, QString)),this,SLOT(setdspversion(long, QString)));
     connect(this,SIGNAL(HideTX(bool)),widget.ctlFrame,SLOT(HideTX(bool)));
     connect(&connection,SIGNAL(setservername(QString)),this,SLOT(setservername(QString)));
@@ -777,14 +775,16 @@ void UI::updateSpectrum() {
         command.clear(); QTextStream(&command) << "getSpectrum " << widget.spectrumFrame->width();
         connection.sendCommand(command);
     }
-    if(infotick > 5){
-       if (slave == 0) connection.sendCommand("q-info"); // get master freq changes
+    if(infotick > 25){
+        connection.sendCommand("q-master");
+       if (connection.getSlave() == true) connection.sendCommand("q-info"); // get master freq changes
+       else connection.sendCommand("q-server");
        infotick = 0;
     }
     if(infotick2 == 0){ // set to 0 wehen we first connect
        if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
     }
-    if(infotick2 == 25){
+    if(infotick2 > 50){
        if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
        infotick2 = 0;
     }
@@ -2314,9 +2314,6 @@ void UI::setRTP(bool state) {
     useRTP=state;
 }
 
-void UI::slaveSetSlave(int s){
-    slave = s;
-}
 
 QString UI::getversionstring(){
     QString str;

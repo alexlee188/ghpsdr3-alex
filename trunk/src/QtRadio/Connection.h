@@ -73,6 +73,7 @@ public:
     QSemaphore SemSpectrum;
     void setMuted(bool);
     QString getHost();
+    bool getSlave();
 
 public slots:
     void connected();
