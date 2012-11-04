@@ -16,7 +16,6 @@
 * Foundation, Inc., 59 Temple Pl
 */
 
-//#include <QDebug>
 /*
 #include <glm/glm.hpp>
 // glm::translate, glm::rotate, glm::scale, glm::perspective
@@ -59,7 +58,6 @@ void Waterfallcl::initialize(int wid, int ht){
 #endif
 
     glEnable(GL_TEXTURE_2D);
-    //glShadeModel(GL_SMOOTH);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
@@ -78,7 +76,6 @@ void Waterfallcl::initialize(int wid, int ht){
     //Bind to tex unit 0
     glUniform1i(spectrumTexture_location, 0);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    //glClearDepth(1.0f);
 
 }
 
@@ -151,9 +148,6 @@ void Waterfallcl::paintGL()
     //glUniformMatrix4fv(uMVPMatrix_location, 1, false, glm::value_ptr(mMVPMatrix));
     glUniformMatrix4fv(uMVPMatrix_location, 1, false, mMVPMatrix);
 
-      // starting to convert opengl to opengles
-      // so that the opengles code can run in low power Single Board Computers
-
     const GLfloat mVertices[] =  {
         0.0f, 0.0f,  // Position 0
         0.0f, 0.0f,  // TexCoord 0
@@ -191,6 +185,7 @@ void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)data);
 }
+
 static char const vertexShader[] =
         "attribute vec4 aPosition;\n"
         "attribute vec2 aTextureCoord;\n"
