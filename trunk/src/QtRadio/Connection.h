@@ -95,6 +95,7 @@ signals:
     void slaveSetFreq(long long f);
     void slaveSetMode(int m);
     void slaveSetFilter(int l, int r);
+    void slaveSetZoom(int z);
     void setdspversion(long, QString);
     void setservername( QString);
     void setRemoteRTPPort(QString,int);

@@ -446,7 +446,7 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     emit resetbandedges(loffset);
 
                 }else if(answer.contains("q-info")){
-                    rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+);z;(\\d+);l;(\\d+);r;(\\d+)");// q-info:0;f;14008750;m;4;
+                    rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+);z;(\\d+);l;(\\d+|-\\d+);r;(\\d+|-\\d+)");
                     rx.indexIn(answer);
                     QString f = rx.cap(2);
                     QString m = rx.cap(3);
@@ -458,11 +458,9 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     int zoom = z.toInt();
                     int left = l.toInt();
                     int right = r.toInt();
-                    qDebug() << "emit Freq  f is =" << newf <<";";
-                    if (newf != 0 && left != 0 && right != 0){
-                        emit slaveSetFreq(newf);
-                        emit slaveSetFilter(left, right);
-                    }
+                    emit slaveSetFreq(newf);
+                    emit slaveSetFilter(left, right);
+                    emit slaveSetZoom(zoom);
                     if(newmode != lastMode){
                       emit slaveSetMode(newmode);
                     }

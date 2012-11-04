@@ -262,6 +262,7 @@ public slots:
  //   void setRemote(char* host,int port);
     void slaveSetMode(int newmode);
     void slaveSetFilter(int l, int r);
+    void slaveSetZoom(int z);
     void setdspversion(long dspversion, QString dspversiontxt);
     void setChkTX(bool chk);
     void setservername(QString sname);
