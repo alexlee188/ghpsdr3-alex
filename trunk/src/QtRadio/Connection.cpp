@@ -444,8 +444,8 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     rx.indexIn(answer);
                     double loffset= rx.cap(1).toDouble();
                     emit resetbandedges(loffset);
-                }else if(answer.contains("q-info")){
 
+                }else if(answer.contains("q-info")){
                     rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+);z;(\\d+);l;(\\d+);r;(\\d+)");// q-info:0;f;14008750;m;4;
                     rx.indexIn(answer);
                     QString f = rx.cap(2);
