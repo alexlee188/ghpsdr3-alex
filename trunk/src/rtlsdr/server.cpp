@@ -46,13 +46,14 @@ int debug_level = 0;
 void print_help()
 {
     cerr << 
-    "    Allowed options:                                               " << std::endl <<
-    "      -s [ --samplerate ] arg (=250000) samplerate in Samples/second" << std::endl <<
-    "                                       (250000 | 500000 | 1000000)    " << std::endl <<
-    "      -g [ --gain ] gain in dB"                                  << std::endl <<
-    "      -h [ --help ]                    print usage message         " << std::endl <<
-    "      -d [ --debug ] arg (=0)          debug level                 " << std::endl <<
-    std::endl;
+    "    Allowed options:"                                    << endl <<
+    "      -s [ --samplerate ] samplerate in Samples/second"  << endl <<
+    "                          250000 | 500000 | 1000000, def=250000" << endl <<
+    "      -g [ --gain ]       gain in dB"                    << endl <<
+    "      -h [ --help ]       print usage message"           << endl <<
+    "      -i [ --device]      device to be used (default=0)" << endl <<
+    "      -d [ --debug ]      debug level (default=0)"       << endl <<
+    endl;
 }
 
 int parseOptions (int argc, char **argv, RtlSdrConfig &cfg)
@@ -68,12 +69,13 @@ int parseOptions (int argc, char **argv, RtlSdrConfig &cfg)
           {"debug",      required_argument, 0, 'd'},
           {"samplerate", required_argument, 0, 's'},
           {"gain",       required_argument, 0, 'g'},
+          {"device",     optional_argument, 0, 'i'},
           {0, 0, 0, 0}
         };
       /* getopt_long stores the option index here. */
       int option_index = 0;
 
-      c = getopt_long (argc, argv, "hd:s:g:",
+      c = getopt_long (argc, argv, "hd:s:g:i:",
                        long_options, &option_index);
 
       /* Detect the end of the options. */
@@ -82,7 +84,6 @@ int parseOptions (int argc, char **argv, RtlSdrConfig &cfg)
 
       switch (c) {
         case 's':
-          printf ("option -c with value `%s'\n", optarg);
           cfg.sr = atoi(optarg);
           break;
 
@@ -91,8 +92,11 @@ int parseOptions (int argc, char **argv, RtlSdrConfig &cfg)
           break;
 
         case 'd':
-          printf ("option -d with value `%s'\n", optarg);
           debug_level = atoi(optarg);
+          break;
+
+        case 'i':
+          cfg.device_index = atoi(optarg);
           break;
 
         case 1:
@@ -102,7 +106,6 @@ int parseOptions (int argc, char **argv, RtlSdrConfig &cfg)
           /* getopt_long already printed an error message. */
           print_help();
           return -1;
-          break;
         }
   }
   return rc;
@@ -114,6 +117,7 @@ int main(int argc, char* argv[]) {
 
     cfg.sr = 250000;
     cfg.gain = 450;
+    cfg.device_index = 0;
     debug_level = 3;
 
     if (parseOptions (argc, argv, cfg) != 0) {
@@ -122,20 +126,32 @@ int main(int argc, char* argv[]) {
 
     cout << "Debug level:          " << debug_level <<  std::endl;
     cout << "Sample rate:          " << cfg.sr      <<  std::endl;
+    cout << "Gain:                 " << cfg.gain    <<  std::endl;
+    cout << "Device index:         " << cfg.device_index <<  std::endl;
 
     // Init RTL SDR
-    int ndev = 0;
+    unsigned ndev = 0;
     if ( ( ndev = rtlsdr_get_device_count()) == 0 ) {
         cout << "No  RtlSDR hardware detected" << endl;
         return 255;
     } else {
 
-        cout << ndev << " device(s) found" <<  endl;
-        if (rtlsdr_open(&(cfg.rtl), 0) < 0) {
+        cout << ndev << " device(s) found:" <<  endl;
+
+        for (unsigned i = 0; i < ndev; i++) cout << "  " << i << ":  " << rtlsdr_get_device_name(i) << endl;
+	cout << endl ;
+
+        if (cfg.device_index >= ndev) {
+          cerr << "Bad device index !" << endl;
+           return 255;
+        }
+	cout << "Using device " << cfg.device_index << ": " << rtlsdr_get_device_name(cfg.device_index) << endl;
+		
+        if (rtlsdr_open(&(cfg.rtl), cfg.device_index) < 0) {
             cerr << "Error opening device ! "<<  std::endl;
             return 255;
         } else {
-            //cout << "Device [" << rtlsdr_get_device_name(0) << "] successfully opened. " <<  cfg.rtl << endl;
+            cout << "Device [" << rtlsdr_get_device_name(0) << "] successfully opened. " <<  cfg.rtl << endl;
         }
 
         int r;
