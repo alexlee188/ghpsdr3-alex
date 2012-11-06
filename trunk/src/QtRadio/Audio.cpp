@@ -591,10 +591,10 @@ void Audio_processing::aLawDecode(char* buffer,int length) {
 
     for (i=0; i < length; i++) {
         v=decodetable[buffer[i]&0xFF];
-        buffer_in[i] = (float)v/32767.0f;
-        //pdecoded_buffer->enqueue(v);
+        //buffer_in[i] = (float)v/32767.0f;
+        pdecoded_buffer->enqueue(v);
     }
-    resample(length);
+    //resample(length);
 }
 
 void Audio_processing::pcmDecode(char* buffer,int length) {
@@ -603,9 +603,10 @@ void Audio_processing::pcmDecode(char* buffer,int length) {
 
     for (i=0; i < length; i+=2) {
         v = (buffer[i] & 0xff) | ((buffer[i+1] & 0xff) << 8);
-        buffer_in[i/2] = (float)v/32767.0f;
+        //buffer_in[i/2] = (float)v/32767.0f;
+        pdecoded_buffer->enqueue(v);
         }
-    resample(length/2);
+    //resample(length/2);
 }
 
 void Audio_processing::codec2Decode(char* buffer,int length) {
@@ -621,12 +622,13 @@ void Audio_processing::codec2Decode(char* buffer,int length) {
         memcpy(bits,&buffer[j],bits_size);
         codec2_decode(codec2, v, bits);
         for (i=0; i < samples_per_frame; i++){
-            buffer_in[i] = (float)v[i]/32767.0f;
+            //buffer_in[i] = (float)v[i]/32767.0f;
+            pdecoded_buffer->enqueue(v[i]);
         }
         j += bits_size;
         k++;
     }
-    resample(samples_per_frame);
+    //resample(samples_per_frame);
 }
 
 void Audio_processing::init_decodetable() {
