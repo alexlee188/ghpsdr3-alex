@@ -198,7 +198,9 @@ static char const vertexShader[] =
         "}\n";
 
 static char const fragmentShader[] =
-        "precision mediump float;"
+        "#ifdef GL_ES\n"
+        "precision mediump float;\n"
+        "#endif\n"
         "uniform sampler2D spectrumTexture;\n"
         "uniform float cy;\n"
         "uniform float offset;\n"
