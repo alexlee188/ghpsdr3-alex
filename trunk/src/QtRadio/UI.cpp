@@ -782,7 +782,6 @@ void UI::updateSpectrum() {
     if(infotick > 25){
         connection.sendCommand("q-master");
        if (connection.getSlave() == true) connection.sendCommand("q-info"); // get master freq changes
-       else connection.sendCommand("q-server");
        infotick = 0;
     }
     if(infotick2 == 0){ // set to 0 wehen we first connect
