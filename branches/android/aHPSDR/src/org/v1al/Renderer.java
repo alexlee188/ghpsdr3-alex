@@ -68,14 +68,13 @@ class Renderer implements GLSurfaceView.Renderer {
 	private int aPosition_location;
 	private int textureCoord_location;
 	
-    //private ShortBuffer mIndices;
+    	private ShortBuffer mIndices;
     
-    /*
-    private final short[] mIndicesData =
-	{ 
-        0, 1, 2, 0, 2, 3 
-	};
-	*/
+    	private final short[] mIndicesData =
+    	{ 
+            0, 1, 2, 0, 2, 3 
+    	};
+    
 
 	
 	/***************************
@@ -86,11 +85,8 @@ class Renderer implements GLSurfaceView.Renderer {
 		this.mContext = context;
 		
 		shader = new Shader();
-		
-		/*
 		mIndices = ByteBuffer.allocateDirect(mIndicesData.length * 2).order(ByteOrder.nativeOrder()).asShortBuffer();
 		mIndices.put(mIndicesData).position(0);
-		*/
 	}
 
 	/*****************************
@@ -138,29 +134,13 @@ class Renderer implements GLSurfaceView.Renderer {
 		// class's static methods instead.
 		
 		// Load the vertex position
-		/*
+		
 		float[] mVerticesData =
 		    { 
 		            0.0f, 0.0f, 0.0f, // Position 0
 		            _width, 0.0f, // TexCoord 0
 		            0.0f, this.height/2.0f, 0.0f, // Position 1
 		            _width, 1.0f, // TexCoord 1
-		            this.width, this.height/2.0f, 0.0f, // Position 2
-		            0.0f, 1.0f, // TexCoord 2
-		            this.width, 0.0f, 0.0f, // Position 3
-		            0.0f, 0.0f // TexCoord 3
-		    };
-		*/
-		float[] mVerticesData =
-		    { 
-		            0.0f, 0.0f, 0.0f, // Position 0
-		            _width, 0.0f, // TexCoord 0
-		            0.0f, this.height/2.0f, 0.0f, // Position 1
-		            _width, 1.0f, // TexCoord 1
-		            this.width, this.height/2.0f, 0.0f, // Position 2
-		            0.0f, 1.0f, // TexCoord 2
-		            0.0f, 0.0f, 0.0f, // Position 0
-		            _width, 0.0f, // TexCoord 0
 		            this.width, this.height/2.0f, 0.0f, // Position 2
 		            0.0f, 1.0f, // TexCoord 2
 		            this.width, 0.0f, 0.0f, // Position 3
@@ -190,8 +170,7 @@ class Renderer implements GLSurfaceView.Renderer {
 
         // Set the sampler texture unit to 0
         GLES20.glUniform1i (spectrumTexture_location, 0 );
-        //GLES20.glDrawElements ( GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_SHORT, mIndices );
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
+        GLES20.glDrawElements ( GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_SHORT, mIndices );
         
 	/*
         GLES20.glDisableVertexAttribArray(aPosition_location);
