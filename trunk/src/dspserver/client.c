@@ -1117,6 +1117,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             sem_wait(&audiostream_sem);
             audiostream_conf.bufsize = bufsize;
             audiostream_conf.samplerate = rate;
+            ozy_set_src_ratio();
             audiostream_conf.channels = channels;
             audiostream_conf.micEncoding = micEncoding;
             audiostream_conf.age++;
@@ -1132,7 +1133,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(cmd,"startrtpstream",14)==0) {
             int rtpport;
             char ipstr[16];
-            int encoding, samplerate, channels;
+            int encoding, rate, channels;
 
             // startrtpstream port encoding samplerate channels
             if (tokenize_cmd(&saveptr, tokens, 4) != 4)
@@ -1141,12 +1142,13 @@ void readcb(struct bufferevent *bev, void *ctx){
             /* FIXME: validate! */
             rtpport = atoi(tokens[0]);
             encoding = atoi(tokens[1]);
-            samplerate = atoi(tokens[2]);
+            rate = atoi(tokens[2]);
             channels = atoi(tokens[3]);
 
             sem_wait(&audiostream_sem);
             audiostream_conf.encoding = encoding;
-            audiostream_conf.samplerate = samplerate;
+            audiostream_conf.samplerate = rate;
+            ozy_set_src_ratio();
             audiostream_conf.channels = channels;
             audiostream_conf.age++;
             sem_post(&audiostream_sem);
@@ -1159,7 +1161,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             } else {
                 inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
                 sdr_log(SDR_LOG_INFO, "starting rtp: to %s:%d encoding %d samplerate %d channels:%d\n",
-                        ipstr,rtpport,encoding,samplerate,channels);
+                        ipstr,rtpport,encoding,rate,channels);
                 item->session=rtp_listen(ipstr,rtpport);
                 item->rtp=connection_rtp;
             }
