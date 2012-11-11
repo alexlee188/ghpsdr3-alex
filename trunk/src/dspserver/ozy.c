@@ -614,7 +614,7 @@ void setSpeed(int s) {
 	SetTXOsc(1, -LO_offset);
 
 	fprintf(stderr,"%s: %f\n", __FUNCTION__, (double) sampleRate);
-	src_ratio = (double)audiostream_conf.samplerate / ((double) sampleRate);
+	ozy_set_src_ratio();
 	mic_src_ratio = (double) sampleRate/ 8000.0;
 }
 
@@ -721,7 +721,7 @@ int ozy_init(const char *server_address) {
     }
 
         // create sample rate subobject
-        src_ratio = (double) audiostream_conf.samplerate / ((double) sampleRate) ;
+        ozy_set_src_ratio();
         int sr_error;
         sr_state = src_new (
                              //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
@@ -748,6 +748,9 @@ int ozy_init(const char *server_address) {
     return rc;
 }
 
+void ozy_set_src_ratio(void){
+	src_ratio = (double)audiostream_conf.samplerate / ((double) sampleRate);
+}
 
 /* --------------------------------------------------------------------------*/
 /** 
