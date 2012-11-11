@@ -240,6 +240,7 @@ fprintf(stderr,"iq_thread\n");
 			fprintf(stderr,"missing IQ frames\n");
                 }
             } // if(buffer.offset==0)
+	} // end while(1)
 #else
 	if (hpsdr)
         	bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*3*4,0,(struct sockaddr*)&iq_addr,&iq_length);
@@ -299,7 +300,6 @@ fprintf(stderr,"iq_thread\n");
                 }
                 ozy_send((unsigned char *)&output_buffer[0],sizeof(output_buffer),"ozy");
         } // if (hpsdr)
-      } // end while
     } // end while
 }
 
