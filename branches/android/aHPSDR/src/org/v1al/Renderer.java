@@ -211,16 +211,6 @@ class Renderer implements GLSurfaceView.Renderer {
 		
 		GLES20.glClearColor(0.0f, 0.0f, .0f, 0.0f);
 		GLES20.glClear( GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
-
-		//GLES20.glEnable   ( GLES20.GL_DEPTH_TEST );
-		//GLES20.glClearDepthf(1.0f);
-		//GLES20.glDepthFunc( GLES20.GL_LEQUAL );
-		//GLES20.glDepthMask( true );
-		//GLES20.glEnable( GLES20.GL_CULL_FACE );
-		//GLES20.glCullFace(GLES20.GL_BACK); 
-
-		// set the view matrix
-		//Matrix.setLookAtM(mVMatrix, 0, 0, 0, -5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 		
 		GLES20.glUseProgram(0);
 		shader = new Shader(vShader, fShader, mContext);
@@ -260,8 +250,7 @@ class Renderer implements GLSurfaceView.Renderer {
         //  Generate a texture object
         GLES20.glGenTextures ( 1, textureId, 0 );
         //checkGlError("GenTextures");
-        
-		GLES20.glEnable(GLES20.GL_TEXTURE_2D);
+
         // Bind the texture object
         GLES20.glBindTexture ( GLES20.GL_TEXTURE_2D, textureId[0] );
 
