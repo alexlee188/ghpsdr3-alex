@@ -785,10 +785,10 @@ void UI::updateSpectrum() {
        infotick = 0;
     }
     if(infotick2 == 0){ // set to 0 wehen we first connect
-       if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
+       if (chkTX) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
     }
     if(infotick2 > 50){
-       if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
+       if (chkTX) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
        infotick2 = 0;
     }
     infotick++;
