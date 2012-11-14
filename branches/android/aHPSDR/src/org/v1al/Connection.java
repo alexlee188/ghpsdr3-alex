@@ -453,6 +453,10 @@ public class Connection extends Thread {
 		this.frequency = frequency;
 		sendCommand("setFrequency " + frequency);
 	}
+	
+	public void setFrequency_without_sendCommand(long frequency){
+		this.frequency = frequency;
+	}
 
 	public long getFrequency() {
 		return frequency;
