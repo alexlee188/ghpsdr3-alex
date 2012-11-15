@@ -308,6 +308,153 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		}
 		return true;
 	}
+	
+	protected void onPrepareDialog(final int id, final Dialog dialog){
+		AlertDialog.Builder builder;
+
+		switch (id){
+			case MENU_BAND:
+				if (!connection.getIsSlave()){		// update band specific default freq on if master
+			    	switch (band){
+			    	case BAND_160:
+			    		band_160_freq = connection.getFrequency();
+			    		break;
+			    	case BAND_80:
+			        	band_80_freq = connection.getFrequency();
+			        	break;
+			    	case BAND_60:
+			        	band_60_freq = connection.getFrequency();
+			        	break;
+			    	case BAND_40:
+			        	band_40_freq = connection.getFrequency();
+			        	break;
+			    	case BAND_30:
+			        	band_30_freq = connection.getFrequency();
+			        	break;
+			    	case BAND_20:
+			        	band_20_freq = connection.getFrequency();
+			        	break;
+			    	case BAND_17:
+			        	band_17_freq = connection.getFrequency();
+			        	break;
+			    	case BAND_15:
+			        	band_15_freq = connection.getFrequency();
+			        	break;
+			    	case BAND_12:
+			        	band_12_freq = connection.getFrequency();
+			        	break;
+			    	case BAND_10:
+			        	band_10_freq = connection.getFrequency();
+			        	break;
+			    	case BAND_6:
+			        	band_6_freq = connection.getFrequency();
+			        	break;
+			    	case BAND_GEN:
+			        	band_gen_freq = connection.getFrequency();
+			        	break;
+			    	case BAND_WWV:
+			        	band_wwv_freq = connection.getFrequency();
+			        	break;
+			    	}
+				}
+				builder = new AlertDialog.Builder(this);
+				builder.setTitle("Select a Band");
+				builder.setSingleChoiceItems(bands, band,
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int item) {
+								//
+								if (item != BAND_RESET) {
+									band = item;
+								} else {  // BAND_RESET
+									band_160_freq = 1850000L;
+									band_80_freq = 3850000L;
+									band_60_freq = 5371500L;
+									band_40_freq = 7050000L;
+									band_30_freq = 10135000L;
+									band_20_freq = 14200000L;
+									band_17_freq = 18130000L;
+									band_15_freq = 21270000L;
+									band_12_freq = 24910000L;
+									band_10_freq = 28500000L;
+									band_6_freq = 50200000L;
+									band_gen_freq = 15310000L;
+									band_wwv_freq = 10000000L;
+								}
+								switch (band) {
+								case BAND_160:
+									connection.setMode(MODE_LSB);
+									connection.setFilter(-2850, -150);
+									connection.setFrequency(band_160_freq);
+									break;
+								case BAND_80:
+									connection.setMode(MODE_LSB);
+									connection.setFilter(-2850, -150);
+									connection.setFrequency(band_80_freq);
+									break;
+								case BAND_60:
+									connection.setMode(MODE_LSB);
+									connection.setFilter(-2850, -150);
+									connection.setFrequency(band_60_freq);
+									break;
+								case BAND_40:
+									connection.setMode(MODE_LSB);
+									connection.setFilter(-2850, -150);
+									connection.setFrequency(band_40_freq);
+									break;
+								case BAND_30:
+									connection.setMode(MODE_USB);
+									connection.setFilter(150, 2850);
+									connection.setFrequency(band_30_freq);
+									break;
+								case BAND_20:
+									connection.setMode(MODE_USB);
+									connection.setFilter(150, 2850);
+									connection.setFrequency(band_20_freq);
+									break;
+								case BAND_17:
+									connection.setMode(MODE_USB);
+									connection.setFilter(150, 2850);
+									connection.setFrequency(band_17_freq);
+									break;
+								case BAND_15:
+									connection.setMode(MODE_USB);
+									connection.setFilter(150, 2850);
+									connection.setFrequency(band_15_freq);
+									break;
+								case BAND_12:
+									connection.setMode(MODE_USB);
+									connection.setFilter(150, 2850);
+									connection.setFrequency(band_12_freq);
+									break;
+								case BAND_10:
+									connection.setMode(MODE_USB);
+									connection.setFilter(150, 2850);
+									connection.setFrequency(band_10_freq);
+									break;
+								case BAND_6:
+									connection.setMode(MODE_USB);
+									connection.setFilter(150, 2850);
+									connection.setFrequency(band_6_freq);
+									break;
+								case BAND_GEN:
+									connection.setMode(MODE_SAM);
+									connection.setFilter(-4000, 4000);
+									connection.setFrequency(band_gen_freq);
+									break;
+								case BAND_WWV:
+									connection.setMode(MODE_AM);
+									connection.setFilter(-4000, 4000);
+									connection.setFrequency(band_wwv_freq);
+									break;
+								}
+								dialog.dismiss();
+							}
+						});
+				builder.create();
+				builder.show();
+				break;
+		}
+	}
 
 	protected Dialog onCreateDialog(int id) {
 		Dialog dialog;
@@ -453,146 +600,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					});
 			dialog = builder.create();
 			break;
-		case MENU_BAND:
-			if (!connection.getIsSlave()){		// update band specific default freq on if master
-		    	switch (band){
-		    	case BAND_160:
-		    		band_160_freq = connection.getFrequency();
-		    		break;
-		    	case BAND_80:
-		        	band_80_freq = connection.getFrequency();
-		        	break;
-		    	case BAND_60:
-		        	band_60_freq = connection.getFrequency();
-		        	break;
-		    	case BAND_40:
-		        	band_40_freq = connection.getFrequency();
-		        	break;
-		    	case BAND_30:
-		        	band_30_freq = connection.getFrequency();
-		        	break;
-		    	case BAND_20:
-		        	band_20_freq = connection.getFrequency();
-		        	break;
-		    	case BAND_17:
-		        	band_17_freq = connection.getFrequency();
-		        	break;
-		    	case BAND_15:
-		        	band_15_freq = connection.getFrequency();
-		        	break;
-		    	case BAND_12:
-		        	band_12_freq = connection.getFrequency();
-		        	break;
-		    	case BAND_10:
-		        	band_10_freq = connection.getFrequency();
-		        	break;
-		    	case BAND_6:
-		        	band_6_freq = connection.getFrequency();
-		        	break;
-		    	case BAND_GEN:
-		        	band_gen_freq = connection.getFrequency();
-		        	break;
-		    	case BAND_WWV:
-		        	band_wwv_freq = connection.getFrequency();
-		        	break;
-		    	}
-			}
-			builder = new AlertDialog.Builder(this);
-			builder.setTitle("Select a Band");
-			builder.setSingleChoiceItems(bands, band,
-					new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dialog, int item) {
-							//
-							if (item != BAND_RESET) {
-								band = item;
-							} else {  // BAND_RESET
-								band_160_freq = 1850000L;
-								band_80_freq = 3850000L;
-								band_60_freq = 5371500L;
-								band_40_freq = 7050000L;
-								band_30_freq = 10135000L;
-								band_20_freq = 14200000L;
-								band_17_freq = 18130000L;
-								band_15_freq = 21270000L;
-								band_12_freq = 24910000L;
-								band_10_freq = 28500000L;
-								band_6_freq = 50200000L;
-								band_gen_freq = 15310000L;
-								band_wwv_freq = 10000000L;
-							}
-							switch (band) {
-							case BAND_160:
-								connection.setMode(MODE_LSB);
-								connection.setFilter(-2850, -150);
-								connection.setFrequency(band_160_freq);
-								break;
-							case BAND_80:
-								connection.setMode(MODE_LSB);
-								connection.setFilter(-2850, -150);
-								connection.setFrequency(band_80_freq);
-								break;
-							case BAND_60:
-								connection.setMode(MODE_LSB);
-								connection.setFilter(-2850, -150);
-								connection.setFrequency(band_60_freq);
-								break;
-							case BAND_40:
-								connection.setMode(MODE_LSB);
-								connection.setFilter(-2850, -150);
-								connection.setFrequency(band_40_freq);
-								break;
-							case BAND_30:
-								connection.setMode(MODE_USB);
-								connection.setFilter(150, 2850);
-								connection.setFrequency(band_30_freq);
-								break;
-							case BAND_20:
-								connection.setMode(MODE_USB);
-								connection.setFilter(150, 2850);
-								connection.setFrequency(band_20_freq);
-								break;
-							case BAND_17:
-								connection.setMode(MODE_USB);
-								connection.setFilter(150, 2850);
-								connection.setFrequency(band_17_freq);
-								break;
-							case BAND_15:
-								connection.setMode(MODE_USB);
-								connection.setFilter(150, 2850);
-								connection.setFrequency(band_15_freq);
-								break;
-							case BAND_12:
-								connection.setMode(MODE_USB);
-								connection.setFilter(150, 2850);
-								connection.setFrequency(band_12_freq);
-								break;
-							case BAND_10:
-								connection.setMode(MODE_USB);
-								connection.setFilter(150, 2850);
-								connection.setFrequency(band_10_freq);
-								break;
-							case BAND_6:
-								connection.setMode(MODE_USB);
-								connection.setFilter(150, 2850);
-								connection.setFrequency(band_6_freq);
-								break;
-							case BAND_GEN:
-								connection.setMode(MODE_SAM);
-								connection.setFilter(-4000, 4000);
-								connection.setFrequency(band_gen_freq);
-								break;
-							case BAND_WWV:
-								connection.setMode(MODE_AM);
-								connection.setFilter(-4000, 4000);
-								connection.setFrequency(band_wwv_freq);
-								break;
-							}
-							dialog.dismiss();
-						}
-					});
-			dialog = builder.create();
-			spectrumView.setAverage(-100);
-			break;
+
         case MENU_FREQUENCY:
                 builder = new AlertDialog.Builder(this);
                 builder.setTitle("Enter frequency (in Hz):");
