@@ -503,8 +503,24 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int item) {
 							//
-							band = item;
-							switch (item) {
+							if (item != BAND_RESET) {
+								band = item;
+							} else {  // BAND_RESET
+								band_160_freq = 1850000L;
+								band_80_freq = 3850000L;
+								band_60_freq = 5371500L;
+								band_40_freq = 7050000L;
+								band_30_freq = 10135000L;
+								band_20_freq = 14200000L;
+								band_17_freq = 18130000L;
+								band_15_freq = 21270000L;
+								band_12_freq = 24910000L;
+								band_10_freq = 28500000L;
+								band_6_freq = 50200000L;
+								band_gen_freq = 15310000L;
+								band_wwv_freq = 10000000L;
+							}
+							switch (band) {
 							case BAND_160:
 								connection.setMode(MODE_LSB);
 								connection.setFilter(-2850, -150);
@@ -1268,7 +1284,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int MENU_ABOUT = 16;
 
 	public static final CharSequence[] bands = { "160", "80", "60", "40", "30",
-			"20", "17", "15", "12", "10", "6", "GEN", "WWV" };
+			"20", "17", "15", "12", "10", "6", "GEN", "WWV", "Reset" };
 
 	private int band = BAND_20;
 	private long frequency=14200000L;
@@ -1300,6 +1316,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int BAND_6 = 10;
 	public static final int BAND_GEN = 11;
 	public static final int BAND_WWV = 12;
+	public static final int BAND_RESET = 13;
 
 	private int mode = MODE_USB;
 	
