@@ -30,6 +30,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -311,6 +312,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	
 	protected void onPrepareDialog(final int id, final Dialog dialog){
 		switch (id){
+			case MENU_SERVERS:
+            break;
 			case MENU_BAND:
 				if (!connection.getIsSlave()){		// update band specific default freq on if master
 			    	switch (band){
@@ -355,11 +358,12 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			        	break;
 			    	}
 				}
+			break;	
 		}
 
 	}
 
-	protected Dialog onCreateDialog(int id) {
+	protected Dialog onCreateDialog(final int id) {
 		Dialog dialog;
 		AlertDialog.Builder builder;
 
@@ -392,94 +396,87 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			break;
 		case MENU_SERVERS:
 			try { 
-                URL updateURL = new URL("http://qtradio.napan.ca/qtradio/qtradio.pl"); 
-                URLConnection conn = updateURL.openConnection(); 
-                conn.setUseCaches(false);
-                InputStream is = conn.getInputStream(); 
-                BufferedInputStream bis = new BufferedInputStream(is); 
-                ByteArrayBuffer baf = new ByteArrayBuffer(50); 
-                
-                int current = 0; 
-                while((current = bis.read()) != -1){ 
-                    baf.append((byte)current); 
-                } 
-
-                bis.close();
-                
-                /* Convert the Bytes read to a String. */ 
-                String html = new String(baf.toByteArray()); 
-                
-                // need to extract out the servers addresses
-                // look for <tr><td>
-                Vector<String>temp=new Vector<String>();
-                Vector<String>item=new Vector<String>();
-                String ip;
-                String call;
-                String clients;
-                int n=0;
-                int i=0;
-                int j;
-                while((i=html.indexOf("<tr><td>",i))!=-1) {
-                	i+=8;
-                	j=html.indexOf("</td>",i);
-                	if(j!=-1) {
-                		ip=html.substring(i,j);
-                		temp.add(ip);  
-                		i=html.indexOf("<td>",j);
-                		i+=4;
-                		j=html.indexOf("</td>",i);
-                		call=html.substring(i,j);
-
-                		i=j+9;
-                		i=html.indexOf("</td>",i);
-                		i+=9;
-                		i=html.indexOf("</td>",i);
-                		i+=9;
-                		i=html.indexOf("</td>",i);
-                		i+=9;
-                		i=html.indexOf("</td>",i);
-                		i+=9;
-                		j=html.indexOf("lient",i);
-                		j--;
-                		clients = html.substring(i,j);
-                        item.add(ip+" ("+call+")"+" "+clients+"client(s)");
-                		i=j; 
-                		n++;
-                	}
-                }
-                
-                Log.i("servers",html);
-                servers=new CharSequence[n];
-                for(i=0;i<n;i++) {
-                	servers[i]=temp.elementAt(i);
-                }
-                
-                String[] t=new String[0];
-                
-                builder = new AlertDialog.Builder(this);
-    			builder.setTitle("Select a Server");
-    			builder.setSingleChoiceItems(item.toArray(t), 0,
-    					new DialogInterface.OnClickListener() {
-    						public void onClick(DialogInterface dialog, int item) {
-    							Log.i("selected",servers[item].toString());
-    							//update.close();
-    							mode=connection.getMode();
-    							frequency=connection.getFrequency();
-    							filterLow=connection.getFilterLow();
-    							filterHigh=connection.getFilterHigh();
-    							connection.close();
-    							server=servers[item].toString();	
-    							connection = new Connection(server, BASE_PORT + receiver,width);
-    							setConnectionDefaults();
-    							mySetTitle();
-    							dialog.dismiss();
-    						}
-    			});
-                
-    			dialog = builder.create();
-            } catch (Exception e) {
-            	
-            } 
+	            URL updateURL = new URL("http://qtradio.napan.ca/qtradio/qtradio.pl"); 
+	            URLConnection conn = updateURL.openConnection(); 
+	            conn.setUseCaches(false);
+	            InputStream is = conn.getInputStream(); 
+	            BufferedInputStream bis = new BufferedInputStream(is); 
+	            ByteArrayBuffer baf = new ByteArrayBuffer(50); 
+	            
+	            int current = 0; 
+	            while((current = bis.read()) != -1){ 
+	                baf.append((byte)current); 
+	            } 
+	
+	            bis.close();
+	  
+	            String html = new String(baf.toByteArray()); 
+	            
+	            // need to extract out the servers addresses
+	            // look for <tr><td>
+	            Vector<String>temp = new Vector<String>();
+	            Vector<String>item = new Vector<String>();
+	            String ip;
+	            String call;
+	            String clients;
+	            int n=0;
+	            int i=0;
+	            int j;
+	            while((i=html.indexOf("<tr><td>",i))!=-1) {
+	            	i+=8;
+	            	j=html.indexOf("</td>",i);
+	            	if(j != -1) {
+	            		ip=html.substring(i,j);
+	            		temp.add(ip);  
+	            		i=html.indexOf("<td>",j);
+	            		i+=4;
+	            		j=html.indexOf("</td>",i);
+	            		call=html.substring(i,j);
+	            		i=j+9;
+	            		i=html.indexOf("</td>",i);
+	            		i+=9;
+	            		i=html.indexOf("</td>",i);
+	            		i+=9;
+	            		i=html.indexOf("</td>",i);
+	            		i+=9;
+	            		i=html.indexOf("</td>",i);
+	            		i+=9;
+	            		j=html.indexOf("lient",i);
+	            		j--;
+	            		clients = html.substring(i,j);
+	                    item.add(ip+" ("+call+")"+" "+clients+"client(s)");
+	            		i=j; 
+	            		n++;
+	            	}
+	            }           
+	            Log.i("servers",html);
+	            final CharSequence[] servers=new CharSequence[n];
+	            for(i=0;i<n;i++) {
+	            	servers[i]=temp.elementAt(i);
+	            }
+	            String[] t = new String[0];
+	            builder = new AlertDialog.Builder(this);
+				builder.setTitle("Select a Server");
+				builder.setSingleChoiceItems(item.toArray(t), 0,
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int item) {
+								Log.i("selected",servers[item].toString());
+								mode=connection.getMode();
+								frequency=connection.getFrequency();
+								filterLow=connection.getFilterLow();
+								filterHigh=connection.getFilterHigh();
+								connection.close();
+								server=servers[item].toString();	
+								connection = new Connection(server, BASE_PORT + receiver,width);
+								setConnectionDefaults();
+								mySetTitle();
+								dialog.dismiss();
+								removeDialog(id);
+							}
+				});       
+				dialog = builder.create();
+	        } catch (Exception e) {  	
+	        }
 			break;
 		case MENU_RECEIVER:
 			builder = new AlertDialog.Builder(this);
@@ -488,7 +485,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int item) {
 							Log.i("Receiver",Integer.toString(item));
-							//update.close();
 							mode=connection.getMode();
 							frequency=connection.getFrequency();
 							filterLow=connection.getFilterLow();
@@ -1257,9 +1253,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 	private Connection connection;
 	private SpectrumView spectrumView;
-	//private Update update;
-	
-	private CharSequence[] servers;
 
 	public static final CharSequence[] receivers = { "0", "1", "2", "3" };
 	
