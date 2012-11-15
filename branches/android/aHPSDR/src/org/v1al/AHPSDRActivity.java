@@ -354,6 +354,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
                     baf.append((byte)current); 
                 } 
 
+                bis.close();
+                
                 /* Convert the Bytes read to a String. */ 
                 String html = new String(baf.toByteArray()); 
                 
