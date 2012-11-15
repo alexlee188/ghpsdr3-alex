@@ -559,7 +559,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 								connection.setFrequency(band_6_freq);
 								break;
 							case BAND_GEN:
-								connection.setMode(MODE_AM);
+								connection.setMode(MODE_SAM);
 								connection.setFilter(-4000, 4000);
 								connection.setFrequency(band_gen_freq);
 								break;
