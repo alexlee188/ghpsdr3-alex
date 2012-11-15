@@ -179,11 +179,19 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
     protected void onStop(){
         Log.i("AHPSDRActivity","onStop");
         super.onStop();
+        boolean isSlave = connection.getIsSlave();
         connection.close();
 
         SharedPreferences prefs = getSharedPreferences("aHPSDR", 0);
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putInt("Band", band);
+        if (!isSlave){
+	        editor.putInt("Band", band);
+			editor.putLong("Frequency", connection.getFrequency());
+	        editor.putInt("Filter", filter);
+			editor.putInt("Mode", connection.getMode());
+			editor.putInt("FilterLow", connection.getFilterLow());
+			editor.putInt("FilterHigh", connection.getFilterHigh());
+        }
     	editor.putLong("band_160_freq", band_160_freq);
     	editor.putLong("band_80_freq", band_80_freq);
     	editor.putLong("band_60_freq", band_60_freq);
@@ -197,11 +205,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
     	editor.putLong("band_6_freq", band_6_freq);
     	editor.putLong("band_gen_freq", band_gen_freq);
     	editor.putLong("band_wwv_freq", band_wwv_freq);
-        editor.putInt("Filter", filter);
-		editor.putInt("Mode", connection.getMode());
-		editor.putLong("Frequency", connection.getFrequency());
-		editor.putInt("FilterLow", connection.getFilterLow());
-		editor.putInt("FilterHigh", connection.getFilterHigh());
 		editor.putInt("Gain", gain);
 		editor.putInt("Micgain", micgain);
 		editor.putInt("AGC", agc);
@@ -449,47 +452,49 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			dialog = builder.create();
 			break;
 		case MENU_BAND:
-	    	switch (band){
-	    	case BAND_160:
-	    		band_160_freq = connection.getFrequency();
-	    		break;
-	    	case BAND_80:
-	        	band_80_freq = connection.getFrequency();
-	        	break;
-	    	case BAND_60:
-	        	band_60_freq = connection.getFrequency();
-	        	break;
-	    	case BAND_40:
-	        	band_40_freq = connection.getFrequency();
-	        	break;
-	    	case BAND_30:
-	        	band_30_freq = connection.getFrequency();
-	        	break;
-	    	case BAND_20:
-	        	band_20_freq = connection.getFrequency();
-	        	break;
-	    	case BAND_17:
-	        	band_17_freq = connection.getFrequency();
-	        	break;
-	    	case BAND_15:
-	        	band_15_freq = connection.getFrequency();
-	        	break;
-	    	case BAND_12:
-	        	band_12_freq = connection.getFrequency();
-	        	break;
-	    	case BAND_10:
-	        	band_10_freq = connection.getFrequency();
-	        	break;
-	    	case BAND_6:
-	        	band_6_freq = connection.getFrequency();
-	        	break;
-	    	case BAND_GEN:
-	        	band_gen_freq = connection.getFrequency();
-	        	break;
-	    	case BAND_WWV:
-	        	band_wwv_freq = connection.getFrequency();
-	        	break;
-	    	}
+			if (!connection.getIsSlave()){		// update band specific default freq on if master
+		    	switch (band){
+		    	case BAND_160:
+		    		band_160_freq = connection.getFrequency();
+		    		break;
+		    	case BAND_80:
+		        	band_80_freq = connection.getFrequency();
+		        	break;
+		    	case BAND_60:
+		        	band_60_freq = connection.getFrequency();
+		        	break;
+		    	case BAND_40:
+		        	band_40_freq = connection.getFrequency();
+		        	break;
+		    	case BAND_30:
+		        	band_30_freq = connection.getFrequency();
+		        	break;
+		    	case BAND_20:
+		        	band_20_freq = connection.getFrequency();
+		        	break;
+		    	case BAND_17:
+		        	band_17_freq = connection.getFrequency();
+		        	break;
+		    	case BAND_15:
+		        	band_15_freq = connection.getFrequency();
+		        	break;
+		    	case BAND_12:
+		        	band_12_freq = connection.getFrequency();
+		        	break;
+		    	case BAND_10:
+		        	band_10_freq = connection.getFrequency();
+		        	break;
+		    	case BAND_6:
+		        	band_6_freq = connection.getFrequency();
+		        	break;
+		    	case BAND_GEN:
+		        	band_gen_freq = connection.getFrequency();
+		        	break;
+		    	case BAND_WWV:
+		        	band_wwv_freq = connection.getFrequency();
+		        	break;
+		    	}
+			}
 			builder = new AlertDialog.Builder(this);
 			builder.setTitle("Select a Band");
 			builder.setSingleChoiceItems(bands, band,
