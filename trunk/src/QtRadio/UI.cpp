@@ -1949,6 +1949,7 @@ void UI::selectBookmark(QAction* action) {
     mode.setMode(bookmarks.getMode());
 
     filters.selectFilter(bookmarks.getFilter());
+    qDebug() << "Bookmark Filter: " << bookmarks.getFilter();
 
 }
 
