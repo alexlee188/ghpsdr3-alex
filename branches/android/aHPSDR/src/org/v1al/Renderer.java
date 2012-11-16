@@ -235,14 +235,11 @@ class Renderer implements GLSurfaceView.Renderer {
 
 	private int createTexture2D(){
 		int[] textureId = new int[1];
-        ByteBuffer pixelBuffer = ByteBuffer.allocateDirect(MAX_CL_WIDTH * MAX_CL_HEIGHT * 4);
+        ByteBuffer pixelBuffer = ByteBuffer.allocateDirect(MAX_CL_WIDTH * MAX_CL_HEIGHT);
         pixelBuffer.position(0);
         for (int i = 0; i < MAX_CL_HEIGHT; i++){
         	for (int j = 0; j < MAX_CL_WIDTH; j++){
         		pixelBuffer.put((byte)0xff);
-        		pixelBuffer.put((byte)0);
-        		pixelBuffer.put((byte)0);
-        		pixelBuffer.put((byte)0);
         	}
         }
         pixelBuffer.position(0);
@@ -255,8 +252,8 @@ class Renderer implements GLSurfaceView.Renderer {
         GLES20.glBindTexture ( GLES20.GL_TEXTURE_2D, textureId[0] );
 
         //  Load the texture
-        GLES20.glTexImage2D ( GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, MAX_CL_WIDTH, 
-        		MAX_CL_HEIGHT, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, pixelBuffer);
+        GLES20.glTexImage2D ( GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, MAX_CL_WIDTH, 
+        		MAX_CL_HEIGHT, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, pixelBuffer);
         // Set the filtering mode
         GLES20.glTexParameteri ( GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR );
         GLES20.glTexParameteri ( GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR );
@@ -267,7 +264,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	
 	
 	public void plotWaterfall(final byte[] bitmap) {
-		int width = bitmap.length/4;
+		int width = bitmap.length;
 		if (width > MAX_CL_WIDTH) width = MAX_CL_WIDTH;		
 		ByteBuffer buffer = ByteBuffer.wrap(bitmap);
 		try{
@@ -275,7 +272,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	        GLES20.glActiveTexture ( GLES20.GL_TEXTURE0 );
 	        GLES20.glBindTexture ( GLES20.GL_TEXTURE_2D, spectrumTex );
 			GLES20.glTexSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, cy, width, 1, 
-				GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buffer);
+				GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, buffer);
 			//checkGlError("glTexSubImage2D");
 		} catch (Exception e){
 			
