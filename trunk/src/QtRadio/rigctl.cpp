@@ -18,7 +18,7 @@
 
 // Modified for QtRadio by Glenn VE9GJ Sept 29 2011
 // Taken from sdr-shell project
-
+// git test
 #include <cstdio>
 
 #include "UI.h"
