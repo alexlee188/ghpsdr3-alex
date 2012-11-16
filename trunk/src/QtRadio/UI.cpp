@@ -2116,6 +2116,16 @@ QString UI::rigctlGetMode()
 QString UI::rigctlGetFilter()
 {
     QString fwidth;
+    QString  m = mode.getStringMode();
+    
+    if (m == "CWU"){
+       return fwidth.setNum(filters.getHigh() + filters.getLow());
+    }
+    else
+    if (m == "CWL"){
+       return fwidth.setNum(filters.getHigh() + filters.getLow());
+    }
+    else
     return fwidth.setNum(filters.getHigh() - filters.getLow());
 }
 
