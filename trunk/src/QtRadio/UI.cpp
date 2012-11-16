@@ -2155,6 +2155,15 @@ void UI::rigctlSetMode(int newmode)
     mode.setMode(newmode);
 }
 
+void UI::rigctlSetFilter(int newfilter)
+
+{
+    // FIXME Spectrum Filter update
+    qDebug() << "UI.cpp: dl6kbg: wanted filter via hamlib: " << newfilter;
+    filterChanged(band.getFilter(), newfilter);
+    band.setFilter(newfilter);
+}
+
 void UI::slaveSetMode(int m)
 {
     rigctlSetMode(m);
