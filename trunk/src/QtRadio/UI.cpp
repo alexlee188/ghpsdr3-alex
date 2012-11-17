@@ -1949,6 +1949,7 @@ void UI::selectBookmark(QAction* action) {
     mode.setMode(bookmarks.getMode());
 
     filters.selectFilter(bookmarks.getFilter());
+    qDebug() << "Bookmark Filter: " << bookmarks.getFilter();
 
 }
 
@@ -2153,6 +2154,14 @@ void UI::rigctlSetMode(int newmode)
 {
     modeChanged(mode.getMode(), newmode);
     mode.setMode(newmode);
+}
+
+void UI::rigctlSetFilter(int newfilter)
+
+{
+
+    qDebug() << "UI.cpp: dl6kbg: wanted filter via hamlib: " << newfilter;
+    filters.selectFilter(newfilter);
 }
 
 void UI::slaveSetMode(int m)
