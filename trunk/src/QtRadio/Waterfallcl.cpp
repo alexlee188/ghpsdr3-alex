@@ -39,13 +39,23 @@ void Waterfallcl::initialize(int wid, int ht){
     data_height = ht;
     cy = MAX_CL_HEIGHT - 1;
 
+    /*
     QImage t;
     QImage b;
     b = QImage( MAX_CL_WIDTH, MAX_CL_HEIGHT, QImage::Format_ARGB32_Premultiplied );
-    t = QGLWidget::convertToGLFormat( b );;
+    t = QGLWidget::convertToGLFormat( b );
+    */
+
+    static unsigned char data[MAX_CL_WIDTH][MAX_CL_HEIGHT];
+    for (int i = 0; i < MAX_CL_HEIGHT; i++){
+        for (int j = 0; j < MAX_CL_WIDTH; j++){
+            data[i][j]= (unsigned char) 0xff;
+        }
+    }
     glGenTextures(1, &spectrumTex);
     glBindTexture(GL_TEXTURE_2D, spectrumTex);
-    glTexImage2D( GL_TEXTURE_2D, 0, 3, t.width(), t.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, t.bits() );
+    //glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, t.width(), t.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, t.bits() );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_LUMINANCE, MAX_CL_WIDTH, MAX_CL_HEIGHT, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*) data);
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
@@ -176,14 +186,14 @@ void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
     int data_length = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
     if (cy-- <= 0) cy = MAX_CL_HEIGHT - 1;
 
-    unsigned char data[MAX_CL_WIDTH][4];
+    unsigned char data[MAX_CL_WIDTH];
     for (int i = 0; i < data_length; i++){
-        data[i][0] = buffer[i];
+        data[i] = buffer[i];
     }
 
     // Update Texture
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
-                    GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)data);
+                    GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
 }
 
 static char const vertexShader[] =
