@@ -59,7 +59,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		setTitle("glSDR: ");
 
 		// Create a new GLSurfaceView - this holds the GL Renderer
-		//mGLSurfaceView = (GLSurfaceView) findViewById(R.id.glsurfaceview);
 		mGLSurfaceView = new GLSurfaceView(this);
 		
 		// detect if OpenGL ES 2.0 support exists - if it doesn't, exit.
@@ -80,9 +79,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
-		
-        //mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
-        //mGravity = mSensorManager.getDefaultSensor(Sensor.TYPE_ALL);
         
         SharedPreferences prefs = getSharedPreferences("aHPSDR", 0);
         band=prefs.getInt("Band", BAND_20);
@@ -173,7 +169,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 						ViewGroup.LayoutParams.MATCH_PARENT));
 		addContentView(spectrumView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
 				ViewGroup.LayoutParams.MATCH_PARENT));
-		
+		adapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
 	}
 
 	@Override
@@ -340,6 +336,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					filters = null;
 					break;
 				}
+				adapter.clear();
+				for (int i = 0; i < 10; i++) adapter.add(filters[i].toString());
 				break;
 			case MENU_BAND:
 				if (!connection.getHasBeenSlave()){		// update band specific default freq
@@ -541,7 +539,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
                     }
             });
             dialog = builder.create();
-            //builder.show();
             break;
         case MENU_BAND:
 			builder = new AlertDialog.Builder(this);
@@ -720,7 +717,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 				break;
 			}
 			if (filters != null) {
-				builder.setSingleChoiceItems(filters, filter,
+				adapter.clear();
+				for (int i = 0; i < 10; i++)
+					adapter.add(filters[i].toString());
+				builder.setAdapter(adapter,
 						new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int item) {
 								filter=item;
@@ -1049,7 +1049,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 									break;
 								}
 								dialog.dismiss();
-								removeDialog(id);
 							}
 						});
 				dialog = builder.create();
@@ -1432,6 +1431,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	private CharSequence[] filters;
 	private int filterLow=150;
 	private int filterHigh=2875;
+	private ArrayAdapter<String> adapter;
 
 	public static final int FILTER_0 = 0;
 	public static final int FILTER_1 = 1;
