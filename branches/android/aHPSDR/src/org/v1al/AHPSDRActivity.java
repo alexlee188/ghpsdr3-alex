@@ -169,14 +169,15 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 						ViewGroup.LayoutParams.MATCH_PARENT));
 		addContentView(spectrumView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
 				ViewGroup.LayoutParams.MATCH_PARENT));
-		adapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
+		filterAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
+		serverAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
 	}
 
 	@Override
     protected void onStop(){
         Log.i("AHPSDRActivity","onStop");
         super.onStop();
-        boolean isSlave = connection.getIsSlave();
+        boolean isSlave = connection.getHasBeenSlave();
         connection.close();
 
         SharedPreferences prefs = getSharedPreferences("aHPSDR", 0);
@@ -240,6 +241,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public void onStart() {
 		super.onStart();
 		Log.i("AHPSDR", "onStart");
+		spectrumView.setAverage(-100);
 	}
 
 	public void onResume() {
@@ -259,10 +261,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		super.onPause();
 		mGLSurfaceView.onPause();
 		Log.i("AHPSDR", "onPause");
-		//mSensorManager.unregisterListener(this);
-		//update.close();
-		//connection.close();
-		//connection=null;
 	}
 
 	public void onDestroy() {
@@ -309,6 +307,67 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	protected void onPrepareDialog(final int id, final Dialog dialog){
 		switch (id){
 			case MENU_SERVERS:
+				try { 
+		            URL updateURL = new URL("http://qtradio.napan.ca/qtradio/qtradio.pl"); 
+		            URLConnection conn = updateURL.openConnection(); 
+		            conn.setUseCaches(false);
+		            InputStream is = conn.getInputStream(); 
+		            BufferedInputStream bis = new BufferedInputStream(is); 
+		            ByteArrayBuffer baf = new ByteArrayBuffer(50); 
+		            
+		            int current = 0; 
+		            while((current = bis.read()) != -1){ 
+		                baf.append((byte)current); 
+		            } 
+		
+		            bis.close();
+		  
+		            String html = new String(baf.toByteArray()); 
+		            
+		            // need to extract out the servers addresses
+		            // look for <tr><td>
+		            Vector<String>temp = new Vector<String>();
+		            String ip;
+		            String call;
+		            String clients;
+		            int n=0;
+		            int i=0;
+		            int j;
+		            serverAdapter.clear();
+		            while((i=html.indexOf("<tr><td>",i))!=-1) {
+		            	i+=8;
+		            	j=html.indexOf("</td>",i);
+		            	if(j != -1) {
+		            		ip=html.substring(i,j);
+		            		temp.add(ip);  
+		            		i=html.indexOf("<td>",j);
+		            		i+=4;
+		            		j=html.indexOf("</td>",i);
+		            		call=html.substring(i,j);
+		            		i=j+9;
+		            		i=html.indexOf("</td>",i);
+		            		i+=9;
+		            		i=html.indexOf("</td>",i);
+		            		i+=9;
+		            		i=html.indexOf("</td>",i);
+		            		i+=9;
+		            		i=html.indexOf("</td>",i);
+		            		i+=9;
+		            		j=html.indexOf("lient",i);
+		            		j--;
+		            		clients = html.substring(i,j);
+		                    serverAdapter.add(ip+" ("+call+")"+" "+clients+"client(s)");
+		            		i=j; 
+		            		n++;
+		            	}
+		            }           
+		            Log.i("servers",html);
+		            servers=new CharSequence[n];
+		            for(i=0;i<n;i++) {
+		            	servers[i]=temp.elementAt(i);
+		            }
+		        } catch (Exception e) {  	
+		        }
 				break;
 			case MENU_FILTER:
 				filters = null;
@@ -336,8 +395,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					filters = null;
 					break;
 				}
-				adapter.clear();
-				for (int i = 0; i < 10; i++) adapter.add(filters[i].toString());
+				filterAdapter.clear();
+				for (int i = 0; i < 10; i++) filterAdapter.add(filters[i].toString());
 				break;
 			case MENU_BAND:
 				if (!connection.getHasBeenSlave()){		// update band specific default freq
@@ -404,7 +463,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 				public void onClick(DialogInterface dialog, int whichButton) {
 					String value = input.getText().toString().trim();
 					Log.i("Server",value);
-					//update.close();
 					mode=connection.getMode();
 					frequency=connection.getFrequency();
 					filterLow=connection.getFilterLow();
@@ -417,91 +475,28 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					dialog.dismiss();
 				}
 			});
-			builder.show();
+			dialog = builder.create();
 			break;
 		case MENU_SERVERS:
-			try { 
-	            URL updateURL = new URL("http://qtradio.napan.ca/qtradio/qtradio.pl"); 
-	            URLConnection conn = updateURL.openConnection(); 
-	            conn.setUseCaches(false);
-	            InputStream is = conn.getInputStream(); 
-	            BufferedInputStream bis = new BufferedInputStream(is); 
-	            ByteArrayBuffer baf = new ByteArrayBuffer(50); 
-	            
-	            int current = 0; 
-	            while((current = bis.read()) != -1){ 
-	                baf.append((byte)current); 
-	            } 
-	
-	            bis.close();
-	  
-	            String html = new String(baf.toByteArray()); 
-	            
-	            // need to extract out the servers addresses
-	            // look for <tr><td>
-	            Vector<String>temp = new Vector<String>();
-	            Vector<String>item = new Vector<String>();
-	            String ip;
-	            String call;
-	            String clients;
-	            int n=0;
-	            int i=0;
-	            int j;
-	            while((i=html.indexOf("<tr><td>",i))!=-1) {
-	            	i+=8;
-	            	j=html.indexOf("</td>",i);
-	            	if(j != -1) {
-	            		ip=html.substring(i,j);
-	            		temp.add(ip);  
-	            		i=html.indexOf("<td>",j);
-	            		i+=4;
-	            		j=html.indexOf("</td>",i);
-	            		call=html.substring(i,j);
-	            		i=j+9;
-	            		i=html.indexOf("</td>",i);
-	            		i+=9;
-	            		i=html.indexOf("</td>",i);
-	            		i+=9;
-	            		i=html.indexOf("</td>",i);
-	            		i+=9;
-	            		i=html.indexOf("</td>",i);
-	            		i+=9;
-	            		j=html.indexOf("lient",i);
-	            		j--;
-	            		clients = html.substring(i,j);
-	                    item.add(ip+" ("+call+")"+" "+clients+"client(s)");
-	            		i=j; 
-	            		n++;
-	            	}
-	            }           
-	            Log.i("servers",html);
-	            final CharSequence[] servers=new CharSequence[n];
-	            for(i=0;i<n;i++) {
-	            	servers[i]=temp.elementAt(i);
-	            }
-	            String[] t = new String[0];
-	            builder = new AlertDialog.Builder(this);
-				builder.setTitle("Select a Server");
-				builder.setSingleChoiceItems(item.toArray(t), 0,
-						new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog, int item) {
-								Log.i("selected",servers[item].toString());
-								mode=connection.getMode();
-								frequency=connection.getFrequency();
-								filterLow=connection.getFilterLow();
-								filterHigh=connection.getFilterHigh();
-								connection.close();
-								server=servers[item].toString();	
-								connection = new Connection(server, BASE_PORT + receiver,width);
-								setConnectionDefaults();
-								mySetTitle();
-								dialog.dismiss();
-								removeDialog(id);
-							}
-				});       
-				dialog = builder.create();
-	        } catch (Exception e) {  	
-	        }
+            builder = new AlertDialog.Builder(this);
+			builder.setTitle("Select a Server");
+			builder.setAdapter(serverAdapter,
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int item) {
+							Log.i("selected",servers[item].toString());
+							mode=connection.getMode();
+							frequency=connection.getFrequency();
+							filterLow=connection.getFilterLow();
+							filterHigh=connection.getFilterHigh();
+							connection.close();
+							server=servers[item].toString();	
+							connection = new Connection(server, BASE_PORT + receiver,width);
+							setConnectionDefaults();
+							mySetTitle();
+							dialog.dismiss();
+						}
+			});       
+			dialog = builder.create();
 			break;
 		case MENU_RECEIVER:
 			builder = new AlertDialog.Builder(this);
@@ -717,10 +712,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 				break;
 			}
 			if (filters != null) {
-				adapter.clear();
+				filterAdapter.clear();
 				for (int i = 0; i < 10; i++)
-					adapter.add(filters[i].toString());
-				builder.setAdapter(adapter,
+					filterAdapter.add(filters[i].toString());
+				builder.setAdapter(filterAdapter,
 						new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int item) {
 								filter=item;
@@ -1222,7 +1217,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.connect();
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(25)");
+	    connection.sendCommand("setClient glSDR(26)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setFilter(filterLow, filterHigh);
@@ -1431,7 +1426,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	private CharSequence[] filters;
 	private int filterLow=150;
 	private int filterHigh=2875;
-	private ArrayAdapter<String> adapter;
+	private ArrayAdapter<String> filterAdapter;
 
 	public static final int FILTER_0 = 0;
 	public static final int FILTER_1 = 1;
@@ -1450,7 +1445,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	private String qAnswer = "";
 	private int BASE_PORT = 8000;
 	private int port = 8000;
-	
+	private ArrayAdapter<String> serverAdapter;
+	private CharSequence servers[];
+	 
 	private String txUser = "";
 	private String txPass = "";
 	
