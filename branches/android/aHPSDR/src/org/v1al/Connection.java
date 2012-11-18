@@ -336,7 +336,10 @@ public class Connection extends Thread {
 		String full_string = new String(answer_buff);
 		if (full_string.indexOf("q-master") == 0){
 			answer = full_string.substring(9);
-			if (answer.indexOf("slave") != -1) isSlave = true;
+			if (answer.indexOf("slave") != -1) {
+				isSlave = true;
+				hasBeenSlave = true;
+			}
 			else isSlave = false;
 		}
 		else if (full_string.indexOf("q-info") == 0 && isSlave){
@@ -610,6 +613,14 @@ public class Connection extends Thread {
 	public boolean getIsSlave(){
 		return isSlave;
 	}
+	
+	public boolean getHasBeenSlave(){
+		return hasBeenSlave;
+	}
+	
+	public void setHasBeenSlave(boolean state){
+		hasBeenSlave = state;
+	}
 
 	private SpectrumView spectrumView;
 
@@ -628,6 +639,7 @@ public class Connection extends Thread {
 	private int answer_length = 0;
 	private String answer = "unknown";
 	private boolean isSlave = false;
+	private boolean hasBeenSlave = false;
 	private String server;
 	private int port;
 	private Socket socket;
@@ -646,11 +658,10 @@ public class Connection extends Thread {
 	private int filterLow;
 	private int filterHigh;
 	private int mode;
-	private int sampleRate;
-	private int band;
-	private short meter;
-	private int agc;
 	private int fps;
+	private int agc;
+	private int sampleRate;
+	private short meter;
 	private int spectrumAverage = 0;
 
 	private int cwPitch = 600;

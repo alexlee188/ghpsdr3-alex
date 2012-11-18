@@ -425,10 +425,15 @@ public class SpectrumView extends View implements OnTouchListener {
 	private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 		@Override
 		public boolean onScale(ScaleGestureDetector detector) {
-		scaleFactor *= detector.getScaleFactor();
-		scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
-		connection.setScaleFactor(scaleFactor);
-		return true;
+			float multiplier = detector.getScaleFactor();
+			if (scaleFactor < 0.2f * MAX_ZOOM){
+				if (multiplier > 1.0) multiplier *= 1.3f;
+				else multiplier /= 1.3f;
+			}
+			scaleFactor *= multiplier;
+			scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
+			connection.setScaleFactor(scaleFactor);
+			return true;
 		}
 		}
 	

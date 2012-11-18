@@ -313,9 +313,36 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	protected void onPrepareDialog(final int id, final Dialog dialog){
 		switch (id){
 			case MENU_SERVERS:
-            break;
+				break;
+			case MENU_FILTER:
+				filters = null;
+				switch (connection.getMode()) {
+				case MODE_LSB:
+				case MODE_USB:
+				case MODE_DSB:
+					filters = ssbFilters;
+					break;
+				case MODE_CWL:
+				case MODE_CWU:
+					filters = cwFilters;
+					break;
+				case MODE_FMN:
+					filters = fmFilters;
+					break;
+				case MODE_AM:
+				case MODE_DIGU:
+				case MODE_DIGL:
+				case MODE_SAM:
+					filters = amFilters;
+					break;
+				case MODE_SPEC:
+				case MODE_DRM:
+					filters = null;
+					break;
+				}
+				break;
 			case MENU_BAND:
-				if (!connection.getIsSlave()){		// update band specific default freq on if master
+				if (!connection.getHasBeenSlave()){		// update band specific default freq
 			    	switch (band){
 			    	case BAND_160:
 			    		band_160_freq = connection.getFrequency();
@@ -667,7 +694,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		case MENU_FILTER:
 			builder = new AlertDialog.Builder(this);
 			builder.setTitle("Select Filter");
-			CharSequence[] filters = null;
+			filters = null;
 			switch (connection.getMode()) {
 			case MODE_LSB:
 			case MODE_USB:
@@ -1213,6 +1240,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.setSpectrumAverage(spectrumAverage);
 		connection.getSpectrum_protocol3(fps+1);
 		connection.setScaleFactor(1f);
+		connection.setHasBeenSlave(false);
 		timer = new Timer();
 		timer.schedule(new answerTask(), 1000, 1000);
 	}
@@ -1401,7 +1429,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		"8.0k", "6.6k", "5.2k", "4.0k", "3.1k", "2.9k", "2.0k" };
 
 	private int filter = FILTER_5;
-	
+	private CharSequence[] filters;
 	private int filterLow=150;
 	private int filterHigh=2875;
 
