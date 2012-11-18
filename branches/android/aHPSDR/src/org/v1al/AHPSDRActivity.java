@@ -1022,6 +1022,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 									break;
 								}
 								dialog.dismiss();
+								removeDialog(id);
 							}
 						});
 				dialog = builder.create();

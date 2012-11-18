@@ -149,9 +149,9 @@ class Renderer implements GLSurfaceView.Renderer {
 		
 	    FloatBuffer mVertices;
 		mVertices = ByteBuffer.allocateDirect(mVerticesData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		mVertices.put(mVerticesData).position(0);
+		mVertices.put(mVerticesData);
 		
-        mVertices.position(0);
+        mVertices.flip();
         GLES20.glVertexAttribPointer ( aPosition_location, 3, GLES20.GL_FLOAT, 
                                        false, 
                                        5 * 4, mVertices );
@@ -172,6 +172,7 @@ class Renderer implements GLSurfaceView.Renderer {
         GLES20.glUniform1i (spectrumTexture_location, 0 );
         GLES20.glDrawElements ( GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_SHORT, mIndices );
         
+        mVertices.clear();
 	/*
         GLES20.glDisableVertexAttribArray(aPosition_location);
         GLES20.glDisableVertexAttribArray(textureCoord_location);
