@@ -17,6 +17,7 @@ import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -67,10 +68,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			// Tell the surface view we want to create an OpenGL ES 2.0-compatible
 			// context, and set an OpenGL ES 2.0-compatible renderer.
 			mGLSurfaceView.setEGLContextClientVersion(2);
-			mGLSurfaceView.setEGLConfigChooser(8,8,8,8,16,0);
-			mGLSurfaceView.getHolder().setFormat(PixelFormat.RGBA_8888);
+			mGLSurfaceView.setEGLConfigChooser(true);
+			mGLSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
 			mGLSurfaceView.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-			mGLSurfaceView.setZOrderOnTop(true);
+			//mGLSurfaceView.setZOrderOnTop(true);
 			renderer = new Renderer(this);
 			mGLSurfaceView.setRenderer(renderer);
 			mGLSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
@@ -163,14 +164,23 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 		connection=null;
 
-		spectrumView = new SpectrumView(this, width, height/2);
+		spectrumView = new SpectrumView(this, width, (int)((float)height/2.34f));
 		spectrumView.setRenderer(renderer);
 		spectrumView.setGLSurfaceView(mGLSurfaceView);
+		spectrumView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
+				ViewGroup.LayoutParams.MATCH_PARENT, 1.0f));
+		
+		mGLSurfaceView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
+				ViewGroup.LayoutParams.MATCH_PARENT, 1.0f));
 			
-		setContentView(mGLSurfaceView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
+		LinearLayout ll = new LinearLayout(this);
+		ll.setOrientation(LinearLayout.VERTICAL);
+		ll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
 						ViewGroup.LayoutParams.MATCH_PARENT));
-		addContentView(spectrumView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
-				ViewGroup.LayoutParams.MATCH_PARENT));
+		ll.addView(spectrumView);
+		ll.addView(mGLSurfaceView);
+		setContentView(ll);
+		
 		filterAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
 		serverAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
 	}

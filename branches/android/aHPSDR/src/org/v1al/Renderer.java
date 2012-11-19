@@ -68,15 +68,14 @@ class Renderer implements GLSurfaceView.Renderer {
 	private int aPosition_location;
 	private int textureCoord_location;
 	
-    	private ShortBuffer mIndices;
-    
-    	private final short[] mIndicesData =
-    	{ 
-            0, 1, 2, 0, 2, 3 
-    	};
-    
-
+	private ShortBuffer mIndices;
+	private final short[] mIndicesData =
+	{ 
+        0, 1, 2, 0, 2, 3 
+	};
 	
+    private FloatBuffer mVertices;
+        
 	/***************************
 	 * CONSTRUCTOR(S)
 	 **************************/
@@ -132,26 +131,8 @@ class Renderer implements GLSurfaceView.Renderer {
 	public void onDrawFrame(GL10 glUnused) {
 		// Ignore the passed-in GL10 interface, and use the GLES20
 		// class's static methods instead.
-		
-		// Load the vertex position
-		
-		float[] mVerticesData =
-		    { 
-		            0.0f, 0.0f, 0.0f, // Position 0
-		            _width, 0.0f, // TexCoord 0
-		            0.0f, this.height/2.0f, 0.0f, // Position 1
-		            _width, 1.0f, // TexCoord 1
-		            this.width, this.height/2.0f, 0.0f, // Position 2
-		            0.0f, 1.0f, // TexCoord 2
-		            this.width, 0.0f, 0.0f, // Position 3
-		            0.0f, 0.0f // TexCoord 3
-		    };
-		
-	    FloatBuffer mVertices;
-		mVertices = ByteBuffer.allocateDirect(mVerticesData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		mVertices.put(mVerticesData);
-		
-        mVertices.flip();
+
+		mVertices.position(0);
         GLES20.glVertexAttribPointer ( aPosition_location, 3, GLES20.GL_FLOAT, 
                                        false, 
                                        5 * 4, mVertices );
@@ -197,12 +178,32 @@ class Renderer implements GLSurfaceView.Renderer {
 						};
 		// scaling
 		Matrix.setIdentityM(mScaleMatrix, 0);
-		Matrix.scaleM(mScaleMatrix, 0, -1.0f, 1.0f, 1.0f);
-		Matrix.translateM(mScaleMatrix, 0, -this.width, (this.height+100)/2.0f, 0.0f);
+		Matrix.scaleM(mScaleMatrix, 0, -1.0f, 2.0f, 1.0f);
+		Matrix.translateM(mScaleMatrix, 0, -this.width, 2.0f, 0.0f);
 		// Creating MVP matrix
 		Matrix.multiplyMM(mMVPMatrix, 0, mProjMatrix, 0, mScaleMatrix, 0);
 		// send to the shader
 		GLES20.glUniformMatrix4fv(uMVPMatrix_location, 1, false, mMVPMatrix, 0);
+		
+		
+		// Load the vertex position
+		
+		float[] mVerticesData =
+		    { 
+		            0.0f, 0.0f, 0.0f, // Position 0
+		            _width, 0.0f, // TexCoord 0
+		            0.0f, this.height/2.0f, 0.0f, // Position 1
+		            _width, 1.0f, // TexCoord 1
+		            this.width, this.height/2.0f, 0.0f, // Position 2
+		            0.0f, 1.0f, // TexCoord 2
+		            this.width, 0.0f, 0.0f, // Position 3
+		            0.0f, 0.0f // TexCoord 3
+		    };
+
+		mVertices = ByteBuffer.allocateDirect(mVerticesData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+		mVertices.put(mVerticesData);	
+        mVertices.flip();
+		
 	}
 
 	/**
@@ -210,7 +211,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	 */
 	public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
 		
-		GLES20.glClearColor(0.0f, 0.0f, .0f, 0.0f);
+		GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		GLES20.glClear( GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
 		
 		GLES20.glUseProgram(0);
