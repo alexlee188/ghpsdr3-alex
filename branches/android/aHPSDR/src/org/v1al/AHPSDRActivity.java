@@ -61,7 +61,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		setTitle("glSDR: ");
 
 		// Create a new GLSurfaceView - this holds the GL Renderer
-		mGLSurfaceView = new GLSurfaceView(this);
+		mGLSurfaceView = new Waterfall(this);
 		
 		// detect if OpenGL ES 2.0 support exists - if it doesn't, exit.
 		if (detectOpenGLES20()) {
