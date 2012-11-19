@@ -20,6 +20,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -68,6 +69,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			mGLSurfaceView.setEGLContextClientVersion(2);
 			mGLSurfaceView.setEGLConfigChooser(8,8,8,8,16,0);
 			mGLSurfaceView.getHolder().setFormat(PixelFormat.RGBA_8888);
+			mGLSurfaceView.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 			mGLSurfaceView.setZOrderOnTop(true);
 			renderer = new Renderer(this);
 			mGLSurfaceView.setRenderer(renderer);
