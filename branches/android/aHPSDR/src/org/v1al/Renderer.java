@@ -86,6 +86,7 @@ class Renderer implements GLSurfaceView.Renderer {
 		shader = new Shader();
 		mIndices = ByteBuffer.allocateDirect(mIndicesData.length * 2).order(ByteOrder.nativeOrder()).asShortBuffer();
 		mIndices.put(mIndicesData).position(0);
+		set_LO_offset(0f);
 	}
 
 	/*****************************
@@ -170,6 +171,8 @@ class Renderer implements GLSurfaceView.Renderer {
 		this.width = width;
 		this.height = height;
 		
+		set_width(width);
+		
 		// Ortho2D Projection
 		mProjMatrix = new float []{ 2.0f/this.width, 0.0f, 0.0f, -0.0f,
 						0.0f, -2.0f/this.height, 0.0f, -0.0f,
@@ -179,7 +182,7 @@ class Renderer implements GLSurfaceView.Renderer {
 		// scaling
 		Matrix.setIdentityM(mScaleMatrix, 0);
 		Matrix.scaleM(mScaleMatrix, 0, -1.0f, 2.0f, 1.0f);
-		Matrix.translateM(mScaleMatrix, 0, -this.width, 2.0f, 0.0f);
+		Matrix.translateM(mScaleMatrix, 0, -this.width, 0.0f, 0.0f);
 		// Creating MVP matrix
 		Matrix.multiplyMM(mMVPMatrix, 0, mProjMatrix, 0, mScaleMatrix, 0);
 		// send to the shader

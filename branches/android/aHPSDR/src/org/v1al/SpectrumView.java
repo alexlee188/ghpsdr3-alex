@@ -265,8 +265,6 @@ public class SpectrumView extends View implements OnTouchListener {
                 // thread:
                 public void run() {
         			renderer.set_cy(cy);
-        			renderer.set_width(WIDTH);
-        			renderer.set_LO_offset(0); // offset should be offset/samplerate * width/MAX_CL_WIDTH
         			renderer.set_waterfallHigh(waterfallHigh);
         			renderer.set_waterfallLow(waterfallLow);	
         			renderer.plotWaterfall(bitmap);

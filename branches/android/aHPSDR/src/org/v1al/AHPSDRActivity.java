@@ -380,7 +380,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		            }
 		        } catch (Exception e) {  	
 		        }
-				spectrumView.setAverage(-100);
 				break;
 			case MENU_FILTER:
 				filters = null;
@@ -455,10 +454,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			        	break;
 			    	}
 				}
-				spectrumView.setAverage(-100);	
 				break;	
 		}
-
+		spectrumView.setAverage(-100);	
 	}
 
 	protected Dialog onCreateDialog(final int id) {
@@ -1230,7 +1228,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.connect();
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(26)");
+	    connection.sendCommand("setClient glSDR(27)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setFilter(filterLow, filterHigh);
