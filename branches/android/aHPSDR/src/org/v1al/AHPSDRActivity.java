@@ -162,12 +162,13 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 		connection=null;
 
-		spectrumView = new SpectrumView(this, width, (int)((float)height/2.34f));
+		spectrumView = new SpectrumView(this, width, (int)((float)height/2.3f));
 		spectrumView.setRenderer(renderer);
 		spectrumView.setGLSurfaceView(mGLSurfaceView);
 		spectrumView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
 				ViewGroup.LayoutParams.MATCH_PARENT, 1.0f));
 		
+		mGLSurfaceView.setSpectrumView(spectrumView);
 		mGLSurfaceView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
 				ViewGroup.LayoutParams.MATCH_PARENT, 1.0f));
 			

@@ -2,12 +2,6 @@ package org.v1al;
 
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.DashPathEffect;
-import android.graphics.Paint;
-import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -23,10 +17,12 @@ public class Waterfall extends GLSurfaceView implements OnTouchListener {
 		// TODO Auto-generated constructor stub
 		WIDTH = width;
 		this.setOnTouchListener(this);
+		detector = new ScaleGestureDetector(context, new ScaleListener());
 	}
 
 	public boolean onTouch(View v, MotionEvent event) {
 		// TODO Auto-generated method stub
+		detector.onTouchEvent(event);
 		if (!vfoLocked) {
 			switch (event.getAction()) {
 			case MotionEvent.ACTION_CANCEL:
@@ -100,6 +96,10 @@ public class Waterfall extends GLSurfaceView implements OnTouchListener {
 		this.connection = connection;
 	}
 	
+	public void setSpectrumView(SpectrumView spectrumView){
+		this.spectrumView = spectrumView;
+	}
+	
 	public void setVfoLock() {
 		vfoLocked = !vfoLocked;
 	}
@@ -116,12 +116,32 @@ public class Waterfall extends GLSurfaceView implements OnTouchListener {
 		this.filterHigh = filterHigh;
 	}
 	
+	private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+		@Override
+		public boolean onScale(ScaleGestureDetector detector) {
+			float multiplier = detector.getScaleFactor();
+			if (scaleFactor < 0.2f * MAX_ZOOM){
+				if (multiplier > 1.0) multiplier *= 1.3f;
+				else multiplier /= 1.3f;
+			}
+			scaleFactor *= multiplier;
+			scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
+			connection.setScaleFactor(scaleFactor);
+			spectrumView.setScaleFactor(scaleFactor);
+			return true;
+		}
+	}
+	
 	private Connection connection;
+	private SpectrumView spectrumView;
 	private float startX;
 	private boolean vfoLocked = false;
 	private boolean moved;
 	private int WIDTH;
 	private float scaleFactor = 1.0f;
+	private ScaleGestureDetector detector;
+	private static float MIN_ZOOM = 1f;
+	private static float MAX_ZOOM = 100f;
 	private int filterLow;
 	private int filterHigh;
 }

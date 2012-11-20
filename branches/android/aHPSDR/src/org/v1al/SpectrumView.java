@@ -289,6 +289,10 @@ public class SpectrumView extends View implements OnTouchListener {
 	public void setGLSurfaceView(Waterfall mGLSurfaceView){
 		this.mGLSurfaceView = mGLSurfaceView;
 	}
+	
+	public void setScaleFactor(float scaleFactor){
+		this.scaleFactor = scaleFactor;
+	}
 
 	public void scroll(int step) {
 		if (!vfoLocked) {
