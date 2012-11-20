@@ -65,6 +65,7 @@ public class SpectrumView extends View implements OnTouchListener {
 			
 			if (connection.getIsSlave()){
 				scaleFactor = (float)connection.getScaleFactor();
+				mGLSurfaceView.setScaleFactor(scaleFactor);
 			}
 			zoom_factor = 1f + (scaleFactor - 1f)/25f;
 
@@ -246,6 +247,8 @@ public class SpectrumView extends View implements OnTouchListener {
 
 		this.filterLow = filterLow;
 		this.filterHigh = filterHigh;
+		mGLSurfaceView.setFilterLow(filterLow);
+		mGLSurfaceView.setFilterHigh(filterHigh);
 
 		average = (int) ((float)average * 0.98f + (float)sum / WIDTH * 0.02f);
 		waterfallLow= average -15;
@@ -283,7 +286,7 @@ public class SpectrumView extends View implements OnTouchListener {
 		this.renderer = renderer;
 	}
 	
-	public void setGLSurfaceView(GLSurfaceView mGLSurfaceView){
+	public void setGLSurfaceView(Waterfall mGLSurfaceView){
 		this.mGLSurfaceView = mGLSurfaceView;
 	}
 
@@ -433,14 +436,15 @@ public class SpectrumView extends View implements OnTouchListener {
 			scaleFactor *= multiplier;
 			scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
 			connection.setScaleFactor(scaleFactor);
+			mGLSurfaceView.setScaleFactor(scaleFactor);
 			return true;
 		}
-		}
+	}
 	
 	private Paint paint;
 
 	private Connection connection;
-	private GLSurfaceView mGLSurfaceView;
+	private Waterfall mGLSurfaceView;
 	private Renderer renderer;
 
 	private int WIDTH = 480;

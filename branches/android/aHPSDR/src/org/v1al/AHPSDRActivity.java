@@ -59,10 +59,13 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		super.onCreate(savedInstanceState);
 		
 		setTitle("glSDR: ");
-
-		// Create a new GLSurfaceView - this holds the GL Renderer
-		mGLSurfaceView = new Waterfall(this);
 		
+		DisplayMetrics metrics = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(metrics);
+		height = metrics.heightPixels;
+		width = metrics.widthPixels;
+		// Create a new GLSurfaceView - this holds the GL Renderer
+		mGLSurfaceView = new Waterfall(this, width, height);	
 		// detect if OpenGL ES 2.0 support exists - if it doesn't, exit.
 		if (detectOpenGLES20()) {
 			// Tell the surface view we want to create an OpenGL ES 2.0-compatible
@@ -156,11 +159,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		txPass=prefs.getString("txPass", "");
 		tx_state[0]=prefs.getBoolean("txAllow", false);
 		dsp_state[3]=prefs.getBoolean("IQ", false);
-		
-		DisplayMetrics metrics = new DisplayMetrics();
-		getWindowManager().getDefaultDisplay().getMetrics(metrics);
-		height = metrics.heightPixels;
-		width = metrics.widthPixels;
 
 		connection=null;
 
@@ -241,6 +239,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		case MotionEvent.ACTION_DOWN:
 			// Log.i("onTouch","ACTION_DOWN");
 			spectrumView.setVfoLock();
+			mGLSurfaceView.setVfoLock();
 			break;
 		case MotionEvent.ACTION_MOVE:
 			// Log.i("onTrackballEvent","ACTION_MOVE");
@@ -380,6 +379,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		            }
 		        } catch (Exception e) {  	
 		        }
+				spectrumView.setAverage(-100);
 				break;
 			case MENU_FILTER:
 				filters = null;
@@ -454,7 +454,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			        	break;
 			    	}
 				}
-			break;	
+				spectrumView.setAverage(-100);	
+				break;	
 		}
 
 	}
@@ -1145,7 +1146,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
             });
             dialog = builder.create();
 			spectrumView.setAverage(-100);
-            //builder.show();
             break;
 		case MENU_GAIN:
 			builder = new AlertDialog.Builder(this);
@@ -1241,6 +1241,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	    connection.setTxPass(txPass);
 	    connection.setIQCorrection(dsp_state[3]);					
 		spectrumView.setConnection(connection);
+		mGLSurfaceView.setConnection(connection);
 		spectrumView.setAverage(-100);
 		connection.setFps(fps);
 		connection.setSpectrumAverage(spectrumAverage);
@@ -1464,7 +1465,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	private String txPass = "";
 	
 	
-	private GLSurfaceView mGLSurfaceView = null;
+	private Waterfall mGLSurfaceView = null;
 	// The Renderer
 	Renderer renderer = null;
 
