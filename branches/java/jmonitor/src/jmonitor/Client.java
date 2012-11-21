@@ -137,9 +137,8 @@ public class Client extends Thread {
 						answer_length - bytes);
 			}
 			//processAnswerBuffer(answer_length, answerBuffer); // remove terminating null
-			break;
                     } else {
-                        //System.err.println("Client: invalid buffer_type "+buffer_type);
+                        System.err.println("Client: invalid buffer_type "+buffer_type);
                     }
                     if(connected==false) {
                         sendCommand("startAudioStream "+AUDIO_BUFFER_SIZE);
