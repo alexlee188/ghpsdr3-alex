@@ -91,6 +91,7 @@ public class Client extends Thread {
         byte[] audio_header=new byte[AUDIO_HEADER_SIZE];
         byte[] spectrum_buffer=new byte[SPECTRUM_BUFFER_SIZE];
         byte[] audio_buffer=new byte[AUDIO_BUFFER_SIZE];
+	byte[] answerBuffer = new byte[101];
         int j;
         if(socket!=null) {
 
@@ -131,7 +132,7 @@ public class Client extends Thread {
 		    } else if(buffer_type==ANSWER_BUFFER) {
 			String length_str = new String(version);
 			answer_length = Integer.valueOf(length_str);
-			bytes_read = 0;
+			bytes = 0;
 			while (bytes != answer_length) {
 				bytes += inputStream.read(answerBuffer, bytes,
 						answer_length - bytes);
