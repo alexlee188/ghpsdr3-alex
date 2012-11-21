@@ -84,7 +84,9 @@ public class Client extends Thread {
 
     public void run() {
         int bytes;
-        int buffer_type;
+        int buffer_type = 0;
+	byte[] buffer_type_array = new byte[1];
+	byte[] version = new byte[2];
         byte[] spectrum_header=new byte[SPECTRUM_HEADER_SIZE];
         byte[] audio_header=new byte[AUDIO_HEADER_SIZE];
         byte[] spectrum_buffer=new byte[SPECTRUM_BUFFER_SIZE];
@@ -103,7 +105,9 @@ public class Client extends Thread {
             status=null;
             while(running) {
                 try {
-                    buffer_type=inputStream.read();
+		    inputStream.read(buffer_type_array, 0, 1);
+		    inputStream.read(version, 0, 2);
+                    buffer_type= buffer_type_array[0];
                     if(buffer_type==SPECTRUM_BUFFER) {
                         bytes=0;
                         while(bytes<SPECTRUM_HEADER_SIZE) {
@@ -125,10 +129,11 @@ public class Client extends Thread {
                         }
                         processAudioBuffer(audio_header,audio_buffer);
                     } else {
-                        System.err.println("Client: invalid buffer_type "+buffer_type);
+                        //System.err.println("Client: invalid buffer_type "+buffer_type);
                     }
                     if(connected==false) {
                         sendCommand("startAudioStream "+AUDIO_BUFFER_SIZE);
+			sendCommand("setFPS " + SPECTRUM_BUFFER_SIZE + " " + 10);	// 10 is the fps
                         connected=true;
                     }
                 } catch (IOException e) {
@@ -145,10 +150,27 @@ public class Client extends Thread {
         }
     }
 
+	private short getShort(byte[] buffer,int offset) {
+		short result;
+		result=(short)(((buffer[offset]&0xFF)<<8)+(buffer[offset+1]&0xFF));
+		return result;
+	}
+	
+	private int getInt(byte[] buffer,int offset) {
+		int result;
+		result=((buffer[offset]&0xFF)<<24)|((buffer[offset+1]&0xFF)<<16)|((buffer[offset+2]&0xFF)<<8)|(buffer[offset+3]&0xFF);
+		return result;
+	}
+
     private void processSpectrumBuffer(byte[] header,byte[] buffer) {
         int j;
+
+/*
         sampleRate = ((header[8] & 0xFF) << 24) + ((header[9] & 0xFF) << 16) + ((header[10] & 0xFF) << 8) + (header[11] & 0xFF);
         meter=(short)(((header[4]&0xFF)<<8)+(header[5]&0xFF));
+*/
+	meter=getShort(header,2);
+        sampleRate=getInt(header,6);
 
         for (int i = 0; i < SAMPLES; i++) {
             samples[i] = -(buffer[i] & 0xFF);
@@ -263,11 +285,11 @@ public class Client extends Thread {
     private static final int AUDIO_BUFFER=1;
     
     private static final int SPECTRUM_HEADER_SIZE=12;
-    private static final int AUDIO_HEADER_SIZE=4;
+    private static final int AUDIO_HEADER_SIZE=2;
 
     private static final int SPECTRUM_BUFFER_SIZE=480;
     
-    public static final int AUDIO_BUFFER_SIZE=480;
+    public static final int AUDIO_BUFFER_SIZE=2000;
     
     private Audio audio;
     private MonitorUpdateListener listener;
@@ -278,7 +300,7 @@ public class Client extends Thread {
 
     private int receiver=0;
     private int port=8000;
-    private String server="81.146.61.118";
+    private String server="192.168.1.9";
     private Socket socket;
 
     private InputStream inputStream;

@@ -16,7 +16,7 @@ public class Main {
      */
     public static void main(String[] args) {
 
-        String server="192.168.1.58";
+        String server="192.168.1.9";
         int receiver=0;
         int limit=0;
         int i=0;
