@@ -128,6 +128,16 @@ public class Client extends Thread {
                             bytes+=inputStream.read(audio_buffer,bytes,AUDIO_BUFFER_SIZE-bytes);
                         }
                         processAudioBuffer(audio_header,audio_buffer);
+		    } else if(buffer_type==ANSWER_BUFFER) {
+			String length_str = new String(version);
+			answer_length = Integer.valueOf(length_str);
+			bytes_read = 0;
+			while (bytes != answer_length) {
+				bytes += inputStream.read(answerBuffer, bytes,
+						answer_length - bytes);
+			}
+			//processAnswerBuffer(answer_length, answerBuffer); // remove terminating null
+			break;
                     } else {
                         //System.err.println("Client: invalid buffer_type "+buffer_type);
                     }
@@ -283,6 +293,8 @@ public class Client extends Thread {
 
     private static final int SPECTRUM_BUFFER=0;
     private static final int AUDIO_BUFFER=1;
+    private static final byte ANSWER_BUFFER = '4';
+    private int answer_length = 0;
     
     private static final int SPECTRUM_HEADER_SIZE=12;
     private static final int AUDIO_HEADER_SIZE=2;
