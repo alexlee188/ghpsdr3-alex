@@ -143,7 +143,7 @@ public class Client extends Thread {
                     }
                     if(connected==false) {
                         sendCommand("startAudioStream "+AUDIO_BUFFER_SIZE);
-			sendCommand("setFPS " + SPECTRUM_BUFFER_SIZE + " " + 10);	// 10 is the fps
+			//sendCommand("setFPS " + SPECTRUM_BUFFER_SIZE + " " + 10);	// 10 is the fps
                         connected=true;
                     }
                 } catch (IOException e) {

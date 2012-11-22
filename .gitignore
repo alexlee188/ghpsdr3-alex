@@ -71,3 +71,4 @@ trunk/src/sdriq/sdriq-server
 trunk/src/sdriq/sdriq-test
 branches/android/aHPSDR/bin/*
 
+/branches/java/jmonitor/dist/
