@@ -348,6 +348,7 @@ public class Connection extends Thread {
 			int mode_end_pos = full_string.indexOf(";", mode_pos+3);
 			String freq_string = full_string.substring(freq_pos+3, mode_pos);
 			this.frequency = Integer.valueOf(freq_string);
+			setBand(frequency);
 			String mode_string = full_string.substring(mode_pos+3, mode_end_pos);
 			this.mode = Integer.valueOf(mode_string);
 			switch (mode) {
@@ -459,6 +460,23 @@ public class Connection extends Thread {
 
 	public long getFrequency() {
 		return frequency;
+	}
+	
+	public void setBand(int band){
+		this.band = band;
+	}
+	
+	private void setBand(long frequency){
+		if (frequency < 2000000) band = AHPSDRActivity.BAND_160;
+		else if (frequency < 3900000) band = AHPSDRActivity.BAND_80;
+		else if (frequency < 5500000) band = AHPSDRActivity.BAND_60;
+		else if (frequency < 7350000) band = AHPSDRActivity.BAND_40;
+		else if (frequency < 10150000) band = AHPSDRActivity.BAND_30;
+		else if (frequency < 14350000) band = AHPSDRActivity.BAND_20;
+	}
+	
+	public int getBand(){
+		return band;
 	}
 
 	public void setFilter(int filterLow, int filterHigh) {
@@ -658,6 +676,7 @@ public class Connection extends Thread {
 	private int filterLow;
 	private int filterHigh;
 	private int mode;
+	private int band = AHPSDRActivity.BAND_20;
 	private int fps;
 	private int agc;
 	private int sampleRate;

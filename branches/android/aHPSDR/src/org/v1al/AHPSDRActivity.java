@@ -412,7 +412,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 				break;
 			case MENU_BAND:
 				if (!connection.getHasBeenSlave()){		// update band specific default freq
-			    	switch (band){
+			    	switch (connection.getBand()){
 			    	case BAND_160:
 			    		band_160_freq = connection.getFrequency();
 			    		break;
@@ -638,6 +638,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 								connection.setFrequency(band_wwv_freq);
 								break;
 							}
+							connection.setBand(band);
 							dialog.dismiss();
 						}
 					});
@@ -1228,9 +1229,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.connect();
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(27)");
+	    connection.sendCommand("setClient glSDR(28)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
+		connection.setBand(band);
 		connection.setFilter(filterLow, filterHigh);
 		connection.setGain(gain*10);
 		connection.setMicGain(micgain);
