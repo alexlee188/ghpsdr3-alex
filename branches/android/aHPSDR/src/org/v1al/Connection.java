@@ -352,33 +352,33 @@ public class Connection extends Thread {
 			String mode_string = full_string.substring(mode_pos+3, mode_end_pos);
 			this.mode = Integer.valueOf(mode_string);
 			switch (mode) {
-				case modeLSB:
+				case AHPSDRActivity.MODE_LSB:
 					setFilter(-3050, -150);
 					break;
-				case modeUSB:
+				case AHPSDRActivity.MODE_USB:
 					setFilter(150, 3050);
 					break;
-				case modeDSB:
+				case AHPSDRActivity.MODE_DSB:
 					setFilter(-2900, 2900);
 					break;
-				case modeCWL:
+				case AHPSDRActivity.MODE_CWL:
 					setFilter(-cwPitch - 250,
 							-cwPitch + 250);
 					break;
-				case modeCWU:
+				case AHPSDRActivity.MODE_CWU:
 					setFilter(cwPitch - 250,
 							cwPitch + 250);
 					break;
-				case modeFMN:
-				case modeAM:
-				case modeDIGU:
-				case modeDIGL:
-				case modeSAM:
+				case AHPSDRActivity.MODE_FMN:
+				case AHPSDRActivity.MODE_AM:
+				case AHPSDRActivity.MODE_DIGU:
+				case AHPSDRActivity.MODE_DIGL:
+				case AHPSDRActivity.MODE_SAM:
 					setFilter(-3300, 3300);
 					break;
-				case modeSPEC:
+				case AHPSDRActivity.MODE_SPEC:
 					break;
-				case modeDRM:
+				case AHPSDRActivity.MODE_DRM:
 					break;
 			}
 			int zoom_pos = full_string.indexOf(";z;");
@@ -473,6 +473,12 @@ public class Connection extends Thread {
 		else if (frequency < 7350000) band = AHPSDRActivity.BAND_40;
 		else if (frequency < 10150000) band = AHPSDRActivity.BAND_30;
 		else if (frequency < 14350000) band = AHPSDRActivity.BAND_20;
+		else if (frequency < 18168000) band = AHPSDRActivity.BAND_17;
+		else if (frequency < 21450000) band = AHPSDRActivity.BAND_15;
+		else if (frequency < 24990000) band = AHPSDRActivity.BAND_12;
+		else if (frequency < 30000000) band = AHPSDRActivity.BAND_10;
+		else if (frequency < 50500000) band = AHPSDRActivity.BAND_6;
+		else band = AHPSDRActivity.BAND_20;
 	}
 	
 	public int getBand(){
@@ -503,7 +509,7 @@ public class Connection extends Thread {
 	}
 
 	public String getStringMode() {
-		return modes[mode];
+		return (String) AHPSDRActivity.modes[mode];
 	}
 
 	public void setAGC(int agc) {
@@ -696,21 +702,6 @@ public class Connection extends Thread {
 	private int zoom = 0;
 	private static int MIN_ZOOM = 0;
 	private static int MAX_ZOOM = 99;
-	public static final int modeLSB = 0;
-	public static final int modeUSB = 1;
-	public static final int modeDSB = 2;
-	public static final int modeCWL = 3;
-	public static final int modeCWU = 4;
-	public static final int modeFMN = 5;
-	public static final int modeAM = 6;
-	public static final int modeDIGU = 7;
-	public static final int modeSPEC = 8;
-	public static final int modeDIGL = 9;
-	public static final int modeSAM = 10;
-	public static final int modeDRM = 11;
-
-	private static final String[] modes = { "LSB", "USB", "DSB", "CWL", "CWU", "FMN", "AM",
-			"DIGU", "SPEC", "DIGL", "SAM", "DRM" };
 
 	public final int micBufferSize = 58;
 	private final int nMicBuffers = 2;

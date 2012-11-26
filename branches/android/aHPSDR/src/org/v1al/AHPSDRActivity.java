@@ -477,6 +477,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					Log.i("Server",value);
 					mode=connection.getMode();
 					frequency=connection.getFrequency();
+					band = connection.getBand();
 					filterLow=connection.getFilterLow();
 					filterHigh=connection.getFilterHigh();
 					connection.close();
@@ -498,6 +499,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 							Log.i("selected",servers[item].toString());
 							mode=connection.getMode();
 							frequency=connection.getFrequency();
+							band=connection.getBand();
 							filterLow=connection.getFilterLow();
 							filterHigh=connection.getFilterHigh();
 							connection.close();
