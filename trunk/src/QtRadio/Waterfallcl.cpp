@@ -16,13 +16,6 @@
 * Foundation, Inc., 59 Temple Pl
 */
 
-/*
-#include <glm/glm.hpp>
-// glm::translate, glm::rotate, glm::scale, glm::perspective
-#include <glm/gtc/matrix_transform.hpp>
-// glm::value_ptr
-#include <glm/gtc/type_ptr.hpp>
-*/
 #include "Waterfallcl.h"
 
 Waterfallcl::Waterfallcl(){
@@ -39,13 +32,6 @@ void Waterfallcl::initialize(int wid, int ht){
     data_height = ht;
     cy = MAX_CL_HEIGHT - 1;
 
-    /*
-    QImage t;
-    QImage b;
-    b = QImage( MAX_CL_WIDTH, MAX_CL_HEIGHT, QImage::Format_ARGB32_Premultiplied );
-    t = QGLWidget::convertToGLFormat( b );
-    */
-
     static unsigned char data[MAX_CL_WIDTH][MAX_CL_HEIGHT];
     for (int i = 0; i < MAX_CL_HEIGHT; i++){
         for (int j = 0; j < MAX_CL_WIDTH; j++){
@@ -54,7 +40,6 @@ void Waterfallcl::initialize(int wid, int ht){
     }
     glGenTextures(1, &spectrumTex);
     glBindTexture(GL_TEXTURE_2D, spectrumTex);
-    //glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, t.width(), t.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, t.bits() );
     glTexImage2D( GL_TEXTURE_2D, 0, GL_LUMINANCE, MAX_CL_WIDTH, MAX_CL_HEIGHT, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*) data);
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
@@ -67,9 +52,8 @@ void Waterfallcl::initialize(int wid, int ht){
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 #endif
 
-    //glEnable(GL_TEXTURE_2D);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+    //glEnable(GL_DEPTH_TEST);
+    //glDepthFunc(GL_LEQUAL);
 
     ShaderProgram = NULL;
     LoadShader();
@@ -85,7 +69,7 @@ void Waterfallcl::initialize(int wid, int ht){
     glUseProgram(ShaderProgram->programId());
     //Bind to tex unit 0
     glUniform1i(spectrumTexture_location, 0);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 }
 
@@ -136,26 +120,13 @@ void Waterfallcl::paintGL()
 
     glUniform1f(width_location, tex_width);
 
-    GLfloat mMVPMatrix[] = {2.0f/data_width, 0.0f, 0.0f, -0.0f,
+    // Ortho2D projection
+    const GLfloat mMVPMatrix[] = {2.0f/data_width, 0.0f, 0.0f, -0.0f,
                            0.0f, -2.0f/data_height, 0.0f, -0.0f,
                            0.0f, 0.0f, 1.0f, 0.0f,
                            -1.0f, 1.0f, 0.0f, 1.0f
                            };
-    // Ortho2D projection
 
-    /*
-    glm::mat4 mProjMatrix = glm::mat4 ( 2.0f/data_width, 0.0f, 0.0f, -0.0f,
-                            0.0f, -2.0f/data_height, 0.0f, -0.0f,
-                            0.0f, 0.0f, 1.0f, 0.0f,
-                            -1.0f, 1.0f, 0.0f, 1.0f
-                            );
-
-    //glm::mat4 mTranslate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-    //glm::mat4 mModel = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-    glm::mat4 mMVPMatrix = mProjMatrix;
-    */
-
-    //glUniformMatrix4fv(uMVPMatrix_location, 1, false, glm::value_ptr(mMVPMatrix));
     glUniformMatrix4fv(uMVPMatrix_location, 1, false, mMVPMatrix);
 
     const GLfloat mVertices[] =  {
