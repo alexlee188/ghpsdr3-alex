@@ -128,14 +128,13 @@ unsigned char *bits;
 // short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
 short *codec2_buffer;
 
-static int sample_count=0;
 static int codec2_count=0;
 
 static int audio_stream_buffer_insert=0;
 
 static unsigned char encodetable[65536];
 
-static struct sdr_thread_id audiostream_tid = SDR_THREAD_ID;
+//static struct sdr_thread_id audiostream_tid = SDR_THREAD_ID;
 
 unsigned char alaw(short sample);
 
@@ -214,11 +213,9 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 	bits = (unsigned char *) malloc( sizeof( unsigned char ) * BITS_SIZE );
     }
 
-    // samples are delivered at 48K
-    // output to stream at 8K (1 in 6) or 48K (1 in 1)
+    // samples are delivered at 48K or 8K depending on audiostream_conf.samplerate
     // codec2 encoding works only for 8K
 
-    if(sample_count==0) {
         int offset;
         // use this sample and convert to a-law or PCM or codec2
         if(as_conf_cache.channels==1) {
@@ -298,15 +295,6 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
             audio_stream_buffer_insert=0;
             //allocate_audio_buffer();
         }
-    }
-    sample_count++;
-    if(as_conf_cache.samplerate==48000) {
-        sample_count=0;
-    } else {
-        if(sample_count==6) {
-            sample_count=0;
-        }
-    }
 }
 
 unsigned char alaw(short sample) {

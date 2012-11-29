@@ -44,7 +44,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="QToolButton" name="toolBtnUp">
@@ -96,7 +96,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="QPushButton" name="bandBtn_01">
@@ -121,7 +121,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="QPushButton" name="pBtnBtoA">
@@ -224,7 +224,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="QPushButton" name="bandBtn_09">
@@ -249,7 +249,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="Line" name="line_2">
@@ -333,7 +333,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="QLabel" name="label_5">
@@ -639,6 +639,9 @@
       <bold>false</bold>
      </font>
     </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
+    </property>
     <property name="text">
      <string>919</string>
     </property>
@@ -690,6 +693,9 @@
       <bold>false</bold>
       <strikeout>false</strikeout>
      </font>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
     </property>
     <property name="text">
      <string>919</string>
@@ -775,7 +781,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="QPushButton" name="bandBtn_04">
@@ -800,7 +806,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="QPushButton" name="pBtnScanUp">
@@ -872,7 +878,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="QPushButton" name="bandBtn_05">
@@ -897,7 +903,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="QPushButton" name="bandBtn_06">
@@ -922,7 +928,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="QPushButton" name="bandBtn_12">
@@ -947,7 +953,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="QPushButton" name="bandBtn_11">
@@ -972,7 +978,7 @@
     <bool>true</bool>
    </property>
    <attribute name="buttonGroup">
-    <string>btnGrpBand</string>
+    <string notr="true">btnGrpBand</string>
    </attribute>
   </widget>
   <widget class="Line" name="line">

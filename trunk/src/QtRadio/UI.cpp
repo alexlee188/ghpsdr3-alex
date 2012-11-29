@@ -96,7 +96,6 @@ UI::UI(const QString server) {
 
     isConnected = false;
     modeFlag = false;
-    slave = 1; //start as master
     infotick = 0;
     infotick2 = 0;
     dspversion = 0;
@@ -287,7 +286,8 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(printStatusBar(QString)),this,SLOT(printStatusBar(QString)));
     connect(&connection,SIGNAL(slaveSetFreq(long long)),this,SLOT(frequencyChanged(long long)));
     connect(&connection,SIGNAL(slaveSetMode(int)),this,SLOT(slaveSetMode(int)));
-    connect(&connection,SIGNAL(slaveSetSlave(int)),this,SLOT(slaveSetSlave(int)));
+    connect(&connection,SIGNAL(slaveSetFilter(int,int)),this,SLOT(slaveSetFilter(int,int)));
+    connect(&connection,SIGNAL(slaveSetZoom(int)),this,SLOT(slaveSetZoom(int)));
     connect(&connection,SIGNAL(setdspversion(long, QString)),this,SLOT(setdspversion(long, QString)));
     connect(this,SIGNAL(HideTX(bool)),widget.ctlFrame,SLOT(HideTX(bool)));
     connect(&connection,SIGNAL(setservername(QString)),this,SLOT(setservername(QString)));
@@ -616,6 +616,8 @@ void UI::connected() {
     command.clear(); QTextStream(&command) << "setClient QtRadio";
     connection.sendCommand(command);
 
+    connection.sendCommand("q-server");
+
     // send initial settings
     frequency=band.getFrequency();
     command.clear(); QTextStream(&command) << "setFrequency " << frequency;
@@ -777,15 +779,16 @@ void UI::updateSpectrum() {
         command.clear(); QTextStream(&command) << "getSpectrum " << widget.spectrumFrame->width();
         connection.sendCommand(command);
     }
-    if(infotick > 5){
-       if (slave == 0) connection.sendCommand("q-info"); // get master freq changes
+    if(infotick > 25){
+        connection.sendCommand("q-master");
+       if (connection.getSlave() == true) connection.sendCommand("q-info"); // get master freq changes
        infotick = 0;
     }
     if(infotick2 == 0){ // set to 0 wehen we first connect
-       if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
+       if (chkTX) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
     }
-    if(infotick2 == 25){
-       if (chkTX && configure.thisuser.compare("None")!= 0) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
+    if(infotick2 > 50){
+       if (chkTX) connection.sendCommand("q-cantx#" + configure.thisuser); // can we tx here?
        infotick2 = 0;
     }
     infotick++;
@@ -1581,7 +1584,6 @@ void UI::frequencyChanged(long long f) {
     widget.spectrumFrame->setFrequency(frequency);
     widget.vfoFrame->setFrequency(frequency);
     widget.waterfallFrame->setFrequency(frequency);
-    printStatusBar(" ... Using VFO");
 }
 
 void UI::frequencyMoved(int increment,int step) {
@@ -1959,6 +1961,7 @@ void UI::selectBookmark(QAction* action) {
     mode.setMode(bookmarks.getMode());
 
     filters.selectFilter(bookmarks.getFilter());
+    qDebug() << "Bookmark Filter: " << bookmarks.getFilter();
 
 }
 
@@ -2090,9 +2093,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-
-                   + getversionstring() +  message + "  master 14 Oct 2012");
-
+                   + getversionstring() +  message + "  master 16 Nov 2012");
     lastmessage = message;
 
 }
@@ -2128,6 +2129,16 @@ QString UI::rigctlGetMode()
 QString UI::rigctlGetFilter()
 {
     QString fwidth;
+    QString  m = mode.getStringMode();
+    
+    if (m == "CWU"){
+       return fwidth.setNum(filters.getHigh() + filters.getLow());
+    }
+    else
+    if (m == "CWL"){
+       return fwidth.setNum(filters.getHigh() + filters.getLow());
+    }
+    else
     return fwidth.setNum(filters.getHigh() - filters.getLow());
 }
 
@@ -2157,9 +2168,28 @@ void UI::rigctlSetMode(int newmode)
     mode.setMode(newmode);
 }
 
+void UI::rigctlSetFilter(int newfilter)
+
+{
+
+    qDebug() << "UI.cpp: dl6kbg: wanted filter via hamlib: " << newfilter;
+    filters.selectFilter(newfilter);
+}
+
 void UI::slaveSetMode(int m)
 {
     rigctlSetMode(m);
+}
+
+void UI::slaveSetFilter(int low, int high){
+    widget.spectrumFrame->setFilter(low,high);
+    widget.waterfallFrame->setFilter(low,high);
+}
+
+void UI::slaveSetZoom(int position){
+    widget.zoomSpectrumSlider->setValue(position);
+    widget.spectrumFrame->setZoom(position);
+    widget.waterfallFrame->setZoom(position);
 }
 
 void UI::getBandFrequency()
@@ -2326,9 +2356,6 @@ void UI::setRTP(bool state) {
     useRTP=state;
 }
 
-void UI::slaveSetSlave(int s){
-    slave = s;
-}
 
 QString UI::getversionstring(){
     QString str;

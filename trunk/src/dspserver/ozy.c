@@ -75,8 +75,6 @@ static pthread_t iq_thread_id;
 
 static int ozy_debug=0;
 
-static int output_sample_increment=1; // 1=48000 2=96000 4=192000
-
 /** Response buffers passed to ozy_send must be this size */
 #define OZY_RESPONSE_SIZE 64
 
@@ -178,7 +176,6 @@ void* iq_thread(void* arg) {
     int iq_socket;
     struct sockaddr_in iq_addr;
     int iq_length = sizeof(iq_addr);
-    int c,j;
     BUFFER buffer;
     int on=1;
 
@@ -206,7 +203,7 @@ fprintf(stderr,"iq_thread\n");
     }
 
     fprintf(stderr,"iq_thread: iq bound to port %d socket=%d\n",htons(iq_addr.sin_port),iq_socket);
-    fprintf(stderr,"output_sample_increment=%d\n",output_sample_increment);
+    fprintf(stderr,"audiostream_conf.samplerate=%d\n", audiostream_conf.samplerate);
     
     while(1) {
         int bytes_read;
@@ -220,12 +217,12 @@ fprintf(stderr,"iq_thread\n");
                 exit(1);
             }
 
-	   if(ozy_debug) {
+	    if(ozy_debug) {
 		fprintf(stderr,"rcvd UDP packet: sequence=%lld offset=%d length=%d\n",
 			buffer.sequence, buffer.offset, buffer.length);
-		}
+	    }
 
-           if(buffer.offset==0) {
+            if(buffer.offset==0) {
                 offset=0;
                 rx_sequence=buffer.sequence;
                 // start of a frame
@@ -242,8 +239,8 @@ fprintf(stderr,"iq_thread\n");
                 } else {
 			fprintf(stderr,"missing IQ frames\n");
                 }
-            }
-        }
+            } // if(buffer.offset==0)
+	} // end while(1)
 #else
 	if (hpsdr)
         	bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*3*4,0,(struct sockaddr*)&iq_addr,&iq_length);
@@ -257,9 +254,7 @@ fprintf(stderr,"iq_thread\n");
         Audio_Callback (input_buffer,&input_buffer[BUFFER_SIZE],
                                 output_buffer,&output_buffer[BUFFER_SIZE], buffer_size, 0);
 
-
-        // process the output with resampler if odd samplerate
-        if (output_sample_increment == -1) {
+        // process the output with resampler
            int rc;
            int j, i;
            float data_in [BUFFER_SIZE*2];
@@ -290,16 +285,8 @@ fprintf(stderr,"iq_thread\n");
                   right_rx_sample=(short)(data.data_out[i*2+1]*32767.0);
                   audio_stream_put_samples(left_rx_sample,right_rx_sample);
                    }
-	     }
-        } else {
+	   } // if (rc)
 
-
-        // process the output
-        for(j=0,c=0;j<buffer_size;j+=output_sample_increment) {
-            left_rx_sample=(short)(output_buffer[j]*32767.0);
-            right_rx_sample=(short)(output_buffer[j+BUFFER_SIZE]*32767.0);
-            audio_stream_put_samples(left_rx_sample,right_rx_sample);
-        }
 
         // send the audio back to the server.  This is for HPSDR hardware.
         if(hpsdr) {
@@ -312,9 +299,7 @@ fprintf(stderr,"iq_thread\n");
                     }
                 }
                 ozy_send((unsigned char *)&output_buffer[0],sizeof(output_buffer),"ozy");
-            }
-
-   	} // end sample_increment == -1
+        } // if (hpsdr)
     } // end while
 }
 
@@ -617,26 +602,19 @@ void getSpectrumSamples(char *samples) {
 * @param speed
 */
 void setSpeed(int s) {
-fprintf(stderr,"setSpeed %d\n",s);
-fprintf(stderr,"LO_offset %f\n",LO_offset);
+	fprintf(stderr,"setSpeed %d\n",s);
+	fprintf(stderr,"LO_offset %f\n",LO_offset);
 
-    sampleRate=s;
+    	sampleRate=s;
 
-    if (s % 48000 == 0)
-	output_sample_increment = s / 48000; // s is a multiple of 48000
-    else
-	output_sample_increment = -1;
-
-    fprintf(stderr,"setSpeed: output sample increment: %d\n",output_sample_increment);
-	
-        SetSampleRate((double)sampleRate);
+	SetSampleRate((double)sampleRate);
 
 	SetRXOsc(0,0, -LO_offset);
 	SetRXOsc(0,1, -LO_offset);
 	SetTXOsc(1, -LO_offset);
 
-    fprintf(stderr,"%s: %f\n", __FUNCTION__, (double) sampleRate);
-    src_ratio = 48000.0 / ((double) sampleRate);
+	fprintf(stderr,"%s: %f\n", __FUNCTION__, (double) sampleRate);
+	ozy_set_src_ratio();
 	mic_src_ratio = (double) sampleRate/ 8000.0;
 }
 
@@ -743,7 +721,7 @@ int ozy_init(const char *server_address) {
     }
 
         // create sample rate subobject
-        src_ratio = 48000.0 / ((double) sampleRate) ;
+        ozy_set_src_ratio();
         int sr_error;
         sr_state = src_new (
                              //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
@@ -770,6 +748,9 @@ int ozy_init(const char *server_address) {
     return rc;
 }
 
+void ozy_set_src_ratio(void){
+	src_ratio = (double)audiostream_conf.samplerate / ((double) sampleRate);
+}
 
 /* --------------------------------------------------------------------------*/
 /** 
