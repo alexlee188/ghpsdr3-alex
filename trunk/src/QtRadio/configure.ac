@@ -42,7 +42,7 @@ QTVM=`echo $QT_VERSION | sed 's/\.[[0-9]]*\.[[0-9]]*//g'`
 AC_MSG_RESULT([QT version major: $QTVM])
 if test "x${QTVM}" = x5; then
    AC_MSG_RESULT([QT 5 detected: adding QtWidgets lib])
-   QT_LIBS="$QT_LIBS -lQtWidgets"
+   QT_LIBS="$QT_LIBS -lQt5Widgets"
 fi
 
 AC_MSG_RESULT([QT_LIBS: $QT_LIBS])

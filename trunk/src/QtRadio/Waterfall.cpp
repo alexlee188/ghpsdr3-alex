@@ -55,7 +55,7 @@ Waterfall::Waterfall(QWidget*& widget) {
     sampleRate=96000;
 
     subRxFrequency=0LL;
-    subRx=FALSE;
+    subRx=false;
 
     waterfallHigh=-60;
     waterfallLow=-125;

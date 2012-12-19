@@ -47,7 +47,7 @@ Spectrum::Spectrum(QWidget*& widget) {
 
     zoom = 0;
     subRxFrequency=0LL;
-    subRx=FALSE;
+    subRx=false;
 
     band_min=0LL;
     band_max=0LL;

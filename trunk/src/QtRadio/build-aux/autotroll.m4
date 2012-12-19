@@ -227,10 +227,19 @@ dnl Memo: AC_ARG_WITH(package, help-string, [if-given], [if-not-given])
   QT_INSTALL_HEADERS_UP=`echo "$QT_INSTALL_HEADERS" | sed 's,/*[[^/]]\+/*$,,'`
   AC_SUBST([QT_INSTALL_HEADERS_UP])
 
+  #
+  # detecting major version
+  qmake_version_sed=['/^.*\([0-9]\)\.[0-9]\.[0-9].*$/!d;s//\1/']
+  QT_VM=`$QMAKE --version 2>&1 | sed "$qmake_version_sed"`
+
   # default for standard QtSDK and binary packages before U11.04
   #
   QT_ADDITIONAL_INCLUDE_PATH=""
-  QT_ADDITIONAL_LDFLAG="-lQtMultimedia"
+  if test x"$QT_VM" = x5; then
+    QT_ADDITIONAL_LDFLAG="-lQt5Multimedia"
+  else
+    QT_ADDITIONAL_LDFLAG="-lQtMultimedia"
+  fi
 
   # if there is a suspicious QtMultimediaKit (sibling of the standard Qt include path)
   # we are hit an Ubuntu binary package (11.04)

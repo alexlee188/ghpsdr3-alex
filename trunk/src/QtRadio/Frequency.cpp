@@ -17,6 +17,8 @@
 */
 
 #include "Frequency.h"
+#define FALSE false
+#define TRUE true
 
 Frequency::Frequency()
 {

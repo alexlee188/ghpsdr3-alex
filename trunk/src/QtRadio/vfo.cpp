@@ -305,7 +305,7 @@ void vfo::writeB(long long freq)
 void vfo::checkBandBtn(int band)
 {
 //qDebug()<<Q_FUNC_INFO<<": Value of band button is ... "<<band;
-    ui->btnGrpBand->button(band)->setChecked(TRUE);
+    ui->btnGrpBand->button(band)->setChecked(true);
 }
 
 long long vfo::readA()
@@ -472,12 +472,12 @@ void vfo::checkSubRx(long long f, int samplerate)
     ui->pBtnvfoB->setStyleSheet("background-color: rgb(85, 255, 0)");
     ui->pBtnvfoA->setStyleSheet("background-color: normal");
     ui->pBtnSplit->setStyleSheet("background-color: normal");
-    ui->pBtnvfoA->setEnabled(FALSE);
+    ui->pBtnvfoA->setEnabled(false);
     vfoEnabled(false, true);
 
-//    ui->pBtnvfoA->setEnabled(FALSE);
+//    ui->pBtnvfoA->setEnabled(false);
 //qDebug()<<Q_FUNC_INFO<<": About to check pBtnSubRx";
-    ui->pBtnSubRx->setChecked(TRUE);
+    ui->pBtnSubRx->setChecked(true);
 }
 
 //Called when subRx is unchecked in main menu via actionSubRx()
@@ -485,8 +485,8 @@ void vfo::uncheckSubRx()
 {
     ui->pBtnvfoB->setText("VFO B");
     ui->pBtnvfoA->setText("VFO A");
-    ui->pBtnvfoA->setEnabled(TRUE);
-    ui->pBtnSubRx->setChecked(FALSE);
+    ui->pBtnvfoA->setEnabled(true);
+    ui->pBtnSubRx->setChecked(false);
     vfoEnabled(true, false);
     on_pBtnvfoA_clicked(); //Return to vfoA = default vfo
 }
