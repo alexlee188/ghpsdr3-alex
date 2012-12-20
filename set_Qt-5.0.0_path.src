@@ -1,4 +1,4 @@
 #export PATH=$HOME/Qt5.0.0beta1/Desktop/Qt/5.0.0-beta1/gcc/bin:$PATH
 #export PATH=/opt/qt5/bin:$PATH
-export PATH=/opt/Qt5.0.0/5.0.0/gcc_64/bin:$PATH
+export PATH=/opt/Qt5.0.0/5.0.0/gcc_64/bin:/opt/Qt5.0.0/Tools/QtCreator/bin:$PATH
 
