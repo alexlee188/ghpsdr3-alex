@@ -587,9 +587,9 @@ static int   open_configuration_file (struct Hiqsdr *hiq)
             fprintf (fc, "#\n");
             fprintf (fc, "# HiQSDR preselector configuration file template\n");
             fprintf (fc, "#\n");
-            fprintf(fc, "%d!\"%s\"\n", 0, "FILTER BYPASS");
+            fprintf(fc, "%d!%s\n", 0, "FILTER BYPASS");
             for (unsigned j=1; j<ARRAY_SIZE(hiq->preselDesc); ++j) {
-                fprintf(fc, "%d!\"%s\"\n", j, "not used");
+                fprintf(fc, "%d!%s\n", j, "not used");
             }
             fclose (fc);
             fprintf (stderr, "Configuration file created at: %s\n", fn);
@@ -598,7 +598,7 @@ static int   open_configuration_file (struct Hiqsdr *hiq)
     }
     if (nr) {
         for (unsigned j=0; j<ARRAY_SIZE(hiq->preselDesc); ++j) {
-            printf("%d: %s\n", j, hiq->preselDesc[j]);
+            printf("%d:%s\n", j, hiq->preselDesc[j]);
         }
     }
     return nr;

@@ -32,6 +32,7 @@ struct RtlSdrConfig {
 
     rtlsdr_dev_t *rtl;
 
+    unsigned device_index;
     int   sr;
     int gain;
 

@@ -50,15 +50,15 @@ void Ctl::on_btnMox_clicked(bool checked)
 {
     bool ptt;
 
-    ui->btnTune->setChecked(FALSE); //Override the tune button
+    ui->btnTune->setChecked(false); //Override the tune button
     if(checked) { //We are going from Rx to Tx
-        ui->btnMox->setChecked(TRUE);
-        ptt = TRUE;
+        ui->btnMox->setChecked(true);
+        ptt = true;
         ui->pwrSlider->setValue(moxPwr);
     }
     else {
-        ui->btnMox->setChecked(FALSE);
-        ptt = FALSE;
+        ui->btnMox->setChecked(false);
+        ptt = false;
     }
     emit pttChange(0, ptt);
 }
@@ -67,15 +67,15 @@ void Ctl::on_btnTune_clicked(bool checked)
 {
     bool ptt;
 
-    ui->btnMox->setChecked(FALSE); //Override the MOX button
+    ui->btnMox->setChecked(false); //Override the MOX button
     if(checked) { //We are going from Rx to Tx
-        ui->btnTune->setChecked(TRUE);
-        ptt = TRUE;
+        ui->btnTune->setChecked(false);
+        ptt = true;
         ui->pwrSlider->setValue(TunePwr);
     }
     else {
-        ui->btnTune->setChecked(FALSE);
-        ptt = FALSE;
+        ui->btnTune->setChecked(false);
+        ptt = false;
     }
     emit pttChange(1, ptt);
 }

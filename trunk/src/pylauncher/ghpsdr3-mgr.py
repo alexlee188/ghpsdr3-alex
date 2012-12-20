@@ -60,11 +60,19 @@ default_cfg = {
 
       },
 
-      'hiqsdr-server': {
+      'hiqsdr-server-96kS': {
           'startCommand': "hiqsdr-server -d3 -s96000 --ip 192.168.2.196",
-          'status':  { "Cannot locate HiQSDR": 'abnormally ended',        
-                       "Listening for TCP connections on port 11000": 'started',     
-                      }                                                              
+          'status':  { "Cannot locate HiQSDR": 'abnormally ended',
+                       "Listening for TCP connections on port 11000": 'started',
+                      }
+
+      },
+
+      'hiqsdr-server-240kS': {
+          'startCommand': "hiqsdr-server -d3 -s240000 --ip 192.168.2.196",
+          'status':  { "Cannot locate HiQSDR": 'abnormally ended',
+                       "Listening for TCP connections on port 11000": 'started',
+                      }
 
       },
 
@@ -212,7 +220,7 @@ class MainWin(QMainWindow):
               {    'name':     'hiqsdr',
                    'tooltip':  'HiQSDR',
                    'shortcut': 'Ctrl+N',
-                   'icon':     'p24.png' 
+                   'icon':     'hiqsdr.png' 
               }
     ]
 
@@ -342,6 +350,17 @@ class MainWin(QMainWindow):
 
             self.tss_d['DSP server'].setCurrent('dttsp-ddc-delayed')
             self.tss_d['DSP server'].run_command()
+
+        if x == 'hiqsdr':
+            self.tss_d['Hardware servers'].setCurrent('hiqsdr-server-96kS')
+            self.tss_d['Hardware servers'].run_command()
+
+            self.tss_d['GUI'].setCurrent('QtRadio')
+            self.tss_d['GUI'].run_command()
+
+            self.tss_d['DSP server'].setCurrent('dttsp-ddc')
+            self.tss_d['DSP server'].run_command()
+
 
 
 def main(argv): 

@@ -913,9 +913,6 @@
    <property name="shortcut">
     <string>L</string>
    </property>
-   <property name="softKeyRole">
-    <enum>QAction::NoSoftKey</enum>
-   </property>
   </action>
   <action name="actionSquelchEnable">
    <property name="checkable">

@@ -38,6 +38,7 @@ struct PerseusConfig {
     bool dither;
     bool random;
     bool preamp;
+    bool localaudio;
 }; 
 
 class PerseusAudio;
