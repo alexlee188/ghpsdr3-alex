@@ -181,7 +181,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		setContentView(ll);
 		
 		//filterAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
-		filterAdapter = new ArrayAdapter<String>(this, R.layout.row, R.id.filter);
+		//filterAdapter = new ArrayAdapter<String>(this, R.layout.row, R.id.filter);
+		filterAdapter = new FilterAdapter(this, R.layout.row, R.id.filter);
 		serverAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
 	}
 
@@ -409,7 +410,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 					break;
 				}
 				filterAdapter.clear();
-				for (int i = 0; i < 10; i++) filterAdapter.add(filters[i].toString());
+				if (filters != null){
+					for (int i = 0; i < 10; i++) filterAdapter.add(filters[i].toString());
+					filterAdapter.setFilter(filter);
+				}
 				break;
 			case MENU_BAND:
 				if (!connection.getHasBeenSlave()){		// update band specific default freq
@@ -1443,7 +1447,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	private CharSequence[] filters;
 	private int filterLow=150;
 	private int filterHigh=2875;
-	private ArrayAdapter<String> filterAdapter;
+	private FilterAdapter filterAdapter;
 
 	public static final int FILTER_0 = 0;
 	public static final int FILTER_1 = 1;
