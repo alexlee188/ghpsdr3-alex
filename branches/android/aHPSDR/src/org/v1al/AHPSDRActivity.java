@@ -180,7 +180,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		ll.addView(mGLSurfaceView);
 		setContentView(ll);
 		
-		filterAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
+		//filterAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
+		filterAdapter = new ArrayAdapter<String>(this, R.layout.row, R.id.filter);
 		serverAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
 	}
 
