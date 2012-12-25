@@ -9,7 +9,7 @@
 		android:layout_height="wrap_content"
 		android:src="@drawable/blue"/>
 	<TextView
-		android:id="@+id/filter"
+		android:id="@+id/selection"
 		android:textStyle="bold"
         android:textSize="22dp"
         android:textColor="#000000"

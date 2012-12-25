@@ -182,8 +182,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		
 		//filterAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
 		//filterAdapter = new ArrayAdapter<String>(this, R.layout.row, R.id.filter);
-		filterAdapter = new FilterAdapter(this, R.layout.row, R.id.filter);
-		serverAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
+		filterAdapter = new CustomAdapter(this, R.layout.row, R.id.selection);
+		//serverAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
+		serverAdapter = new CustomAdapter(this, R.layout.row, R.id.selection);
 	}
 
 	@Override
@@ -377,8 +378,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		            }           
 		            Log.i("servers",html);
 		            servers=new CharSequence[n];
+		            serverAdapter.setSelection(0);
 		            for(i=0;i<n;i++) {
 		            	servers[i]=temp.elementAt(i);
+		            	if (servers[i].toString().equals(server)) serverAdapter.setSelection(i);
 		            }
 		        } catch (Exception e) {  	
 		        }
@@ -412,7 +415,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 				filterAdapter.clear();
 				if (filters != null){
 					for (int i = 0; i < 10; i++) filterAdapter.add(filters[i].toString());
-					filterAdapter.setFilter(filter);
+					filterAdapter.setSelection(filter);
 				}
 				break;
 			case MENU_BAND:
@@ -1236,7 +1239,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.connect();
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(29)");
+	    connection.sendCommand("setClient glSDR(30)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setBand(band);
@@ -1447,7 +1450,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	private CharSequence[] filters;
 	private int filterLow=150;
 	private int filterHigh=2875;
-	private FilterAdapter filterAdapter;
+	private CustomAdapter filterAdapter;
 
 	public static final int FILTER_0 = 0;
 	public static final int FILTER_1 = 1;
@@ -1466,7 +1469,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	private String qAnswer = "";
 	private int BASE_PORT = 8000;
 	private int port = 8000;
-	private ArrayAdapter<String> serverAdapter;
+	private CustomAdapter serverAdapter;
 	private CharSequence servers[];
 	 
 	private String txUser = "";
