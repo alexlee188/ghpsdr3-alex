@@ -201,6 +201,7 @@ void init_register(const char *scfile){
         fprintf(stderr,"%s\n", "  Contains Unknown for a Call");
         fprintf(stderr,"%s\n", "  Please edit this file and fill in your station details!");
         fprintf(stderr,"%s\n", "***********************************************************");
+	exit(-1);
     }
     call = url_encode(call);
     location = url_encode(location);
