@@ -820,6 +820,7 @@ static char *slave_commands[] = {
     "startaudiostream",
     "startrtpstream",
     "setfps",
+    "setmaster",
     NULL
 };
 
@@ -1462,6 +1463,38 @@ void readcb(struct bufferevent *bev, void *ctx){
                 goto badcommand;
             zoom=atoi(tokens[0]);
             //fprintf(stdout,"Zoom value is '%d'\n",zoom);
+        } else if(strncmp(cmd,"setmaster",9)==0) {
+            int ntok;
+
+            if (slave) {
+                    sdr_log(SDR_LOG_INFO,"Setmaster: %s  txcfg: %d\n",message,txcfg);
+                    if ((ntok = tokenize_cmd(&saveptr, tokens, 2)) < 2)
+                        goto badcommand;
+                    if(txcfg == TXPASSWD){
+                        if (ntok == 2) {
+                            char *thisuser = tokens[0];
+                            char *thispasswd = tokens[1];
+                            if(chkPasswd(thisuser, thispasswd) == 0){ 
+                                sdr_log(SDR_LOG_INFO,"SetMaster allowed\n");
+                                sem_wait(&bufferevent_semaphore);
+                                TAILQ_REMOVE(&Client_list, current_item, entries);
+                                TAILQ_INSERT_HEAD(&Client_list, current_item, entries);
+                                sem_post(&bufferevent_semaphore);
+                            }else{
+                                sdr_log(SDR_LOG_INFO,"Setmaster denied because user %s password check failed!\n",thisuser);
+                            }
+                        }
+                    }else if (txcfg == TXALL){
+                        sdr_log(SDR_LOG_INFO,"SetMaster allowed\n");
+                        sem_wait(&bufferevent_semaphore);
+                        TAILQ_REMOVE(&Client_list, current_item, entries);
+                        TAILQ_INSERT_HEAD(&Client_list, current_item, entries);
+                        sem_post(&bufferevent_semaphore);
+                    } else{
+                        fprintf(stderr,"Invalid SetMaster command: '%s'\n",message);
+                        fprintf(stderr,"... because txcfg is neither TXPASSWD nor TXALL\n");
+                    }
+            }
         } else {
             fprintf(stderr,"Invalid command: token: '%s'\n",cmd);
         }
