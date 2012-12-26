@@ -171,3 +171,8 @@ void Ctl::RigCtlTX(bool rigctlptt){
         on_btnMox_clicked(false);
     }
 }
+
+void Ctl::on_btnMaster_clicked()
+{
+    emit masterBtnClicked();
+}

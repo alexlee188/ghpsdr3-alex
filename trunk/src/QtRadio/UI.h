@@ -276,7 +276,7 @@ public slots:
     void testSliderChange(int value);
     void testButtonClick(bool state);
     void resetbandedges(double offset);
-
+    void masterButtonClicked(void);
     void hardware (QString);
 
 signals:
