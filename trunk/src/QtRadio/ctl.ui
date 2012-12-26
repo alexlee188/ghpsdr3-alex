@@ -25,7 +25,7 @@
      <x>10</x>
      <y>2</y>
      <width>51</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="focusPolicy">
@@ -42,9 +42,9 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>23</y>
+     <y>24</y>
      <width>51</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="text">
@@ -107,9 +107,9 @@
   <widget class="QProgressBar" name="MicProgressBar">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>70</x>
      <y>46</y>
-     <width>221</width>
+     <width>161</width>
      <height>20</height>
     </rect>
    </property>
@@ -158,9 +158,9 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>70</y>
+     <y>71</y>
      <width>51</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="text">
@@ -194,6 +194,19 @@
    </property>
    <property name="text">
     <string>Toggle</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnMaster">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>47</y>
+     <width>51</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>MASTER</string>
    </property>
   </widget>
  </widget>

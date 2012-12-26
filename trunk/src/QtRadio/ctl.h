@@ -53,7 +53,7 @@ signals:
     void pwrSlider_valueChanged(double pwr);
     void testBtnClick(bool state);
     void testSliderChange(int value);
-
+    void masterBtnClicked(void);
 public slots:
     void update_mic_level(qreal level);
     void HideTX(bool cantx);
@@ -71,6 +71,8 @@ private slots:
     void on_pushButton_released();
 
     void on_pushButton_toggled(bool checked);
+
+    void on_btnMaster_clicked();
 
 private:
     Ui::Ctl *ui;

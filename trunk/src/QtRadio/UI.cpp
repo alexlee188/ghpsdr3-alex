@@ -302,6 +302,7 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
     connect(&configure,SIGNAL(RxIQspinChanged(double)),this,SLOT(RxIQspinChanged(double)));
     connect(&configure,SIGNAL(spinBox_cwPitchChanged(int)),this,SLOT(cwPitchChanged(int)));
+    connect(widget.ctlFrame,SIGNAL(masterBtnClicked()),this,SLOT(masterButtonClicked()));
     connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
     connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
     connect(&connection,SIGNAL(hardware(QString)),this,SLOT(hardware(QString)));
@@ -2454,7 +2455,9 @@ void UI::testButtonClick(bool state)
     qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
 }
 
-//>>>>>>> Connected test controls to main UI
+void UI::masterButtonClicked(void){
+    connection.sendCommand("setMaster " + configure.thisuser + " " + configure.thispass);
+}
 
  void UI::resetbandedges(double offset)
  {
