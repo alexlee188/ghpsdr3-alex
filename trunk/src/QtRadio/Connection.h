@@ -28,7 +28,7 @@
 
 #include <QObject>
 #include <QDebug>
-#include <QTcpSocket>
+#include <QtNetwork/QSslSocket>
 #include <QTimer>
 #include <QMutex>
 #include <QQueue>
@@ -113,7 +113,7 @@ private:
 
     QString host;
     int port;
-    QTcpSocket* tcpSocket;
+    QSslSocket* sslSocket;
     QMutex mutex;
     int state;
     char* hdr;
