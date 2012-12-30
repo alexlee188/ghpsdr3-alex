@@ -146,6 +146,9 @@ have_event20_pthreads=no
 AC_SEARCH_LIBS([evthread_use_pthreads], [event_pthreads],
                [have_event20_pthreads=yes])
 
+have_event20_openssl=no
+AC_SEARCH_LIBS([bufferevent_openssl_socket_new], [event_openssl],[have_event20_openssl=yes])
+
 have_samplerate=no
 AC_SEARCH_LIBS([src_new], [samplerate],[have_samplerate=yes])
 
@@ -308,6 +311,18 @@ if test "x${have_event20_pthreads}" = xno; then
   ghpsdr3.  See the README file for installation instructions.
 -----------------------------------
 ])
+fi
+
+if test "x${have_event20_openssl}" = xyes; then
+    AC_CHECK_HEADERS([event2/bufferevent_ssl.h], [], [have_event20_openssl=no])
+fi
+
+if test "x${have_event20_openssl}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The libevent-2.0 library and header file with Openssl support required to build ghpsdr3.
+  Required lib is libevent_openssl
+-----------------------------------])
 fi
 
 if test "x${have_samplerate}" = xyes; then
