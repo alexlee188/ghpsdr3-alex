@@ -66,11 +66,6 @@
 /* For fcntl */
 #include <fcntl.h>
 
-#include <event2/event.h>
-#include <event2/thread.h>
-#include <event2/buffer.h>
-#include <event2/bufferevent.h>
-
 #include "client.h"
 #include "ozy.h"
 #include "audiostream.h"
@@ -92,6 +87,9 @@ static pthread_t client_thread_id, tx_thread_id, rtp_tx_thread_id;
 
 #define BASE_PORT 8000
 static int port=BASE_PORT;
+
+#define BASE_PORT_SSL 9000
+static int port_ssl=BASE_PORT_SSL;
 
 // This must match the size declared in DttSP
 #define SAMPLE_BUFFER_SIZE 4096
@@ -281,6 +279,7 @@ void client_init(int receiver) {
     spectrum_timer_init();
 
     port=BASE_PORT+receiver;
+    port_ssl = BASE_PORT_SSL + receiver;
     rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
 
     if(rc != 0) {
@@ -674,7 +673,38 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
     bufferevent_free(bev);
 }
 
+static void
+ssl_readcb(struct bufferevent * bev, void * arg)
+{
+    struct evbuffer *in = bufferevent_get_input(bev);
 
+    printf("Received %zu bytes\n", evbuffer_get_length(in));
+    printf("----- data ----\n");
+    printf("%.*s\n", (int)evbuffer_get_length(in), evbuffer_pullup(in, -1));
+
+    bufferevent_write_buffer(bev, in);
+}
+
+static void
+do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa,
+             int sa_len, void *arg)
+{
+    struct event_base *evbase;
+    struct bufferevent *bev;
+    SSL_CTX *server_ctx;
+    SSL *client_ctx;
+
+    server_ctx = (SSL_CTX *)arg;
+    client_ctx = SSL_new(server_ctx);
+    evbase = evconnlistener_get_base(serv);
+
+    bev = bufferevent_openssl_socket_new(evbase, sock, client_ctx,
+                                         BUFFEREVENT_SSL_ACCEPTING,
+                                         BEV_OPT_CLOSE_ON_FREE);
+
+    bufferevent_enable(bev, EV_READ);
+    bufferevent_setcb(bev, ssl_readcb, NULL, NULL, NULL);
+}
 
 void* client_thread(void* arg) {
  
@@ -683,6 +713,10 @@ void* client_thread(void* arg) {
     struct event *listener_event;
     struct sockaddr_in server;
     int serverSocket;
+
+    SSL_CTX *ctx;
+    struct evconnlistener *listener;
+    struct sockaddr_in server_ssl;
 
     sdr_thread_register("client_thread");
 
@@ -719,10 +753,27 @@ void* client_thread(void* arg) {
 	exit(1);
     }
 
-    base = event_base_new();
-    listener_event = event_new(base, serverSocket, EV_READ|EV_PERSIST, do_accept, (void*)base);
+    memset(&server_ssl,0,sizeof(server_ssl));
+    server_ssl.sin_family=AF_INET;
+    server_ssl.sin_addr.s_addr=htonl(INADDR_ANY);
+    server_ssl.sin_port=htons(port_ssl);
 
+    ctx = evssl_init();
+    if (ctx == NULL){
+        perror("client ctx init failed");
+        exit(1);
+    }
+
+    base = event_base_new();
+
+    listener_event = event_new(base, serverSocket, EV_READ|EV_PERSIST, do_accept, (void*)base);
     event_add(listener_event, NULL);
+
+    listener = evconnlistener_new_bind(
+                         base, do_accept_ssl, (void *)ctx,
+                         LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE, 1024,
+                         (struct sockaddr *)&server_ssl, sizeof(server_ssl));
+
     event_base_loop(base, 0);
     return NULL;
 }
@@ -1505,6 +1556,33 @@ void readcb(struct bufferevent *bev, void *ctx){
     } // end while
 }
 
+static SSL_CTX *
+evssl_init(void)
+{
+    SSL_CTX  *server_ctx;
+
+    /* Initialize the OpenSSL library */
+    SSL_load_error_strings();
+    SSL_library_init();
+    /* We MUST have entropy, or else there's no point to crypto. */
+    if (!RAND_poll())
+        return NULL;
+
+    server_ctx = SSL_CTX_new(SSLv23_server_method());
+
+    if (! SSL_CTX_use_certificate_chain_file(server_ctx, "cert") ||
+        ! SSL_CTX_use_PrivateKey_file(server_ctx, "pkey", SSL_FILETYPE_PEM)) {
+        puts("Couldn't read 'pkey' or 'cert' file.  To generate a key\n"
+           "and self-signed certificate, run:\n"
+           "  openssl genrsa -out pkey 2048\n"
+           "  openssl req -new -key pkey -out cert.req\n"
+           "  openssl x509 -req -days 365 -in cert.req -signkey pkey -out cert");
+        return NULL;
+    }
+    SSL_CTX_set_options(server_ctx, SSL_OP_NO_SSLv2);
+
+    return server_ctx;
+}
 
 void client_set_samples(char* client_samples, float* samples,int size) {
     int i,j;

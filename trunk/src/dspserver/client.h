@@ -47,6 +47,15 @@
 
 #include <sys/queue.h>
 #include <ortp/ortp.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/rand.h>
+#include <event2/event.h>
+#include <event2/thread.h>
+#include <event2/buffer.h>
+#include <event2/bufferevent.h>
+#include <event2/listener.h>
+#include <event2/bufferevent_ssl.h>
 
 enum CLIENT_CONNECTION {
 	connection_unknown,
@@ -82,6 +91,8 @@ void setprintcountry(void);
 void answer_question(char *message, char *clienttype, struct bufferevent *bev);
 char servername[21];
 void printversion(void);
+static SSL_CTX *evssl_init(void);
+
 extern double mic_src_ratio;
 
 #endif
