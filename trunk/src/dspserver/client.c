@@ -621,55 +621,58 @@ void errorcb(struct bufferevent *bev, short error, void *ctx)
     if (error & BEV_EVENT_EOF) {
         /* connection has been closed, do any clean up here */
         /* ... */
+            sem_wait(&bufferevent_semaphore);
+            for (item = TAILQ_FIRST(&Client_list); item != NULL; item = TAILQ_NEXT(item, entries)){
+	        if (item->bev == bev){
+                    char ipstr[16];
+                    inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
+                    sdr_log(SDR_LOG_INFO, "RX%d: client disconnection from %s:%d\n",
+                            receiver, ipstr, ntohs(item->client.sin_port));
+                    if (item->rtp == connection_rtp) {
+                        rtp_disconnect(item->session);
+                        is_rtp_client = 1;
+                    }
+                    TAILQ_REMOVE(&Client_list, item, entries);
+                    free(item);
+                    break;
+	        }
+            }
+
+            TAILQ_FOREACH(item, &Client_list, entries){
+	        client_count++;
+	        if (item->rtp == connection_rtp) rtp_client_count++;
+            }
+
+            sem_post(&bufferevent_semaphore);
+
+            if ((rtp_client_count <= 0) && is_rtp_client) {
+	        rtp_connected = 0; 	// last rtp client disconnected
+	        rtp_listening = 0;
+            }
+
+            if (toShareOrNotToShare) {
+                char status_buf[32];
+                sprintf(status_buf, "%d client(s)", client_count);
+                updateStatus(status_buf);
+            }
+
+            if (client_count <= 0) {
+                sem_wait(&bufferevent_semaphore);
+                send_audio = 0;
+                sem_post(&bufferevent_semaphore);
+            }
+            bufferevent_free(bev);
     } else if (error & BEV_EVENT_ERROR) {
         /* check errno to see what error occurred */
         /* ... */
+        sdr_log(SDR_LOG_INFO, "special EVUTIL_SOCKET_ERROR() %d: %s\n",  EVUTIL_SOCKET_ERROR(), evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
     } else if (error & BEV_EVENT_TIMEOUT) {
         /* must be a timeout event handle, handle it */
         /* ... */
+    } else if (error & BEV_EVENT_CONNECTED){
+        sdr_log(SDR_LOG_INFO, "errorcb: finished requested connection\n");
     }
 
-    sem_wait(&bufferevent_semaphore);
-    for (item = TAILQ_FIRST(&Client_list); item != NULL; item = TAILQ_NEXT(item, entries)){
-	if (item->bev == bev){
-            char ipstr[16];
-            inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
-            sdr_log(SDR_LOG_INFO, "RX%d: client disconnection from %s:%d\n",
-                    receiver, ipstr, ntohs(item->client.sin_port));
-            if (item->rtp == connection_rtp) {
-                rtp_disconnect(item->session);
-                is_rtp_client = 1;
-            }
-            TAILQ_REMOVE(&Client_list, item, entries);
-            free(item);
-            break;
-	}
-    }
-
-    TAILQ_FOREACH(item, &Client_list, entries){
-	client_count++;
-	if (item->rtp == connection_rtp) rtp_client_count++;
-    }
-
-    sem_post(&bufferevent_semaphore);
-
-    if ((rtp_client_count <= 0) && is_rtp_client) {
-	rtp_connected = 0; 	// last rtp client disconnected
-	rtp_listening = 0;
-    }
-
-    if (toShareOrNotToShare) {
-        char status_buf[32];
-        sprintf(status_buf, "%d client(s)", client_count);
-        updateStatus(status_buf);
-    }
-
-    if (client_count <= 0) {
-        sem_wait(&bufferevent_semaphore);
-        send_audio = 0;
-        sem_post(&bufferevent_semaphore);
-    }
-    bufferevent_free(bev);
 }
 
 void do_accept(evutil_socket_t listener, short event, void *arg){
@@ -786,7 +789,7 @@ do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa,
     item = malloc(sizeof(*item));
     memset(item, 0, sizeof(*item));
 
-    bufferevent_setcb(bev, readcb, writecb, NULL, NULL);
+    bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
     bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
     bufferevent_setwatermark(bev, EV_WRITE, 4096, 0);
     bufferevent_enable(bev, EV_READ|EV_WRITE);
