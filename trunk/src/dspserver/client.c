@@ -735,6 +735,7 @@ void* client_thread(void* arg) {
     setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 #endif
 
+/*
     memset(&server,0,sizeof(server));
     server.sin_family=AF_INET;
     server.sin_addr.s_addr=htonl(INADDR_ANY);
@@ -752,7 +753,7 @@ void* client_thread(void* arg) {
 	perror("client listen");
 	exit(1);
     }
-
+*/
     memset(&server_ssl,0,sizeof(server_ssl));
     server_ssl.sin_family=AF_INET;
     server_ssl.sin_addr.s_addr=htonl(INADDR_ANY);
@@ -766,9 +767,10 @@ void* client_thread(void* arg) {
 
     base = event_base_new();
 
+/*
     listener_event = event_new(base, serverSocket, EV_READ|EV_PERSIST, do_accept, (void*)base);
     event_add(listener_event, NULL);
-
+*/
     listener = evconnlistener_new_bind(
                          base, do_accept_ssl, (void *)ctx,
                          LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE, 1024,
