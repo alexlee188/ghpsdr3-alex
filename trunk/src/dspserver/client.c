@@ -611,8 +611,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg);
 void readcb(struct bufferevent *bev, void *ctx);
 void writecb(struct bufferevent *bev, void *ctx);
 
-void
-errorcb(struct bufferevent *bev, short error, void *ctx)
+void errorcb(struct bufferevent *bev, short error, void *ctx)
 {
     client_entry *item;
     int client_count = 0;
@@ -671,161 +670,6 @@ errorcb(struct bufferevent *bev, short error, void *ctx)
         sem_post(&bufferevent_semaphore);
     }
     bufferevent_free(bev);
-}
-
-static void
-ssl_readcb(struct bufferevent * bev, void * arg)
-{
-    struct evbuffer *in = bufferevent_get_input(bev);
-
-    printf("Received %zu bytes\n", evbuffer_get_length(in));
-    printf("----- data ----\n");
-    printf("%.*s\n", (int)evbuffer_get_length(in), evbuffer_pullup(in, -1));
-
-    bufferevent_write_buffer(bev, in);
-}
-
-/**
-   Create a new SSL bufferevent to send its data over an SSL * on a socket.
-
-   @param base An event_base to use to detect reading and writing
-   @param fd A socket to use for this SSL
-   @param ssl A SSL* object from openssl.
-   @param state The current state of the SSL connection
-   @param options One or more bufferevent_options
-   @return A new bufferevent on success, or NULL on failure.
-*/
-struct bufferevent *
-bufferevent_openssl_socket_new(struct event_base *base,
-    evutil_socket_t fd,
-    struct ssl_st *ssl,
-    enum bufferevent_ssl_state state,
-    int options);
-
-static void
-do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa,
-             int sa_len, void *arg)
-{
-    struct event_base *evbase;
-    struct bufferevent *bev;
-    SSL_CTX *server_ctx;
-    SSL *client_ctx;
-
-    server_ctx = (SSL_CTX *)arg;
-    client_ctx = SSL_new(server_ctx);
-    evbase = evconnlistener_get_base(serv);
-
-    bev = bufferevent_openssl_socket_new(evbase, sock, client_ctx,
-                                         BUFFEREVENT_SSL_ACCEPTING,
-                                         BEV_OPT_CLOSE_ON_FREE);
-
-    bufferevent_enable(bev, EV_READ);
-    bufferevent_setcb(bev, ssl_readcb, NULL, NULL, NULL);
-}
-
-SSL_CTX *evssl_init(void)
-{
-    SSL_CTX  *server_ctx;
-
-    /* Initialize the OpenSSL library */
-    SSL_load_error_strings();
-    SSL_library_init();
-    /* We MUST have entropy, or else there's no point to crypto. */
-    if (!RAND_poll())
-        return NULL;
-
-    server_ctx = SSL_CTX_new(SSLv23_server_method());
-
-    if (! SSL_CTX_use_certificate_chain_file(server_ctx, "cert") ||
-        ! SSL_CTX_use_PrivateKey_file(server_ctx, "pkey", SSL_FILETYPE_PEM)) {
-        puts("Couldn't read 'pkey' or 'cert' file.  To generate a key\n"
-           "and self-signed certificate, run:\n"
-           "  openssl genrsa -out pkey 2048\n"
-           "  openssl req -new -key pkey -out cert.req\n"
-           "  openssl x509 -req -days 365 -in cert.req -signkey pkey -out cert");
-        return NULL;
-    }
-    SSL_CTX_set_options(server_ctx, SSL_OP_NO_SSLv2);
-
-    return server_ctx;
-}
-
-void* client_thread(void* arg) {
- 
-    int on=1;
-    struct event_base *base;
-    struct event *listener_event;
-    struct sockaddr_in server;
-    int serverSocket;
-
-    SSL_CTX *ctx;
-    struct evconnlistener *listener;
-    struct sockaddr_in server_ssl;
-
-    sdr_thread_register("client_thread");
-
-    fprintf(stderr,"client_thread\n");
-
-    serverSocket=socket(AF_INET,SOCK_STREAM,0);
-    if(serverSocket==-1) {
-        perror("client socket");
-        return NULL;
-    }
-
-    evutil_make_socket_nonblocking(serverSocket);
-    evutil_make_socket_closeonexec(serverSocket);
-
-#ifndef WIN32
-    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-#endif
-
-
-    memset(&server,0,sizeof(server));
-    server.sin_family=AF_INET;
-    server.sin_addr.s_addr=htonl(INADDR_ANY);
-    server.sin_port=htons(port);
-
-    if(bind(serverSocket,(struct sockaddr *)&server,sizeof(server))<0) {
-        perror("client bind");
-        fprintf(stderr,"port=%d\n",port);
-        return NULL;
-    }
-
-    sdr_log(SDR_LOG_INFO, "client_thread: listening on port %d\n", port);
-
-    if (listen(serverSocket, 5) == -1) {
-	perror("client listen");
-	exit(1);
-    }
-
-    memset(&server_ssl,0,sizeof(server_ssl));
-    server_ssl.sin_family=AF_INET;
-    server_ssl.sin_addr.s_addr=htonl(INADDR_ANY);
-    server_ssl.sin_port=htons(port_ssl);
-
-    ctx = evssl_init();
-    if (ctx == NULL){
-        perror("client ctx init failed");
-        exit(1);
-    }
-
-    base = event_base_new();
-
-
-    listener_event = event_new(base, serverSocket, EV_READ|EV_PERSIST, do_accept, (void*)base);
-    event_add(listener_event, NULL);
-
-    listener = evconnlistener_new_bind(
-                         base, do_accept_ssl, (void *)ctx,
-                         LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE, 1024,
-                         (struct sockaddr *)&server_ssl, sizeof(server_ssl));
-
-    event_base_loop(base, 0);
-
-    evconnlistener_free(listener);
-    SSL_CTX_free(ctx);
-
-    return NULL;
 }
 
 void do_accept(evutil_socket_t listener, short event, void *arg){
@@ -888,6 +732,210 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
         sprintf(status_buf,"%d client(s)", client_count);
         updateStatus(status_buf);
     }
+}
+
+
+static void
+ssl_readcb(struct bufferevent * bev, void * arg)
+{
+    struct evbuffer *in = bufferevent_get_input(bev);
+
+    printf("Received %zu bytes\n", evbuffer_get_length(in));
+    printf("----- data ----\n");
+    printf("%.*s\n", (int)evbuffer_get_length(in), evbuffer_pullup(in, -1));
+
+    bufferevent_write_buffer(bev, in);
+}
+
+/**
+   Create a new SSL bufferevent to send its data over an SSL * on a socket.
+
+   @param base An event_base to use to detect reading and writing
+   @param fd A socket to use for this SSL
+   @param ssl A SSL* object from openssl.
+   @param state The current state of the SSL connection
+   @param options One or more bufferevent_options
+   @return A new bufferevent on success, or NULL on failure.
+*/
+struct bufferevent *
+bufferevent_openssl_socket_new(struct event_base *base,
+    evutil_socket_t fd,
+    struct ssl_st *ssl,
+    enum bufferevent_ssl_state state,
+    int options);
+
+static void
+do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa,
+             int sa_len, void *arg)
+{
+    struct event_base *evbase;
+    struct bufferevent *bev;
+    SSL_CTX *server_ctx;
+    SSL *client_ctx;
+
+    server_ctx = (SSL_CTX *)arg;
+    client_ctx = SSL_new(server_ctx);
+    evbase = evconnlistener_get_base(serv);
+
+    bev = bufferevent_openssl_socket_new(evbase, sock, client_ctx,
+                                         BUFFEREVENT_SSL_ACCEPTING,
+                                         BEV_OPT_CLOSE_ON_FREE);
+
+    client_entry *item;
+
+    char ipstr[16];
+    // add newly connected client to Client_list
+    item = malloc(sizeof(*item));
+    memset(item, 0, sizeof(*item));
+    memcpy(&item->client, sa, sizeof(*sa));
+
+    inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
+    sdr_log(SDR_LOG_INFO, "RX%d: client connection from %s:%d\n",
+            receiver, ipstr, ntohs(item->client.sin_port));
+
+    if(prncountry){
+        printcountry((struct sockaddr_in *)sa);
+    }
+
+    bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
+    bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
+    bufferevent_setwatermark(bev, EV_WRITE, 4096, 0);
+    bufferevent_enable(bev, EV_READ|EV_WRITE);
+    item->bev = bev;
+    item->rtp = connection_unknown;
+    item->fps = 0;
+    item->frame_counter = 0;
+    sem_wait(&bufferevent_semaphore);
+    TAILQ_INSERT_TAIL(&Client_list, item, entries);
+    sem_post(&bufferevent_semaphore);
+
+    int client_count = 0;
+    sem_wait(&bufferevent_semaphore);
+    /* NB: Clobbers item */
+    TAILQ_FOREACH(item, &Client_list, entries){
+        client_count++;
+    }
+    sem_post(&bufferevent_semaphore);
+
+    if (client_count == 0) {
+        zoom = 0;
+    }
+
+    if (toShareOrNotToShare) {
+        char status_buf[32];
+        sprintf(status_buf,"%d client(s)", client_count);
+        updateStatus(status_buf);
+    }
+
+/*
+    bufferevent_enable(bev, EV_READ);
+    bufferevent_setcb(bev, ssl_readcb, NULL, NULL, NULL);
+*/
+}
+
+SSL_CTX *evssl_init(void)
+{
+    SSL_CTX  *server_ctx;
+
+    /* Initialize the OpenSSL library */
+    SSL_load_error_strings();
+    SSL_library_init();
+    /* We MUST have entropy, or else there's no point to crypto. */
+    if (!RAND_poll())
+        return NULL;
+
+    server_ctx = SSL_CTX_new(SSLv23_server_method());
+
+    if (! SSL_CTX_use_certificate_chain_file(server_ctx, "cert") ||
+        ! SSL_CTX_use_PrivateKey_file(server_ctx, "pkey", SSL_FILETYPE_PEM)) {
+        puts("Couldn't read 'pkey' or 'cert' file.  To generate a key\n"
+           "and self-signed certificate, run:\n"
+           "  openssl genrsa -out pkey 2048\n"
+           "  openssl req -new -key pkey -out cert.req\n"
+           "  openssl x509 -req -days 365 -in cert.req -signkey pkey -out cert");
+        return NULL;
+    }
+    SSL_CTX_set_options(server_ctx, SSL_OP_NO_SSLv2);
+
+    return server_ctx;
+}
+
+void* client_thread(void* arg) {
+ 
+    int on=1;
+    struct event_base *base;
+    struct event *listener_event;
+    struct sockaddr_in server;
+    int serverSocket;
+
+    SSL_CTX *ctx;
+    struct evconnlistener *listener;
+    struct sockaddr_in server_ssl;
+
+    sdr_thread_register("client_thread");
+
+    fprintf(stderr,"client_thread\n");
+
+    serverSocket=socket(AF_INET,SOCK_STREAM,0);
+    if(serverSocket==-1) {
+        perror("client socket");
+        return NULL;
+    }
+
+    evutil_make_socket_nonblocking(serverSocket);
+    evutil_make_socket_closeonexec(serverSocket);
+
+#ifndef WIN32
+    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+#endif
+
+    memset(&server,0,sizeof(server));
+    server.sin_family=AF_INET;
+    server.sin_addr.s_addr=htonl(INADDR_ANY);
+    server.sin_port=htons(port);
+
+    if(bind(serverSocket,(struct sockaddr *)&server,sizeof(server))<0) {
+        perror("client bind");
+        fprintf(stderr,"port=%d\n",port);
+        return NULL;
+    }
+
+    sdr_log(SDR_LOG_INFO, "client_thread: listening on port %d\n", port);
+
+    if (listen(serverSocket, 5) == -1) {
+	perror("client listen");
+	exit(1);
+    }
+
+    memset(&server_ssl,0,sizeof(server_ssl));
+    server_ssl.sin_family=AF_INET;
+    server_ssl.sin_addr.s_addr=htonl(INADDR_ANY);
+    server_ssl.sin_port=htons(port_ssl);
+
+    ctx = evssl_init();
+    if (ctx == NULL){
+        perror("client ctx init failed");
+        exit(1);
+    }
+
+    base = event_base_new();
+
+    // add the non-ssl listener to event base
+    listener_event = event_new(base, serverSocket, EV_READ|EV_PERSIST, do_accept, (void*)base);
+    event_add(listener_event, NULL);
+
+    // add the ssl listener to event base
+    listener = evconnlistener_new_bind(
+                         base, do_accept_ssl, (void *)ctx,
+                         LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE, 1024,
+                         (struct sockaddr *)&server_ssl, sizeof(server_ssl));
+
+    event_base_loop(base, 0);
+
+    evconnlistener_free(listener);
+    SSL_CTX_free(ctx);
+
+    return NULL;
 }
 
 void writecb(struct bufferevent *bev, void *ctx){
