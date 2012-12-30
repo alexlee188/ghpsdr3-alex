@@ -14,7 +14,7 @@ AC_CONFIG_MACRO_DIR([build-aux])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
+
 
 #
 # Checking for build cpu
@@ -73,7 +73,7 @@ AM_PROG_CC_C_O
 
 # AC_CHECK_LIB([usb], [usb_init])
 
-AC_CHECK_LIB([portaudio], [Pa_Initialize], [echo "libportaudio FOUND"],
+AC_CHECK_LIB([portaudio], [Pa_Initialize], [],
              [
               echo "-------------------------------------------------"
               echo ""
@@ -84,7 +84,7 @@ AC_CHECK_LIB([portaudio], [Pa_Initialize], [echo "libportaudio FOUND"],
               exit -1
              ])
 
-AC_CHECK_LIB([pthread], [pthread_create], [echo "libpthread FOUND"],
+AC_CHECK_LIB([pthread], [pthread_create], [],
              [
               echo "-------------------------------------------------"
               echo ""
@@ -94,7 +94,7 @@ AC_CHECK_LIB([pthread], [pthread_create], [echo "libpthread FOUND"],
               exit -1
              ])
 
-AC_CHECK_LIB([samplerate], [src_new], [echo "libsamplerate FOUND"],
+AC_CHECK_LIB([samplerate], [src_new], [],
              [
               echo "-------------------------------------------------"
               echo ""
@@ -105,7 +105,7 @@ AC_CHECK_LIB([samplerate], [src_new], [echo "libsamplerate FOUND"],
               exit -1
              ])
 
-AC_CHECK_LIB([perseus-sdr], [perseus_init], [echo "libperseus-sdr FOUND"],
+AC_CHECK_LIB([perseus-sdr], [perseus_init], [],
              [
               echo "-------------------------------------------------"
               echo ""
@@ -116,7 +116,7 @@ AC_CHECK_LIB([perseus-sdr], [perseus_init], [echo "libperseus-sdr FOUND"],
               exit -1
              ])
 
-AC_CHECK_LIB([boost_program_options], [main], [echo "libboost_program_options FOUND"],
+AC_CHECK_LIB([boost_program_options], [main], [],
              [
               echo "-------------------------------------------------"
               echo ""
