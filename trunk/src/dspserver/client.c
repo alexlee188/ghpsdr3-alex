@@ -727,7 +727,6 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     }
 
     if (toShareOrNotToShare) {
- 
         char status_buf[32];
         sprintf(status_buf,"%d client(s)", client_count);
         updateStatus(status_buf);
@@ -783,19 +782,9 @@ do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa,
 
     client_entry *item;
 
-    char ipstr[16];
     // add newly connected client to Client_list
     item = malloc(sizeof(*item));
     memset(item, 0, sizeof(*item));
-    memcpy(&item->client, sa, sizeof(*sa));
-
-    inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
-    sdr_log(SDR_LOG_INFO, "RX%d: client connection from %s:%d\n",
-            receiver, ipstr, ntohs(item->client.sin_port));
-
-    if(prncountry){
-        printcountry((struct sockaddr_in *)sa);
-    }
 
     bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
     bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
