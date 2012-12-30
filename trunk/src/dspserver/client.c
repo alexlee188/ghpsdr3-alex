@@ -775,6 +775,10 @@ void* client_thread(void* arg) {
                          (struct sockaddr *)&server_ssl, sizeof(server_ssl));
 
     event_base_loop(base, 0);
+
+    evconnlistener_free(listener);
+    SSL_CTX_free(ctx);
+
     return NULL;
 }
 
