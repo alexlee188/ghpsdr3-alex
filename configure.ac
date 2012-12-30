@@ -317,11 +317,15 @@ if test "x${have_event20_openssl}" = xyes; then
     AC_CHECK_HEADERS([event2/bufferevent_ssl.h], [], [have_event20_openssl=no])
 fi
 
+if test "x${have_event20_openssl}" = xyes; then
+    AC_CHECK_HEADERS([openssl/ssl.h], [], [have_event20_openssl=no])
+fi
+
 if test "x${have_event20_openssl}" = xno; then
     AC_MSG_ERROR([
 -----------------------------------
-  The libevent-2.0 library and header file with Openssl support required to build ghpsdr3.
-  Required lib is libevent_openssl
+  The libevent-2.0 library and header file with Openssl support required.
+  Required lib is libevent-openssl.  You also need to install libssl-dev.
 -----------------------------------])
 fi
 
