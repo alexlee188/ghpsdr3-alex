@@ -618,7 +618,7 @@ void errorcb(struct bufferevent *bev, short error, void *ctx)
     int rtp_client_count = 0;
     int is_rtp_client = 0;
 
-    if (error & BEV_EVENT_EOF) {
+    if ((error & BEV_EVENT_EOF) || ((error & BEV_EVENT_ERROR)&&(EVUTIL_SOCKET_ERROR()==0))) {
         /* connection has been closed, do any clean up here */
         /* ... */
             sem_wait(&bufferevent_semaphore);
@@ -736,7 +736,7 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     }
 }
 
-
+// used for testing ssl socket.  This is just an echo server.
 static void
 ssl_readcb(struct bufferevent * bev, void * arg)
 {
