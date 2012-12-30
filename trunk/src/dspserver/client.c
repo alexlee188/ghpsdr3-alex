@@ -919,7 +919,8 @@ void* client_thread(void* arg) {
     // add the ssl listener to event base
     listener = evconnlistener_new_bind(
                          base, do_accept_ssl, (void *)ctx,
-                         LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE, 1024,
+                         LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE | 
+                         LEV_OPT_THREADSAFE, 1024,
                          (struct sockaddr *)&server_ssl, sizeof(server_ssl));
 
     event_base_loop(base, 0);
