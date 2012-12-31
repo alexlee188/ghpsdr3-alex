@@ -929,6 +929,7 @@ void* client_thread(void* arg) {
 
     fprintf(stderr,"client_thread\n");
 
+    // setting up non-ssl open serverSocket
     serverSocket=socket(AF_INET,SOCK_STREAM,0);
     if(serverSocket==-1) {
         perror("client socket");
@@ -960,6 +961,7 @@ void* client_thread(void* arg) {
 	exit(1);
     }
 
+    // setting up ssl server
     memset(&server_ssl,0,sizeof(server_ssl));
     server_ssl.sin_family=AF_INET;
     server_ssl.sin_addr.s_addr=htonl(INADDR_ANY);
@@ -973,6 +975,7 @@ void* client_thread(void* arg) {
     // setup openssl thread-safe callbacks
     thread_setup();
 
+    // this is the Event base for both non-ssl and ssl servers
     base = event_base_new();
 
     // add the non-ssl listener to event base
@@ -985,9 +988,10 @@ void* client_thread(void* arg) {
                          LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE | 
                          LEV_OPT_THREADSAFE, 1024,
                          (struct sockaddr *)&server_ssl, sizeof(server_ssl));
-
+    // this will be an endless loop to service all the network events
     event_base_loop(base, 0);
 
+    // if for whatever reason the Event loop terminates, cleanup
     evconnlistener_free(listener);
     thread_cleanup();
     SSL_CTX_free(ctx);
@@ -1790,12 +1794,16 @@ void setprintcountry()
 void printcountry(struct sockaddr_in *client){
     pthread_t lookup_thread;
     int ret;
+    in_addr_t *client_addr;
+
+    client_addr = malloc(sizeof(*client_addr));
+    *client_addr = client->sin_addr.s_addr;
 
     /* This takes advantage of the fact that IPv4 addresses are 32 bits.
      * If or when this code is aware of other types of sockets, the
      * argument here will have to be renegotiated. */
     ret = pthread_create(&lookup_thread, NULL, printcountrythread,
-                         (void*)client->sin_addr.s_addr);
+                         (void*) client_addr);
     if (ret == 0) pthread_detach(lookup_thread);
 }
 
@@ -1808,7 +1816,8 @@ void *printcountrythread(void *arg)
   struct in_addr addr;
   char ipstr[16];
 
-  addr.s_addr = (in_addr_t)arg;
+  addr.s_addr = *(in_addr_t*)arg;
+  free(arg);
   inet_ntop(AF_INET, (void *)&addr, ipstr, sizeof(ipstr));
   /* Open the command for reading. */
   sprintf(sCmd,"wget -q -O - --post-data 'ip=%s' http://www.selfseo.com/ip_to_country.php 2>/dev/null | sed -e '/ is assigned to /!d' -e 's/.*border=1> \\([^<]*\\).*/\\1/'",
