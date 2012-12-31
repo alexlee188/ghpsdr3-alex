@@ -69,7 +69,7 @@ void Ctl::on_btnTune_clicked(bool checked)
 
     ui->btnMox->setChecked(false); //Override the MOX button
     if(checked) { //We are going from Rx to Tx
-        ui->btnTune->setChecked(false);
+        ui->btnTune->setChecked(true);
         ptt = true;
         ui->pwrSlider->setValue(TunePwr);
     }
