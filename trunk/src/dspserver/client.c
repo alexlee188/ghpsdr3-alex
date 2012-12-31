@@ -1799,9 +1799,6 @@ void printcountry(struct sockaddr_in *client){
     client_addr = malloc(sizeof(*client_addr));
     *client_addr = client->sin_addr.s_addr;
 
-    /* This takes advantage of the fact that IPv4 addresses are 32 bits.
-     * If or when this code is aware of other types of sockets, the
-     * argument here will have to be renegotiated. */
     ret = pthread_create(&lookup_thread, NULL, printcountrythread,
                          (void*) client_addr);
     if (ret == 0) pthread_detach(lookup_thread);
