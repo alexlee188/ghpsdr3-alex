@@ -82,6 +82,7 @@ public slots:
     void socketError(QAbstractSocket::SocketError socketError);
     void socketData();
     void processBuffer();
+    void ssl_Error(QList<QSslError>);
 
 signals:
     void isConnected();

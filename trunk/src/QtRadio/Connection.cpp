@@ -94,12 +94,14 @@ void Connection::connect(QString h,int p) {
     QObject::connect(sslSocket, SIGNAL(readyRead()),
             this, SLOT(socketData()));
 
+    QObject::connect(sslSocket, SIGNAL(sslErrors(QList<QSslError>)),this,SLOT(ssl_Error(QList<QSslError>)));
+
     // set the initial state
     state=READ_HEADER_TYPE;
     // cleanup dirty value eventually left from previous usage
     bytes=0;
     qDebug() << "Connection::connect: connectToHost: " << host << ":" << port;
-    sslSocket->connectToHost(host,port);
+    sslSocket->connectToHostEncrypted(host,port);
 
 }
 
@@ -155,6 +157,10 @@ void Connection::socketError(QAbstractSocket::SocketError socketError) {
     emit disconnected(sslSocket->errorString());
     // memory leakeage !! 
     // sslSocket=NULL;
+}
+
+void Connection::ssl_Error(QList<QSslError> error){
+    sslSocket->ignoreSslErrors();
 }
 
 void Connection::connected() {
