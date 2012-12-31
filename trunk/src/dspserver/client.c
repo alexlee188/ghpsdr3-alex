@@ -847,7 +847,7 @@ SSL_CTX *evssl_init(void)
            "  openssl x509 -req -days 365 -in cert.req -signkey pkey -out cert");
         return NULL;
     }
-    SSL_CTX_set_options(server_ctx, SSL_OP_NO_SSLv2);
+    SSL_CTX_set_options(server_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_COMPRESSION);
 
     return server_ctx;
 }
