@@ -489,7 +489,7 @@ void UI::fpsChanged(int f) {
 void UI::setFPS(void){
     QString command;
     command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumFrame->width() << " " << fps;
-    //connection.sendCommand(command);
+    connection.sendCommand(command);
 }
 
 void UI::resizeEvent(QResizeEvent *){
