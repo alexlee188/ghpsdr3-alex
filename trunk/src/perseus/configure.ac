@@ -14,7 +14,7 @@ AC_CONFIG_MACRO_DIR([build-aux])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
+
 
 #
 # Checking for build cpu
@@ -73,15 +73,59 @@ AM_PROG_CC_C_O
 
 # AC_CHECK_LIB([usb], [usb_init])
 
-AC_CHECK_LIB([portaudio], [Pa_Initialize])
+AC_CHECK_LIB([portaudio], [Pa_Initialize], [],
+             [
+              echo "-------------------------------------------------"
+              echo ""
+              echo "Error! You need to have portaudio library around."
+              echo "Ubuntu/Debian: sudo apt-get install portaudio19-dev"
+              echo ""
+              echo "-------------------------------------------------"
+              exit -1
+             ])
 
-AC_CHECK_LIB([pthread], [pthread_create])
+AC_CHECK_LIB([pthread], [pthread_create], [],
+             [
+              echo "-------------------------------------------------"
+              echo ""
+              echo "Error! You need to have pthread library around."
+              echo ""
+              echo "-------------------------------------------------"
+              exit -1
+             ])
 
-AC_CHECK_LIB([samplerate], [src_new])
+AC_CHECK_LIB([samplerate], [src_new], [],
+             [
+              echo "-------------------------------------------------"
+              echo ""
+              echo "Error! You need to have samplerate library around."
+              echo "Ubuntu/Debian: sudo apt-get install libsamplerate0-dev"
+              echo ""
+              echo "-------------------------------------------------"
+              exit -1
+             ])
 
-AC_CHECK_LIB([perseus-sdr], [main])
+AC_CHECK_LIB([perseus-sdr], [perseus_init], [],
+             [
+              echo "-------------------------------------------------"
+              echo ""
+              echo "Error! You need to have perseus-sdr library around."
+              echo "In order to build it, please follow instructions in http://code.google.com/p/libperseus-sdr/source/browse/trunk/README"
+              echo ""
+              echo "-------------------------------------------------"
+              exit -1
+             ])
 
-AC_CHECK_LIB([boost_program_options], [perseus_init])
+AC_CHECK_LIB([boost_program_options], [main], [],
+             [
+              echo "-------------------------------------------------"
+              echo ""
+              echo "Error! You need to have boost library around."
+              echo "Ubuntu/Debian: sudo apt-get install libboost-dev libboost-all-dev"
+              echo ""
+              echo "-------------------------------------------------"
+              exit -1
+             ])
 
 # Checks for header files.
 AC_FUNC_ALLOCA
