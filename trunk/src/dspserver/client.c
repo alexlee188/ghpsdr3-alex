@@ -618,8 +618,8 @@ void errorcb(struct bufferevent *bev, short error, void *ctx)
     int rtp_client_count = 0;
     int is_rtp_client = 0;
 
-    if ((error & BEV_EVENT_EOF) || ((error & BEV_EVENT_ERROR)&&(EVUTIL_SOCKET_ERROR()==0))) {
-        /* connection has been closed, do any clean up here */
+    if ((error & BEV_EVENT_EOF) || (error & BEV_EVENT_ERROR)) {
+        /* connection has been closed, or error has occured, do any clean up here */
         /* ... */
             sem_wait(&bufferevent_semaphore);
             for (item = TAILQ_FIRST(&Client_list); item != NULL; item = TAILQ_NEXT(item, entries)){
@@ -670,7 +670,7 @@ void errorcb(struct bufferevent *bev, short error, void *ctx)
         /* must be a timeout event handle, handle it */
         /* ... */
     } else if (error & BEV_EVENT_CONNECTED){
-        sdr_log(SDR_LOG_INFO, "errorcb: finished requested connection\n");
+        sdr_log(SDR_LOG_INFO, "BEV_EVENT_CONNECTED: completed SSL handshake connection\n");
     }
 
 }
