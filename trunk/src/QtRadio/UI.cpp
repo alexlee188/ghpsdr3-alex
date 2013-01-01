@@ -489,7 +489,8 @@ void UI::fpsChanged(int f) {
 void UI::setFPS(void){
     QString command;
     command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumFrame->width() << " " << fps;
-    connection.sendCommand(command);
+    // disable timer based spectrum fps for ssl debug
+    //connection.sendCommand(command);
 }
 
 void UI::resizeEvent(QResizeEvent *){
@@ -774,12 +775,12 @@ void UI::disconnected(QString message) {
 }
 
 void UI::updateSpectrum() {
-
-    if (!protocol3){
+    // temporary using old protocol to update spectrum for ssl debug
+    //if (!protocol3){
         QString command;
         command.clear(); QTextStream(&command) << "getSpectrum " << widget.spectrumFrame->width();
         connection.sendCommand(command);
-    }
+    //}
     if(infotick > 25){
         connection.sendCommand("q-master");
        if (connection.getSlave() == true) connection.sendCommand("q-info"); // get master freq changes
