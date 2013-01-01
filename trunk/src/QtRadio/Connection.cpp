@@ -47,7 +47,7 @@
 
 Connection::Connection() {
     qDebug() << "Connection::Connection";
-    tcpSocket=NULL;
+    sslSocket=NULL;
     state=READ_HEADER_TYPE;
     bytes=0;
     hdr=(char*)malloc(HEADER_SIZE_2_1);  // HEADER_SIZE is larger than AUTIO_HEADER_SIZE so it is OK
@@ -76,30 +76,32 @@ void Connection::connect(QString h,int p) {
     port=p;
 
     // cleanup previous object, if any
-    if (tcpSocket) {
-        delete tcpSocket;
+    if (sslSocket) {
+        delete sslSocket;
     }
 
-    tcpSocket=new QTcpSocket(this);
+    sslSocket=new QSslSocket(this);
 
-    QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
+    QObject::connect(sslSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(socketError(QAbstractSocket::SocketError)));
 
-    QObject::connect(tcpSocket, SIGNAL(connected()),
+    QObject::connect(sslSocket, SIGNAL(encrypted()),
             this, SLOT(connected()));
 
-    QObject::connect(tcpSocket, SIGNAL(disconnected()),
+    QObject::connect(sslSocket, SIGNAL(disconnected()),
             this, SLOT(disconnected()));
 
-    QObject::connect(tcpSocket, SIGNAL(readyRead()),
+    QObject::connect(sslSocket, SIGNAL(readyRead()),
             this, SLOT(socketData()));
+
+    QObject::connect(sslSocket, SIGNAL(sslErrors(QList<QSslError>)),this,SLOT(ssl_Error(QList<QSslError>)));
 
     // set the initial state
     state=READ_HEADER_TYPE;
     // cleanup dirty value eventually left from previous usage
     bytes=0;
     qDebug() << "Connection::connect: connectToHost: " << host << ":" << port;
-    tcpSocket->connectToHost(host,port);
+    sslSocket->connectToHostEncrypted(host,port);
 
 }
 
@@ -107,17 +109,17 @@ void Connection::disconnected() {
     qDebug() << "Connection::disconnected: emits: " << "Remote disconnected";
     emit disconnected("Remote disconnected");
 
-    if(tcpSocket!=NULL) {
-        QObject::disconnect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
+    if(sslSocket!=NULL) {
+        QObject::disconnect(sslSocket, SIGNAL(error(QAbstractSocket::SocketError)),
                 this, SLOT(socketError(QAbstractSocket::SocketError)));
 
-        QObject::disconnect(tcpSocket, SIGNAL(connected()),
+        QObject::disconnect(sslSocket, SIGNAL(connected()),
                 this, SLOT(connected()));
 
-        QObject::disconnect(tcpSocket, SIGNAL(disconnected()),
+        QObject::disconnect(sslSocket, SIGNAL(disconnected()),
                 this, SLOT(disconnected()));
 
-        QObject::disconnect(tcpSocket, SIGNAL(readyRead()),
+        QObject::disconnect(sslSocket, SIGNAL(readyRead()),
                 this, SLOT(socketData()));
 
     }
@@ -127,10 +129,10 @@ void Connection::disconnect() {
 
     qDebug() << "Connection::disconnect Line " << __LINE__;
 
-    if(tcpSocket!=NULL) {
-        tcpSocket->close();
+    if(sslSocket!=NULL) {
+        sslSocket->close();
         // object deletion moved in connect method 
-        // tcpSocket=NULL;
+        // sslSocket=NULL;
 
     }
     // close the hardware panel, if any
@@ -149,16 +151,20 @@ void Connection::socketError(QAbstractSocket::SocketError socketError) {
             qDebug() << "Remote host refused connection";
             break;
         default:
-            qDebug() << "Socket Error: " << tcpSocket->errorString();
+            qDebug() << "Socket Error: " << sslSocket->errorString();
     }
 
-    emit disconnected(tcpSocket->errorString());
+    emit disconnected(sslSocket->errorString());
     // memory leakeage !! 
-    // tcpSocket=NULL;
+    // sslSocket=NULL;
+}
+
+void Connection::ssl_Error(QList<QSslError> error){
+    sslSocket->ignoreSslErrors();
 }
 
 void Connection::connected() {
-    qDebug() << "Connection::Connected" << tcpSocket->isValid();
+    qDebug() << "Connection::Connected" << sslSocket->isValid();
     emit isConnected();
     state=READ_HEADER_TYPE;
     lastFreq = 0;
@@ -178,12 +184,12 @@ void Connection::sendCommand(QString command) {
 
     //qDebug() << "Connection::sendCommand: "<<command;
     for (i=0; i < SEND_BUFFER_SIZE; i++) buffer[i] = 0;
-    if(tcpSocket!=NULL && tcpSocket->isValid() && tcpSocket->isWritable()) {
+    if(sslSocket!=NULL && sslSocket->isValid() && sslSocket->isWritable()) {
         mutex.lock();
         strcpy(buffer,command.toUtf8().constData());
-        bytesWritten = tcpSocket->write(buffer,SEND_BUFFER_SIZE);
+        bytesWritten = sslSocket->write(buffer,SEND_BUFFER_SIZE);
         if (bytesWritten != SEND_BUFFER_SIZE) qDebug() << "sendCommand: write error";
-        //tcpSocket->flush();
+        //sslSocket->flush();
         mutex.unlock();
     }
 }
@@ -195,14 +201,14 @@ void Connection::sendAudio(int length, unsigned char* data) {
     int bytesWritten;
 
     for (i=0; i < SEND_BUFFER_SIZE; i++) buffer[i] = 0;
-    if(tcpSocket!=NULL && tcpSocket->isValid() && tcpSocket->isWritable()) {
+    if(sslSocket!=NULL && sslSocket->isValid() && sslSocket->isWritable()) {
         QTextStream(&command) << "mic ";
         strcpy(buffer,command.toUtf8().constData());
         memcpy(&buffer[4], data,length);
         mutex.lock();
-        bytesWritten = tcpSocket->write(buffer, SEND_BUFFER_SIZE);
+        bytesWritten = sslSocket->write(buffer, SEND_BUFFER_SIZE);
         if (bytesWritten != SEND_BUFFER_SIZE) qDebug() << "sendCommand: write error";
-        //tcpSocket->flush();
+        //sslSocket->flush();
         mutex.unlock();
     }
 }
@@ -221,10 +227,10 @@ void Connection::socketData() {
 
     if (bytes < 0) {
         //fprintf(stderr,"QtRadio: FATAL: INVALID byte counter: %d\n", bytes);
-        //tcpSocket->close();
+        //sslSocket->close();
         return;
     }            
-    toRead=tcpSocket->bytesAvailable();
+    toRead=sslSocket->bytesAvailable();
     if (toRead <= 0) {
         return;
     }
@@ -232,10 +238,10 @@ void Connection::socketData() {
         //fprintf (stderr, "%d of %d [%d]\n", bytesRead, toRead, state);
         switch(state) {
         case READ_HEADER_TYPE:
-            thisRead=tcpSocket->read(&hdr[bytes],3 - bytes);
+            thisRead=sslSocket->read(&hdr[bytes],3 - bytes);
             if (thisRead < 0) {
                fprintf(stderr,"QtRadio: FATAL: READ_AUDIO_HEADER: error in read: %d\n", thisRead);
-               tcpSocket->close();
+               sslSocket->close();
                return;
             }
             bytes+=thisRead;
@@ -287,10 +293,10 @@ void Connection::socketData() {
 
         case READ_AUDIO_HEADER:
             //fprintf (stderr, "READ_AUDIO_HEADER: hdr size: %d bytes: %d\n", AUDIO_HEADER_SIZE, bytes);
-            thisRead=tcpSocket->read(&hdr[bytes],AUDIO_HEADER_SIZE - bytes);
+            thisRead=sslSocket->read(&hdr[bytes],AUDIO_HEADER_SIZE - bytes);
             if (thisRead < 0) {
                fprintf(stderr,"QtRadio: FATAL: READ_AUDIO_HEADER: error in read: %d\n", thisRead);
-               tcpSocket->close();
+               sslSocket->close();
                return;
             }
             bytes+=thisRead;
@@ -306,10 +312,10 @@ void Connection::socketData() {
 
          case READ_HEADER:
             //fprintf (stderr, "READ_HEADER: hdr size: %d bytes: %d\n", header_size, bytes);
-            thisRead=tcpSocket->read(&hdr[bytes],header_size - bytes);
+            thisRead=sslSocket->read(&hdr[bytes],header_size - bytes);
             if (thisRead < 0) {
                fprintf(stderr,"QtRadio: FATAL: READ_HEADER: error in read: %d\n", thisRead);
-               tcpSocket->close();
+               sslSocket->close();
                return;
             }
             bytes+=thisRead;
@@ -329,10 +335,10 @@ void Connection::socketData() {
 
         case READ_BUFFER:
             //fprintf (stderr, "READ_BUFFER: length: %d bytes: %d\n", length, bytes);
-            thisRead=tcpSocket->read(&buffer[bytes],length-bytes);
+            thisRead=sslSocket->read(&buffer[bytes],length-bytes);
             if (thisRead < 0) {
                fprintf(stderr,"QtRadio: FATAL: READ_BUFFER: error in read: %d\n", thisRead);
-               tcpSocket->close();
+               sslSocket->close();
                return;
             }
             bytes+=thisRead;
@@ -349,7 +355,7 @@ void Connection::socketData() {
             break;
 
         case READ_RTP_REPLY:
-            thisRead=tcpSocket->read(&hdr[bytes],7-bytes); // length and port
+            thisRead=sslSocket->read(&hdr[bytes],7-bytes); // length and port
             bytes+=thisRead;
             if(bytes==7) {
                 /*
@@ -366,10 +372,10 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
 
         case READ_ANSWER:
             //qDebug() << "Connection READ ANSWER";
-            thisRead=tcpSocket->read(&ans[bytes],answer_size - bytes);
+            thisRead=sslSocket->read(&ans[bytes],answer_size - bytes);
             if (thisRead < 0) {
                fprintf(stderr,"QtRadio: FATAL: READ_BUFFER: error in read: %d\n", thisRead);
-               tcpSocket->close();
+               sslSocket->close();
                return;
             }
             bytes+=thisRead;

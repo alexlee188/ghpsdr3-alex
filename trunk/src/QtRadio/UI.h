@@ -74,7 +74,7 @@
 #include "hardware.h"
 #include "powermate.h"
 
-#define DSPSERVER_BASE_PORT 8000
+#define DSPSERVER_BASE_PORT 9000
 
 #define AGC_LONG 1
 #define AGC_SLOW 2

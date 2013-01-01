@@ -17,7 +17,7 @@
 
 #include "Connection.h"
 
-#define BANDSCOPE_PORT 9000
+#define BANDSCOPE_PORT 7000
 
 namespace Ui {
     class Bandscope;

@@ -28,7 +28,7 @@
 
 #include <QObject>
 #include <QDebug>
-#include <QTcpSocket>
+#include <QtNetwork/QSslSocket>
 #include <QTimer>
 #include <QMutex>
 #include <QQueue>
@@ -82,6 +82,7 @@ public slots:
     void socketError(QAbstractSocket::SocketError socketError);
     void socketData();
     void processBuffer();
+    void ssl_Error(QList<QSslError>);
 
 signals:
     void isConnected();
@@ -113,7 +114,7 @@ private:
 
     QString host;
     int port;
-    QTcpSocket* tcpSocket;
+    QSslSocket* sslSocket;
     QMutex mutex;
     int state;
     char* hdr;

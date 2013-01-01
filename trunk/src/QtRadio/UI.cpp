@@ -489,7 +489,8 @@ void UI::fpsChanged(int f) {
 void UI::setFPS(void){
     QString command;
     command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumFrame->width() << " " << fps;
-    connection.sendCommand(command);
+    // disable timer based spectrum fps for ssl debug
+    //connection.sendCommand(command);
 }
 
 void UI::resizeEvent(QResizeEvent *){
@@ -774,12 +775,12 @@ void UI::disconnected(QString message) {
 }
 
 void UI::updateSpectrum() {
-
-    if (!protocol3){
+    // temporary using old protocol to update spectrum for ssl debug
+    //if (!protocol3){
         QString command;
         command.clear(); QTextStream(&command) << "getSpectrum " << widget.spectrumFrame->width();
         connection.sendCommand(command);
-    }
+    //}
     if(infotick > 25){
         connection.sendCommand("q-master");
        if (connection.getSlave() == true) connection.sendCommand("q-info"); // get master freq changes
@@ -2094,7 +2095,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + " opengl 26 Dec 2012");
+                   + getversionstring() +  message + " opengl-ssl 1 Jan 2013");
     lastmessage = message;
 
 }
