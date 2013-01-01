@@ -428,19 +428,22 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
         sem_post(&spectrum_semaphore);
         sem_wait(&bufferevent_semaphore);
         TAILQ_FOREACH(item, &Client_list, entries){
-            //sem_post(&bufferevent_semaphore);
+            sem_post(&bufferevent_semaphore);
             if(item->fps > 0) {
                 if (item->frame_counter-- <= 1) {
                     char *client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
                     sem_wait(&spectrum_semaphore);
                     client_set_samples(client_samples,spectrumBuffer,item->samples);
+                    // additional protection for ssl
+                    //sem_wait(&bufferevent_semaphore);
                     bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
+                    //sem_post(&bufferevent_semaphore);
                     sem_post(&spectrum_semaphore);
                     free(client_samples);
                     item->frame_counter = (item->fps == 0) ? 50 : 50 / item->fps;
                 }
             }
-            //sem_wait(&bufferevent_semaphore);
+            sem_wait(&bufferevent_semaphore);
         }
         sem_post(&bufferevent_semaphore);
 
@@ -1007,13 +1010,13 @@ void writecb(struct bufferevent *bev, void *ctx){
     while ((item = audio_stream_queue_remove()) != NULL){
         sem_wait(&bufferevent_semaphore);
         TAILQ_FOREACH(client_item, &Client_list, entries){
-            //sem_post(&bufferevent_semaphore);
+            sem_post(&bufferevent_semaphore);
             if(client_item->rtp == connection_tcp) {
                 bufferevent_write(client_item->bev, item->buf, item->length);
             }
             else if (client_item->rtp == connection_rtp)
                 rtp_send(client_item->session,&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
-            //sem_wait(&bufferevent_semaphore);
+            sem_wait(&bufferevent_semaphore);
         }
         sem_post(&bufferevent_semaphore);
 
@@ -1932,9 +1935,9 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 
 	reply = (char *) malloc(length+4);		// need to include the terminating null
 	memcpy(reply, answer, length+4);
-        sem_wait(&bufferevent_semaphore);
+        //sem_wait(&bufferevent_semaphore);
 	bufferevent_write(bev, reply, strlen(answer) );
-        sem_post(&bufferevent_semaphore);
+        //sem_post(&bufferevent_semaphore);
 
         free(reply);
 }
