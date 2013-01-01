@@ -434,10 +434,7 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
                     char *client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
                     sem_wait(&spectrum_semaphore);
                     client_set_samples(client_samples,spectrumBuffer,item->samples);
-                    // additional protection for ssl
-                    //sem_wait(&bufferevent_semaphore);
                     bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
-                    //sem_post(&bufferevent_semaphore);
                     sem_post(&spectrum_semaphore);
                     free(client_samples);
                     item->frame_counter = (item->fps == 0) ? 50 : 50 / item->fps;
@@ -748,9 +745,7 @@ ssl_readcb(struct bufferevent * bev, void * arg)
     printf("Received %zu bytes\n", evbuffer_get_length(in));
     printf("----- data ----\n");
     printf("%.*s\n", (int)evbuffer_get_length(in), evbuffer_pullup(in, -1));
-    sem_wait(&bufferevent_semaphore);
     bufferevent_write_buffer(bev, in);
-    sem_post(&bufferevent_semaphore);
 }
 
 /**
@@ -1185,9 +1180,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             }
             char *client_samples=malloc(BUFFER_HEADER_SIZE+samples);
             client_set_samples(client_samples,spectrumBuffer,samples);
-            sem_wait(&bufferevent_semaphore);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
-            sem_post(&bufferevent_semaphore);
             sem_post(&spectrum_semaphore);
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
