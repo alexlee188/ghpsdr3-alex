@@ -910,8 +910,13 @@ void readcb(struct bufferevent *bev, void *ctx){
 
         if (message[0] == '*') {
            fprintf(stderr,"HARDWARE DIRECTED: message: '%s'\n",message);
-           ozySendStarCommand (message);
-           answer_question(message,"slave", bev);
+           if (!slave) {
+              // if master, forward the message to the hardware
+              ozySendStarCommand (message); 
+              answer_question(message,"slave", bev);
+           } else {
+              // in slave mode don't forward the message
+           }
            continue;
         } 
 
