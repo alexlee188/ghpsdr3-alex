@@ -37,7 +37,8 @@ Bridgewater, NJ 08807
 #define RINGMULT (4)
 #define METERMULT (20)
 #define SPECMULT (4)
-#define DEFRATE (48000.0)
+//#define DEFRATE (48000.0) //by w3sz changed
+#define DEFRATE (192000.0) //by w3sz
 #define DEFSIZE (4096)
 #define DEFMODE (USB)
 #define DEFSPEC (4096)
