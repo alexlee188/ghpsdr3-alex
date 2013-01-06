@@ -32,7 +32,7 @@ Bridgewater, NJ 08807
 */
 
 #include <common.h>
-
+extern int W3SZBUF; //by w3sz
 //========================================================================
 /* initialization and termination */
 
@@ -79,6 +79,7 @@ setup_all (REAL rate, int buflen, SDRMODE mode, char *wisdom,
 	uni[thread].samplerate = rate;
 	uni[thread].buflen = buflen;
 	uni[thread].mode.sdr = mode;
+	uni[thread].bufsz=specsize; //by w3sz
 	if (thread != 1) uni[thread].mode.trx = RX;
 	else uni[thread].mode.trx = TX;
 

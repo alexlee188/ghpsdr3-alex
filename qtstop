@@ -1,0 +1,4 @@
+#!/bin/bash
+killall QtRadio
+killall dspserver
+killall hpsdr-server
