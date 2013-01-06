@@ -1,9 +1,9 @@
 
 [Anjuta]
-Geometry=1180x937+724+24
+Geometry=1180x937+738+24
 
 [File Loader]
-Files=../../trunk/src/DttSP/defs.h#41%%%../../trunk/src/DttSP/common.h#78%%%../../trunk/src/DttSP/sdrexport.h#84%%%../../trunk/src/DttSP/winmain.c#745%%%../../trunk/src/DttSP/sdr.c#82
+Files=../../trunk/src/dspserver/client.c#181
 
 [Document Manager]
 bookmarks=<?xml version="1.0" encoding="UTF-8"?>\n<bookmarks/>\n
@@ -19,6 +19,10 @@ BuildArgs/Default=--enable-maintainer-mode
 BuildArgs/Debug=--enable-maintainer-mode 'CFLAGS=-g -O0' 'CXXFLAGS=-g -O0' 'JFLAGS=-g -O0' 'FFLAGS=-g -O0'
 BuildArgs/Profiling=--enable-maintainer-mode 'CFLAGS=-g -pg' 'CXXFLAGS=-g -pg' 'JFLAGS=-g -pg' 'FFLAGS=-g -pg'
 BuildArgs/Optimized=--enable-maintainer-mode 'CFLAGS=-O2' 'CXXFLAGS=-O2' 'JFLAGS=-O2' 'FFLAGS=-O2'
+
+[Project Manager]
+Shortcut=ghpsdr3-alex-new-lgfft//softrock//softrock%%%ghpsdr3-alex-new-lgfft//DttSP//libDttSP.a%%%ghpsdr3-alex-new-lgfft//dspserver//dspserver%%%ghpsdr3-alex-new-lgfft//dspserver//libsdrutil.a%%%ghpsdr3-alex-new-lgfft//widget-server//widget-server%%%ghpsdr3-alex-new-lgfft//server//hpsdr-server%%%ghpsdr3-alex-new-lgfft//hiqsdr//hiqsdr-test%%%ghpsdr3-alex-new-lgfft//hiqsdr//hiqsdr-server%%%ghpsdr3-alex-new-lgfft//sdriq//sdriq-test%%%ghpsdr3-alex-new-lgfft//sdriq//sdriq-server
+Expand=ghpsdr3-alex-new-lgfft%%%ghpsdr3-alex-new-lgfft//DttSP
 
 [Debugger]
 Stop at beginning=2

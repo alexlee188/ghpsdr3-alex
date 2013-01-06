@@ -32,7 +32,6 @@ Bridgewater, NJ 08807
 */
 
 #include <common.h>
-extern int W3SZBUF; //by w3sz
 //========================================================================
 /* initialization and termination */
 
