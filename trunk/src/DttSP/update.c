@@ -1436,7 +1436,6 @@ Process_ComplexSpectrum (unsigned int thread, float *results)
 	//sem_post (&top[thread].sync.upd.sem);
 	compute_complex_spectrum (&uni[thread].spec);
 	memcpy ((void *) results, uni[thread].spec.coutput, uni[thread].spec.size * sizeof (COMPLEX));
-//	fprintf(stderr,"%s %i%c\n","Proces ComplexSpectrum uni[thread].spec.size)",uni[thread].spec.size),"\n",fflush(stderr);
 }
 
 DttSP_EXP void
@@ -1449,12 +1448,10 @@ Process_Spectrum (unsigned int thread, float *results)
 	//sem_post (&top[thread].sync.upd.sem);
 	compute_spectrum (&uni[thread].spec);
 	memcpy ((void *) results, uni[thread].spec.output, uni[thread].spec.size * sizeof (float));
-
-//	fprintf(stderr,"%s %i%c\n","Proces Spectrum uni[thread].spec.size)",uni[thread].spec.size),"\n",fflush(stderr);
 }
 
 DttSP_EXP void
-Process_Panadapter (unsigned int thread, float *results) //this is the  process used to send spectrum data to QtRadio
+Process_Panadapter (unsigned int thread, float *results)
 {
 	extern BOOLEAN reset_em;
 	//sem_wait (&top[thread].sync.upd.sem);
@@ -1475,7 +1472,6 @@ Process_Panadapter (unsigned int thread, float *results) //this is the  process 
 	//sem_post (&top[thread].sync.upd.sem);
 	compute_spectrum (&uni[thread].spec);
 	memcpy ((void *) results, uni[thread].spec.output, uni[thread].spec.size * sizeof (float));
-//	fprintf(stderr,"%s %i%c\n","Proces Panadapter uni[thread].spec.size)",uni[thread].spec.size),"\n",fflush(stderr);
 }
 
 DttSP_EXP void
