@@ -8,8 +8,8 @@
 import os
 import sys 
 import time 
-from PyQt4.QtCore import * 
-from PyQt4.QtGui import * 
+from PyQt5.QtCore import * 
+from PyQt5.QtGui import * 
 import subprocess
 import json
 
@@ -46,14 +46,14 @@ default_cfg = {
        },
 
       'widget-server': {
-          'startCommand': "widget-server",
+          'startCommand': "widget-server --metis",
           'status':  { "Cannot locate Ozy": 'abnormally ended',        
                        "Listening for TCP connections on port 11000": 'started',     
                       }                                                              
        },
 
       'hpsdr-server': {
-          'startCommand': "hpsdr-server --dither off",
+          'startCommand': "hpsdr-server --metis --dither off",
           'status':  { "Cannot locate Ozy": 'abnormally ended',        
                        "Listening for TCP connections on port 11000": 'started',     
                       }                                                              

@@ -24,8 +24,8 @@
 */
 
 #include "Spectrum.h"
-
-#define MAX_WIDTH 4096
+//#define MAX_WIDTH 4096
+#define MAX_WIDTH 262144 //w3sz
 
 Spectrum::Spectrum() {
 }

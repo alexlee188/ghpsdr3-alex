@@ -439,5 +439,5 @@
      server->setClassE(params["classe"]);
      server->setLineIn(params["linein"]);
      server->setMicBoost(params["micboost"]);
-     server->setMicGain(atof(params["micgain"].toAscii().constData()));
+     server->setMicGain(atof(params["micgain"].toLatin1().constData()));
  }

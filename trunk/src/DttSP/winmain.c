@@ -37,6 +37,9 @@ Bridgewater, NJ 08807
 // elementary defaults
 struct _loc loc[3];
 extern unsigned int threadno;
+extern int W3SZBUF; //by w3sz
+extern int *W3SZBUFptr;  //by w3sz
+extern int ptrctr; //by w3sz
 /////////////////////////////////////////////////////////////////////////
 // most of what little we know here about the inner loop,
 // functionally speaking
@@ -284,7 +287,7 @@ Audio_Callback (float *input_l, float *input_r, float *output_l,
 
 	if (b)
 	{
-		//fprintf(stdout,"Audio_Callback: call reset_system_audio\n"), fflush(stdout);
+		//fprintf(stderr,"Audio_Callback: call reset_system_audio\n"), fflush(stderr);
 		reset_system_audio(nframes);
 		memset (output_l, 0, nframes * sizeof (float));
 		memset (output_r, 0, nframes * sizeof (float));
@@ -314,7 +317,7 @@ Audio_Callback (float *input_l, float *input_r, float *output_l,
 		}
 		else
 		{	// rb pathology
-			//fprintf(stdout,"Audio_Callback-2: rb out pathology\n"), fflush(stdout);
+			//fprintf(stderr,"Audio_Callback-2: rb out pathology\n"), fflush(stderr);
 //			reset_system_audio(nframes);
 //			memset (output_l, 0, nframes * sizeof (float));
 //			memset (output_r, 0, nframes * sizeof (float));
@@ -331,7 +334,7 @@ Audio_Callback (float *input_l, float *input_r, float *output_l,
 		}
 		else
 		{	// rb pathology
-			//fprintf(stdout,"Audio_Callback-3: rb in pathology\n"), fflush(stdout);
+			//fprintf(stderr,"Audio_Callback-3: rb in pathology\n"), fflush(stderr);
 //			reset_system_audio(nframes);
 //			memset (output_l, 0, nframes * sizeof (float));
 //			memset (output_r, 0, nframes * sizeof (float));
@@ -368,7 +371,7 @@ Audio_Callback2 (float **input, float **output, unsigned int nframes)
 	if (b)
 	{
 		//fprintf(stderr, "reset_em!\n"); fflush(stderr);
-		//fprintf(stdout,"Audio_Callback2: reset_em = TRUE\n"), fflush(stdout);
+		//fprintf(stderr,"Audio_Callback2: reset_em = TRUE\n"), fflush(stderr);
 		reset_system_audio(nframes);
 		for(thread=0;thread<threadno;thread++) {
 			memset (output[2*thread], 0, nframes * sizeof (float));
@@ -741,7 +744,17 @@ setup_defaults (unsigned int thread)
 	loc[thread].def.size = DEFSIZE;
 	loc[thread].def.nrx = MAXRX;
 	loc[thread].def.mode = DEFMODE;
-	loc[thread].def.spec = DEFSPEC;
+
+  loc[thread].def.spec = W3SZBUF; //by w3sz changed DEFSPEC to W3SZBUF which is located in common.h
+  fprintf(stderr, "%s%i%s%i%s%c", " winmain line 749 setup_defaults W3SZBUF = ", W3SZBUF, " loc[thread].def.spec = ", loc[thread].def.spec, "\n", fflush(stderr));  //by w3sz
+	if(ptrctr>0)  
+	{
+//		loc[thread].def.spec = *W3SZBUFptr;
+		  loc[thread].def.spec = W3SZBUF;
+		  fprintf(stderr, "%s%i%s%i%s%c", " winmain line 754 setup_defaults W3SZBUF = ", W3SZBUF, " loc[thread].def.spec = ", loc[thread].def.spec, "\n", fflush(stderr));  //by w3sz
+
+	}
+  //  loc[thread].def.spec = DEFSPEC;  //changed by w3sz
 	loc[thread].mult.ring = RINGMULT;
 	loc[thread].def.comp = DEFCOMP;
 }
@@ -791,6 +804,7 @@ setup (char *app_data_path)
 				app_data_path, loc[thread].def.spec, loc[thread].def.nrx, loc[thread].def.comp, thread);
 		//fprintf(stderr,"setup: workspace done thread %u\n", thread),fflush(stderr);
 
+		fprintf(stderr, "%s%i%s%i%s%c", " winmain setup line 805 specsize = ",loc[thread].def.spec , " winmain W3SZBUF =", W3SZBUF, "\n", fflush(stderr));
 		setup_local_audio (thread);
 		//fprintf(stderr,"setup: setup_local_audio done\n"),fflush(stderr);
 		setup_system_audio (thread);
@@ -808,6 +822,8 @@ setup (char *app_data_path)
 		reset_spectrum (thread);
 		reset_counters (thread);
 		fprintf(stderr,"setup sdr thread %0u: done\n",thread),fflush(stderr);
+		fprintf(stderr,"setup in winmain.c done\n",thread),fflush(stderr);
+
 	}
 }
 
@@ -839,6 +855,7 @@ reset_for_buflen (unsigned int thread, int new_buflen)
 	reset_meters (thread);
 	reset_spectrum (thread);
 	reset_counters (thread);
+fprintf(stderr,"reset_for_buflen in winmain.c done\n",thread),fflush(stderr);
 
 	return 0;
 }
@@ -873,6 +890,8 @@ reset_for_samplerate (REAL new_samplerate)
 		reset_meters (thread);
 		reset_spectrum (thread);
 		reset_counters (thread);
+	fprintf(stderr,"reset_for_samplerate in winmain.c done\n",thread),fflush(stderr);
+	
 	}
 	return 0;
 }

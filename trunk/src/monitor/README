@@ -4,7 +4,7 @@ monitor accepts the following command on the command line.
 
 --receiver 0|1|2|3 (default 0)
 
-    Receiver that this client is attached to (Please note singular). Also please not that receivers are 0 based. 
+    Receiver that this client is attached to (Please note singular). Also please note that receivers are 0 based. 
 
 --server 0.0.0.0 (default 127.0.0.1)
 

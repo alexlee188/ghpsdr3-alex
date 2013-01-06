@@ -1,0 +1,6 @@
+#!/bin/bash
+kill hpsdr-server 
+sleep 1
+kill dspserver 
+sleep 1
+kill QtRadio

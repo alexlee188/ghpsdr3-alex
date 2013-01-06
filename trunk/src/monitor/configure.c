@@ -24,7 +24,8 @@
 *
 */
 
-#include <gtk/gtk.h>
+//#include <gtk/gtk.h>
+#include "/usr/include/gtk-3.0/gtk/gtk.h" //w3sz
 #include "configure.h"
 #include "monitor.h"
 

@@ -34,7 +34,9 @@ Bridgewater, NJ 08807
 */
 
 #include <common.h>
-
+//external int W3SZBUF;  //by w3sz
+int *W3SZBUFptr;  //by w3sz
+int ptrctr = 0;
 ////////////////////////////////////////////////////////////////////////////
 // for commands affecting RX, which RX is Listening
 unsigned int threadno=2;
@@ -358,6 +360,38 @@ SetSampleRate (double newSampleRate)
 	sem_post (&top[0].sync.upd.sem);
 	return rtn;
 }
+
+///by w3sz inserted SetW3SZBUF here
+//by w3sz set FFT size
+
+DttSP_EXP void
+SetW3SZBUF (int newbufsz)
+{
+extern void reset_spectrum (unsigned int);
+	unsigned int thread;
+
+	W3SZBUF = newbufsz;
+	W3SZBUFptr = &W3SZBUF;
+	ptrctr = 1;
+	fprintf(stderr, "%s%i%s%i%s%i%s%c", " ????? update.c SetW3SZBUF newbufsz= ", newbufsz, " W3SZBUF = ", W3SZBUF," *W3SZBUFptr = ",*W3SZBUFptr, "\n", fflush(stderr));  //by w3sz
+
+  for(thread = 0;thread < 3; thread++)
+  {
+      top[thread].susp = TRUE;
+          sem_wait (&top[thread].sync.upd.sem);
+  }
+
+  for(thread = 0;thread < 3; thread++)
+  {
+      top[thread].susp = FALSE;
+          sem_post (&top[thread].sync.upd.sem);
+  }
+		 
+}
+
+//end w3sz set FFT size
+
+
 
 DttSP_EXP void
 SetNR (unsigned int thread, unsigned subrx, BOOLEAN setit)
@@ -1436,6 +1470,7 @@ Process_ComplexSpectrum (unsigned int thread, float *results)
 	//sem_post (&top[thread].sync.upd.sem);
 	compute_complex_spectrum (&uni[thread].spec);
 	memcpy ((void *) results, uni[thread].spec.coutput, uni[thread].spec.size * sizeof (COMPLEX));
+//	fprintf(stderr,"%s %i%c\n","Proces ComplexSpectrum uni[thread].spec.size)",uni[thread].spec.size),"\n",fflush(stderr);
 }
 
 DttSP_EXP void
@@ -1448,10 +1483,12 @@ Process_Spectrum (unsigned int thread, float *results)
 	//sem_post (&top[thread].sync.upd.sem);
 	compute_spectrum (&uni[thread].spec);
 	memcpy ((void *) results, uni[thread].spec.output, uni[thread].spec.size * sizeof (float));
+
+//	fprintf(stderr,"%s %i%c\n","Proces Spectrum uni[thread].spec.size)",uni[thread].spec.size),"\n",fflush(stderr);
 }
 
 DttSP_EXP void
-Process_Panadapter (unsigned int thread, float *results)
+Process_Panadapter (unsigned int thread, float *results) //this is the  process used to send spectrum data to QtRadio
 {
 	extern BOOLEAN reset_em;
 	//sem_wait (&top[thread].sync.upd.sem);
@@ -1472,6 +1509,7 @@ Process_Panadapter (unsigned int thread, float *results)
 	//sem_post (&top[thread].sync.upd.sem);
 	compute_spectrum (&uni[thread].spec);
 	memcpy ((void *) results, uni[thread].spec.output, uni[thread].spec.size * sizeof (float));
+//	fprintf(stderr,"%s %i%c\n","Proces Panadapter uni[thread].spec.size)",uni[thread].spec.size),"\n",fflush(stderr);
 }
 
 DttSP_EXP void

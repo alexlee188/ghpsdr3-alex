@@ -72,8 +72,8 @@ typedef struct _buffer {
     unsigned char data[500];
 } BUFFER;
 
-#define SPECTRUM_BUFFER_SIZE 8192
 
+#define SPECTRUM_BUFFER_SIZE 8192 
 extern int sampleRate;
 
 extern int mox;

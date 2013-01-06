@@ -457,7 +457,7 @@ AC_CONFIG_FILES([Makefile
                  trunk/src/pylauncher/Makefile
                  trunk/src/hiqsdr/Makefile
                  trunk/src/sdriq/Makefile
-		 ])
+                  ])
 
 
 

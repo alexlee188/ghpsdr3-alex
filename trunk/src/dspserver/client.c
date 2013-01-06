@@ -93,8 +93,9 @@ static pthread_t client_thread_id, tx_thread_id, rtp_tx_thread_id;
 #define BASE_PORT 8000
 static int port=BASE_PORT;
 
-// This must match the size declared in DttSP
-#define SAMPLE_BUFFER_SIZE 4096
+// This must match the size declared in DttSP common.h W3SZBUF
+//#define SAMPLE_BUFFER_SIZE 4096
+#define SAMPLE_BUFFER_SIZE 262144 //by w3sz
 static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static int zoom = 0;
 static int low,high;            // filter low/high
@@ -178,7 +179,8 @@ static void *printcountrythread(void *);
 static void printcountry(struct sockaddr_in *);
 
 float getFilterSizeCalibrationOffset() {
-    int size=1024; // dspBufferSize
+//    int size=1024; // dspBufferSize 
+    int size=262144; // dspBufferSize //by w3sz
     float i=log10((float)size);
     return 3.0f*(11.0f-i);
 }

@@ -1,0 +1,10 @@
+dspserver/ozy.h:#define SPECTRUM_BUFFER_SIZE 262144 //w3sz
+
+DttSP/defs.h:#define DEFSIZE (262144) //w3sz
+DttSP/defs.h:#define DEFSPEC (262144) //w3sz
+
+receiver/spectrum.c://int spectrumLow=-131072;  w3sz
+receiver/spectrum.c://int spectrumHigh=+131072;  w3sz
+receiver/spectrum_update.h:#define SPECTRUM_BUFFER_SIZE 262144 //w3sz
+receiver/spectrum_buffers.h:   #define SPECTRUM_BUFFER_SIZE 262144  //w3sz
+

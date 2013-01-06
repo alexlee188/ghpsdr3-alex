@@ -3,6 +3,7 @@
 This file is part of a program that implements a Software-Defined Radio.
 
 Copyright (C) 2004, 2005, 2006 by Frank Brickle, AB2KT and Bob McGwier, N4HY.
+Copyright (C) 2011 Warren Pratt, NR0V - Changes for AGC, ALC, Leveler, Compressor
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -33,6 +34,11 @@ Bridgewater, NJ 08807
 
 #include <common.h>
 
+//FILE *wcpfile;	// (NR0V)
+extern int W3SZBUF; //by w3sz
+extern int *W3SZBUFptr; //by w3sz
+extern int ptrctr; //by w3sz
+
 //========================================================================
 /* initialization and termination */
 
@@ -55,6 +61,8 @@ reset_spectrum (unsigned int thread)
 {
 	if (uni[thread].spec.flag)
 		reinit_spectrum (&uni[thread].spec);
+	//fprintf(stdout, "%s%i%s%i", " spec.flag= ", uni[thread].spec.flag, "  loc[thread].def.spec = ", loc[thread].def.spec, "\n", fflush(stdout));  //by w3sz
+
 }
 
 void
@@ -76,9 +84,20 @@ PRIVATE void
 setup_all (REAL rate, int buflen, SDRMODE mode, char *wisdom,
 	int specsize, int numrecv, int cpdsize, unsigned int thread)
 {
+extern int *W3SZBUFptr;
+
+//  fprintf(stdout, "%s%i%s%i%s%c", " sdr.c setup_all specsize1= ", specsize, "  setup_all buflen = ", buflen, "\n", fflush(stdout));  //by w3sz
+
 	uni[thread].samplerate = rate;
 	uni[thread].buflen = buflen;
 	uni[thread].mode.sdr = mode;
+        uni[thread].bufsz = specsize;  //by w3sz
+	if(ptrctr>0)  //by w3sz
+	{
+		uni[thread].bufsz = *W3SZBUFptr; //by w3sz
+		specsize = *W3SZBUFptr;  //by w3sz
+//		fprintf(stdout, "%s%i%s%i%s%c", " sdr.c setup_all specsize2= ", uni[thread].bufsz, "  *W3SZBUFptr = ", *W3SZBUFptr, "\n", fflush(stdout));  //by w3sz
+	}
 	if (thread != 1) uni[thread].mode.trx = RX;
 	else uni[thread].mode.trx = TX;
 
@@ -406,6 +425,16 @@ setup_workspace (REAL rate, int buflen, SDRMODE mode,
                  char *wisdom, int specsize, int numrecv, int cpdsize, unsigned int thread)
 {
 	int k;
+	//wcpfile = fopen ("wcptest", "w"); // (NR0V)
+  int specsize_old=262144;  //by w3sz
+  extern int *W3SZBUFptr;  //by w3sz
+  //begin section added by w3sz
+  if(ptrctr>0)  
+	{
+		specsize = *W3SZBUFptr;
+	}	
+//  fprintf(stdout, "%s%i%s%i%s%i%s%c", " new sdr.c setup_workspace specsize = ", specsize, "old setup_workspace specsize = ", specsize_old, "  setup_workspace buflen = ", buflen, "\n", fflush(stdout));  //by w3sz
+  //end added by w3sz
 
 	setup_all (rate, buflen, mode, wisdom, specsize, numrecv, cpdsize, thread);
 
@@ -418,6 +447,7 @@ setup_workspace (REAL rate, int buflen, SDRMODE mode,
 	uni[thread].multirx.nac = 1;
 
 	setup_tx (thread);
+        specsize_old = specsize;  //by w3sz
 }
 
 void
@@ -595,6 +625,8 @@ do_rx_meter (int k, unsigned int thread, CXB buf, int tap)
 PRIVATE void
 do_rx_spectrum (int k, unsigned int thread, CXB buf, int type)
 {
+//	fprintf(stdout, "%s%i", " rx_spectrum CXBsize(buf) = ", CXBsize(buf));  //by w3sz
+	
 	if (uni[thread].spec.flag && k == uni[thread].spec.rxk && type == uni[thread].spec.type)
 	{
 		if ((uni[thread].spec.type == SPEC_POST_DET) && (!rx[thread][k].bin.flag)) 
