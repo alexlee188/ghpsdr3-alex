@@ -81,6 +81,7 @@ extern struct _uni
 {
   REAL samplerate;
   int buflen;
+  int bufsz; // largeFFT
 
   struct
   {
@@ -475,5 +476,5 @@ extern struct _top
 
 } top[3];
 
-
+//int bufsz; // largeFFT
 #endif

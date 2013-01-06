@@ -741,7 +741,8 @@ setup_defaults (unsigned int thread)
 	loc[thread].def.size = DEFSIZE;
 	loc[thread].def.nrx = MAXRX;
 	loc[thread].def.mode = DEFMODE;
-	loc[thread].def.spec = DEFSPEC;
+	//loc[thread].def.spec = DEFSPEC;
+        loc[thread].def.spec = W3SZBUF; // largeFFT
 	loc[thread].mult.ring = RINGMULT;
 	loc[thread].def.comp = DEFCOMP;
 }

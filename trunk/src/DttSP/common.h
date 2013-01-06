@@ -80,4 +80,5 @@ Bridgewater, NJ 08807
 
 #include <sdrexport.h>
 #include <local.h>
+static int W3SZBUF=262144; // largeFFT
 #endif

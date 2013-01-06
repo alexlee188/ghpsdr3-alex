@@ -33,6 +33,8 @@ Bridgewater, NJ 08807
 
 #include <common.h>
 
+
+
 //========================================================================
 /* initialization and termination */
 
@@ -76,7 +78,8 @@ PRIVATE void
 setup_all (REAL rate, int buflen, SDRMODE mode, char *wisdom,
 	int specsize, int numrecv, int cpdsize, unsigned int thread)
 {
-	uni[thread].samplerate = rate;
+
+        uni[thread].samplerate = rate;
 	uni[thread].buflen = buflen;
 	uni[thread].mode.sdr = mode;
 	if (thread != 1) uni[thread].mode.trx = RX;
@@ -100,7 +103,8 @@ setup_all (REAL rate, int buflen, SDRMODE mode, char *wisdom,
 	{
 		reset_meters (thread);
 	}
-
+        extern int W3SZBUF; // largeFFT
+        uni[thread].bufsz=specsize; // largeFFT
 	uni[thread].spec.rxk = 0;
 	uni[thread].spec.buflen = uni[thread].buflen;
 	uni[thread].spec.scale = SPEC_PWR;
