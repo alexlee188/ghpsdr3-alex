@@ -741,8 +741,7 @@ setup_defaults (unsigned int thread)
 	loc[thread].def.size = DEFSIZE;
 	loc[thread].def.nrx = MAXRX;
 	loc[thread].def.mode = DEFMODE;
-//	loc[thread].def.spec = DEFSPEC;//by w3sz deleted
-	loc[thread].def.spec = W3SZBUF; //by w3sz changed DEFSPEC to W3SZBUF which is located in common.h	
+	loc[thread].def.spec = DEFSPEC;
 	loc[thread].mult.ring = RINGMULT;
 	loc[thread].def.comp = DEFCOMP;
 }
