@@ -78,6 +78,7 @@
 #include "rtp.h"
 #include "G711A.h"
 #include "util.h"
+#include "../DttSP/common.h" //by w3sz
 
 static int timing=0;
 
@@ -177,7 +178,7 @@ static void *printcountrythread(void *);
 static void printcountry(struct sockaddr_in *);
 
 float getFilterSizeCalibrationOffset() {
-//    int size=1024; // dspBufferSize //by w3sz
+//    int size=1024; // dspBufferSize //by w3sz changed
     int size=W3SZBUF; // dspBufferSize //by w3sz	
     float i=log10((float)size);
     return 3.0f*(11.0f-i);

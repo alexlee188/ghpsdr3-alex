@@ -37,12 +37,19 @@ Bridgewater, NJ 08807
 #define RINGMULT (4)
 #define METERMULT (20)
 #define SPECMULT (4)
-//#define DEFRATE (48000.0) //by w3sz
+
 #define DEFRATE (192000.0) //by w3sz
+#define DEFSIZE (4096) //by w3sz
+#define DEFCOMP (512)
+#define DEFMODE (USB)
+//DEFSPEC removed and replaced by GlobalClass.cs
+/* below were defaults before changed by w3sz
+#define DEFRATE (48000.0)
 #define DEFSIZE (4096)
 #define DEFMODE (USB)
 #define DEFSPEC (4096)
 #define DEFCOMP (512)
+*/
 
 #define MAXRX (2)
 
