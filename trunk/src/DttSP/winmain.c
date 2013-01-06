@@ -284,7 +284,7 @@ Audio_Callback (float *input_l, float *input_r, float *output_l,
 
 	if (b)
 	{
-		//fprintf(stderr,"Audio_Callback: call reset_system_audio\n"), fflush(stderr);
+		//fprintf(stdout,"Audio_Callback: call reset_system_audio\n"), fflush(stdout);
 		reset_system_audio(nframes);
 		memset (output_l, 0, nframes * sizeof (float));
 		memset (output_r, 0, nframes * sizeof (float));
@@ -314,7 +314,7 @@ Audio_Callback (float *input_l, float *input_r, float *output_l,
 		}
 		else
 		{	// rb pathology
-			//fprintf(stderr,"Audio_Callback-2: rb out pathology\n"), fflush(stderr);
+			//fprintf(stdout,"Audio_Callback-2: rb out pathology\n"), fflush(stdout);
 //			reset_system_audio(nframes);
 //			memset (output_l, 0, nframes * sizeof (float));
 //			memset (output_r, 0, nframes * sizeof (float));
@@ -331,7 +331,7 @@ Audio_Callback (float *input_l, float *input_r, float *output_l,
 		}
 		else
 		{	// rb pathology
-			//fprintf(stderr,"Audio_Callback-3: rb in pathology\n"), fflush(stderr);
+			//fprintf(stdout,"Audio_Callback-3: rb in pathology\n"), fflush(stdout);
 //			reset_system_audio(nframes);
 //			memset (output_l, 0, nframes * sizeof (float));
 //			memset (output_r, 0, nframes * sizeof (float));
@@ -368,7 +368,7 @@ Audio_Callback2 (float **input, float **output, unsigned int nframes)
 	if (b)
 	{
 		//fprintf(stderr, "reset_em!\n"); fflush(stderr);
-		//fprintf(stderr,"Audio_Callback2: reset_em = TRUE\n"), fflush(stderr);
+		//fprintf(stdout,"Audio_Callback2: reset_em = TRUE\n"), fflush(stdout);
 		reset_system_audio(nframes);
 		for(thread=0;thread<threadno;thread++) {
 			memset (output[2*thread], 0, nframes * sizeof (float));
@@ -741,9 +741,8 @@ setup_defaults (unsigned int thread)
 	loc[thread].def.size = DEFSIZE;
 	loc[thread].def.nrx = MAXRX;
 	loc[thread].def.mode = DEFMODE;
-
-  loc[thread].def.spec = W3SZBUF; //by w3sz changed DEFSPEC to W3SZBUF which is located in common.h
-  //  loc[thread].def.spec = DEFSPEC;  //changed by w3sz
+//	loc[thread].def.spec = DEFSPEC;//by w3sz deleted
+	loc[thread].def.spec = W3SZBUF; //by w3sz changed DEFSPEC to W3SZBUF which is located in common.h	
 	loc[thread].mult.ring = RINGMULT;
 	loc[thread].def.comp = DEFCOMP;
 }
@@ -792,6 +791,7 @@ setup (char *app_data_path)
 				loc[thread].def.mode,
 				app_data_path, loc[thread].def.spec, loc[thread].def.nrx, loc[thread].def.comp, thread);
 		//fprintf(stderr,"setup: workspace done thread %u\n", thread),fflush(stderr);
+
 		setup_local_audio (thread);
 		//fprintf(stderr,"setup: setup_local_audio done\n"),fflush(stderr);
 		setup_system_audio (thread);
@@ -809,8 +809,6 @@ setup (char *app_data_path)
 		reset_spectrum (thread);
 		reset_counters (thread);
 		fprintf(stderr,"setup sdr thread %0u: done\n",thread),fflush(stderr);
-		fprintf(stderr,"setup in winmain.c done\n",thread),fflush(stderr);
-
 	}
 }
 
@@ -842,7 +840,6 @@ reset_for_buflen (unsigned int thread, int new_buflen)
 	reset_meters (thread);
 	reset_spectrum (thread);
 	reset_counters (thread);
-fprintf(stderr,"reset_for_buflen in winmain.c done\n",thread),fflush(stderr);
 
 	return 0;
 }
@@ -877,8 +874,6 @@ reset_for_samplerate (REAL new_samplerate)
 		reset_meters (thread);
 		reset_spectrum (thread);
 		reset_counters (thread);
-	fprintf(stderr,"reset_for_samplerate in winmain.c done\n",thread),fflush(stderr);
-	
 	}
 	return 0;
 }
