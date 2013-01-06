@@ -33,9 +33,6 @@ Bridgewater, NJ 08807
 */
 
 #include <common.h>
-
-//FILE *wcpfile;	// (NR0V)
-
 //========================================================================
 /* initialization and termination */
 
@@ -79,13 +76,10 @@ PRIVATE void
 setup_all (REAL rate, int buflen, SDRMODE mode, char *wisdom,
 	int specsize, int numrecv, int cpdsize, unsigned int thread)
 {
-
-
 	uni[thread].samplerate = rate;
 	uni[thread].buflen = buflen;
 	uni[thread].mode.sdr = mode;
-    uni[thread].bufsz = specsize;  //by w3sz
-	
+	uni[thread].bufsz = specsize; //by w3sz
 	if (thread != 1) uni[thread].mode.trx = RX;
 	else uni[thread].mode.trx = TX;
 
@@ -413,8 +407,7 @@ setup_workspace (REAL rate, int buflen, SDRMODE mode,
                  char *wisdom, int specsize, int numrecv, int cpdsize, unsigned int thread)
 {
 	int k;
-	//wcpfile = fopen ("wcptest", "w"); // (NR0V)
-  
+
 	setup_all (rate, buflen, mode, wisdom, specsize, numrecv, cpdsize, thread);
 
 	for (k = 0; k < uni[thread].multirx.nrx; k++)
@@ -426,7 +419,6 @@ setup_workspace (REAL rate, int buflen, SDRMODE mode,
 	uni[thread].multirx.nac = 1;
 
 	setup_tx (thread);
-  
 }
 
 void
@@ -604,7 +596,6 @@ do_rx_meter (int k, unsigned int thread, CXB buf, int tap)
 PRIVATE void
 do_rx_spectrum (int k, unsigned int thread, CXB buf, int type)
 {
-
 	if (uni[thread].spec.flag && k == uni[thread].spec.rxk && type == uni[thread].spec.type)
 	{
 		if ((uni[thread].spec.type == SPEC_POST_DET) && (!rx[thread][k].bin.flag)) 

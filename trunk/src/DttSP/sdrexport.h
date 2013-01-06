@@ -82,7 +82,6 @@ extern struct _uni
   REAL samplerate;
   int buflen;
   int bufsz;  //by w3sz added bufsz
-
   struct
   {
     SDRMODE sdr;

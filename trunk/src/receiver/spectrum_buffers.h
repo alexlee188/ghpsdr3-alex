@@ -32,8 +32,8 @@ extern "C" {
 #endif
     #include <semaphore.h>
 
-//    #define SPECTRUM_BUFFER_SIZE 8192
-   #define SPECTRUM_BUFFER_SIZE 262144  //w3sz
+    #define SPECTRUM_BUFFER_SIZE 8192
+
 /* --------------------------------------------------------------------------*/
 /** 
 * @brief spectrum_buffer

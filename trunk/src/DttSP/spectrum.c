@@ -130,7 +130,6 @@ compute_spectrum (SpecBlock * sb)
 			sb->output[i] = (float) Cmag (CXBdata (sb->freqbuf, j));
 			sb->output[j] = (float) Cmag (CXBdata (sb->freqbuf, i));
 		}
-		
 	}
 	else
 	{				// SPEC_PWR

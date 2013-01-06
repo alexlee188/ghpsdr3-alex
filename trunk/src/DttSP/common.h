@@ -76,9 +76,7 @@ Bridgewater, NJ 08807
 #include <malloc.h>
 
 //typedef long uid_t;
-
 static int W3SZBUF=262144;  //by w3sz  must match SAMPLE_BUFFER_SIZE in dspserver/client.c
-
 /*End Windows differences */
 
 #include <sdrexport.h>

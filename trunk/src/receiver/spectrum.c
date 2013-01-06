@@ -53,9 +53,6 @@ int spectrumSTEP=10;
 int spectrumLow=-24000;
 int spectrumHigh=+24000;
 
-//int spectrumLow=-131072;  w3sz
-//int spectrumHigh=+131072;  w3sz
-
 int spectrumMode;
 
 
