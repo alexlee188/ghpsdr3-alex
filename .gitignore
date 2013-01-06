@@ -69,5 +69,11 @@ trunk/src/hiqsdr/hiqsdr-server
 trunk/src/hiqsdr/hiqsdr-test
 trunk/src/sdriq/sdriq-server
 trunk/src/sdriq/sdriq-test
+trunk/src/perseus/perseus_server
+trunk/src/rtlsdr/rtlsdr-server
+trunk/src/usrp/usrp_server
+
 branches/android/aHPSDR/bin/*
 
+/branches/java/jmonitor/dist/
+/branches/java/jmonitor/build/
