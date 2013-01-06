@@ -180,7 +180,7 @@ static void printcountry(struct sockaddr_in *);
 
 float getFilterSizeCalibrationOffset() {
 //    int size=1024; // dspBufferSize 
-    int size=262144; // dspBufferSize //by w3sz
+    int size=W3SZBUF; // dspBufferSize //by w3sz
     float i=log10((float)size);
     return 3.0f*(11.0f-i);
 }

@@ -119,7 +119,6 @@ compute_spectrum (SpecBlock * sb)
 	int i, j, half = sb->size / 2;
 
 
-//	fprintf(stdout,"%s%i","ComputeSpectrum running Spectrum Size = ", sb->size, fflush(stdout));  //by w3sz
 	// assume timebuf has windowed current snapshot
 
 	fftwf_execute (sb->plan);
@@ -132,7 +131,6 @@ compute_spectrum (SpecBlock * sb)
 			sb->output[j] = (float) Cmag (CXBdata (sb->freqbuf, i));
 		}
 		
-//		fprintf(stdout,"%s%i%s%i%s"," Using CMAG i = ", i,"  j = ", j, "  ");  //by w3sz
 	}
 	else
 	{				// SPEC_PWR
@@ -145,7 +143,6 @@ compute_spectrum (SpecBlock * sb)
 				(float) (10.0 *
 				log10 (Csqrmag (CXBdata (sb->freqbuf, i)) + 1e-60));
 		}
-//				fprintf(stdout,"%s%i%s%i%s"," Using CSQRMAG i = ", i,"  j = ", j, "  ");  //by w3sz
 	}
 }
 
@@ -172,10 +169,6 @@ init_spectrum (SpecBlock * sb)
 		fftwf_plan_dft_1d (sb->size, (fftwf_complex *) CXBbase (sb->timebuf),
 		(fftwf_complex *) CXBbase (sb->freqbuf),
 		FFTW_FORWARD, sb->planbits);
-//	fprintf(stdout, "%i", sb->size);  //by w3sz
-//	fprintf(stdout, "%s%i%s", "  init_spectrum sb->size = ", sb->size ," \n");  //by w3sz
-
-
 }
 
 void

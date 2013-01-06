@@ -37,9 +37,6 @@ Bridgewater, NJ 08807
 // elementary defaults
 struct _loc loc[3];
 extern unsigned int threadno;
-extern int W3SZBUF; //by w3sz
-extern int *W3SZBUFptr;  //by w3sz
-extern int ptrctr; //by w3sz
 /////////////////////////////////////////////////////////////////////////
 // most of what little we know here about the inner loop,
 // functionally speaking
@@ -746,14 +743,6 @@ setup_defaults (unsigned int thread)
 	loc[thread].def.mode = DEFMODE;
 
   loc[thread].def.spec = W3SZBUF; //by w3sz changed DEFSPEC to W3SZBUF which is located in common.h
-  fprintf(stderr, "%s%i%s%i%s%c", " winmain line 749 setup_defaults W3SZBUF = ", W3SZBUF, " loc[thread].def.spec = ", loc[thread].def.spec, "\n", fflush(stderr));  //by w3sz
-	if(ptrctr>0)  
-	{
-//		loc[thread].def.spec = *W3SZBUFptr;
-		  loc[thread].def.spec = W3SZBUF;
-		  fprintf(stderr, "%s%i%s%i%s%c", " winmain line 754 setup_defaults W3SZBUF = ", W3SZBUF, " loc[thread].def.spec = ", loc[thread].def.spec, "\n", fflush(stderr));  //by w3sz
-
-	}
   //  loc[thread].def.spec = DEFSPEC;  //changed by w3sz
 	loc[thread].mult.ring = RINGMULT;
 	loc[thread].def.comp = DEFCOMP;
@@ -803,8 +792,6 @@ setup (char *app_data_path)
 				loc[thread].def.mode,
 				app_data_path, loc[thread].def.spec, loc[thread].def.nrx, loc[thread].def.comp, thread);
 		//fprintf(stderr,"setup: workspace done thread %u\n", thread),fflush(stderr);
-
-		fprintf(stderr, "%s%i%s%i%s%c", " winmain setup line 805 specsize = ",loc[thread].def.spec , " winmain W3SZBUF =", W3SZBUF, "\n", fflush(stderr));
 		setup_local_audio (thread);
 		//fprintf(stderr,"setup: setup_local_audio done\n"),fflush(stderr);
 		setup_system_audio (thread);
