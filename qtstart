@@ -1,6 +1,6 @@
 #!/bin/bash
 hpsdr-server --metis --samplerate 192000 &
 sleep 1
-dspserver --hpsdr --lo 0 --nocorrectiq --fft 262144 &
+dspserver --hpsdr --lo 0 --nocorrectiq  &
 sleep 1
 QtRadio

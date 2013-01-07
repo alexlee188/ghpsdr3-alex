@@ -3,7 +3,6 @@
 This file is part of a program that implements a Software-Defined Radio.
 
 Copyright (C) 2004, 2005, 2006 by Frank Brickle, AB2KT and Bob McGwier, N4HY.
-Copyright (C) 2011 Warren Pratt, NR0V - Changes for AGC, ALC, Leveler, Compressor
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -79,7 +78,6 @@ setup_all (REAL rate, int buflen, SDRMODE mode, char *wisdom,
 	uni[thread].samplerate = rate;
 	uni[thread].buflen = buflen;
 	uni[thread].mode.sdr = mode;
-	uni[thread].bufsz = specsize; //by w3sz
 	if (thread != 1) uni[thread].mode.trx = RX;
 	else uni[thread].mode.trx = TX;
 
