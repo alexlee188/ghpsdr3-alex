@@ -32,7 +32,6 @@ Bridgewater, NJ 08807
 */
 
 #include <common.h>
-
 //========================================================================
 /* initialization and termination */
 

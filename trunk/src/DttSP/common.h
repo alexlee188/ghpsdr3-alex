@@ -73,9 +73,9 @@ Bridgewater, NJ 08807
 #include <pthread.h>
 #include <sched.h>
 #include <semaphore.h>
-//#include <malloc16.h>
-//typedef long uid_t;
+#include <malloc.h>
 
+//typedef long uid_t;
 /*End Windows differences */
 
 #include <sdrexport.h>

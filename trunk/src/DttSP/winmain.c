@@ -51,7 +51,7 @@ extern void setup_workspace (REAL rate,
 			     char *wisdom,
 			     int specsize, int numrecv, int cpdsize, unsigned int thread);
 extern void destroy_workspace (unsigned int thread);
-
+extern int DEFSPEC;//by w3sz
 
 //========================================================================
 

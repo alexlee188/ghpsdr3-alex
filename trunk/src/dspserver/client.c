@@ -80,7 +80,7 @@
 #include "util.h"
 
 static int timing=0;
-
+extern int DEFSPEC;
 static int rtp_tx_init_done = 0;
 
 static pthread_t client_thread_id, tx_thread_id, rtp_tx_thread_id;
@@ -91,12 +91,15 @@ static int port=BASE_PORT;
 #define BASE_PORT_SSL 9000
 static int port_ssl=BASE_PORT_SSL;
 
-// This must match the size declared in DttSP
-#define SAMPLE_BUFFER_SIZE 4096
-static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
 static int zoom = 0;
 static int low,high;            // filter low/high
 
+//#define SAMPLE_BUFFER_SIZE 4096 //by w3sz changed and moved
+
+// This must match the size declared in DttSP common.h W3SZBUF //by w3sz
+#define SAMPLE_BUFFER_SIZE DEFSPEC //by w3sz changed and moved
+
+static float spectrumBuffer[262144];//changed by w3sz
 #define TX_BUFFER_SIZE 1024
 // same as BUFFER_SIZE defined in softrock server
 // format is float left_buffer[BUFFER_SIZE] followed by right_buffer[BUFFER_SIZE] non-interleaved
@@ -176,7 +179,8 @@ static void *printcountrythread(void *);
 static void printcountry(struct sockaddr_in *);
 
 float getFilterSizeCalibrationOffset() {
-    int size=1024; // dspBufferSize
+//    int size=1024; // dspBufferSize //by w3sz changed
+    int size=DEFSPEC; // dspBufferSize //by w3sz	
     float i=log10((float)size);
     return 3.0f*(11.0f-i);
 }

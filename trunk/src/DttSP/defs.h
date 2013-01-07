@@ -37,12 +37,12 @@ Bridgewater, NJ 08807
 #define RINGMULT (4)
 #define METERMULT (20)
 #define SPECMULT (4)
-#define DEFRATE (48000.0)
-#define DEFSIZE (4096)
-#define DEFMODE (USB)
-#define DEFSPEC (4096)
-#define DEFCOMP (512)
 
+#define DEFRATE (192000.0) //by w3sz changed
+#define DEFSIZE (4096)
+//#define DEFSPEC (4096) //by w3sz ; now a variable initialized in dspserver/main.c
+#define DEFCOMP (512)
+#define DEFMODE (USB)
 #define MAXRX (2)
 
 #ifndef MAXPATHLEN
