@@ -41,7 +41,7 @@ struct dspserver_config {
     int thread_debug;
     int no_correct_iq;
 };
-
+    int DEFSPEC;
 extern struct dspserver_config config;
 
 #endif
