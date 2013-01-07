@@ -38,8 +38,9 @@ struct dspserver_config {
     char server_address[256];
     int thread_debug;
     int no_correct_iq;
-};
 
+};
+    int DEFSPEC;
 extern struct dspserver_config config;
 
 #endif

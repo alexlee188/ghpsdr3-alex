@@ -80,6 +80,7 @@
 */
 
 const char *version = "20130101;-opengl-ssl"; //YYYYMMDD; text desc
+extern int DEFSPEC;//by w3sz
 
 // main.c
 
@@ -126,7 +127,9 @@ enum {
     OPT_HPSDR,
     OPT_NOCORRECTIQ,
     OPT_DEBUG,
+	OPT_FFT, //by w3sz
     OPT_THREAD_DEBUG
+
 };
 
 struct option longOptions[] = {
@@ -142,10 +145,12 @@ struct option longOptions[] = {
     {"hpsdr",no_argument, NULL, OPT_HPSDR},
     {"nocorrectiq",no_argument, NULL, OPT_NOCORRECTIQ},
     {"debug",no_argument, NULL, OPT_DEBUG},
+	{"fft",required_argument, NULL, OPT_FFT}, //by w3sz
 #ifdef THREAD_DEBUG
     {"debug-threads",no_argument, NULL, OPT_THREAD_DEBUG},
 #endif /* THREAD_DEBUG */
     {0,0,0,0}
+	
 };
 
 char* shortOptions="";
@@ -212,6 +217,15 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
             case OPT_DEBUG:
                 ozy_set_debug(1);
                 break;
+			case OPT_FFT: //by w3sz
+				DEFSPEC=atoi(optarg); //by w3sz
+//				if (DEFSPEC=0)  //by w3sz
+//					{
+//				DEFSPEC=4096; //by w3sz
+//					}
+				  fprintf (stderr, "DttSP main.c DEFSPEC=: %d\n", DEFSPEC);  //by w3sz
+
+				break;
             case OPT_THREAD_DEBUG:
                 config->thread_debug = 1;
                 break;
@@ -227,6 +241,8 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
 		fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
 		fprintf(stderr,"            --hpsdr (if using hpsdr hardware)\n");
 		fprintf(stderr,"            --nocorrectiq (select if using non QSD receivers, like Perseus, HiQSDR, Mercury)\n");
+		fprintf(stderr,"            --fft (to set fft size to other than 4096; choices include:)\n");//by w3sz
+		fprintf(stderr,"                   8192, 16384, 32768, 65536, 131072, and 262144\n");//by w3sz
 #ifdef THREAD_DEBUG
                 fprintf(stderr,"            --debug-threads (enable threading assertions)\n");
 #endif /* THREAD_DEBUG */
@@ -275,6 +291,17 @@ int main(int argc,char* argv[]) {
     printversion();
     setSoundcard(getSoundcardId(config.soundCardName));
 
+	if (DEFSPEC==0) //by w3sz
+		{
+		DEFSPEC=4096; //by w3sz
+		}
+
+	if ((DEFSPEC !=4096) && (DEFSPEC!=8192) && (DEFSPEC!=16384) && (DEFSPEC!=32768) && (DEFSPEC!=65536) && (DEFSPEC!=131072) && (DEFSPEC!=262144)) //by w3sz
+		{
+		DEFSPEC=4096; //by w3sz
+		}
+	fprintf (stderr, "DttSP main.c DEFSPEC=: %d\n", DEFSPEC);  //by w3sz
+	
     // initialize DttSP
     if(getcwd(directory, sizeof(directory))==NULL) {
         fprintf(stderr,"current working directory path is > MAXPATHLEN");
