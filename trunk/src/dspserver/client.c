@@ -83,10 +83,9 @@
 #include "rtp.h"
 #include "G711A.h"
 #include "util.h"
-#include "../DttSP/common.h" //by w3sz
 
 static int timing=0;
-
+extern int DEFSPEC;
 static int rtp_tx_init_done = 0;
 
 static pthread_t client_thread_id, tx_thread_id, rtp_tx_thread_id;
@@ -101,9 +100,9 @@ static int zoom = 0;
 static int low,high;            // filter low/high
 
 // This must match the size declared in DttSP common.h W3SZBUF //by w3sz
-#define SAMPLE_BUFFER_SIZE 262144 //by w3sz changed and moved
-static float spectrumBuffer[SAMPLE_BUFFER_SIZE]; 
+#define SAMPLE_BUFFER_SIZE DEFSPEC //by w3sz changed and moved
 
+static float spectrumBuffer[262144];//changed by w3sz
 #define TX_BUFFER_SIZE 1024
 // same as BUFFER_SIZE defined in softrock server
 // format is float left_buffer[BUFFER_SIZE] followed by right_buffer[BUFFER_SIZE] non-interleaved
@@ -184,7 +183,7 @@ static void printcountry(struct sockaddr_in *);
 
 float getFilterSizeCalibrationOffset() {
 //    int size=1024; // dspBufferSize //by w3sz changed
-    int size=W3SZBUF; // dspBufferSize //by w3sz	
+    int size=DEFSPEC; // dspBufferSize //by w3sz	
     float i=log10((float)size);
     return 3.0f*(11.0f-i);
 }
