@@ -7,14 +7,18 @@ import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 
+import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord.OnRecordPositionUpdateListener;
 import android.media.AudioTrack;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
+import android.os.Build;
 import android.util.Log;
 
+@TargetApi(Build.VERSION_CODES.CUPCAKE)
 public class Connection extends Thread {
 	public Connection(String server, int port, int width) {
 		// Log.i("Connection",server+":"+port);
@@ -36,7 +40,8 @@ public class Connection extends Thread {
 		this.fps = fps;
 	}
 	
-	public void connect() {
+	public boolean connect() {
+		boolean result = true;
 		Log.i("Connection","connect: "+server+":"+port);
 		try {
 			socket = new Socket();
@@ -84,14 +89,16 @@ public class Connection extends Thread {
 		    recorder.startRecording();
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
-
+		    
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
 					+ port + "'" + e.getMessage() + "'");
 			status=e.toString();
 			socket=null;
+			result = false;
 		}
+		return result;
 	}
 	
 	public void close() {
