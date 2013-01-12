@@ -264,11 +264,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		mGLSurfaceView.onResume();
 		Log.i("AHPSDR", "onResume");
 		//mSensorManager.registerListener(this, mGravity, SensorManager.SENSOR_DELAY_NORMAL);
-		if(connection==null) {
-			connection = new Connection(server, BASE_PORT+receiver, width);
-			setConnectionDefaults();
-			mySetTitle();
-		}
+		connection = new Connection(server, BASE_PORT+receiver, width);
+		setConnectionDefaults();
+		mySetTitle();
 		spectrumView.setAverage(-100);
 	}
 
@@ -283,7 +281,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		Log.i("AHPSDR", "onDestroy");
 		//update.close();
 		connection.close();
-		connection=null;
 	}
 
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -1260,7 +1257,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		};
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(31)");
+	    connection.sendCommand("setClient glSDR(32)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setBand(band);
