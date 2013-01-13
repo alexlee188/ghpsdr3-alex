@@ -126,6 +126,7 @@ int main(int argc,char* argv[]) {
 
 void process_args(int argc,char* argv[]) {
     int i;
+	metisip="0.0.0.0";
 
 
     while((i=getopt_long(argc,argv,short_options,long_options,&option_index))!=EOF) {
@@ -231,8 +232,6 @@ void process_args(int argc,char* argv[]) {
 
             case 15: // metisip
                 metisip=optarg;
-				metisip1=metisip;//by w3sz
-fprintf(stderr,"metisip=%s\n",metisip);
                 break;
 
             case 16: // fpga image
@@ -265,8 +264,10 @@ fprintf(stderr,"metisip=%s\n",metisip);
                 fprintf(stderr,"         --ozyhex <file name>\n");
                 exit(1);
                 break;
-               
+        
         }
     }
+		metisip1=metisip;//by w3sz
+		fprintf(stderr,"metisip=%s\n",metisip);
 }
 
