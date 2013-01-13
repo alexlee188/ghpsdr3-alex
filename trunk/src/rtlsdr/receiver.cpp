@@ -117,7 +117,7 @@ const char* attach_receiver(int rx, CLIENT* client)
     if (r < 0)
        fprintf(stderr, "WARNING: Failed to set tuner gain.\n");
     else
-       fprintf(stderr, "%p: Tuner gain set to %i dB.\n", receiver[rx].cfg.rtl, receiver[rx].cfg.gain);
+       fprintf(stderr, "%p: Tuner gain set to %i dB.\n", receiver[rx].cfg.rtl, receiver[rx].cfg.gain/10);
 
 
 
