@@ -4,17 +4,33 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.security.SecureRandom;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord.OnRecordPositionUpdateListener;
 import android.media.AudioTrack;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
+import android.os.Build;
 import android.util.Log;
 
+@TargetApi(Build.VERSION_CODES.CUPCAKE)
 public class Connection extends Thread {
 	public Connection(String server, int port, int width) {
 		// Log.i("Connection",server+":"+port);
@@ -24,6 +40,26 @@ public class Connection extends Thread {
 		for (int i = 0; i < SPECTRUM_BUFFER_SIZE; i++) samples[i] = 120;
 		this.server = server;
 		this.port = port;
+
+		// Create a trust manager that does not validate certificate chains
+		if (trustAllCerts == null){
+			trustAllCerts = new TrustManager[]{
+			new X509TrustManager() {
+				public java.security.cert.X509Certificate[]
+				getAcceptedIssuers() {
+				return null;
+				}
+				public void
+				checkClientTrusted(java.security.cert.X509Certificate[] certs, String
+				authType) {
+				}
+				public void
+				checkServerTrusted(java.security.cert.X509Certificate[] certs, String
+				authType) {
+				}
+			}};
+		}
+		
 		System.gc();
 	}
 
@@ -36,62 +72,122 @@ public class Connection extends Thread {
 		this.fps = fps;
 	}
 	
-	public void connect() {
+	public boolean connect() {
+		boolean result = true;
 		Log.i("Connection","connect: "+server+":"+port);
 		try {
-			socket = new Socket();
-			socket.connect(new InetSocketAddress(server,port),5000);
-			inputStream = socket.getInputStream();
-			outputStream = socket.getOutputStream();
-		
-		
-		    audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 8000,
-				AudioFormat.CHANNEL_OUT_MONO,
-				AudioFormat.ENCODING_PCM_16BIT, AUDIO_BUFFER_SIZE * 2,
-				AudioTrack.MODE_STREAM);
-		
-		    audioTrack.play();
-		    
-		    int N = 10 * AudioRecord.getMinBufferSize(8000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
-		    if (N < micBufferSize * 40) N = micBufferSize * 40; // 40 * 58 = 2320
-		    
-		    recorder = new AudioRecord(AudioSource.MIC, 8000,
-		    				AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, N);
-		    
-		    recorder.setPositionNotificationPeriod(micBufferSize * nMicBuffers);
-		    final int finalMicBufferSize = micBufferSize;
-		    
-		    OnRecordPositionUpdateListener positionUpdater = new OnRecordPositionUpdateListener () {
-		    	public void onPeriodicNotification(AudioRecord recorder){
-		    		for (int j = 0; j < nMicBuffers; j++){
-			    		short[] micData = new short[micBufferSize];
-			    		recorder.read(micData, 0, finalMicBufferSize);
-			    		if (allowTx & MOX){
-				    		byte[] micEncodedData = new byte[micBufferSize];
-				    		for (int i = 0; i < micBufferSize; i++){
-				    			micEncodedData[i] = aLawEncode[(micData[i] << micGain) & 0xFFFF];
-				    		}
-				    		sendAudio(micEncodedData);
-				    	}
-		    		}
-		    	}
-		    	
-		    	public void onMarkerReached(AudioRecord recorder){
-		    	}
-		    	
-		    };
-		    recorder.setRecordPositionUpdateListener(positionUpdater);
-		    recorder.startRecording();
-		    short[] buffer = new short[micBufferSize*nMicBuffers];
-		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
-
+	        if (sslContext == null) {
+	            sslContext = SSLContext.getInstance("TLS");
+	            sslContext.init(null, trustAllCerts, new SecureRandom()); 
+	           }
+	        
+	        final SSLSocketFactory delegate = sslContext.getSocketFactory();
+            SocketFactory factory = new SSLSocketFactory() {
+                @Override
+                public Socket createSocket(String host, int port)
+                        throws IOException, UnknownHostException {
+                    InetAddress addr = InetAddress.getByName(host);
+                    injectHostname(addr, host);
+                    return delegate.createSocket(addr, port);
+                }
+                @Override
+                public Socket createSocket(InetAddress host, int port)
+                        throws IOException {
+                    return delegate.createSocket(host, port);
+                }
+                @Override
+                public Socket createSocket(String host, int port, InetAddress localHost, int localPort)
+                        throws IOException, UnknownHostException {
+                    return delegate.createSocket(host, port, localHost, localPort);
+                }
+                @Override
+                public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort)
+                        throws IOException {
+                    return delegate.createSocket(address, port, localAddress, localPort);
+                }
+                private void injectHostname(InetAddress address, String host) {
+                    try {
+                        Field field = InetAddress.class.getDeclaredField("hostName");
+                        field.setAccessible(true);
+                        field.set(address, host);
+                    } catch (Exception ignored) {
+                    }
+                }
+                @Override
+                public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
+                    injectHostname(s.getInetAddress(), host);
+                    return delegate.createSocket(s, host, port, autoClose);
+                }
+                @Override
+                public String[] getDefaultCipherSuites() {
+                    return delegate.getDefaultCipherSuites();
+                }
+                @Override
+                public String[] getSupportedCipherSuites() {
+                    return delegate.getSupportedCipherSuites();
+                }
+            };
+            
+            socket = (SSLSocket)factory.createSocket(server, port);
+            socket.setSoTimeout(10000);
+            socket.setUseClientMode(true);
+            
+            SSLSession session = socket.getSession();
+            boolean secured = session.isValid();
+            if (secured) {
+				inputStream = socket.getInputStream();
+				outputStream = socket.getOutputStream();
+			    audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 8000,
+					AudioFormat.CHANNEL_OUT_MONO,
+					AudioFormat.ENCODING_PCM_16BIT, AUDIO_BUFFER_SIZE * 2,
+					AudioTrack.MODE_STREAM);
+			
+			    audioTrack.play();
+			    
+			    int N = 10 * AudioRecord.getMinBufferSize(8000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
+			    if (N < micBufferSize * 40) N = micBufferSize * 40; // 40 * 58 = 2320
+			    
+			    recorder = new AudioRecord(AudioSource.MIC, 8000,
+			    				AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, N);
+			    
+			    recorder.setPositionNotificationPeriod(micBufferSize * nMicBuffers);
+			    final int finalMicBufferSize = micBufferSize;
+			    
+			    OnRecordPositionUpdateListener positionUpdater = new OnRecordPositionUpdateListener () {
+			    	public void onPeriodicNotification(AudioRecord recorder){
+			    		for (int j = 0; j < nMicBuffers; j++){
+				    		short[] micData = new short[micBufferSize];
+				    		recorder.read(micData, 0, finalMicBufferSize);
+				    		if (allowTx & MOX){
+					    		byte[] micEncodedData = new byte[micBufferSize];
+					    		for (int i = 0; i < micBufferSize; i++){
+					    			micEncodedData[i] = aLawEncode[(micData[i] << micGain) & 0xFFFF];
+					    		}
+					    		sendAudio(micEncodedData);
+					    	}
+			    		}
+			    	}
+			    	
+			    	public void onMarkerReached(AudioRecord recorder){
+			    	}
+			    	
+			    };
+			    recorder.setRecordPositionUpdateListener(positionUpdater);
+			    recorder.startRecording();
+			    short[] buffer = new short[micBufferSize*nMicBuffers];
+			    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
+            } else {
+            	result = false;
+            }
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
 					+ port + "'" + e.getMessage() + "'");
 			status=e.toString();
 			socket=null;
+			result = false;
 		}
+		return result;
 	}
 	
 	public void close() {
@@ -646,6 +742,9 @@ public class Connection extends Thread {
 		hasBeenSlave = state;
 	}
 
+	private static TrustManager[] trustAllCerts = null;
+	private SSLContext sslContext = null;
+	private SSLSocket socket;
 	private SpectrumView spectrumView;
 
 	private static final int BUFFER_TYPE_SIZE = 1;
@@ -666,7 +765,6 @@ public class Connection extends Thread {
 	private boolean hasBeenSlave = false;
 	private String server;
 	private int port;
-	private Socket socket;
 	private InputStream inputStream;
 	private OutputStream outputStream;
 	private boolean running = false;
