@@ -264,11 +264,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		mGLSurfaceView.onResume();
 		Log.i("AHPSDR", "onResume");
 		//mSensorManager.registerListener(this, mGravity, SensorManager.SENSOR_DELAY_NORMAL);
-		if(connection==null) {
-			connection = new Connection(server, BASE_PORT+receiver, width);
-			setConnectionDefaults();
-			mySetTitle();
-		}
+		connection = new Connection(server, BASE_PORT+receiver, width);
+		setConnectionDefaults();
+		mySetTitle();
 		spectrumView.setAverage(-100);
 	}
 
@@ -283,7 +281,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		Log.i("AHPSDR", "onDestroy");
 		//update.close();
 		connection.close();
-		connection=null;
 	}
 
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -1234,12 +1231,33 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	}
 	
 	private void setConnectionDefaults(){
+		boolean result;
 		if (timer != null) timer.cancel();
 		connection.setSpectrumView(spectrumView);
-		connection.connect();
+		result = connection.connect();
+		if (!result){	
+			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+			// set title
+			alertDialogBuilder.setTitle("Server Unavailable");
+			// set dialog message
+			alertDialogBuilder
+				.setMessage("The selected Server is unavailable.  Please use MENU (looks like 3 dots at bottom of your device) to select another Server.")
+				.setCancelable(false)
+				.setPositiveButton("OK",new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog,int id) {
+						// if this button is clicked, close
+						// current activity
+						if (connection != null) connection.close();
+					}
+				  });
+				// create alert dialog
+				AlertDialog alertDialog = alertDialogBuilder.create();
+				// show it
+				alertDialog.show();
+		};
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(30)");
+	    connection.sendCommand("setClient glSDR(32)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setBand(band);
