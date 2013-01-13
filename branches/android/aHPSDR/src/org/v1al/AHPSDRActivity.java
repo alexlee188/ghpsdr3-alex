@@ -1485,8 +1485,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 	private String server = "qtradio.napan.ca";
 	private String qAnswer = "";
-	private int BASE_PORT = 8000;
-	private int port = 8000;
+	private int BASE_PORT = 9000;
+	private int port = 9000;
 	private CustomAdapter serverAdapter;
 	private CharSequence servers[];
 	 
