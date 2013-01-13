@@ -29,7 +29,7 @@ void Client::readClient() {
     QTcpSocket* socket = (QTcpSocket*)sender();
     QByteArray buffer=socket->readLine();
     QString response=parseCommand(QString(buffer));
-    socket->write(response.toAscii());
+    socket->write(response.toLatin1());
 }
 
 QString Client::parseCommand(QString buffer) {
