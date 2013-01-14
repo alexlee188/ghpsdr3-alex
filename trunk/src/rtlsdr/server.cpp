@@ -49,7 +49,7 @@ void print_help()
     "    Allowed options:"                                    << endl <<
     "      -s [ --samplerate ] samplerate in Samples/second"  << endl <<
     "                          250000 | 500000 | 1000000, def=250000" << endl <<
-    "      -g [ --gain ]       gain in dB"                    << endl <<
+    "      -g [ --gain ]       gain in dB or -1 for AGC"      << endl <<
     "      -h [ --help ]       print usage message"           << endl <<
     "      -i [ --device]      device to be used (default=0)" << endl <<
     "      -d [ --debug ]      debug level (default=0)"       << endl <<
@@ -168,6 +168,14 @@ int main(int argc, char* argv[]) {
         else
             fprintf(stderr, "Tuned to %i Hz.\n", frequency);
 
+if(cfg.gain<0) {
+        r = rtlsdr_set_tuner_gain_mode(cfg.rtl, 0);
+        if (r < 0)
+           fprintf(stderr, "WARNING: Failed to set tuner gain mode.\n");
+        else
+           fprintf(stderr, "Tuner gain set in auto mode\n");
+
+} else {
         r = rtlsdr_set_tuner_gain_mode(cfg.rtl, 1 /* manual */ );
         if (r < 0)
            fprintf(stderr, "WARNING: Failed to set tuner gain mode.\n");
@@ -180,6 +188,7 @@ int main(int argc, char* argv[]) {
         else
            fprintf(stderr, "Tuner gain set to %.2f dB.\n", cfg.gain/10.0);
 
+}
 
 
         cout << "Press q <ENTER> to exit." << endl;

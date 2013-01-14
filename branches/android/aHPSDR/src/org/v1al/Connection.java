@@ -741,6 +741,10 @@ public class Connection extends Thread {
 	public void setHasBeenSlave(boolean state){
 		hasBeenSlave = state;
 	}
+	
+	public void setMaster(){
+		sendCommand("setMaster " + txUser + " " + txPass);
+	}
 
 	private static TrustManager[] trustAllCerts = null;
 	private SSLContext sslContext = null;

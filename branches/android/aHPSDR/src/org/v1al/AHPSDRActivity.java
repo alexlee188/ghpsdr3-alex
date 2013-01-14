@@ -298,6 +298,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		menu.add(0, MENU_SPECTRUM_AVERAGE, 0, "Spectrum Average");
 		menu.add(0, MENU_TX, 0, "ALLOW TX");
 		menu.add(0, MENU_TX_USER, 0, "TX User Password");
+		menu.add(0, MENU_MASTER, 0, "MASTER");
 		menu.add(0, MENU_MIC_GAIN, 0, "MIC GAIN");
 		menu.add(0, MENU_ABOUT, 0, "About");
 		menu.add(0, MENU_QUIT, 0, "Quit");
@@ -1211,6 +1212,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			about.setTitle("About glSDR");
 			about.show();
 			break;
+		case MENU_MASTER:
+			connection.setMaster();
+			break;
 		default:
 			dialog = null;
 			break;
@@ -1355,6 +1359,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int MENU_MIC_GAIN = 14;
 	public static final int MENU_SPECTRUM_AVERAGE = 15;
 	public static final int MENU_ABOUT = 16;
+	public static final int MENU_MASTER = 17;
 
 	public static final CharSequence[] bands = { "160", "80", "60", "40", "30",
 			"20", "17", "15", "12", "10", "6", "GEN", "WWV", "Reset" };
