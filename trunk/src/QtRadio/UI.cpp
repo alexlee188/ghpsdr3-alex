@@ -724,8 +724,8 @@ void UI::connected() {
     command.clear(); QTextStream(&command) << "SetNB " << (widget.actionNB->isChecked()?"true":"false");
     connection.sendCommand(command);
 
-    //command.clear(); QTextStream(&command) << "SetDCBlock 1";
-    //connection.sendCommand(command);
+   // command.clear(); QTextStream(&command) << "SetDCBlock 1";
+   // connection.sendCommand(command);
 
     //
     // hardware special command
@@ -2236,6 +2236,11 @@ void UI::pttChange(int caller, bool ptt)
                connection.sendCommand(command);
                actionAM();
             }
+            else { //by w3sz
+                if(caller==0) { //we have clicked the MOX button  //by w3sz
+                }
+            }
+
             //Mute the receiver audio and freeze the spectrum and waterfall display
             connection.setMuted(true);
             //Key the radio
