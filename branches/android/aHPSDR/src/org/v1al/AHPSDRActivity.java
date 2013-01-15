@@ -1257,7 +1257,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		};
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(32)");
+	    connection.sendCommand("setClient glSDR(33)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setBand(band);
