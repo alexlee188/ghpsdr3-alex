@@ -1,8 +1,8 @@
 <h3>glSDR</h3>
-Version 32 with ssl`<br>
+Version 33 with ssl<br>
 Copyright 2012 Alex Lee<br>
 <b>http://napan.ca/ghpsdr3/index.php/Main_Page</b><br><br>
 List of servers<br>
 <b>http://qtradio.napan.ca/qtradio/qtradio.pl</b><br><br>
 Map of servers<br>
-<b>http://http://www.montefusco.com/ghpsdr3/</b><br><br>
+<b>http://www.montefusco.com/ghpsdr3/</b><br><br>
