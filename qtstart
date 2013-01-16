@@ -1,6 +1,6 @@
 #!/bin/bash
 trunk/src/server/./hpsdr-server --metis --samplerate 192000 &
 sleep 1
-trunk/src/dspserver/./dspserver --hpsdr --lo 0 --nocorrectiq --fft 262144 &
+trunk/src/dspserver/./dspserver --hpsdr --lo 0 --nocorrectiq --fft 131072 &
 sleep 1
 trunk/src/QtRadio/./QtRadio
