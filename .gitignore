@@ -106,3 +106,8 @@ trunk/src/usrp/build-aux/lt~obsolete.m4
 trunk/src/usrp/libtool
 trunk/src/usrp/ltmain.sh
 
+trunk/src/perseus/perseus_server
+trunk/src/rtlsdr/rtlsdr-server
+trunk/src/usrp/usrp_server
+
+
