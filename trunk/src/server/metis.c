@@ -176,6 +176,7 @@ void metis_discover(char* interface,char* metisip) {
         exit(1);
     }
 
+
     discovery_length=sizeof(discovery_addr);
     memset(&discovery_addr,0,discovery_length);
     discovery_addr.sin_family=AF_INET;
@@ -202,6 +203,8 @@ int metis_found() {
 char* metis_ip_address(int entry) {
     if(entry>=0 && entry<found) {
         return metis_cards[entry].ip_address;
+		fprintf(stderr,"Metis ip_address = %i\n", ip_address);	
+
     }
     return NULL;
 }
@@ -347,12 +350,17 @@ void* metis_receive_thread(void* arg) {
                             fprintf(stderr,"Metis MAC address %s\n",metis_cards[found].mac_address);
     
                             // get ip address from packet header
-                            sprintf(metis_cards[found].ip_address,"%d.%d.%d.%d",
+							if (metisip1 != "0.0.0.0")
+							{ 
+							fprintf(stderr,"Requested Metis IP address %s\n",metisip1);
+							addr.sin_addr.s_addr =inet_addr(metisip1) ;//by w3sz
+							}
+								sprintf(metis_cards[found].ip_address,"%d.%d.%d.%d",
                                        addr.sin_addr.s_addr&0xFF,
                                        (addr.sin_addr.s_addr>>8)&0xFF,
                                        (addr.sin_addr.s_addr>>16)&0xFF,
                                        (addr.sin_addr.s_addr>>24)&0xFF);
-                            fprintf(stderr,"Metis IP address %s\n",metis_cards[found].ip_address);
+                            fprintf(stderr,"Assigned Metis IP address %s\n",metis_cards[found].ip_address);
                             metis_cards[found].code_version = input_buffer[9];
                             switch (input_buffer[10]) {
                                case 0x00:
