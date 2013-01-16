@@ -987,6 +987,9 @@ void* client_thread(void* arg) {
                          LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE | 
                          LEV_OPT_THREADSAFE, 1024,
                          (struct sockaddr *)&server_ssl, sizeof(server_ssl));
+
+    sdr_log(SDR_LOG_INFO, "client_thread: listening on port %d\n for ssl connection", port_ssl);
+
     // this will be an endless loop to service all the network events
     event_base_loop(base, 0);
 
