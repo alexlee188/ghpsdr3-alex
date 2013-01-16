@@ -39,3 +39,5 @@ char* metis_mac_address(int entry);
 void metis_start_receive_thread();
 
 int metis_write(unsigned char ep,char* buffer,int length);
+
+char* metisip1; //by w3sz
