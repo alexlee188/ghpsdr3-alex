@@ -88,8 +88,11 @@ public class Connection extends Thread {
                         throws IOException, UnknownHostException {
                     InetAddress addr = InetAddress.getByName(host);
                     injectHostname(addr, host);
+                    // try to connect with timeout - if timed out throws exception
                     Socket sc = delegate.createSocket();
-                    sc.connect(new InetSocketAddress(addr, port), 2000);
+                    sc.bind(null);
+                    sc.connect(new InetSocketAddress(addr, port), 5000);
+                    // connection was successful
                     return sc;
                 }
                 @Override
