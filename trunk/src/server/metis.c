@@ -351,7 +351,8 @@ void* metis_receive_thread(void* arg) {
     
                             // get ip address from packet header
 							if (metisip1 != "0.0.0.0")
-							{
+							{ 
+							fprintf(stderr,"Requested Metis IP address %s\n",metisip1);
 							addr.sin_addr.s_addr =inet_addr(metisip1) ;//by w3sz
 							}
 								sprintf(metis_cards[found].ip_address,"%d.%d.%d.%d",
@@ -359,7 +360,7 @@ void* metis_receive_thread(void* arg) {
                                        (addr.sin_addr.s_addr>>8)&0xFF,
                                        (addr.sin_addr.s_addr>>16)&0xFF,
                                        (addr.sin_addr.s_addr>>24)&0xFF);
-                            fprintf(stderr,"Metis IP address %s\n",metis_cards[found].ip_address);
+                            fprintf(stderr,"Assigned Metis IP address %s\n",metis_cards[found].ip_address);
                             metis_cards[found].code_version = input_buffer[9];
                             switch (input_buffer[10]) {
                                case 0x00:
