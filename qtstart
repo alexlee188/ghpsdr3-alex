@@ -1,5 +1,5 @@
 #!/bin/bash
-hpsdr-server --metis --samplerate 192000 &
+hpsdr-server --metis --samplerate 192000 --metisip 192.168.1.63 &
 sleep 1
 dspserver --hpsdr --lo 0 --nocorrectiq --fft 262144 &
 sleep 1
