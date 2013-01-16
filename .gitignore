@@ -77,3 +77,7 @@ branches/android/aHPSDR/bin/*
 
 /branches/java/jmonitor/dist/
 /branches/java/jmonitor/build/
+
+trunk/src/*/.anjuta/*
+trunk/src/*/.anjuta*
+trunk/src/*/*.anjuta
