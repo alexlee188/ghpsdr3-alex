@@ -1262,7 +1262,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		};
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(32)");
+	    connection.sendCommand("setClient glSDR(33)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setBand(band);
@@ -1501,7 +1501,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	private String server = "qtradio.napan.ca";
 	private String qAnswer = "";
 	private int BASE_PORT = 9000;
-	private int port = 9000;
 	private CustomAdapter serverAdapter;
 	private CharSequence servers[];
 	 

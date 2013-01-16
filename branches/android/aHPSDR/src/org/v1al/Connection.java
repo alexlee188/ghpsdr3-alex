@@ -88,7 +88,9 @@ public class Connection extends Thread {
                         throws IOException, UnknownHostException {
                     InetAddress addr = InetAddress.getByName(host);
                     injectHostname(addr, host);
-                    return delegate.createSocket(addr, port);
+                    Socket sc = delegate.createSocket();
+                    sc.connect(new InetSocketAddress(addr, port), 2000);
+                    return sc;
                 }
                 @Override
                 public Socket createSocket(InetAddress host, int port)
@@ -129,7 +131,7 @@ public class Connection extends Thread {
             };
             
             socket = (SSLSocket)factory.createSocket(server, port);
-            socket.setSoTimeout(10000);
+            socket.setSoTimeout(5000);
             socket.setUseClientMode(true);
             
             SSLSession session = socket.getSession();
