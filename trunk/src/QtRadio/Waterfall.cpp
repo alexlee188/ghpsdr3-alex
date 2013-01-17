@@ -87,9 +87,8 @@ Waterfall::Waterfall(QWidget*& widget) {
 #endif
 
     waterfallcl = new Waterfallcl;
-
-    waterfallcl->initialize(width()*2,256);
-    waterfallcl->resize(width()*2,height()*2);
+    waterfallcl->initialize(width(),256);
+    waterfallcl->resize(width()*3,height()*2);
     waterfallcl->setParent(this);
     waterfallcl->show();
 }
