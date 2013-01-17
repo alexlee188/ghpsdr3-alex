@@ -121,8 +121,8 @@ void Waterfallcl::paintGL()
     glUniform1f(width_location, tex_width);
 
     // Ortho2D projection
-    const GLfloat mMVPMatrix[] = {2.0f/data_width, 0.0f, 0.0f, -0.0f,
-                           0.0f, -2.0f/data_height, 0.0f, -0.0f,
+    const GLfloat mMVPMatrix[] = {2.0f/data_width, 0.0f, 0.0f, 0.0f,
+                           0.0f, -2.0f/data_height, 0.0f, 0.0f,
                            0.0f, 0.0f, 1.0f, 0.0f,
                            -1.0f, 1.0f, 0.0f, 1.0f
                            };
@@ -139,7 +139,6 @@ void Waterfallcl::paintGL()
         0.0f, MAX_CL_HEIGHT, // Position 3
         0.0f, 1.0f // TexCoord 3
     };
-
     glVertexAttribPointer(aPosition_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, mVertices);
     glEnableVertexAttribArray(aPosition_location);
     glVertexAttribPointer(textureCoord_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, &mVertices[2]);
