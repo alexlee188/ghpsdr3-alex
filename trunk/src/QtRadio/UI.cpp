@@ -724,8 +724,8 @@ void UI::connected() {
     command.clear(); QTextStream(&command) << "SetNB " << (widget.actionNB->isChecked()?"true":"false");
     connection.sendCommand(command);
 
-   // command.clear(); QTextStream(&command) << "SetDCBlock 1";
-   // connection.sendCommand(command);
+    //command.clear(); QTextStream(&command) << "SetDCBlock 1";
+    //connection.sendCommand(command);
 
     //
     // hardware special command
