@@ -91,15 +91,7 @@ static int port=BASE_PORT;
 #define BASE_PORT_SSL 9000
 static int port_ssl=BASE_PORT_SSL;
 
-<<<<<<< HEAD
-// This must match the size declared in DttSP common.h W3SZBUF //by w3sz
-//#define SAMPLE_BUFFER_SIZE 4096 //by w3sz changed and moved
 
-=======
-// This must match the size declared in DttSP
-#define SAMPLE_BUFFER_SIZE 4096
-static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
->>>>>>> opengl-ssl
 static int zoom = 0;
 static int low,high;            // filter low/high
 
@@ -188,12 +180,9 @@ static void *printcountrythread(void *);
 static void printcountry(struct sockaddr_in *);
 
 float getFilterSizeCalibrationOffset() {
-<<<<<<< HEAD
+
 //    int size=1024; // dspBufferSize //by w3sz changed
     int size=DEFSPEC; // dspBufferSize //by w3sz	
-=======
-    int size=1024; // dspBufferSize
->>>>>>> opengl-ssl
     float i=log10((float)size);
     return 3.0f*(11.0f-i);
 }

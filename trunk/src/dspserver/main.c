@@ -80,12 +80,8 @@
 * 
 */
 
-<<<<<<< HEAD
 const char *version = "20130122;-bigfft-opengl-ssl"; //YYYYMMDD; text desc
 extern int DEFSPEC;//by w3sz
-=======
-const char *version = "20130122;-opengl-ssl"; //YYYYMMDD; text desc
->>>>>>> opengl-ssl
 
 // main.c
 
