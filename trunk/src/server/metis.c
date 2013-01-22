@@ -349,17 +349,13 @@ void* metis_receive_thread(void* arg) {
                                        input_buffer[3]&0xFF,input_buffer[4]&0xFF,input_buffer[5]&0xFF,input_buffer[6]&0xFF,input_buffer[7]&0xFF,input_buffer[8]&0xFF);
                             fprintf(stderr,"Metis MAC address %s\n",metis_cards[found].mac_address);
     
-                            // get ip address from packet header
-							if (metisip1 != "0.0.0.0")
-<<<<<<< HEAD
-							{ 
-							fprintf(stderr,"Requested Metis IP address %s\n",metisip1);
-=======
-							{
->>>>>>> bigfft-opengl
-							addr.sin_addr.s_addr =inet_addr(metisip1) ;//by w3sz
-							}
-								sprintf(metis_cards[found].ip_address,"%d.%d.%d.%d",
+                        // get ip address from packet header
+			if (metisip1 != "0.0.0.0")
+			{ 
+			fprintf(stderr,"Requested Metis IP address %s\n",metisip1);
+			addr.sin_addr.s_addr =inet_addr(metisip1) ;//by w3sz
+			}
+				sprintf(metis_cards[found].ip_address,"%d.%d.%d.%d",
                                        addr.sin_addr.s_addr&0xFF,
                                        (addr.sin_addr.s_addr>>8)&0xFF,
                                        (addr.sin_addr.s_addr>>16)&0xFF,

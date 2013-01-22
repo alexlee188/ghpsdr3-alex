@@ -88,22 +88,17 @@ static pthread_t client_thread_id, tx_thread_id, rtp_tx_thread_id;
 #define BASE_PORT 8000
 static int port=BASE_PORT;
 
-<<<<<<< HEAD
 #define BASE_PORT_SSL 9000
 static int port_ssl=BASE_PORT_SSL;
-=======
+
 // This must match the size declared in DttSP common.h W3SZBUF //by w3sz
 //#define SAMPLE_BUFFER_SIZE 4096 //by w3sz changed and moved
->>>>>>> bigfft-opengl
 
 static int zoom = 0;
 static int low,high;            // filter low/high
 
-<<<<<<< HEAD
-//#define SAMPLE_BUFFER_SIZE 4096 //by w3sz changed and moved
 
-=======
->>>>>>> bigfft-opengl
+//#define SAMPLE_BUFFER_SIZE 4096 //by w3sz changed and moved
 // This must match the size declared in DttSP common.h W3SZBUF //by w3sz
 #define SAMPLE_BUFFER_SIZE DEFSPEC //by w3sz changed and moved
 
@@ -1188,15 +1183,8 @@ void readcb(struct bufferevent *bev, void *ctx){
             sem_wait(&spectrum_semaphore);
             // spectrumBuffer is updated by spectrum_timer thread every 20ms
             client_set_samples(client_samples,spectrumBuffer,samples);
-<<<<<<< HEAD
-            bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
             sem_post(&spectrum_semaphore);
-=======
-            sem_post(&spectrum_semaphore);
-            sem_wait(&bufferevent_semaphore);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
-            sem_post(&bufferevent_semaphore);
->>>>>>> bigfft-opengl
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;

@@ -40,8 +40,5 @@ void metis_start_receive_thread();
 
 int metis_write(unsigned char ep,char* buffer,int length);
 
-<<<<<<< HEAD
 char* metisip1; //by w3sz
-=======
-char* metisip1; //by w3sz
->>>>>>> bigfft-opengl
+

@@ -1,12 +1,7 @@
 #!/bin/bash
-<<<<<<< HEAD
-killall QtRadio
-killall dspserver
-killall hpsdr-server
-=======
 killall hpsdr-server 
 sleep 1
 killall dspserver
 sleep 1
 killall QtRadio
->>>>>>> bigfft-opengl
+
