@@ -915,8 +915,13 @@ void readcb(struct bufferevent *bev, void *ctx){
 
         if (message[0] == '*') {
            fprintf(stderr,"HARDWARE DIRECTED: message: '%s'\n",message);
-           ozySendStarCommand (message);
-           answer_question(message,"slave", bev);
+           if (!slave) {
+              // if master, forward the message to the hardware
+              ozySendStarCommand (message); 
+              answer_question(message,"slave", bev);
+           } else {
+              // in slave mode don't forward the message
+           }
            continue;
         } 
 
@@ -963,23 +968,14 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             int samples=atoi(tokens[0]);
-            
-            sem_wait(&spectrum_semaphore);
-            if(mox) {
-                Process_Panadapter(1,spectrumBuffer);
-                meter=CalculateTXMeter(1,5); // MIC
-                subrx_meter=-121;
-            } else {
-                Process_Panadapter(0,spectrumBuffer);
-                meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-                subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-            }
             char *client_samples=malloc(BUFFER_HEADER_SIZE+samples);
+            sem_wait(&spectrum_semaphore);
+            // spectrumBuffer is updated by spectrum_timer thread every 20ms
             client_set_samples(client_samples,spectrumBuffer,samples);
+            sem_post(&spectrum_semaphore);
             sem_wait(&bufferevent_semaphore);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
             sem_post(&bufferevent_semaphore);
-            sem_post(&spectrum_semaphore);
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;
@@ -1590,12 +1586,13 @@ void setprintcountry()
 void printcountry(struct sockaddr_in *client){
     pthread_t lookup_thread;
     int ret;
+    in_addr_t *client_addr;
 
-    /* This takes advantage of the fact that IPv4 addresses are 32 bits.
-     * If or when this code is aware of other types of sockets, the
-     * argument here will have to be renegotiated. */
+    client_addr = malloc(sizeof(*client_addr));
+    *client_addr = client->sin_addr.s_addr;
+
     ret = pthread_create(&lookup_thread, NULL, printcountrythread,
-                         (void*)client->sin_addr.s_addr);
+                         (void*) client_addr);
     if (ret == 0) pthread_detach(lookup_thread);
 }
 
@@ -1608,7 +1605,8 @@ void *printcountrythread(void *arg)
   struct in_addr addr;
   char ipstr[16];
 
-  addr.s_addr = (in_addr_t)arg;
+  addr.s_addr = *(in_addr_t*)arg;
+  free(arg);
   inet_ntop(AF_INET, (void *)&addr, ipstr, sizeof(ipstr));
   /* Open the command for reading. */
   sprintf(sCmd,"wget -q -O - --post-data 'ip=%s' http://www.selfseo.com/ip_to_country.php 2>/dev/null | sed -e '/ is assigned to /!d' -e 's/.*border=1> \\([^<]*\\).*/\\1/'",

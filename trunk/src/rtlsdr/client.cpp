@@ -383,7 +383,8 @@ const char* parse_command(CLIENT* client,char* command) {
 
         } else {
             // invalid command string
-            return INVALID_COMMAND;
+            fprintf (stderr, "***************************** INVALID_COMMAND: %s\n", token);
+             return INVALID_COMMAND;
         }
     } else {
         // empty command string
