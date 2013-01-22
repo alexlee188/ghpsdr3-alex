@@ -1177,9 +1177,10 @@ void readcb(struct bufferevent *bev, void *ctx){
             int samples=atoi(tokens[0]);
             char *client_samples=malloc(BUFFER_HEADER_SIZE+samples);
             sem_wait(&spectrum_semaphore);
+            // spectrumBuffer is updated by spectrum_timer thread every 20ms
             client_set_samples(client_samples,spectrumBuffer,samples);
-            bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
             sem_post(&spectrum_semaphore);
+            bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;
