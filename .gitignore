@@ -81,6 +81,7 @@ branches/android/aHPSDR/bin/*
 trunk/src/*/.anjuta/*
 trunk/src/*/.anjuta*
 trunk/src/*/*.anjuta
+<<<<<<< HEAD
 
 build-aux/libtool.m4
 build-aux/ltoptions.m4
@@ -111,3 +112,5 @@ trunk/src/rtlsdr/rtlsdr-server
 trunk/src/usrp/usrp_server
 
 
+=======
+>>>>>>> bigfft-opengl

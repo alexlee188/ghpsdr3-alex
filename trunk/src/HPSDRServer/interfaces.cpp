@@ -42,7 +42,7 @@ Interfaces::Interfaces() {
                 if(addr.ip().protocol() == QAbstractSocket::IPv4Protocol) {
                     qDebug()<<iface.name()<<iface.hardwareAddress()<<addr.ip().toString();
                     interfaces.append(iface);
-                    interfaceNames.insert(nInterfaces, iface.humanReadableName().toAscii());
+                    interfaceNames.insert(nInterfaces, iface.humanReadableName().toLatin1());
                     nInterfaces++;
                 }
             }

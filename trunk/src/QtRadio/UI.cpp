@@ -2237,6 +2237,11 @@ void UI::pttChange(int caller, bool ptt)
                connection.sendCommand(command);
                actionAM();
             }
+            else { //by w3sz
+                if(caller==0) { //we have clicked the MOX button  //by w3sz
+                }
+            }
+
             //Mute the receiver audio and freeze the spectrum and waterfall display
             connection.setMuted(true);
             //Key the radio

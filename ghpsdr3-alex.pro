@@ -3,7 +3,7 @@
 TEMPLATE = subdirs
 
 QtRadio.subdir = trunk/src/QtRadio
-softrock.subdir = trunk/src/softrock
-softrock.makefile = Makefile
+# softrock.subdir = trunk/src/softrock
+# softrock.makefile = Makefile
 
-SUBDIRS += QtRadio softrock
+SUBDIRS += QtRadio #softrock

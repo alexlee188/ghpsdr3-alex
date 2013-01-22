@@ -36,7 +36,11 @@ Bridgewater, NJ 08807
 
 #define RINGMULT (4)
 #define METERMULT (20)
+<<<<<<< HEAD
 #define SPECMULT (4)
+=======
+#define SPECMULT (4)
+>>>>>>> bigfft-opengl
 
 #define DEFRATE (192000.0) //by w3sz changed
 #define DEFSIZE (4096)

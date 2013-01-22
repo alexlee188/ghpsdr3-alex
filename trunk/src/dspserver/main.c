@@ -6,6 +6,7 @@
 * \date 2009-04-11
 *
 *
+* 
 * \mainpage GHPSDR 
 *  \image html ../ghpsdr.png
 *  \image latex ../ghpsdr.png "Screen shot of GHPSDR" width=10cm
@@ -79,7 +80,11 @@
 * 
 */
 
+<<<<<<< HEAD
 const char *version = "20130101;-opengl-ssl"; //YYYYMMDD; text desc
+=======
+const char *version = "20121226;-opengl"; //YYYYMMDD; text desc
+>>>>>>> bigfft-opengl
 extern int DEFSPEC;//by w3sz
 
 // main.c

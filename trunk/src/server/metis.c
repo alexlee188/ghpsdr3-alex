@@ -351,8 +351,12 @@ void* metis_receive_thread(void* arg) {
     
                             // get ip address from packet header
 							if (metisip1 != "0.0.0.0")
+<<<<<<< HEAD
 							{ 
 							fprintf(stderr,"Requested Metis IP address %s\n",metisip1);
+=======
+							{
+>>>>>>> bigfft-opengl
 							addr.sin_addr.s_addr =inet_addr(metisip1) ;//by w3sz
 							}
 								sprintf(metis_cards[found].ip_address,"%d.%d.%d.%d",
