@@ -76,6 +76,7 @@ Bridgewater, NJ 08807
 #include <malloc.h>
 
 //typedef long uid_t;
+
 /*End Windows differences */
 
 #include <sdrexport.h>

@@ -298,6 +298,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		menu.add(0, MENU_SPECTRUM_AVERAGE, 0, "Spectrum Average");
 		menu.add(0, MENU_TX, 0, "ALLOW TX");
 		menu.add(0, MENU_TX_USER, 0, "TX User Password");
+		menu.add(0, MENU_MASTER, 0, "MASTER");
 		menu.add(0, MENU_MIC_GAIN, 0, "MIC GAIN");
 		menu.add(0, MENU_ABOUT, 0, "About");
 		menu.add(0, MENU_QUIT, 0, "Quit");
@@ -1211,6 +1212,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			about.setTitle("About glSDR");
 			about.show();
 			break;
+		case MENU_MASTER:
+			connection.setMaster();
+			break;
 		default:
 			dialog = null;
 			break;
@@ -1233,6 +1237,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	private void setConnectionDefaults(){
 		boolean result;
 		if (timer != null) timer.cancel();
+		if (spectrum_timer != null) timer.cancel();
 		connection.setSpectrumView(spectrumView);
 		result = connection.connect();
 		if (!result){	
@@ -1274,11 +1279,13 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		spectrumView.setAverage(-100);
 		connection.setFps(fps);
 		connection.setSpectrumAverage(spectrumAverage);
-		connection.getSpectrum_protocol3(fps+1);
+		//connection.getSpectrum_protocol3(fps+1);
 		connection.setScaleFactor(1f);
 		connection.setHasBeenSlave(false);
 		timer = new Timer();
 		timer.schedule(new answerTask(), 1000, 1000);
+		spectrum_timer = new Timer();
+		spectrum_timer.schedule(new spectrumTask(), 1000/fps, 1000/fps);
 	}
 	
 	private void mySetTitle(){
@@ -1308,8 +1315,15 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	    }
 	}
 	
+	class spectrumTask extends TimerTask {
+		public void run(){
+			connection.getSpectrum();
+		}
+	}
+	
 	private Timer timer;
 	private Handler mHandler = new Handler();
+	private Timer spectrum_timer;
 	private int width;
 	private int height;
 
@@ -1345,6 +1359,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int MENU_MIC_GAIN = 14;
 	public static final int MENU_SPECTRUM_AVERAGE = 15;
 	public static final int MENU_ABOUT = 16;
+	public static final int MENU_MASTER = 17;
 
 	public static final CharSequence[] bands = { "160", "80", "60", "40", "30",
 			"20", "17", "15", "12", "10", "6", "GEN", "WWV", "Reset" };
@@ -1485,8 +1500,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 
 	private String server = "qtradio.napan.ca";
 	private String qAnswer = "";
-	private int BASE_PORT = 8000;
-	private int port = 8000;
+	private int BASE_PORT = 9000;
 	private CustomAdapter serverAdapter;
 	private CharSequence servers[];
 	 

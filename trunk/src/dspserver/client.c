@@ -91,9 +91,15 @@ static int port=BASE_PORT;
 #define BASE_PORT_SSL 9000
 static int port_ssl=BASE_PORT_SSL;
 
+<<<<<<< HEAD
 // This must match the size declared in DttSP common.h W3SZBUF //by w3sz
 //#define SAMPLE_BUFFER_SIZE 4096 //by w3sz changed and moved
 
+=======
+// This must match the size declared in DttSP
+#define SAMPLE_BUFFER_SIZE 4096
+static float spectrumBuffer[SAMPLE_BUFFER_SIZE];
+>>>>>>> opengl-ssl
 static int zoom = 0;
 static int low,high;            // filter low/high
 
@@ -182,8 +188,12 @@ static void *printcountrythread(void *);
 static void printcountry(struct sockaddr_in *);
 
 float getFilterSizeCalibrationOffset() {
+<<<<<<< HEAD
 //    int size=1024; // dspBufferSize //by w3sz changed
     int size=DEFSPEC; // dspBufferSize //by w3sz	
+=======
+    int size=1024; // dspBufferSize
+>>>>>>> opengl-ssl
     float i=log10((float)size);
     return 3.0f*(11.0f-i);
 }
@@ -994,6 +1004,9 @@ void* client_thread(void* arg) {
                          LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE | 
                          LEV_OPT_THREADSAFE, 1024,
                          (struct sockaddr *)&server_ssl, sizeof(server_ssl));
+
+    sdr_log(SDR_LOG_INFO, "client_thread: listening on port %d for ssl connection\n", port_ssl);
+
     // this will be an endless loop to service all the network events
     event_base_loop(base, 0);
 
