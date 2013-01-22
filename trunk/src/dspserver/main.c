@@ -79,7 +79,7 @@
 * 
 */
 
-const char *version = "20130101;-ssl"; //YYYYMMDD; text desc
+const char *version = "20130122;-bigfft-ssl"; //YYYYMMDD; text desc
 extern int DEFSPEC;//by w3sz
 
 // main.c

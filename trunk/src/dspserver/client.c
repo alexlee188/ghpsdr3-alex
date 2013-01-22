@@ -991,6 +991,9 @@ void* client_thread(void* arg) {
                          LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE | 
                          LEV_OPT_THREADSAFE, 1024,
                          (struct sockaddr *)&server_ssl, sizeof(server_ssl));
+
+    sdr_log(SDR_LOG_INFO, "client_thread: listening on port %d for ssl connection\n", port_ssl);
+
     // this will be an endless loop to service all the network events
     event_base_loop(base, 0);
 
@@ -1176,21 +1179,12 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             int samples=atoi(tokens[0]);
-            
-            sem_wait(&spectrum_semaphore);
-            if(mox) {
-                Process_Panadapter(1,spectrumBuffer);
-                meter=CalculateTXMeter(1,5); // MIC
-                subrx_meter=-121;
-            } else {
-                Process_Panadapter(0,spectrumBuffer);
-                meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-                subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-            }
             char *client_samples=malloc(BUFFER_HEADER_SIZE+samples);
+            sem_wait(&spectrum_semaphore);
+            // spectrumBuffer is updated by spectrum_timer thread every 20ms
             client_set_samples(client_samples,spectrumBuffer,samples);
-            bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
             sem_post(&spectrum_semaphore);
+            bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;
