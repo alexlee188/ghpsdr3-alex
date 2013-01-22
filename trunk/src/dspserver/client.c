@@ -968,23 +968,14 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             int samples=atoi(tokens[0]);
-            
-            sem_wait(&spectrum_semaphore);
-            if(mox) {
-                Process_Panadapter(1,spectrumBuffer);
-                meter=CalculateTXMeter(1,5); // MIC
-                subrx_meter=-121;
-            } else {
-                Process_Panadapter(0,spectrumBuffer);
-                meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-                subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-            }
             char *client_samples=malloc(BUFFER_HEADER_SIZE+samples);
+            sem_wait(&spectrum_semaphore);
+            // spectrumBuffer is updated by spectrum_timer thread every 20ms
             client_set_samples(client_samples,spectrumBuffer,samples);
+            sem_post(&spectrum_semaphore);
             sem_wait(&bufferevent_semaphore);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
             sem_post(&bufferevent_semaphore);
-            sem_post(&spectrum_semaphore);
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;
