@@ -435,9 +435,9 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
                     sem_wait(&spectrum_semaphore);
                     client_set_samples(client_samples,spectrumBuffer,item->samples);
                     sem_post(&spectrum_semaphore);
-                    sem_wait(&bufferevent_semaphore);
+                    //sem_wait(&bufferevent_semaphore);
                     bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
-                    sem_post(&bufferevent_semaphore);
+                    //sem_post(&bufferevent_semaphore);
                     free(client_samples);
                     item->frame_counter = (item->fps == 0) ? 50 : 50 / item->fps;
                 }
@@ -1012,9 +1012,9 @@ void writecb(struct bufferevent *bev, void *ctx){
         TAILQ_FOREACH(client_item, &Client_list, entries){
             sem_post(&bufferevent_semaphore);
             if(client_item->rtp == connection_tcp) {
-                sem_wait(&bufferevent_semaphore);
+                //sem_wait(&bufferevent_semaphore);
                 bufferevent_write(client_item->bev, item->buf, item->length);
-                sem_post(&bufferevent_semaphore);
+                //sem_post(&bufferevent_semaphore);
             }
             else if (client_item->rtp == connection_rtp)
                 rtp_send(client_item->session,&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
@@ -1184,9 +1184,9 @@ void readcb(struct bufferevent *bev, void *ctx){
             // spectrumBuffer is updated by spectrum_timer thread every 20ms
             client_set_samples(client_samples,spectrumBuffer,samples);
             sem_post(&spectrum_semaphore);
-            sem_wait(&bufferevent_semaphore);
+            //sem_wait(&bufferevent_semaphore);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
-            sem_post(&bufferevent_semaphore);
+            //sem_post(&bufferevent_semaphore);
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;
