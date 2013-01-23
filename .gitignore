@@ -70,4 +70,24 @@ trunk/src/hiqsdr/hiqsdr-test
 trunk/src/sdriq/sdriq-server
 trunk/src/sdriq/sdriq-test
 branches/android/aHPSDR/bin/*
+build-aux/libtool.m4
+build-aux/ltoptions.m4
+build-aux/ltsugar.m4
+build-aux/ltversion.m4
+build-aux/lt~obsolete.m4
+libtool
+ltmain.sh
+trunk/src/rtlsdr/build-aux/libtool.m4
+trunk/src/rtlsdr/build-aux/ltoptions.m4
+trunk/src/rtlsdr/build-aux/ltsugar.m4
+trunk/src/rtlsdr/build-aux/ltversion.m4
+trunk/src/rtlsdr/build-aux/lt~obsolete.m4
+trunk/src/rtlsdr/ltmain.sh
+trunk/src/usrp/build-aux/libtool.m4
+trunk/src/usrp/build-aux/ltoptions.m4
+trunk/src/usrp/build-aux/ltsugar.m4
+trunk/src/usrp/build-aux/ltversion.m4
+trunk/src/usrp/build-aux/lt~obsolete.m4
+trunk/src/usrp/ltmain.sh
+
 
