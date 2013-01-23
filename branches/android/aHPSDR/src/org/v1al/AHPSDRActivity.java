@@ -1,5 +1,6 @@
 package org.v1al;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 
 
@@ -14,6 +15,7 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -51,6 +53,7 @@ import java.util.TimerTask;
 import java.util.Vector;
 import android.util.DisplayMetrics;
 
+@TargetApi(Build.VERSION_CODES.FROYO)
 public class AHPSDRActivity extends Activity implements SensorEventListener {
 	/** Called when the activity is first created. */
 	
