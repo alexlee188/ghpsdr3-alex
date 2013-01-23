@@ -107,4 +107,6 @@ trunk/src/usrp/ltmain.sh
 trunk/src/perseus/perseus_server
 trunk/src/rtlsdr/rtlsdr-server
 trunk/src/usrp/usrp_server
+branches/android/.metadata/*
+
 
