@@ -777,7 +777,7 @@ do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa,
     server_ctx = (SSL_CTX *)arg;
     client_ctx = SSL_new(server_ctx);
     evbase = evconnlistener_get_base(serv);
-
+    evutil_make_socket_nonblocking(sock);
     bev = bufferevent_openssl_socket_new(evbase, sock, client_ctx,
                                          BUFFEREVENT_SSL_ACCEPTING,
                                          BEV_OPT_CLOSE_ON_FREE|BEV_OPT_THREADSAFE);
