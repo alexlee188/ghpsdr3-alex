@@ -434,8 +434,8 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
                     char *client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
                     sem_wait(&spectrum_semaphore);
                     client_set_samples(client_samples,spectrumBuffer,item->samples);
-                    bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
                     sem_post(&spectrum_semaphore);
+                    bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
                     free(client_samples);
                     item->frame_counter = (item->fps == 0) ? 50 : 50 / item->fps;
                 }
@@ -777,10 +777,10 @@ do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa,
     server_ctx = (SSL_CTX *)arg;
     client_ctx = SSL_new(server_ctx);
     evbase = evconnlistener_get_base(serv);
-
+    evutil_make_socket_nonblocking(sock);
     bev = bufferevent_openssl_socket_new(evbase, sock, client_ctx,
                                          BUFFEREVENT_SSL_ACCEPTING,
-                                         BEV_OPT_CLOSE_ON_FREE);
+                                         BEV_OPT_CLOSE_ON_FREE|BEV_OPT_THREADSAFE);
 
     client_entry *item;
 
@@ -1928,9 +1928,7 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 
 	reply = (char *) malloc(length+4);		// need to include the terminating null
 	memcpy(reply, answer, length+4);
-        //sem_wait(&bufferevent_semaphore);
 	bufferevent_write(bev, reply, strlen(answer) );
-        //sem_post(&bufferevent_semaphore);
 
         free(reply);
 }
