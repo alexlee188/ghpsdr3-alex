@@ -161,7 +161,7 @@ int encoding = 0;
 
 static int send_audio = 0;
 
-static sem_t bufferevent_semaphore, mic_semaphore, spectrum_semaphore;
+static sem_t bufferevent_semaphore, bufferwrite_semaphore, mic_semaphore, spectrum_semaphore;
 
 void* client_thread(void* arg);
 void* tx_thread(void* arg);
@@ -272,6 +272,7 @@ void client_init(int receiver) {
     TAILQ_INIT(&Client_list);
 
     sem_init(&bufferevent_semaphore,0,1);
+    sem_init(&bufferwrite_semaphore,0,1);
     sem_init(&mic_semaphore,0,1);
     sem_init(&spectrum_semaphore,0,1);
     signal(SIGPIPE, SIG_IGN);
@@ -435,9 +436,9 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
                     sem_wait(&spectrum_semaphore);
                     client_set_samples(client_samples,spectrumBuffer,item->samples);
                     sem_post(&spectrum_semaphore);
-                    //sem_wait(&bufferevent_semaphore);
+                    //sem_wait(&bufferwrite_semaphore);
                     bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
-                    //sem_post(&bufferevent_semaphore);
+                    //sem_post(&bufferwrite_semaphore);
                     free(client_samples);
                     item->frame_counter = (item->fps == 0) ? 50 : 50 / item->fps;
                 }
@@ -1012,9 +1013,9 @@ void writecb(struct bufferevent *bev, void *ctx){
         TAILQ_FOREACH(client_item, &Client_list, entries){
             sem_post(&bufferevent_semaphore);
             if(client_item->rtp == connection_tcp) {
-                //sem_wait(&bufferevent_semaphore);
+                //sem_wait(&bufferwrite_semaphore);
                 bufferevent_write(client_item->bev, item->buf, item->length);
-                //sem_post(&bufferevent_semaphore);
+                //sem_post(&bufferwrite_semaphore);
             }
             else if (client_item->rtp == connection_rtp)
                 rtp_send(client_item->session,&item->buf[AUDIO_BUFFER_HEADER_SIZE], (item->length - AUDIO_BUFFER_HEADER_SIZE));
@@ -1184,9 +1185,9 @@ void readcb(struct bufferevent *bev, void *ctx){
             // spectrumBuffer is updated by spectrum_timer thread every 20ms
             client_set_samples(client_samples,spectrumBuffer,samples);
             sem_post(&spectrum_semaphore);
-            //sem_wait(&bufferevent_semaphore);
+            //sem_wait(&bufferwrite_semaphore);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
-            //sem_post(&bufferevent_semaphore);
+            //sem_post(&bufferwrite_semaphore);
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;
@@ -1933,9 +1934,9 @@ void answer_question(char *message, char *clienttype, struct bufferevent *bev){
 
 	reply = (char *) malloc(length+4);		// need to include the terminating null
 	memcpy(reply, answer, length+4);
-        //sem_wait(&bufferevent_semaphore);
+        //sem_wait(&bufferwrite_semaphore);
 	bufferevent_write(bev, reply, strlen(answer) );
-        //sem_post(&bufferevent_semaphore);
+        //sem_post(&bufferwrite_semaphore);
 
         free(reply);
 }
