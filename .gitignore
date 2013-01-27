@@ -90,4 +90,6 @@ trunk/src/usrp/build-aux/ltversion.m4
 trunk/src/usrp/build-aux/lt~obsolete.m4
 trunk/src/usrp/ltmain.sh
 branches/android/aHPSDR/gen/*
-
+branches/java/jmonitor/build/
+branches/java/jmonitor/dist/
+branches/java/jmonitor/nbproject/private/*
