@@ -1,20 +1,26 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * MonitorFrame.java
+ * Created by John Melton G0ORX
+ * Created on 31-Dec-2009, 17:31:23
  */
 
 /*
- * MonitorFrame.java
- *
- * Created on 31-Dec-2009, 17:31:23
+ * This code has been and reviewed modified.
+ * John Tucker, N8MDP
+ */
+
+/*
+ * Revsion History
+ * 1/20/13: Updated the "public void updateSamples()" function to now include:
+ *          1. offset - adjustment factor to relocate the Filter block based
+ *                      on the dspserver offset value.
+ *          2. localOscOffset - This is the actual dspserver offset value in Hz
+ * 
+ * 
  */
 
 package jmonitor;
 
-/**
- *
- * @author john
- */
 public class MonitorFrame extends javax.swing.JFrame implements MonitorUpdateListener {
 
     /** Creates new form MonitorFrame */
@@ -22,9 +28,8 @@ public class MonitorFrame extends javax.swing.JFrame implements MonitorUpdateLis
         this.client=client;
         initComponents();
 
-        this.setTitle("JMonitor: "+client.getServer()+" Rx"+client.getReceiver());
+        this.setTitle("JMonitor: "+client.getServer()+" Rx"+client.getReceiver()+" Rev:012013 for ghpsdr3-alex");
         monitorPanel.setClient(client);
-        //waterfallPanel.setClient(client);
     }
 
     /** This method is called from within the constructor to
@@ -47,9 +52,8 @@ public class MonitorFrame extends javax.swing.JFrame implements MonitorUpdateLis
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    public void updateSamples(float[] samples,int filterLow,int filterHigh,int sampleRate) {
-        monitorPanel.updateSamples(samples,filterLow,filterHigh,sampleRate);
-        //waterfallPanel.updateWaterfall(samples,filterLow,filterHigh,sampleRate);
+    public void updateSamples(float[] samples,int filterLow,int filterHigh,int sampleRate,int offset,int localOscOffset) {
+        monitorPanel.updateSamples(samples,filterLow,filterHigh,sampleRate,offset,localOscOffset);
     }
 
     public void updateStatus() {
