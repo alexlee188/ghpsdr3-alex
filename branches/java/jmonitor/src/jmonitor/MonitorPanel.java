@@ -1,20 +1,26 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * MonitorPanel.java
+ * Created by John Melton G0ORX
+ * Created on 01-Feb-2010, 08:34:50
  */
 
 /*
- * MonitorPanel.java
- *
- * Created on 01-Feb-2010, 08:34:50
+ * This code has been and reviewed modified.
+ * John Tucker, N8MDP
+ */
+
+/*
+ * Revsion History
+ * 1/20/13: Updated the "public void updateSamples()" function to now include:
+ *          1. offset - adjustment factor to relocate the Filter block based
+ *                      on the dspserver offset value.
+ *          2. localOscOffset - This is the actual dspserver offset value in Hz
+ * 
+ * 
  */
 
 package jmonitor;
 
-/**
- *
- * @author john
- */
 public class MonitorPanel  extends javax.swing.JPanel implements MonitorUpdateListener {
 
     /** Creates new form MonitorPanel */
@@ -28,15 +34,16 @@ public class MonitorPanel  extends javax.swing.JPanel implements MonitorUpdateLi
         waterfallPanel.setClient(client);
     }
 
-    public void updateSamples(float[] samples, int filterLow, int filterHigh, int sampleRate) {
-        spectrumPanel.updateMonitor(samples,filterLow,filterHigh,sampleRate);
+    public void updateSamples(float[] samples, int filterLow, int filterHigh, int sampleRate, int offset, int localOscOffset) {
+        spectrumPanel.updateMonitor(samples,filterLow,filterHigh,sampleRate,offset,localOscOffset);
         waterfallPanel.updateWaterfall(samples,filterLow,filterHigh,sampleRate);
-        controlPanel.update();
+        spectrumPanel.drawSpectrum(offset,localOscOffset);
+        controlPanel.updateVFO();
     }
 
     public void updateStatus() {
-        //System.err.println("MonitorPanel.updateStatus");
         spectrumPanel.updateStatus();
+
     }
 
     /** This method is called from within the constructor to

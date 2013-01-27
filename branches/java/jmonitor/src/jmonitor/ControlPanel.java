@@ -1,12 +1,28 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * ControlPanel.java
+ * Created by John Melton G0ORX
+ * Created on 01-Feb-2010, 12:47:52
+ * 
  */
 
 /*
- * ControlPanel.java
- *
- * Created on 01-Feb-2010, 12:47:52
+ * This code has been and reviewed modified.
+ * John Tucker, N8MDP
+ */
+
+/*
+ * Revsion History
+ * 1/20/13: Changes:
+ *              1. public void updatedVFO ()
+ *                  A. Added code to properly set the mode (e.g. LSB, USB..)
+ *                  B. Added code to set the Master/Slave mode indicator
+ *                  C. Added code to update the Digital Meter.
+ * 		2. Added two new functions for the UP/DN VFO
+ *                  A. private void freqUpActionPerformed
+ *                      => Increases the VFO setting by 1000Hz	
+ *                  B. private void freqDownActionPerformed
+ *			=> Decreases the VFO setting by 1000Hz	
+ * 
  */
 
 package jmonitor;
@@ -20,10 +36,6 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
 
-/**
- *
- * @author john
- */
 public class ControlPanel extends javax.swing.JPanel {
 
     /** Creates new form ControlPanel */
@@ -44,8 +56,20 @@ public class ControlPanel extends javax.swing.JPanel {
         this.client=client;
     }
 
+    
+    // I am adding this code to just update the Frequency VFO and the String Mode
+    public void updateVFO () {
+        frequency=client.getFrequency();
+        String fString=mhzFormat.format(frequency/1000000)+"."+khzFormat.format(frequency%1000000);
+        vfo.setText(fString); 
+        modeString=client.getStringMode();
+        mode.setText(modeString);
+        msID.setText(client.getmsMode());
+        digitalMeter.update(client.getMeter());
+    }
+ 
     public void update() {
-
+// Not sure this function is even called!!! Will review
         if(client.getFrequency()!=frequency) {
             frequency=client.getFrequency();
             String fString=mhzFormat.format(frequency/1000000)+"."+khzFormat.format(frequency%1000000);
@@ -58,6 +82,7 @@ public class ControlPanel extends javax.swing.JPanel {
         }
         
         digitalMeter.update(client.getMeter());
+        
 
     }
    
@@ -70,6 +95,10 @@ public class ControlPanel extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jButton1 = new javax.swing.JButton();
+        button2 = new java.awt.Button();
+        panel1 = new java.awt.Panel();
+        panel2 = new java.awt.Panel();
         bandButton = new javax.swing.JButton();
         modeButton = new javax.swing.JButton();
         vfo = new javax.swing.JTextField();
@@ -79,13 +108,43 @@ public class ControlPanel extends javax.swing.JPanel {
         agcButton = new javax.swing.JButton();
         dspButton = new javax.swing.JButton();
         afgainButton = new javax.swing.JButton();
+        msID = new javax.swing.JTextField();
+        jScrollBar1 = new javax.swing.JScrollBar();
+        freqUp = new java.awt.Button();
+        freqDown = new java.awt.Button();
+
+        jButton1.setText("jButton1");
+
+        button2.setLabel("button2");
+
+        javax.swing.GroupLayout panel1Layout = new javax.swing.GroupLayout(panel1);
+        panel1.setLayout(panel1Layout);
+        panel1Layout.setHorizontalGroup(
+            panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
+        panel1Layout.setVerticalGroup(
+            panel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
+
+        javax.swing.GroupLayout panel2Layout = new javax.swing.GroupLayout(panel2);
+        panel2.setLayout(panel2Layout);
+        panel2Layout.setHorizontalGroup(
+            panel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
+        panel2Layout.setVerticalGroup(
+            panel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
 
         setMaximumSize(new java.awt.Dimension(480, 27));
         setMinimumSize(new java.awt.Dimension(480, 27));
         setPreferredSize(new java.awt.Dimension(480, 27));
         setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        bandButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12));
+        bandButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12)); // NOI18N
         bandButton.setText("Band");
         bandButton.setAlignmentY(0.0F);
         bandButton.setMaximumSize(new java.awt.Dimension(90, 27));
@@ -98,7 +157,7 @@ public class ControlPanel extends javax.swing.JPanel {
         });
         add(bandButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 90, -1));
 
-        modeButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12));
+        modeButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12)); // NOI18N
         modeButton.setText("Mode");
         modeButton.setAlignmentY(0.0F);
         modeButton.setMaximumSize(new java.awt.Dimension(90, 27));
@@ -130,11 +189,11 @@ public class ControlPanel extends javax.swing.JPanel {
                 vfoActionPerformed(evt);
             }
         });
-        add(vfo, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 30, 180, 30));
+        add(vfo, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 20, 150, 40));
 
-        mode.setBackground(new java.awt.Color(0, 0, 0));
         mode.setEditable(false);
-        mode.setFont(new java.awt.Font("DejaVu Sans", 1, 14));
+        mode.setBackground(new java.awt.Color(0, 0, 0));
+        mode.setFont(new java.awt.Font("DejaVu Sans", 1, 14)); // NOI18N
         mode.setForeground(new java.awt.Color(0, 255, 0));
         mode.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         mode.setText("LSB");
@@ -151,12 +210,12 @@ public class ControlPanel extends javax.swing.JPanel {
         );
         digitalMeterLayout.setVerticalGroup(
             digitalMeterLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 20, Short.MAX_VALUE)
+            .addGap(0, 23, Short.MAX_VALUE)
         );
 
         add(digitalMeter, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 0, 140, 20));
 
-        filterButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12));
+        filterButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12)); // NOI18N
         filterButton.setText("Filter");
         filterButton.setMaximumSize(new java.awt.Dimension(90, 27));
         filterButton.setMinimumSize(new java.awt.Dimension(90, 27));
@@ -168,7 +227,7 @@ public class ControlPanel extends javax.swing.JPanel {
         });
         add(filterButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 0, 80, -1));
 
-        agcButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12));
+        agcButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12)); // NOI18N
         agcButton.setText("AGC");
         agcButton.setMaximumSize(new java.awt.Dimension(90, 27));
         agcButton.setMinimumSize(new java.awt.Dimension(90, 27));
@@ -180,7 +239,7 @@ public class ControlPanel extends javax.swing.JPanel {
         });
         add(agcButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 30, 80, -1));
 
-        dspButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12));
+        dspButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12)); // NOI18N
         dspButton.setText("DSP");
         dspButton.setMaximumSize(new java.awt.Dimension(90, 27));
         dspButton.setMinimumSize(new java.awt.Dimension(90, 27));
@@ -192,7 +251,7 @@ public class ControlPanel extends javax.swing.JPanel {
         });
         add(dspButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 0, 80, -1));
 
-        afgainButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12));
+        afgainButton.setFont(new java.awt.Font("DejaVu Sans", 0, 12)); // NOI18N
         afgainButton.setText("AFGain");
         afgainButton.setMaximumSize(new java.awt.Dimension(90, 27));
         afgainButton.setMinimumSize(new java.awt.Dimension(90, 27));
@@ -203,6 +262,40 @@ public class ControlPanel extends javax.swing.JPanel {
             }
         });
         add(afgainButton, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 30, 80, -1));
+
+        msID.setEditable(false);
+        msID.setBackground(new java.awt.Color(0, 0, 0));
+        msID.setFont(new java.awt.Font("Arial", 1, 10)); // NOI18N
+        msID.setForeground(new java.awt.Color(0, 255, 0));
+        msID.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        msID.setText("Master-Mode");
+        msID.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                msIDActionPerformed(evt);
+            }
+        });
+        add(msID, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 0, 80, -1));
+        add(jScrollBar1, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 30, -1, -1));
+
+        freqUp.setBackground(new java.awt.Color(255, 255, 255));
+        freqUp.setFont(new java.awt.Font("Dialog", 0, 10)); // NOI18N
+        freqUp.setLabel("UP");
+        freqUp.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                freqUpActionPerformed(evt);
+            }
+        });
+        add(freqUp, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 20, 30, 20));
+
+        freqDown.setBackground(new java.awt.Color(255, 255, 255));
+        freqDown.setFont(new java.awt.Font("Dialog", 0, 10)); // NOI18N
+        freqDown.setLabel("DN");
+        freqDown.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                freqDownActionPerformed(evt);
+            }
+        });
+        add(freqDown, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 40, 30, 20));
     }// </editor-fold>//GEN-END:initComponents
 
     private void createBandMenu() {
@@ -557,6 +650,7 @@ public class ControlPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_dspButtonActionPerformed
 
     private void vfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vfoActionPerformed
+        // This function no longer works due to the timer updates... JLT
         // user has entered a frequency
         String s=vfo.getText().replace(".","");
         try {
@@ -580,6 +674,18 @@ public class ControlPanel extends javax.swing.JPanel {
 
         }
     }//GEN-LAST:event_vfoMouseClicked
+
+    private void msIDActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_msIDActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_msIDActionPerformed
+
+    private void freqUpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_freqUpActionPerformed
+        client.setFrequency(client.getFrequency()+1000);
+    }//GEN-LAST:event_freqUpActionPerformed
+
+    private void freqDownActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_freqDownActionPerformed
+        client.setFrequency(client.getFrequency()-1000);
+    }//GEN-LAST:event_freqDownActionPerformed
 
     private void createLSBFilterMenu() {
 
@@ -1447,11 +1553,19 @@ public class ControlPanel extends javax.swing.JPanel {
     private javax.swing.JButton afgainButton;
     private javax.swing.JButton agcButton;
     private javax.swing.JButton bandButton;
+    private java.awt.Button button2;
     private jmonitor.DigitalMeter digitalMeter;
     private javax.swing.JButton dspButton;
     private javax.swing.JButton filterButton;
+    private java.awt.Button freqDown;
+    private java.awt.Button freqUp;
+    private javax.swing.JButton jButton1;
+    private javax.swing.JScrollBar jScrollBar1;
     private javax.swing.JTextField mode;
     private javax.swing.JButton modeButton;
+    public javax.swing.JTextField msID;
+    private java.awt.Panel panel1;
+    private java.awt.Panel panel2;
     private javax.swing.JTextField vfo;
     // End of variables declaration//GEN-END:variables
 
