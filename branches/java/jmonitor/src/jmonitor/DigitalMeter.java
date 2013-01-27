@@ -1,20 +1,22 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ /*
+ * DigitalMeter.java
+ * Created by John Melton G0ORX
+ * Created on 02-Feb-2010, 14:08:40
  */
 
 /*
- * DigitalMeter.java
- *
- * Created on 02-Feb-2010, 14:08:40
+ * This code has been and reviewed modified.
+ * John Tucker, N8MDP
+ */
+
+/*
+ * Revsion History
+ * 01/20/13: No Change
+ * 
  */
 
 package jmonitor;
 
-/**
- *
- * @author john
- */
 public class DigitalMeter extends javax.swing.JPanel {
 
     /** Creates new form DigitalMeter */

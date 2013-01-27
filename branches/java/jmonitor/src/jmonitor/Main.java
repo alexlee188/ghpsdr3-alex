@@ -1,14 +1,26 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * Main.java
+ * Created by John Melton G0ORX
+ * Created on 01-Feb-2010, 11:05:21
+ * 
+ */
+
+/*
+ * This code has been and reviewed modified.
+ * John Tucker, N8MDP
+ */
+
+/*
+ * Revsion History
+ * 1/20/13: Changes:
+ *              1. Set default frequency to 7.170000MHz (40 Meters)
+ *              2. Server set to: "n8mdp.dyndns.org" (may not work)
+ * 
+ * 
  */
 
 package jmonitor;
 
-/**
- *
- * @author john
- */
 public class Main {
 
     /**
@@ -16,7 +28,8 @@ public class Main {
      */
     public static void main(String[] args) {
 
-        String server="192.168.1.58";
+        String server="n8mdp.dyndns.org";
+//        String server="192.168.254.53";
         int receiver=0;
         int limit=0;
         int i=0;
@@ -56,9 +69,9 @@ public class Main {
 
         Client client=new Client(server,receiver,audio,limit);
         client.start();
-        client.setFrequency(7048000);
+        client.setFrequency(7170000);  // defualt to 40 Meters
         client.setMode(0);
-        client.setFilter(-2850,-150);
+        client.setFilter(-3450,-150);
         client.setGain(30);
         
         MonitorFrame frame=new MonitorFrame(client);
