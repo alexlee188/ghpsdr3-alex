@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <string.h>
 #include <pthread.h>
+#include <vector>
 #include "hiqsdr.h"
 
 
@@ -55,9 +56,9 @@ struct PreselItem { // Holds item data from the hiqsdr.config file
 struct Hiqsdr {
     // network parameters
     char ip_addr[256];
-    unsigned short ctrl_port;   
-    unsigned short rx_data_port;   
-    unsigned short tx_data_port;   
+    unsigned short ctrl_port;
+    unsigned short rx_data_port;
+    unsigned short tx_data_port;
     int            ctrl_socket;
     int            data_socket;
 
@@ -67,9 +68,11 @@ struct Hiqsdr {
     long long bw;
     int  attDb;
     int  antSel;
-    int  preSel;
+	int  preselItemCnt; // Count of filter entries in hiqsdr.config
+    int  preSel; // Holds index to current filter
     char *preselDesc[16];
-    int  preamp;   
+	std::vector<PreselItem> preInfo; //Holds presel filters table
+    int  preamp;
 
     // asynch thread for receiving data from hardware
     pthread_t      thread_id;
