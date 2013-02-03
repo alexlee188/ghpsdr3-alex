@@ -46,7 +46,9 @@ struct AsynchCtxData {
     int run;
 };
 
-struct PreselItem {
+struct PreselItem { // Holds item data from the hiqsdr.config file
+	long long freq;
+	int filtNum;
     char *desc;
 };
 
