@@ -69,7 +69,7 @@ struct Hiqsdr {
     int  attDb;
     int  antSel;
 	int  preselItemCnt; // Count of filter entries in hiqsdr.config
-    int  preSel; // Holds index to current filter
+    int  preSel; // Holds filter number
     char *preselDesc[16];
 	std::vector<PreselItem> preInfo; //Holds presel filters table
     int  preamp;
@@ -212,8 +212,18 @@ char *hiqsdr_get_ip_address ()
 
 int hiqsdr_set_frequency (long long f)
 {
+   int cnt;
+	
    fprintf (stderr, "%s: %Ld\n", __FUNCTION__, f);
    hq.freq = f;
+
+	for (cnt=0; cnt<(hq.preInfo.size()-1); ++cnt) {
+		if ((f >= hq.preInfo[cnt].freq) & (f < hq.preInfo[cnt+1].freq)){
+			break;
+		}
+	}
+	
+   hq.preSel = cnt;
    send_command (&hq);
    return 0;
 }
