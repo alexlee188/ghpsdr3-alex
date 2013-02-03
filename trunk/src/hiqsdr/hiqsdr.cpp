@@ -555,58 +555,86 @@ static int   open_configuration_file (struct Hiqsdr *hiq)
     FILE *fc;
     int nr = 0;
 
-    sprintf (fn, "%s/%s", getenv("HOME"), "hiqsdr.conf");
+    sprintf (fn, "%s/%s", getenv("HOME"), "hiqsdr.cfg");
 
-    // preload the data (default values)
-    for (unsigned i=0; i < ARRAY_SIZE(hiq->preselDesc); ++i) {
-        hiq->preselDesc[i] = 0;
-    }
-
-    if (( fc = fopen (fn, "r")) != 0) {
-
+    if (( fc = fopen (fn, "r")) == NULL) {
+		fprintf (stderr, "No configuration file found in %s\n", fn);
+		createConfigFile(fc, fn);
+	}
+	if (( fc = fopen (fn, "r")) != NULL) {
         while (!feof(fc)) {
             char line [BUFSIZ];
+			long long f;
             int n;
             char pd [BUFSIZ];
 
             if (fgets (line, sizeof(line), fc)) {
                 if (line[0] == '#') continue;
-                if (sscanf(line, "%d!%[^\t\n]\n", &n, pd) == 2) {
-                    if (n >= 0 && n < 16) {
-                        delete hiq->preselDesc[n];
-                        hiq->preselDesc[n] = new char [strlen(pd)+1];
-                        if (hiq->preselDesc[n]) strcpy (hiq->preselDesc[n], pd), ++nr;
-                    }
-
+                if (sscanf(line, "%d!%lld!%[^\t\n]\n", &n, &f, pd) == 3) {
+                    PreselItem temp;
+					temp.filtNum = n;
+    				temp.freq = f;
+					temp.desc = new char [strlen(pd)];
+					strcpy (temp.desc, pd);
+					n = n;
+					hiq->preInfo.push_back(temp);
+					nr++;
                 }
-            }
-            
+            }         
         }
-
-    } else {
-
-        // no file available, create a default
-        fprintf (stderr, "No configuration file found in %s\n", fn);
-
-        if ((fc = fopen (fn, "w+"))) {
-            fprintf (fc, "#\n");
-            fprintf (fc, "# HiQSDR preselector configuration file template\n");
-            fprintf (fc, "#\n");
-            fprintf(fc, "%d!%s\n", 0, "FILTER BYPASS");
-            for (unsigned j=1; j<ARRAY_SIZE(hiq->preselDesc); ++j) {
-                fprintf(fc, "%d!%s\n", j, "not used");
-            }
-            fclose (fc);
-            fprintf (stderr, "Configuration file created at: %s\n", fn);
-        }
-
+    } else { // Can't open file for read. Do error thing.
+		perror ("The following error occurred");
+		return 0;
     }
-    if (nr) {
-        for (unsigned j=0; j<ARRAY_SIZE(hiq->preselDesc); ++j) {
-            printf("%d:%s\n", j, hiq->preselDesc[j]);
+    if (nr) { // Print the contents of the preInfo vector (struct Hiqsdr)
+		printf("Idx  Filt     Freq     Description\n");
+		printf("-----------------------------------\n");
+        for (unsigned j=0; j<hiq->preInfo.size(); ++j) {
+            printf("%*d %*d %*lld   %s\n",2,j, 5,hiq->preInfo[j].filtNum,
+                   10,hiq->preInfo[j].freq, hiq->preInfo[j].desc);
         }
     }
     return nr;
+}
+
+static int createConfigFile(FILE *fc, const char *fn)
+{
+	int nr;
+	
+    if ((fc = fopen (fn, "w+"))) {
+        fprintf (fc, "#\n");
+        fprintf (fc, "# HiQSDR preselector configuration file template\n");
+        fprintf (fc, "#\n");
+        fprintf(fc, "%d!%d!%s\n", 0, 0, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 1, 1800000, "160 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 2000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 2, 3500000, "80 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 4000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 3, 5000000, "60 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 5100000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 4, 7000000, "40 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 7300000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 5, 10100000, "30M");
+		fprintf(fc, "%d!%d!%s\n", 0, 10150000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 6, 14000000, "20 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 14350000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 7, 18068000, "17 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 18168000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 8, 21000000, "15 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 21450000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 9, 24890000, "12 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 24990000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 10, 28000000, "10 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 29700000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 11, 51000000, "6 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 53000000, "FILTER BYPASS");
+		fclose (fc);
+        fprintf (stderr, "Configuration file created at: %s\n", fn);
+		nr = 23;
+    } else {
+		perror ("The following error occurred");
+	}
+	return nr;
 }
 
 /*
