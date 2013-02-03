@@ -213,17 +213,19 @@ char *hiqsdr_get_ip_address ()
 int hiqsdr_set_frequency (long long f)
 {
    int cnt;
+	printf("At line 216 in the hiqsdr_set_frequency function\n");
 	
-   fprintf (stderr, "%s: %Ld\n", __FUNCTION__, f);
+   fprintf (stderr, "%s:gvj %Ld\n", __FUNCTION__, f);
    hq.freq = f;
-
+	
+	// Check to see if freq change caused a band filter change
 	for (cnt=0; cnt<(hq.preInfo.size()-1); ++cnt) {
 		if ((f >= hq.preInfo[cnt].freq) & (f < hq.preInfo[cnt+1].freq)){
 			break;
 		}
-	}
+	}	
+   if (hq.preSel != cnt) hiqsdr_set_preselector(cnt);
 	
-   hq.preSel = cnt;
    send_command (&hq);
    return 0;
 }
@@ -323,7 +325,7 @@ bandLabels = ['Audio', '160', '80', '40', '30', '20', '17', '15',
 int hiqsdr_set_preselector (int p)
 {
     hq.preSel = (p & 0x0F);
-    fprintf (stderr, "%s: preselector: %02X\n", __FUNCTION__, hq.preSel);
+    fprintf (stderr, "%s: preselector-gvj: %02X\n", __FUNCTION__, hq.preSel);
     send_command (&hq);
     return 0;
 }
@@ -331,8 +333,8 @@ int hiqsdr_set_preselector (int p)
 
 int hiqsdr_get_preselector_desc (unsigned int p, char *pDesc)
 {
-    if (p < ARRAY_SIZE(hq.preselDesc) ) {
-        strcpy (pDesc, hq.preselDesc[p]);
+    if (p < hq.preInfo.size() ) {
+        strcpy (pDesc, hq.preInfo[p].desc);
         return 0;
     } else
         return -1;
