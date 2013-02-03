@@ -215,7 +215,7 @@ int hiqsdr_set_frequency (long long f)
    int cnt;
 	printf("At line 216 in the hiqsdr_set_frequency function\n");
 	
-   fprintf (stderr, "%s:gvj %Ld\n", __FUNCTION__, f);
+   fprintf (stderr, "%s: %Ld\n", __FUNCTION__, f);
    hq.freq = f;
 	
 	// Check to see if freq change caused a band filter change
@@ -325,7 +325,7 @@ bandLabels = ['Audio', '160', '80', '40', '30', '20', '17', '15',
 int hiqsdr_set_preselector (int p)
 {
     hq.preSel = (p & 0x0F);
-    fprintf (stderr, "%s: preselector-gvj: %02X\n", __FUNCTION__, hq.preSel);
+    fprintf (stderr, "%s: preselector: %02X\n", __FUNCTION__, hq.preSel);
     send_command (&hq);
     return 0;
 }
