@@ -47,6 +47,7 @@ int hiqsdr_get_preamp (void);
 int hiqsdr_start_asynch_input (HIQSDR_CB cb, void *pud);
 int hiqsdr_stop_asynch_input ();
 int hiqsdr_deinit (void);
+static int createConfigFile(FILE *fc, const char *fn);
 
 char *hiqsdr_get_ip_address ();
 
