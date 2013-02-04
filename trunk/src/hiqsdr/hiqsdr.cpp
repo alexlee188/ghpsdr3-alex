@@ -49,7 +49,7 @@ struct AsynchCtxData {
 
 struct PreselItem { // Holds item data from the hiqsdr.config file
 	long long freq;
-	int filtNum;
+	unsigned int filtNum;
     char *desc;
 };
 
@@ -68,9 +68,9 @@ struct Hiqsdr {
     long long bw;
     int  attDb;
     int  antSel;
-	int  preselItemCnt; // Count of filter entries in hiqsdr.config
-    int  preSel; // Holds filter number
-    char *preselDesc[16];
+	//int  preselItemCnt; // Count of filter entries in hiqsdr.config
+    unsigned int  preSel; // Holds filter number
+    //char *preselDesc[16];
 	std::vector<PreselItem> preInfo; //Holds presel filters table
     int  preamp;
 
@@ -212,22 +212,25 @@ char *hiqsdr_get_ip_address ()
 
 int hiqsdr_set_frequency (long long f)
 {
-   int cnt;
-	printf("At line 216 in the hiqsdr_set_frequency function\n");
+   unsigned int cnt;
 	
    fprintf (stderr, "%s: %Ld\n", __FUNCTION__, f);
    hq.freq = f;
 	
-	// Check to see if freq change caused a band filter change
+	// Check to see if freq change caused a band filter change.
 	for (cnt=0; cnt<(hq.preInfo.size()-1); ++cnt) {
 		if ((f >= hq.preInfo[cnt].freq) & (f < hq.preInfo[cnt+1].freq)){
-			break;
+			break; // cnt indexes the filter associated with this frequency.
 		}
-	}	
-   if (hq.preSel != cnt) hiqsdr_set_preselector(cnt);
-	
+	}
+	// If freq change caused a filter change then store new filter details.
+   if (hq.preSel != hq.preInfo[cnt].filtNum) {
+		 hiqsdr_set_preselector(hq.preInfo[cnt].filtNum);
+	}
+	// else { TODO check and see if send_command sends all commands
    send_command (&hq);
    return 0;
+	// }
 }
 
 int hiqsdr_set_bandwidth (long long b)
@@ -333,12 +336,18 @@ int hiqsdr_set_preselector (int p)
 
 int hiqsdr_get_preselector_desc (unsigned int p, char *pDesc)
 {
-    if (p < hq.preInfo.size() ) {
-        strcpy (pDesc, hq.preInfo[p].desc);
-        return 0;
-    } else
-        return -1;
+	unsigned int cnt;
+	unsigned int tableSize = hq.preInfo.size();
 
+	// Retrieve the index to the filter number
+	for (cnt = 0; cnt < tableSize; ++cnt) {
+		if (p == hq.preInfo[cnt].filtNum) break;
+	}
+	if (cnt < tableSize) {
+		strcpy (pDesc, hq.preInfo[cnt].desc);
+		return 0;
+	} else
+		return -1;
 }
 
 int hiqsdr_set_preamp (int newstatus)
