@@ -631,7 +631,7 @@ static int createConfigFile(FILE *fc, const char *fn)
 		fprintf(fc, "%d!%d!%s\n", 0, 2000000, "FILTER BYPASS");
 		fprintf(fc, "%d!%d!%s\n", 2, 3500000, "80 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 4000000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 3, 5000000, "60 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 5000000, "60 M (Filt Bypass)");
 		fprintf(fc, "%d!%d!%s\n", 0, 5100000, "FILTER BYPASS");
 		fprintf(fc, "%d!%d!%s\n", 4, 7000000, "40 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 7300000, "FILTER BYPASS");
