@@ -631,27 +631,25 @@ static int createConfigFile(FILE *fc, const char *fn)
 		fprintf(fc, "%d!%d!%s\n", 0, 2000000, "FILTER BYPASS");
 		fprintf(fc, "%d!%d!%s\n", 2, 3500000, "80 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 4000000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 0, 5000000, "60 M (Filt Bypass)");
-		fprintf(fc, "%d!%d!%s\n", 0, 5100000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 4, 7000000, "40 M");
+		fprintf(fc, "%d!%d!%s\n", 3, 7000000, "40 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 7300000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 5, 10100000, "30M");
+		fprintf(fc, "%d!%d!%s\n", 4, 10100000, "30M");
 		fprintf(fc, "%d!%d!%s\n", 0, 10150000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 6, 14000000, "20 M");
+		fprintf(fc, "%d!%d!%s\n", 5, 14000000, "20 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 14350000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 7, 18068000, "17 M");
+		fprintf(fc, "%d!%d!%s\n", 6, 18068000, "17 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 18168000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 8, 21000000, "15 M");
+		fprintf(fc, "%d!%d!%s\n", 7, 21000000, "15 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 21450000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 9, 24890000, "12 M");
+		fprintf(fc, "%d!%d!%s\n", 8, 24890000, "12 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 24990000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 10, 28000000, "10 M");
+		fprintf(fc, "%d!%d!%s\n", 9, 28000000, "10 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 29700000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 11, 51000000, "6 M");
+		fprintf(fc, "%d!%d!%s\n", 10, 51000000, "6 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 53000000, "FILTER BYPASS");
 		fclose (fc);
         fprintf (stderr, "Configuration file created at: %s\n", fn);
-		nr = 23;
+		nr = 21;
     } else {
 		perror ("The following error occurred");
 	}
