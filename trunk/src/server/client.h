@@ -41,7 +41,7 @@ typedef enum {
 
 typedef struct _client {
     int socket;
-    int address_length;
+    unsigned int address_length;
     struct sockaddr_in address;
     pthread_t thread_id;
     RECEIVER_STATE receiver_state;

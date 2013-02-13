@@ -23,12 +23,19 @@
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
 */
+#if !defined __OZYIO_H__
+#define __OZYIO_H__
 
 int ozy_open(void);
 int ozy_close();
-int ozy_get_firmware_string(char* buffer,int buffer_size);
+int ozy_get_firmware_string(unsigned char* buffer,int buffer_size);
 int ozy_write(int ep,unsigned char* buffer,int buffer_size);
 int ozy_read(int ep,unsigned char* buffer,int buffer_size);
 
 void ozy_load_fw();
 int ozy_load_fpga(char *rbf_fnamep);
+int ozy_set_led(int which, int on);
+int ozy_reset_cpu(int reset);
+int ozy_load_firmware(char *fnamep);
+
+#endif

@@ -53,3 +53,29 @@ Currently the server program is a command line program and it has several option
 
     specify ethernet interface to use for Metis (default eth0).
 
+--hermes
+
+    interfaces Hermes via Ethernet (requires 2.2 firmware)
+
+
+
+How to run Hermes server
+========================
+
+
+In three separate xterm windows, run the following command, following the order shown below:
+
+
+hpsdr-server  --hermes --samplerate 96000
+
+dspserver --lo 0  --hpsdr --nocorrectiq 
+
+QtRadio 127.0.0.1
+
+
+The samplerates available are 48000, 96000 and 192000 S/s.
+The audio has to be available both from local audio system and from headphone socket on Hermes.
+For the small delay, use the headphone.
+
+
+

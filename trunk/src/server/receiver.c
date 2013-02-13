@@ -54,7 +54,7 @@ static char response[80];
 
 static unsigned long sequence=0L;
 
-void init_receivers() {
+void init_receivers(void) {
     int i;
     for(i=0;i<MAX_RECEIVERS;i++) {
         receiver[i].client=(CLIENT*)NULL;
@@ -140,7 +140,7 @@ void send_IQ_buffer(int rx) {
     struct sockaddr_in client;
     int client_length;
     unsigned short offset;
-    unsigned short length;
+    //unsigned short length;
     BUFFER buffer;
     int rc;
 

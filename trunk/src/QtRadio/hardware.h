@@ -121,7 +121,38 @@ private slots:
    void attClicked(int state);
    void processAnswer (QStringList);
 };
+            
 
+class QSlider;
+
+class HardwareHermes: public DlgHardware
+{ 
+   Q_OBJECT
+
+public:
+   HardwareHermes (Connection *pC, QWidget *p);
+   ~HardwareHermes ();
+private:
+   QSignalMapper *attMapper;
+   QSignalMapper *atxrMapper;
+private slots:
+   void attClicked(int state); 
+   void atxrClicked(int state);
+   void attSlid(int state);
+   void txDriveSlid(int state);
+   void txLineInGainSlid(int state);
+   void randomChanged(int);
+   void ditherChanged(int);
+   void preampChanged(int);
+   void micBoostClicked(int);
+
+   void processAnswer (QStringList);
+
+private:
+   QSlider *pAttSlider;
+   QSlider *pTxSlider;
+   QSlider *pTxLineInGain;
+};
 
 
 class HardwareFactory {
