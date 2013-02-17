@@ -235,6 +235,7 @@ char* parse_command(CLIENT* client,char* command) {
                 token=strtok(NULL," \r\n");
                 if(token!=NULL) {
                     client->mox=atoi(token);
+                    fprintf (stderr, "MOX received: %d\n", client->mox);
                     return OK;
                 } else {
                     // invalid command string

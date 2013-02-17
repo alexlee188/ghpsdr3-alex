@@ -819,6 +819,11 @@ void write_ozy_output_buffer_hermes () {
         rr++ ;
     }
 
+    if (mox) {
+        ozy_output_buffer[3] |= 0x01;
+    } else {
+        ozy_output_buffer[3] &= 0xFE;
+    }
 
     if(metis || hermes) {
         bytes=metis_write(0x02,ozy_output_buffer,OZY_BUFFER_SIZE);
