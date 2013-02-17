@@ -140,7 +140,6 @@ void process_args(int argc,char* argv[]) {
                 ozy_set_receivers(atoi(optarg));
                 break;
             case 1: // sample rate
-                fprintf (stderr, "XXXXXXXXXXXXXXXX\n");
                 ozy_set_sample_rate(atoi(optarg));
                 break;
             case 2: // dither
@@ -252,18 +251,20 @@ fprintf(stderr,"metisip=%s\n",metisip);
                 break;
 
             case 18: // hermes flag
-                fprintf (stderr, "HHHHHHHHHHHHHHHHHHHHHHHHHH\n");
                 hermes=1;
                 ozy_set_hermes(hermes);
                 ozy_set_hermes_power(0);
-                if(optarg && strlen(optarg) > 0) {                
-                    int h_power = atoi(optarg);
-                    if (h_power >= 0 && h_power <= 255)
+                if(optarg) {                
+                    int h_power;
+                    if (sscanf (optarg, "%d", &h_power) == 1 && h_power >= 0 && h_power <= 255 ) {
                         ozy_set_hermes_power(h_power);
-                    else {
-                        fprintf(stderr,"invalid power value: power set to zero\n");   
-                        ozy_set_hermes_power(0);
+                    } else {
+                        fprintf(stderr,"invalid Hermes power value\n");   
+                        exit (1);
                     }
+                } else {
+                    fprintf(stderr,"missing Hermes power value\n");   
+                    exit (1);
                 }
                 break;
 

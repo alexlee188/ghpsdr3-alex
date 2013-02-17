@@ -740,16 +740,43 @@ void write_ozy_output_buffer_hermes () {
         switch (hermes_send_status) {
         case 0:
             if(receiver[current_receiver].frequency_changed) {
-                //if(receivers==1) {
-                //    ozy_output_buffer[3]=control_out[0]|0x02;
-                //} else {
-                    ozy_output_buffer[3]=control_out[0]|((current_receiver+2)<<1);
-                //}
+                // C0
+                // 0 0 0 0 0 1 0 x     C1, C2, C3, C4   NCO Frequency in Hz for Receiver_1
+                //
+                // C0
+                // 0 0 0 0 0 1 1 x     C1, C2, C3, C4   NCO Frequency in Hz for Receiver _2 
+                //
+                // C0
+                // 0 0 0 0 1 0 0 x     C1, C2, C3, C4   NCO Frequency in Hz for Receiver _3 
+                //
+                // C0
+                // 0 0 0 0 1 0 1 x     C1, C2, C3, C4   NCO Frequency in Hz for Receiver _4 
+                //
+                // C0
+                // 0 0 0 0 1 1 0 x     C1, C2, C3, C4   NCO Frequency in Hz for Receiver _5 
+                //
+                // C0
+                // 0 0 0 0 1 1 1 x     C1, C2, C3, C4   NCO Frequency in Hz for Receiver _6 
+                //
+                // C0
+                // 0 0 0 1 0 0 0 x     C1, C2, C3, C4   NCO Frequency in Hz for Receiver _7 
+                ozy_output_buffer[3]=control_out[0]|((current_receiver+2)<<1);
                 ozy_output_buffer[4]=receiver[current_receiver].frequency>>24;
                 ozy_output_buffer[5]=receiver[current_receiver].frequency>>16;
                 ozy_output_buffer[6]=receiver[current_receiver].frequency>>8;
                 ozy_output_buffer[7]=receiver[current_receiver].frequency;
                 receiver[current_receiver].frequency_changed=0;
+
+            } else if (mox) {
+                //  C0
+                //  0 0 0 0 0 0 1 x     C1, C2, C3, C4 NCO Frequency in Hz for Transmitter, Apollo ATU
+                //                                     (32 bit binary representation - MSB in C1) 
+                ozy_output_buffer[3]=control_out[0]|((1)<<1);
+                ozy_output_buffer[4]=receiver[current_receiver].frequency>>24;
+                ozy_output_buffer[5]=receiver[current_receiver].frequency>>16;
+                ozy_output_buffer[6]=receiver[current_receiver].frequency>>8;
+                ozy_output_buffer[7]=receiver[current_receiver].frequency;
+
             } else {
                 ozy_output_buffer[3]=control_out[0];
                 ozy_output_buffer[4]=control_out[1];
