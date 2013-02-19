@@ -293,12 +293,13 @@ fprintf(stderr,"iq_thread\n");
                 if(mox) {
                     Audio_Callback (&input_buffer[BUFFER_SIZE*2],&input_buffer[BUFFER_SIZE*2],
                                     &output_buffer[BUFFER_SIZE*2],&output_buffer[BUFFER_SIZE*3], buffer_size, 1);
+					//fprintf (stderr, ".\n");
                 } else {
                     for(j=0;j<buffer_size;j++) {
                         output_buffer[(BUFFER_SIZE*2)+j]=output_buffer[(BUFFER_SIZE*3)+j]=0.0F;
                     }
                 }
-                ozy_send((unsigned char *)&output_buffer[0],sizeof(output_buffer),"ozy");
+                if (!mox) ozy_send((unsigned char *)&output_buffer[0],sizeof(output_buffer),"ozy");
         } // if (hpsdr)
     } // end while
 }

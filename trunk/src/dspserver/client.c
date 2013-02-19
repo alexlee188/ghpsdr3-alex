@@ -103,7 +103,7 @@ static int low,high;            // filter low/high
 // same as BUFFER_SIZE defined in softrock server
 // format is float left_buffer[BUFFER_SIZE] followed by right_buffer[BUFFER_SIZE] non-interleaved
 static float tx_buffer[TX_BUFFER_SIZE*2];
-static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
+static float tx_IQ_buffer[TX_BUFFER_SIZE*4];
 
 static int samples_per_frame, bits_per_frame;
 
@@ -539,6 +539,8 @@ void *tx_thread(void *arg){
      data_out = (float *) malloc( sizeof( float ) * MIC_ALAW_BUFFER_SIZE * 24 );
    }
 
+   sdr_log(SDR_LOG_INFO, "tx_thread STARTED\n");
+
    sdr_thread_register("tx_thread");
 
     while (1){
@@ -584,10 +586,14 @@ void *tx_thread(void *arg){
 			tx_buffer[tx_buffer_counter + TX_BUFFER_SIZE] = data_out[2*i+1];
 			tx_buffer_counter++;
 			if (tx_buffer_counter >= TX_BUFFER_SIZE){
+                memset (tx_IQ_buffer, 0, sizeof(tx_IQ_buffer));
 				// use DttSP to process Mic data into tx IQ
-				Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
+				Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], &tx_IQ_buffer[TX_BUFFER_SIZE*2], &tx_IQ_buffer[TX_BUFFER_SIZE*3], TX_BUFFER_SIZE, 1);
 				// send Tx IQ to server, buffer is non-interleaved.
-                                ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+                if (hpsdr && mox) {
+                    ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+                }
+				//fprintf (stderr, "X\n");
 				tx_buffer_counter = 0;
 			}
 		} // end for i
