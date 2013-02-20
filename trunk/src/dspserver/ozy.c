@@ -154,6 +154,7 @@ short server_port;
 int session;
 
 int hpsdr=0;
+int hpsdr_local = 0;
 
 
 static int local_audio=0;
@@ -165,7 +166,6 @@ static int port_audio=0;
 //
 SRC_STATE *sr_state;
 double src_ratio;
-
 
 
 
@@ -288,18 +288,28 @@ fprintf(stderr,"iq_thread\n");
 	   } // if (rc)
 
 
-        // send the audio back to the server.  This is for HPSDR hardware.
+        // send the audio back to the server.
+        // This is for HPSDR hardware.
+        // NOTE: the stream is yet at the RX sample rate
+        // the (crude) rate adaption is done into hpsdr_server (ozy.c - process_ozy_output_buffer() )
         if(hpsdr) {
-                if(mox) {
+                if(hpsdr_local && mox) {
+                    //
+                    // MOX compute the TX data from locally generated microphone data
+                    //
                     Audio_Callback (&input_buffer[BUFFER_SIZE*2],&input_buffer[BUFFER_SIZE*2],
                                     &output_buffer[BUFFER_SIZE*2],&output_buffer[BUFFER_SIZE*3], buffer_size, 1);
-					//fprintf (stderr, ".\n");
+					fprintf (stderr, ".\n");
                 } else {
+                    //
+                    // NO MOX, zeroing the microphone output sample buffer
+                    //
                     for(j=0;j<buffer_size;j++) {
                         output_buffer[(BUFFER_SIZE*2)+j]=output_buffer[(BUFFER_SIZE*3)+j]=0.0F;
                     }
                 }
-                if (!mox) ozy_send((unsigned char *)&output_buffer[0],sizeof(output_buffer),"ozy");
+                // sending samples when receiveing OR when transmitting in local mode
+                if (!mox || (hpsdr && hpsdr_local)) ozy_send((unsigned char *)&output_buffer[0],sizeof(output_buffer),"ozy");
         } // if (hpsdr)
     } // end while
 }
@@ -825,5 +835,10 @@ void dump_udp_buffer(unsigned char* buffer) {
 
 void ozy_set_hpsdr() {
     hpsdr=1;
+}
+
+void ozy_set_hpsdr_local() {
+    ozy_set_hpsdr();
+    hpsdr_local=1;
 }
 

@@ -1089,7 +1089,10 @@ void process_ozy_output_buffer(float *left_output_buffer,float *right_output_buf
     }
 
     if(!playback) {
-        // process the output
+        //
+        // process the output 
+        // skipping all the samples more that 48 kS/s
+        // 
         for(j=0,c=0;j<BUFFER_SIZE;j+=output_sample_increment) {
 
             if(mox) {
