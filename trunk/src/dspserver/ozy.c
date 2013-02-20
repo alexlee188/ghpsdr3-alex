@@ -299,7 +299,6 @@ fprintf(stderr,"iq_thread\n");
                     //
                     Audio_Callback (&input_buffer[BUFFER_SIZE*2],&input_buffer[BUFFER_SIZE*2],
                                     &output_buffer[BUFFER_SIZE*2],&output_buffer[BUFFER_SIZE*3], buffer_size, 1);
-					fprintf (stderr, ".\n");
                 } else {
                     //
                     // NO MOX, zeroing the microphone output sample buffer

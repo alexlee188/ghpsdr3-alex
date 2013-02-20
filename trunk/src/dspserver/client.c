@@ -593,7 +593,6 @@ void *tx_thread(void *arg){
 					Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], &tx_IQ_buffer[TX_BUFFER_SIZE*2], &tx_IQ_buffer[TX_BUFFER_SIZE*3], TX_BUFFER_SIZE, 1);
 					// send Tx IQ to server, buffer is non-interleaved.
 					if (mox) {
-                        //fprintf (stderr, "XH!LOC\n");
 						ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
 					}
 				} else if (!hpsdr) {
@@ -601,7 +600,6 @@ void *tx_thread(void *arg){
 					Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], &tx_IQ_buffer[TX_BUFFER_SIZE*0], &tx_IQ_buffer[TX_BUFFER_SIZE*1], TX_BUFFER_SIZE, 1);
 					// send Tx IQ to server, buffer is non-interleaved.
 					ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
-                    fprintf (stderr, "X!H\n");
 				}
 				tx_buffer_counter = 0;
 			}
