@@ -625,7 +625,16 @@ void setSpeed(int s) {
 
 	fprintf(stderr,"%s: %f\n", __FUNCTION__, (double) sampleRate);
 	ozy_set_src_ratio();
-	mic_src_ratio = (double) sampleRate/ 8000.0;
+    //
+    // because in HPSDR the TX I/Q stream is expected @ 48 kS/s 
+    // indipendently from the RX sample rate, it would seem that here we have to
+    // set the transmission resampler is a fixed and different way that when we are using softrocks.
+    // However, because into the hpsdr_server process there is in place a crude but nonetheless effective  
+    // resampling, the resampling ratio is exactly the same.
+    // (see also the function process_ozy_output_buffer in trunk/src/server/ozy.c)
+    //
+    mic_src_ratio = (double) sampleRate/ 8000.0;
+	fprintf(stderr,"%s: mic source ratio: %f\n", __FUNCTION__, (double) mic_src_ratio);
 }
 
 /* --------------------------------------------------------------------------*/
