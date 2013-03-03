@@ -145,6 +145,8 @@ private slots:
    void ditherChanged(int);
    void preampChanged(int);
    void micBoostClicked(int);
+   void lineInClicked(int);
+   void adcOverload ();
 
    void processAnswer (QStringList);
 
@@ -152,6 +154,8 @@ private:
    QSlider *pAttSlider;
    QSlider *pTxSlider;
    QSlider *pTxLineInGain;
+   QString  sn;
+   QTimer  *adcOverloadTimer;
 };
 
 

@@ -766,7 +766,7 @@ HardwareHermes :: HardwareHermes (Connection *pC, QWidget *pW): DlgHardware (pC,
     txLineInGainGroupBox->setFlat(true);
 
     pTxLineInGain = new QSlider();
-    pTxLineInGain->setMaximum ( 32 );
+    pTxLineInGain->setMaximum ( 31 );
     pTxLineInGain->setMinimum ( 0  );
     pTxLineInGain->setPageStep( 4  );
 
@@ -793,6 +793,9 @@ HardwareHermes :: HardwareHermes (Connection *pC, QWidget *pW): DlgHardware (pC,
     // Hermes Microphone boosts
     QCheckBox *micBoost  = new QCheckBox(tr("&Mic Boost"));
 
+    // Hermes Line-In / Microphone selector
+    QCheckBox *lineIn = new QCheckBox(tr("&Line In"));
+
 
     // Main layout of tx tab
     QHBoxLayout *tx_grid = new QHBoxLayout;
@@ -803,6 +806,7 @@ HardwareHermes :: HardwareHermes (Connection *pC, QWidget *pW): DlgHardware (pC,
     tx_grid->addWidget (txLineInGainGroupBox);
     tx_grid->addWidget (alexTxRelayGroupBox);
     tx_grid->addWidget (micBoost);
+    tx_grid->addWidget (lineIn);
 
     // use grid object as main dialog's layout 
     pTx->setLayout(tx_grid);
@@ -859,6 +863,9 @@ HardwareHermes :: HardwareHermes (Connection *pC, QWidget *pW): DlgHardware (pC,
     // Mic boost
     connect(micBoost, SIGNAL(stateChanged(int)), this, SLOT(micBoostClicked(int)));
 
+    // Line In / Mic selector
+    connect(lineIn, SIGNAL(stateChanged(int)), this, SLOT(lineInClicked(int)));
+
     // update the serial number in title bar
     QString command;
     command.clear(); QTextStream(&command) << "*getserial?";
@@ -871,6 +878,21 @@ HardwareHermes :: HardwareHermes (Connection *pC, QWidget *pW): DlgHardware (pC,
     randomCB->setCheckState(Qt::Checked);  // random ON
     att0Db->setChecked(true);              // attenuator 0 dB
     alexTx0->setChecked(true);             // Alex-Tx/ANAN-10 Tx antenna #0
+    pTxLineInGain->setEnabled(false);
+
+    // creates the timer in order to request ADC overload bit, it will be started 
+    // after the first message is received back
+    adcOverloadTimer = new QTimer(this);
+    connect ( adcOverloadTimer, SIGNAL ( timeout() ), this, SLOT ( adcOverload()) );
+}
+
+// request the ADC overload status
+void HardwareHermes :: adcOverload () {
+    qDebug() << "adcOverload";
+    QString command;
+    command.clear(); QTextStream(&command) << "*getadcoverload?" ;
+    pConn->sendCommand (command);
+    adcOverloadTimer->start(1000);
 }
 
 void HardwareHermes :: attClicked(int state)
@@ -898,7 +920,16 @@ void HardwareHermes :: micBoostClicked(int state)
 {
    qDebug() << "Hermes Mic boost: " << state ;
    QString command;
-   command.clear(); QTextStream(&command) << "*hermesmicboost " << state;
+   command.clear(); QTextStream(&command) << "*hermesmicboost " << ((state==Qt::Checked) ? "on" : "off");
+   pConn->sendCommand (command);
+}
+
+void HardwareHermes :: lineInClicked(int state)
+{
+   qDebug() << "Hermes Line In / Mic selector: " << state ;
+   QString command;
+   command.clear(); QTextStream(&command) << "*hermeslinein " << ((state==Qt::Checked) ? "on" : "off");
+   pTxLineInGain->setEnabled(((state==Qt::Checked) ? true : false));
    pConn->sendCommand (command);
 }
 
@@ -928,8 +959,6 @@ void HardwareHermes :: txLineInGainSlid(int state)
    command.clear(); QTextStream(&command) << "*settxlineingain " << state;
    pConn->sendCommand (command);
 }
-
-
 
 void HardwareHermes :: ditherChanged(int state)
 {
@@ -964,7 +993,20 @@ void HardwareHermes :: processAnswer (QStringList list)
        // change the title bar
        QString x;
        x.clear(); 
-       QTextStream(&x) << windowTitle() << " - SN: " << list[2];
+       QTextStream(&x) << windowTitle() << " - IP: " << list[2];
+       setWindowTitle(x) ;
+       sn = list[2];
+       // automatically starts the timer in order to request ADC overload bit
+       adcOverloadTimer->start(1000);
+    } else
+
+    if (list[0] == "*getadcoverload?") {
+       // try to set the overload flag
+       qDebug() << Q_FUNC_INFO<<list[2];
+       // change the title bar
+       QString x;
+       x.clear(); 
+       QTextStream(&x) << "Hermes" << " - IP: " << sn << " - " << (list[2] == "1" ? "OVERLOAD" : "") ;
 
        setWindowTitle(x) ;
     }
@@ -973,7 +1015,7 @@ void HardwareHermes :: processAnswer (QStringList list)
 
 HardwareHermes :: ~HardwareHermes ()
 {
-
+    if (adcOverloadTimer) adcOverloadTimer->stop(), delete adcOverloadTimer;
 }
 
 

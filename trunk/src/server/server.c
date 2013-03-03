@@ -121,11 +121,9 @@ int main(int argc,char* argv[]) {
     }
 
     while(1) {
-#ifdef __linux__
-        sleep(10);
-#else   // Windows
-        Sleep(10);
-#endif
+	    char ch;
+	    while((ch = getc(stdin)) != EOF) 
+	      if (ch == 'q') break;
     }
 }
 

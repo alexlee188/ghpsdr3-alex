@@ -44,6 +44,7 @@ void ozy_set_random(int random);
 void ozy_set_10mhzsource(int source);
 void ozy_set_122_88mhzsource(int source);
 void ozy_set_micsource(int source);
+int  ozy_get_adc_overflow (void);
 
 void ozy_set_timing(int t);
 
@@ -68,6 +69,7 @@ void ozy_set_hermes(int state);
 void ozy_set_open_collector_outputs(int oc);
 void ozy_set_hermes_power(unsigned char p);
 void ozy_set_hermes_lineingain(unsigned char p);
+void ozy_set_hermes_linein(unsigned char p);
 void ozy_set_hermes_att(int p);
 void ozy_set_hermes_mic_boost(int p);
 
