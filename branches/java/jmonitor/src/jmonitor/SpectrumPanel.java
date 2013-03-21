@@ -1,14 +1,31 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/*
- * MonitorPanel.java
- *
+ * SpectrumPanel.java
+ * Created by John Melton G0ORX
  * Created on 31-Dec-2009, 17:38:26
  */
 
+/*
+ * This code has been and reviewed modified.
+ * John Tucker, N8MDP
+ */
+
+/*
+ * Revsion History
+ * 1/20/13: Updated the following Functions:
+ *      1. formMouseClicked - Added freqOffset so that the frequency offset in
+ *                          in Hz is used in the calcluation of where to 
+ *                          set the frequency based on a mouse click.
+ *      2. updateMonitor() - Now includes:
+ *                  A. offset - adjustment factor to relocate the Filter block 
+ *                          based on the dspserver offset value.
+ *                  B. localOscOffset - This is the actual dspserver offset 
+ *                          value in Hz
+ *      3. drawSpectrum(int offset, int localOscOffset): This allows the 
+ *                          spectrum plot to be properly plotted for the offset
+ *                          value from the dspserver.
+ * 
+ * 
+ */
 package jmonitor;
 
 import java.awt.Color;
@@ -77,33 +94,37 @@ public class SpectrumPanel extends javax.swing.JPanel {
     }
 
     private void formMouseWheelMoved(java.awt.event.MouseWheelEvent evt) {//GEN-FIRST:event_formMouseWheelMoved
+        // I don't use this function at this time... JLT 01/20/13
         client.setFrequency(client.getFrequency()+(evt.getWheelRotation()*100));
     }//GEN-LAST:event_formMouseWheelMoved
 
     private void formMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_formMouseClicked
+        int resolution = 1;
+        int freq_offset = client.getOffset();        
         if(client.isConnected()) {
-            int scrollAmount=(evt.getX() - (WIDTH / 2)) * (client.getSampleRate() / WIDTH);
+            int scrollAmount=(evt.getX() - (WIDTH / 2)) * (client.getSampleRate() / WIDTH/resolution);
             switch(evt.getButton()) {
                 case MouseEvent.BUTTON1:
                     // Left Button - move to center of filter
                     if(filterHigh<0) {
-                        client.setFrequency(client.getFrequency()+(scrollAmount + ((filterHigh - filterLow) / 2)));
+                        client.setFrequency(client.getFrequency()+(scrollAmount + ((filterHigh - filterLow) / 2))-freq_offset);
                     } else {
-                        client.setFrequency(client.getFrequency()+(scrollAmount - ((filterHigh - filterLow) / 2)));
+                        client.setFrequency(client.getFrequency()+(scrollAmount - ((filterHigh - filterLow) / 2))-freq_offset);
                     }
                     break;
                 case MouseEvent.BUTTON3:
                     // Right Button - move to cursor
-                    client.setFrequency(client.getFrequency()+scrollAmount);
+                    client.setFrequency(client.getFrequency()+scrollAmount-freq_offset);
                     break;
             }
         }
     }//GEN-LAST:event_formMouseClicked
 
     private void formMouseDragged(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_formMouseDragged
+        int resolution = 4;    
         if(client.isConnected()) {
             int increment=startX-evt.getX();
-            client.setFrequency(client.getFrequency()+(increment*(client.getSampleRate()/WIDTH)));
+            client.setFrequency(client.getFrequency()+(increment*(client.getSampleRate()/WIDTH/resolution)));
             startX=evt.getX();
         }
     }//GEN-LAST:event_formMouseDragged
@@ -131,9 +152,9 @@ public class SpectrumPanel extends javax.swing.JPanel {
         }
     }
 
-    public void updateMonitor(float[] samples,int filterLow,int filterHigh,int sampleRate) {
+    public void updateMonitor(float[] samples,int filterLow,int filterHigh,int sampleRate, int offset, int localOscOffset) {
         plotSpectrum(samples,filterLow,filterHigh,sampleRate);
-        drawSpectrum();
+        drawSpectrum(offset,localOscOffset);
     }
 
     public void updateStatus() {
@@ -154,7 +175,7 @@ public class SpectrumPanel extends javax.swing.JPanel {
         filterRight=(filterHigh-(-sampleRate/2))*WIDTH/sampleRate;
     }
 
-    private void drawSpectrum() {
+    public void drawSpectrum(int offset, int localOscOffset) {
         if(image==null) image=this.createImage(WIDTH,HEIGHT);
         if(image!=null) {
             Graphics graphics=image.getGraphics();
@@ -163,12 +184,16 @@ public class SpectrumPanel extends javax.swing.JPanel {
             graphics.fillRect(0,0,WIDTH,HEIGHT);
 
             // draw the filter
-            graphics.setColor(Color.GRAY);
-            graphics.fillRect(filterLeft,0,filterRight-filterLeft,HEIGHT);
+            graphics.setColor(Color.BLUE);
+            // Relocate the filter for the LO offset using the calculated
+            // 'offset' factor  - 1/20/13
+            graphics.fillRect(filterLeft+offset,0,filterRight-filterLeft,HEIGHT);
 
             // plot frequency markers
             int sampleRate=client.getSampleRate();
-            long f=client.getFrequency()-(sampleRate/2);
+            //Local Oscillator value subtracted from frequency to properly
+            // place the frequency markers - 1/20/13
+            long f=client.getFrequency()-(sampleRate/2)-localOscOffset;       
             long increment;
 
             switch(sampleRate) {
@@ -213,7 +238,8 @@ public class SpectrumPanel extends javax.swing.JPanel {
 
             // draw cursor
             graphics.setColor(Color.RED);
-            graphics.drawLine(WIDTH/2, 0, WIDTH/2, HEIGHT);
+            // added the 'offset' to relocate cursor to offset location
+            graphics.drawLine(WIDTH/2+offset, 0, WIDTH/2+offset, HEIGHT);
 
             // plot the data
             graphics.setColor(Color.WHITE);
@@ -247,6 +273,7 @@ public class SpectrumPanel extends javax.swing.JPanel {
     private Font font=new Font("Ariel",Font.PLAIN,10);
 
     private DecimalFormat frequencyFormat=new java.text.DecimalFormat("####.00");
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables

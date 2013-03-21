@@ -1,6 +1,18 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * Audio.java
+ * Created by John Melton G0ORX
+ * 
+ */
+
+/*
+ * This code has been and reviewed modified.
+ * John Tucker, N8MDP
+ */
+
+/*
+ * Revsion History
+ * 01/20/13: No Change
+ * 
  */
 
 package jmonitor;

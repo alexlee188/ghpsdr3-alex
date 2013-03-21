@@ -1,22 +1,28 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * MonitorApplet.java
+ * Created by John Melton G0ORX
+ * Created on 01-Feb-2010, 11:05:21
+ * 
  */
 
 /*
- * MonitorApplet.java
- *
- * Created on 01-Feb-2010, 11:05:21
+ * This code has been and reviewed modified.
+ * John Tucker, N8MDP
+ */
+
+/*
+ * Revsion History
+ * 1/20/13: Changes:
+ *              1. Set default frequency to 7.170000MHz (40 Meters)
+ *              2. Server set to: "n8mdp.dyndns.org" (may not work)
+ * 
+ * 
  */
 
 package jmonitor;
 
 import javax.swing.JFrame;
 
-/**
- *
- * @author john
- */
 public class MonitorApplet extends javax.swing.JApplet {
 
     /** Initializes the applet MonitorApplet */
@@ -76,9 +82,9 @@ public class MonitorApplet extends javax.swing.JApplet {
         
         client = new Client(server, receiver,audio,limit);
         client.start();
-        client.setFrequency(7048000);
+        client.setFrequency(7170000);  // Defaulting to 40 Meters
         client.setMode(0);
-        client.setFilter(-2850, -150);
+        client.setFilter(-3450, -150);
         client.setAGC(1);
         client.setGain(30);
 
@@ -103,7 +109,7 @@ public class MonitorApplet extends javax.swing.JApplet {
     private jmonitor.MonitorPanel monitorPanel;
     // End of variables declaration//GEN-END:variables
 
-    String server = "81.146.61.118";
+    String server = "192.168.254.53";
     int receiver = 0;
     int limit;
 

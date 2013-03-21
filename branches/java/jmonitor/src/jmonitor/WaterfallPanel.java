@@ -1,12 +1,21 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * WaterfallPanel.java
+ * Created by John Melton G0ORX
+ * Created on 20-Jan-2010, 09:42:39
  */
 
 /*
- * WaterfallPanel.java
- *
- * Created on 20-Jan-2010, 09:42:39
+ * This code has been and reviewed modified.
+ * John Tucker, N8MDP
+ */
+
+/*
+ * Revsion History
+ * 1/20/13: This code has been modified to now display a color waterfall. I 
+ * commented out the original gray scale code from John Melton. This way, you
+ * can still see what he did. 
+ * 
+ * 
  */
 
 package jmonitor;
@@ -14,13 +23,9 @@ package jmonitor;
 import java.awt.Image;
 import java.awt.event.MouseEvent;
 
-/**
- *
- * @author john
- */
 public class WaterfallPanel extends javax.swing.JPanel {
 
-    /** Creates new form WaterfallPanel */
+/** Creates new form WaterfallPanel */
     public WaterfallPanel() {
         initComponents();
         pixels=new int[WIDTH*HEIGHT];
@@ -36,8 +41,9 @@ public class WaterfallPanel extends javax.swing.JPanel {
 
     public void updateWaterfall(float[] samples,int filterLow,int filterHigh,int sampleRate) {
 
-        this.filterLow=filterLow;
-        this.filterHigh=filterHigh;
+        int local_average=0;    
+        this.filterLow=filterLow;   // Don't think this is used in the function
+        this.filterHigh=filterHigh; // Don't think this is used in the function
 
         // move the pixel array down
         System.arraycopy(pixels,0,pixels,WIDTH,(WIDTH*(HEIGHT-1)));
@@ -45,20 +51,83 @@ public class WaterfallPanel extends javax.swing.JPanel {
         // draw the new line
         for(int i=0;i<WIDTH;i++) {
             pixels[i]=calculatePixel(samples[i]);
+            local_average+=samples[i];  // Needed to compute waterfall levels
         }
 
+        // This code computes the average of the samples to automatically
+        // scale the watefall
+        waterfallLow=(local_average/WIDTH)-10;
+        waterfallHigh=waterfallLow+60;
+//        System.err.println(waterfallLow+" , "+waterfallHigh);
         this.repaint();
     }
 
     private int calculatePixel(float sample) {
-        // simple gray scale
-        int v=((int)sample-low)*255/(high-low);
+        // simple gray scale. Changed from 255 to 127 to cut down on contrast
+        //int v=((int)sample-low)*127/(high-low);
 
-        if(v<0) v=0;
-        if(v>255) v=255;
+        //if(v<0) v=0;
+        //if(v>255) v=255;
 
-        int pixel=(255<<24)+(v<<16)+(v<<8)+v;
-        return pixel;
+        //int pixel=(255<<24)+(v<<16)+(v<<8)+v;
+        //return pixel;
+        
+        // This cod was pulled from the glSDR code some there was similarity
+        // in opration - 1/20/13
+        int R,G,B;
+        if(sample<waterfallLow) {
+            R=colorLowR;
+            G=colorLowG;
+            B=colorLowB;
+        } else if(sample>waterfallHigh) {
+            R=colorHighR;
+            G=colorHighG;
+            B=colorHighB;
+        } else {
+            float range=waterfallHigh-waterfallLow;
+            float offset=sample-waterfallLow;
+            float percent=offset/range;
+            if(percent<(2.0f/9.0f)) {
+                float local_percent = percent / (2.0f/9.0f);
+                R = (int)((1.0f-local_percent)*colorLowR);
+                G = (int)((1.0f-local_percent)*colorLowG);
+                B = (int)(colorLowB + local_percent*(255-colorLowB));
+                    } else if(percent<(3.0f/9.0f)) {
+                    float local_percent = (percent - 2.0f/9.0f) / (1.0f/9.0f);
+                R = 0;
+                G = (int)(local_percent*255);
+                B = 255;
+            } else if(percent<(4.0f/9.0f)) {
+                float local_percent = (percent - 3.0f/9.0f) / (1.0f/9.0f);
+                R = 0;
+                G = 255;
+                B = (int)((1.0f-local_percent)*255);
+            } else if(percent<(5.0f/9.0f)) {
+                float local_percent = (percent - 4.0f/9.0f) / (1.0f/9.0f);
+                R = (int)(local_percent*255);
+                G = 255;
+                B = 0;
+            } else if(percent<(7.0f/9.0f)) {
+                float local_percent = (percent - 5.0f/9.0f) / (2.0f/9.0f);
+                 R = 255;
+                 G = (int)((1.0f-local_percent)*255);
+                 B = 0;
+            } else if(percent<(8.0f/9.0f)) {
+                float local_percent = (percent - 7.0f/9.0f) / (1.0f/9.0f);
+                R = 255;
+                G = 0;
+                B = (int)(local_percent*255);
+            } else {
+                float local_percent = (percent - 8.0f/9.0f) / (1.0f/9.0f);
+                R = (int)((0.75f + 0.25f*(1.0f-local_percent))*255.0f);
+                G = (int)(local_percent*255.0f*0.5f);
+                B = 255;
+            }
+        }
+   
+    int pixel = (255 << 24)+(R << 16)+(G << 8) + B;
+    return pixel;
+            
     }
 
     public void setClient(Client client) {
@@ -107,34 +176,36 @@ public class WaterfallPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void formMouseWheelMoved(java.awt.event.MouseWheelEvent evt) {//GEN-FIRST:event_formMouseWheelMoved
-        //client.sendCommand("scrollFrequency "+Integer.toString(evt.getWheelRotation()*(client.getSampleRate()/WIDTH)));
         client.setFrequency(client.getFrequency()+(evt.getWheelRotation()*100));
     }//GEN-LAST:event_formMouseWheelMoved
 
     private void formMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_formMouseClicked
+        int resolution = 1;
+        int freq_offset = client.getOffset();
         if(client.isConnected()) {
-            int scrollAmount=(evt.getX() - (WIDTH / 2)) * (client.getSampleRate() / WIDTH);
+            int scrollAmount=(evt.getX() - (WIDTH / 2)) * (client.getSampleRate() / WIDTH / resolution);
             switch(evt.getButton()) {
                 case MouseEvent.BUTTON1:
                     // Left Button - move to center of filter
                     if(filterHigh<0) {
-                        client.setFrequency(client.getFrequency()+(scrollAmount + ((filterHigh - filterLow) / 2)));
+                        client.setFrequency(client.getFrequency()+(scrollAmount + ((filterHigh - filterLow) / 2))-freq_offset);
                     } else {
-                        client.setFrequency(client.getFrequency()+(scrollAmount - ((filterHigh - filterLow) / 2)));
+                        client.setFrequency(client.getFrequency()+(scrollAmount - ((filterHigh - filterLow) / 2))-freq_offset);
                     }
                     break;
                 case MouseEvent.BUTTON3:
                     // Right Button - move to cursor
-                    client.setFrequency(client.getFrequency()+(scrollAmount));
+                    client.setFrequency(client.getFrequency()+(scrollAmount)-freq_offset);
                     break;
             }
         }
     }//GEN-LAST:event_formMouseClicked
 
     private void formMouseDragged(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_formMouseDragged
+        int resolution = 4;
         if(client.isConnected()) {
             int increment=startX-evt.getX();
-            client.setFrequency(client.getFrequency()+(increment*(client.getSampleRate()/WIDTH)));
+            client.setFrequency(client.getFrequency()+(increment*(client.getSampleRate()/WIDTH/resolution)));
             startX=evt.getX();
         }
     }//GEN-LAST:event_formMouseDragged
@@ -152,8 +223,8 @@ public class WaterfallPanel extends javax.swing.JPanel {
     private static final int WIDTH=480;
     private static final int HEIGHT=100;
 
-    private int low=-115;
-    private int high=-75;
+    private int low=-115;   // Was -115. Only used for B&W
+    private int high=-60;   // Was -75. Only used for B&W
 
     private int pixels[];
 
@@ -163,5 +234,15 @@ public class WaterfallPanel extends javax.swing.JPanel {
     private int filterHigh;
 
     private int startX;
+    
+    private int waterfallLow=-120;
+    private int waterfallHigh=-40;
+
+    private int colorLowR=0;
+    private int colorLowG=0;
+    private int colorLowB=0;
+    private int colorHighR=255;
+    private int colorHighG=0;
+    private int colorHighB=0;
 
 }
