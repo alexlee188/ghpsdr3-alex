@@ -2472,7 +2472,7 @@ void UI::testButtonClick(bool state)
 
 void UI :: hardware (QString answer)
 {
-   HardwareFactory :: processAnswer (answer, &connection, this);
+   HardwareFactory :: Instance() .processAnswer (answer, &connection, this);
 }
 
 

@@ -56,6 +56,11 @@ servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
 hardware.moc.cpp \
+hardware_hermes.moc.cpp \
+hardware_perseus.moc.cpp \
+hardware_sdriq.moc.cpp \
+hardware_hiqsdr.moc.cpp \
+hardware_rtlsdr.moc.cpp \
 powermate.moc.cpp 
 	
 nodist_QtRadio_SOURCES = \
@@ -99,6 +104,11 @@ servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
 hardware.moc.cpp \
+hardware_hermes.moc.cpp \
+hardware_perseus.moc.cpp \
+hardware_sdriq.moc.cpp \
+hardware_hiqsdr.moc.cpp \
+hardware_rtlsdr.moc.cpp \
 powermate.moc.cpp
 
 
@@ -112,7 +122,7 @@ Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.
 ctl.cpp rigctl.cpp\
 Audioinput.cpp \
 servers.cpp\
-G711A.cpp RTP.cpp hardware.cpp powermate.cpp \
+G711A.cpp RTP.cpp hardware.cpp hardware_hermes.cpp hardware_perseus.cpp hardware_sdriq.cpp hardware_hiqsdr.cpp hardware_rtlsdr.cpp powermate.cpp \
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  Waterfall.h  \
 Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Spectrum.h    XvtrEntry.h  \
@@ -124,6 +134,11 @@ servers.h \
 G711A.h RTP.h \
 cusdr_queue.h \
 hardware.h \
+hardware_hermes.h \
+hardware_perseus.h \
+hardware_sdriq.h \
+hardware_hiqsdr.h \
+hardware_rtlsdr.h \
 powermate.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui servers.ui
@@ -172,6 +187,11 @@ servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
 hardware.moc.cpp \
+hardware_hermes.moc.cpp \
+hardware_perseus.moc.cpp \
+hardware_sdriq.moc.cpp \
+hardware_hiqsdr.moc.cpp \
+hardware_rtlsdr.moc.cpp \
 powermate.moc.cpp
 
 #
