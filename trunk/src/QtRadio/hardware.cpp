@@ -32,10 +32,6 @@ DlgHardware :: ~DlgHardware ()
 
 }
 
-
-
-
-
 DlgHardware * HardwareFactory::Clone(Connection *pConn, const char *pName, QWidget * /*  p  */) 
 {
    qDebug() << Q_FUNC_INFO << pName;

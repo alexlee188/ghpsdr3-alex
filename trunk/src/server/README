@@ -59,23 +59,77 @@ Currently the server program is a command line program and it has several option
 
 
 
-How to run Hermes server
-========================
+How to run an Hermes server
+===========================
+
+The Hermes hardware needs some especially suited changes to both hpsdr_server and dspserver.
+
+First off, please note that Hermes can be operated with ghpsdr3-alex in two different modes:
+
+ - local
+ - remote
 
 
-In three separate xterm windows, run the following command, following the order shown below:
+In both modes the samplerates available are 48000, 96000, 192000 and 384000 S/s.
+(The 384kS/s samplerate is available starting since firmware version 2.2)
+
+Keep in mind that the latter two require a quite powerful computer.
 
 
-hpsdr-server  --hermes 0 --samplerate 96000
+Local mode
+==========
 
-dspserver --lo 0  --hpsdr --nocorrectiq 
+In this mode the microphone and the headphone have to be connected to Hermes and QtRadio GUI is
+used mainly for display the spectrum and the waterfall and in order to operate the tx via the MOX button.
+Another important command available is the Drive slider in the TX tab of QtRadio hardware window.
 
-QtRadio 127.0.0.1
+In three separate xterm windows, run the following command, in the order shown below:
+
+  hpsdr-server  --hermes 0 --samplerate 96000
+
+  dspserver --lo 0  --hpsdrloc --nocorrectiq 
+
+  QtRadio 127.0.0.1
 
 
-The samplerates available are 48000, 96000 and 192000 S/s.
-The audio has to be available both from local audio system and from headphone socket on Hermes.
-For the small delay, use the headphone.
+The audio is available both from local audio system (where QtRadio is running) and from headphone socket on Hermes,
+but you will experience a noticeable delay in QtRadio.
+
+
+
+Remote Mode
+===========
+
+
+In this mode the microphone audio is taken from QtRadio, processed in dspserver and sent back to the hardware, so you can operate
+an Hermes that stands in a fully remote location, together with a PC running dspserver and hpsdr_server.
+
+The audio is available both from local audio system (where QtRadio is running) and from headphone socket on Hermes.
+
+In the PC near to Hermes open two xterm windows, and run the following command:
+
+
+  hpsdr-server  --hermes 0 --samplerate 96000
+
+  dspserver --lo 0  --hpsdr --nocorrectiq 
+
+
+In another PC run
+
+  QtRadio 
+
+and select from the server list your radio.
+If the two systems are on the same private network, specify the server address directly in the QtRadio
+command line (as in the Local case).
+
+In case you decide to make Hermes available on the Internet, you can select your server directly from
+the server list. 
+In this case, take care to configure the dspserver.conf in order to avoid unintended accesses to your radio.
+
+Of course, in remote mode, you can even run everything in the same PC, just make sure you have a powerful 
+enough CPU.
+
+
 
 
 

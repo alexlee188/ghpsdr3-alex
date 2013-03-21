@@ -24,6 +24,9 @@
 *
 */
 
+#ifndef __CLIENT_H__
+#define __CLIENT_H__
+
 #ifndef __linux__
 #include <winsock.h>
 #include "pthread.h"
@@ -55,3 +58,4 @@ typedef struct _client {
 
 void* client_thread(void* arg);
 
+#endif

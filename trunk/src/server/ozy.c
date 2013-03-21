@@ -268,6 +268,7 @@ static int AIN6=0;
 static int IO1=1; // 1 is inactive
 static int IO2=1;
 static int IO3=1;
+static int IO4=1;
 
 
 static int samples=0;
@@ -883,12 +884,23 @@ if(rx_frame<10) {
         dot=(control_in[0]&0x04)==0x04;
 
         switch((control_in[0]>>3)&0x1F) {
-
+        // C1 
+        // 0 0 0 0 0 0 0 0
+        //   | | | | | | |
+        //   | | | | | | +---------- LT2208 Overflow (1 = active, 0 = inactive)
+        //   | | | | | +------------ Hermes I01 (0 = active, 1 = inactive)
+        //   | | | | +-------------- Hermes I02 (0 = active, 1 = inactive)
+        //   | | | +---------------- Hermes I03 (0 = active, 1 = inactive)
+        //   | | +------------------ Hermes I04 (0 = active, 1 = inactive)
+        //   | +-------------------- Cyclops PLL locked (0 = unlocked, 1 = locked)
+        //   +---------------------- Cyclops - Mercury frequency changed, bit toggles   
+        //                  
         case 0:
             lt2208ADCOverflow=control_in[1]&0x01;
             IO1=(control_in[1]&0x02)?0:1;
             IO2=(control_in[1]&0x04)?0:1;
             IO3=(control_in[1]&0x08)?0:1;
+            IO4=(control_in[1]&0x10)?0:1;
             if(mercury_software_version!=control_in[2]) {
                 mercury_software_version=control_in[2];
                 fprintf(stderr,"  Mercury Software version: %d (0x%0X)\n",mercury_software_version,mercury_software_version);
@@ -986,7 +998,10 @@ if(rx_frame<10) {
                 // send to dspserver
                 mic_sample    = (int)((signed char) buffer[b++]) << 8;
                 mic_sample   += (int)((unsigned char)buffer[b++]);
-                mic_sample_float=(float)mic_sample/32767.0*mic_gain; // 16 bit sample
+                if (hermes) {
+                    mic_sample_float=(float)mic_sample/32767.0 ;           // 16 bit sample
+                } else 
+                    mic_sample_float=(float)mic_sample/32767.0 * mic_gain; // 16 bit sample
                 receiver[r].input_buffer[samples+BUFFER_SIZE+BUFFER_SIZE]=mic_sample_float;
             }
 /*
@@ -1209,8 +1224,16 @@ void ozy_set_hermes_mic_boost(int b)
 
 void ozy_set_hermes_lineingain(unsigned char p)
 {
-    control_out_hermes_att[2]=control_out_hermes_att[2]&0x1F;
-    control_out_hermes_att[2]=control_out_hermes_att[2] | (p & 0xE0);
+    control_out_hermes_att[2]=control_out_hermes_att[2]&0xE0;
+    control_out_hermes_att[2]=control_out_hermes_att[2] | (p & 0x1F);
+    fprintf(stderr,"%s: %d 0x%02X\n", __FUNCTION__, p, control_out_hermes_att[2]);
+}
+
+void ozy_set_hermes_linein(unsigned char p)
+{
+    control_out_hermes_pow[2]=control_out_hermes_pow[2]&0xFD;
+    control_out_hermes_pow[2]=control_out_hermes_pow[2]|((p<<1) & 0x02);
+    fprintf(stderr,"%s: %d: 0x%02X\n", __FUNCTION__, p, control_out_hermes_pow[2]);
 }
 
 void ozy_set_hermes_att(int av) {
@@ -1247,3 +1270,8 @@ void ozy_set_alex_tx_relay (unsigned int t)
     fprintf(stderr,"%s: %d: 0x%02X\n", __FUNCTION__, t, control_out[4]);
 }
 
+
+int  ozy_get_adc_overflow (void)
+{
+    return lt2208ADCOverflow;
+}

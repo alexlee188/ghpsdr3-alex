@@ -289,13 +289,49 @@ char* parse_command(CLIENT* client,char* command) {
                 return INVALID_COMMAND;
             }
 
+        } else if(strcmp(token,"hermesmicboost")==0) {
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+                if (strcmp(token,"on")==0) {
+                    ozy_set_hermes_mic_boost(1);
+                    return OK;
+                }
+                if (strcmp(token,"off")==0) { 
+                    ozy_set_hermes_mic_boost(0);
+                    return OK;
+                }
+                return INVALID_COMMAND;
+            } else {
+                return INVALID_COMMAND;
+            }
+
+        } else if(strcmp(token,"hermeslinein")==0) {
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+                if (strcmp(token,"on")==0) {
+                    ozy_set_hermes_linein(1);
+                    return OK;
+                }
+                if (strcmp(token,"off")==0) { 
+                    ozy_set_hermes_linein(0);
+                    return OK;
+                }
+                return INVALID_COMMAND;
+            } else {
+                return INVALID_COMMAND;
+            }
+
         } else if(strcmp(token,"hardware?")==0) {
-            fprintf (stderr, "*****************************\n");
             return "OK Hermes";
 
         } else if(strcmp(token,"getserial?")==0) {
             static char buf[50];
-            snprintf (buf, sizeof(buf), "OK %s- firmware %d", metis_ip_address(0), ozy_get_hermes_sw_ver());
+            snprintf (buf, sizeof(buf), "OK %s\"- firmware %d\"", metis_ip_address(0), ozy_get_hermes_sw_ver());
+            return buf;
+
+        } else if(strcmp(token,"getadcoverload?")==0) {
+            static char buf[50];
+            snprintf (buf, sizeof(buf), "OK %d", ozy_get_adc_overflow ());
             return buf;
 
         } else if(strcmp(token,"dither")==0) {
