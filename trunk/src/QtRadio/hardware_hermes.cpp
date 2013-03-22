@@ -1,4 +1,11 @@
 #include <QtGui>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QSlider>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QTabWidget>
+#endif
 #include "hardware_hermes.h"
 
 

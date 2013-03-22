@@ -1,4 +1,11 @@
 #include <QtGui>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QSlider>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QCheckBox>
+#endif
+
 #include "hardware_perseus.h"
 
 HardwarePerseus :: HardwarePerseus (Connection *pC, QWidget *pW): DlgHardware (pC, pW)
