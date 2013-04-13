@@ -49,7 +49,7 @@ Bridgewater, NJ 08807
 #include <filter.h>
 #include <oscillator.h>
 #include <dttspagc.h>
-#include <am_demod.h>
+//#include <am_demod.h>
 #include <fm_demod.h>
 #include <noiseblanker.h>
 #include <correctIQ.h>
@@ -62,6 +62,10 @@ Bridgewater, NJ 08807
 #include <spectrum.h>
 #include <diversity.h>
 #include <compress.h>
+#include <wcpAGC.h>
+#include <anf.h>
+#include <anr.h>
+#include <amd.h>
 
 //------------------------------------------------------------------------
 // max no. simultaneous receivers
@@ -131,26 +135,31 @@ extern struct _rx
 {
   struct
   {
-    CXB i, o;
+    CXB i, o, i_notch, o_notch;
   } buf;
   IQ iqfix;
+
   struct
   {
     double freq, phase;
     OSC gen;
   } osc;
+
   struct
   {
 	 int decim;
 	 BOOLEAN flag;
 	 ResStF gen1r,gen1i,gen2r,gen2i;
   } resample;
+
   float output_gain;
   struct
   {
     ComplexFIR coef;
-    FiltOvSv ovsv;
+    FiltOvSv ovsv, ovsv_notch;// (NR0V)
     COMPLEX *save;
+    double low;		// (NR0V)
+    double high;
   } filt,filt2;
 
   DCBlocker dcb;
@@ -168,11 +177,11 @@ extern struct _rx
     BOOLEAN flag;
   } nb_sdrom;
 
-  struct
-  {
-    LMSR gen;
-    BOOLEAN flag;
-  } anr, anf;
+//  struct
+//  {
+//    LMSR gen;
+//    BOOLEAN flag;
+//  } anr, anf;
 
   struct
   {
@@ -180,24 +189,53 @@ extern struct _rx
 	  BOOLEAN flag;
   } banr, banf;
 
+  struct	// (NR0V)
+  {
+	ANF gen;
+	BOOLEAN flag;
+	int position;
+  } anf;
+
+  struct	// (NR0V)
+  {
+	ANR gen;
+	BOOLEAN flag;
+	int position;
+  } anr;
+
   struct
   {
     DTTSPAGC gen;
     BOOLEAN flag;
   } dttspagc;
+
+  struct //(NR0V)
+  {
+    WCPAGC gen;
+    BOOLEAN flag;
+  } wcpagc;
+  
   struct
   {
     AMD gen;
   } am;
+
+  struct	//(NR0V)
+  {
+    AMD gen;
+  } amd;
+  
   struct
   {
     FMD gen;
   } fm;
+
   struct
   {
     BOOLEAN flag;
     SpotToneGen gen;
   } spot;
+
   struct
   {
     REAL thresh, atten, power;
@@ -218,6 +256,12 @@ extern struct _rx
     BOOLEAN flag;
   } grapheq;
 
+  struct
+  {
+    IIR_2P2Z gen;
+    BOOLEAN flag;
+  }  notch[9];
+
   SDRMODE mode;
   struct
   {
@@ -235,7 +279,7 @@ extern struct _tx
 {
   struct
   {
-    CXB i, ic, o, oc;
+    CXB i, ic, o, oc, i_pre, o_pre;
   } buf;
   IQ iqfix;
 
@@ -265,6 +309,31 @@ extern struct _tx
   struct
   {
     REAL cvtmod2freq;
+ 		double phase;
+		REAL preemphasis_filter;
+		REAL deemphasis_out;
+		REAL k_preemphasis;
+		REAL k_deemphasis;		
+		REAL clip_threshold;
+		IIR_BPF_2P input_BPF;
+		IIR_LPF_2P output_LPF1;
+		IIR_LPF_2P output_LPF2;
+		IIR_LPF_2P input_BPF1;
+		IIR_LPF_2P input_BPF2;
+		IIR_LPF_2P input_BPF3;
+		IIR_LPF_2P input_BPF4;
+		IIR_LPF_2P input_LPF1;
+		IIR_LPF_2P input_LPF2;
+		IIR_HPF_2P input_HPF1;
+		IIR_HPF_2P input_HPF2;
+
+		struct
+		{
+			double freq_hz;
+			OSC osc;
+			REAL amp;
+			BOOLEAN flag;
+		}ctcss;
   } fm;
 
   struct
@@ -275,17 +344,17 @@ extern struct _tx
   } squelch;
 
 
-  struct
+/*  struct
   {
     DTTSPAGC gen;
     BOOLEAN flag;
   } leveler, alc;
-
-/*  struct // (NR0V)
+*/
+  struct // (NR0V)
   {
           WCPAGC gen;
           BOOLEAN flag;
-  } leveler, alc;*/
+  } leveler, alc;
 
   struct // (NR0V)
   {
@@ -467,7 +536,17 @@ extern struct _top
     struct {
       RUNMODE last;
     } run;
-  } swch;
+  	struct
+	{
+		BOOLEAN flag;
+		int count;
+		int count_limit;
+		float threshold;
+	} rise_thresh;
+
+	BOOLEAN flag;
+	
+} swch;
 
   
   BOOLEAN susp;

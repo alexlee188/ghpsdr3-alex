@@ -39,7 +39,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>3</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="Server">
     <attribute name="title">
@@ -1108,13 +1108,13 @@
       </rect>
      </property>
      <property name="title">
-      <string>NB</string>
+      <string/>
      </property>
      <widget class="QLabel" name="label_23">
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>30</y>
+        <y>40</y>
         <width>71</width>
         <height>17</height>
        </rect>
@@ -1127,7 +1127,7 @@
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>20</y>
+        <y>31</y>
         <width>62</width>
         <height>27</height>
        </rect>
@@ -1153,8 +1153,8 @@
       </property>
       <property name="font">
        <font>
-        <weight>75</weight>
-        <bold>true</bold>
+        <weight>50</weight>
+        <bold>false</bold>
        </font>
       </property>
       <property name="text">
@@ -1193,6 +1193,25 @@
        <number>20</number>
       </property>
      </widget>
+     <widget class="QLabel" name="label_35">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>67</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>NB</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QGroupBox" name="groupBox_6">
      <property name="geometry">
@@ -1226,7 +1245,7 @@
       <property name="geometry">
        <rect>
         <x>90</x>
-        <y>80</y>
+        <y>77</y>
         <width>59</width>
         <height>29</height>
        </rect>
@@ -1254,7 +1273,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>RXIQMu</string>
+       <string>RXIQMu:</string>
       </property>
      </widget>
      <widget class="QCheckBox" name="RxIQdivCheckBox">
@@ -1272,6 +1291,97 @@
       <property name="checked">
        <bool>true</bool>
       </property>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_7">
+     <property name="geometry">
+      <rect>
+       <x>240</x>
+       <y>160</y>
+       <width>151</width>
+       <height>61</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Window</string>
+     </property>
+     <widget class="QComboBox" name="windowComboBox">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>30</y>
+        <width>110</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <item>
+       <property name="text">
+        <string>Rectangular</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Hanning</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Welch</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Parzen</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Bartlett</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Hamming</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Blackman2</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Blackman3</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Blackman4</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Exponential</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Riemann</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Blkharris</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Nuttall</string>
+       </property>
+      </item>
      </widget>
     </widget>
    </widget>
@@ -1329,6 +1439,19 @@
      </property>
      <property name="text">
       <string>Save</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="dcBlockCheckBox">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>20</y>
+       <width>85</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>DC Block</string>
      </property>
     </widget>
    </widget>

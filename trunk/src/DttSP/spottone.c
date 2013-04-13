@@ -131,7 +131,9 @@ SpotToneOn (SpotToneGen st)
 
   // freq is in Hz
 
-  fixOSC(st->osc.gen, st->osc.freq, 0.0, st->sr);
+//  fixOSC(st->osc.gen, st->osc.freq, 0.0, st->sr);
+  OSCfreq (st->osc.gen) = 2.0 * M_PI * st->osc.freq / st->sr;
+  OSCphase (st->osc.gen) = 0.0;
 
   st->stage = SpotTone_RISE;
 }

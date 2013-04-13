@@ -103,6 +103,8 @@ Configure::Configure() {
     widget.userpass->setEditTriggers(QAbstractItemView::AllEditTriggers);
     //QTableWidgetItem *newitem = new QTableWidgetItem("Fill Item");
     //widget.userpass->setItem(0, 0, newitem);
+    widget.dcBlockCheckBox->setChecked(false);  //KD0OSS
+    widget.windowComboBox->setCurrentIndex(11);  //KD0OSS
 
     connect(widget.spectrumHighSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotSpectrumHighChanged(int)));
     connect(widget.spectrumLowSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotSpectrumLowChanged(int)));
@@ -125,6 +127,7 @@ Configure::Configure() {
 
     connect(widget.hostComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotHostChanged(int)));
     connect(widget.rxSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotReceiverChanged(int)));
+    connect(widget.dcBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotDCBlock(bool)));   //KD0OSS
 
     connect(widget.nrTapsSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrTapsChanged(int)));
     connect(widget.nrDelaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrDelayChanged(int)));
@@ -135,6 +138,8 @@ Configure::Configure() {
     connect(widget.anfDelaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotAnfDelayChanged(int)));
     connect(widget.anfGainSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotAnfGainChanged(int)));
     connect(widget.anfLeakSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotAnfLeakChanged(int)));
+
+    connect(widget.windowComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotWindowType(int)));
 
     connect(widget.nbThresholdSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNbThresholdChanged(int)));
     connect(widget.sdromThresholdSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotSdromThresholdChanged(int)));
@@ -160,7 +165,7 @@ void Configure::updateXvtrList(Xvtr* xvtr) {
     // update the list of XVTR entries
     XvtrEntry* entry;
     QStringList headings;
-    QString title;
+//    QString title;
     QString minFrequency;
     QString maxFrequency;
     QString ifFrequency;
@@ -190,7 +195,6 @@ void Configure::updateXvtrList(Xvtr* xvtr) {
         widget.XVTRTableWidget->setItem(i, 3, ifFrequencyItem);
     }
     widget.XVTRTableWidget->resizeColumnsToContents();
-
 }
 
 void Configure::connected(bool state) {
@@ -216,7 +220,7 @@ void Configure::connected(bool state) {
     widget.hostComboBox->setDisabled(state);
     widget.rxSpinBox->setDisabled(state);
 
-
+ //   widget.windowComboBox->setDisabled(state);  //KD0OSS
 }
 
 void Configure::loadSettings(QSettings* settings) {
@@ -287,6 +291,7 @@ void Configure::loadSettings(QSettings* settings) {
 
     settings->beginGroup("TxSettings");
     widget.allowTx->setChecked(settings->value("allowTx",FALSE).toBool());
+    widget.dcBlockCheckBox->setChecked(settings->value("dcBlock",FALSE).toBool());  //KD0OSS
     settings->endGroup();
 
     settings->beginGroup("RxIQimage");
@@ -370,6 +375,7 @@ void Configure::saveSettings(QSettings* settings) {
     settings->endGroup();
     settings->beginGroup("TxSettings");
         settings->setValue("allowTx",widget.allowTx->checkState());
+        settings->setValue("dcBlock",widget.dcBlockCheckBox->checkState());  //KD0OSS
     settings->endGroup();
     settings->beginGroup("RxIQimage");
         settings->setValue("RxIQon/off",widget.RxIQcheckBox->checkState());
@@ -541,8 +547,20 @@ void Configure::slotSdromThresholdChanged(int threshold) {
     emit sdromThresholdChanged((double)widget.sdromThresholdSpinBox->value()*0.165);
 }
 
+void Configure::slotWindowType(int type) {
+    emit windowTypeChanged(type);
+}
+
 QString Configure::getHost() {
     return widget.hostComboBox->currentText();
+}
+
+void Configure::slotDCBlock(bool state) {   //KD0OSS
+    emit dcBlockChanged(state);
+}
+
+bool Configure::getDCBlockValue() {  //KD0OSS
+    return widget.dcBlockCheckBox->isChecked();
 }
 
 int Configure::getReceiver() {

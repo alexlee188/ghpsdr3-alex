@@ -237,11 +237,13 @@ public slots:
 
     void hostChanged(QString host);
     void receiverChanged(int rx);
+    void dcBlockChanged(bool state);
 
     void nrValuesChanged(int,int,double,double);
     void anfValuesChanged(int,int,double,double);
     void nbThresholdChanged(double);
     void sdromThresholdChanged(double);
+    void windowTypeChanged(int);
 
     void actionBookmark();
     void addBookmark();
@@ -276,7 +278,7 @@ public slots:
     void testSliderChange(int value);
     void testButtonClick(bool state);
     void resetbandedges(double offset);
-    void masterButtonClicked(void);
+
     void hardware (QString);
 
 signals:

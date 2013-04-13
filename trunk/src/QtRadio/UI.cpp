@@ -259,11 +259,14 @@ UI::UI(const QString server) {
 
     connect(&configure,SIGNAL(hostChanged(QString)),this,SLOT(hostChanged(QString)));
     connect(&configure,SIGNAL(receiverChanged(int)),this,SLOT(receiverChanged(int)));
+    connect(&configure,SIGNAL(dcBlockChanged(bool)),this,SLOT(dcBlockChanged(bool)));  // KD0OSS
 
     connect(&configure,SIGNAL(nrValuesChanged(int,int,double,double)),this,SLOT(nrValuesChanged(int,int,double,double)));
     connect(&configure,SIGNAL(anfValuesChanged(int,int,double,double)),this,SLOT(anfValuesChanged(int,int,double,double)));
     connect(&configure,SIGNAL(nbThresholdChanged(double)),this,SLOT(nbThresholdChanged(double)));
     connect(&configure,SIGNAL(sdromThresholdChanged(double)),this,SLOT(sdromThresholdChanged(double)));
+
+    connect(&configure, SIGNAL(windowTypeChanged(int)),this,SLOT(windowTypeChanged(int))); //KD0OSS
 
     connect(&bookmarks,SIGNAL(bookmarkSelected(QAction*)),this,SLOT(selectBookmark(QAction*)));
     connect(&bookmarkDialog,SIGNAL(accepted()),this,SLOT(addBookmark()));
@@ -302,7 +305,6 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
     connect(&configure,SIGNAL(RxIQspinChanged(double)),this,SLOT(RxIQspinChanged(double)));
     connect(&configure,SIGNAL(spinBox_cwPitchChanged(int)),this,SLOT(cwPitchChanged(int)));
-    connect(widget.ctlFrame,SIGNAL(masterBtnClicked()),this,SLOT(masterButtonClicked()));
     connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
     connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
     connect(&connection,SIGNAL(hardware(QString)),this,SLOT(hardware(QString)));
@@ -555,6 +557,7 @@ void UI::actionConnect() {
 
     // Initialise RxIQMu. Set RxIQMu to disabled, set value and then enable if checked.
     RxIQspinChanged(configure.getRxIQspinBoxValue());
+    dcBlockChanged(configure.getDCBlockValue());
     widget.zoomSpectrumSlider->setValue(0);
     on_zoomSpectrumSlider_sliderMoved(0);
 }
@@ -1182,7 +1185,7 @@ void UI::modeChanged(int previousMode,int newMode) {
         case MODE_SAM:
             widget.actionSAM->setChecked(FALSE);
             break;
-        case MODE_FMN:
+        case MODE_FM:
             widget.actionFMN->setChecked(FALSE);
             break;
         case MODE_DIGL:
@@ -1223,7 +1226,7 @@ void UI::modeChanged(int previousMode,int newMode) {
             widget.actionSAM->setChecked(TRUE);
             filters.selectFilters(&samFilters);
             break;
-        case MODE_FMN:
+        case MODE_FM:
             widget.actionFMN->setChecked(TRUE);
             filters.selectFilters(&fmnFilters);
             break;
@@ -1409,9 +1412,9 @@ void UI::actionSAM() {
 
 void UI::actionFMN() {
     modeFlag = true;
-    mode.setMode(MODE_FMN);
+    mode.setMode(MODE_FM);
     filters.selectFilters(&fmnFilters);
-    band.setMode(MODE_FMN);
+    band.setMode(MODE_FM);
     frequencyChanged(frequency);
     modeFlag = false;
 }
@@ -2031,7 +2034,7 @@ void UI::bookmarkSelected(int entry) {
         case MODE_SAM:
             filters=&samFilters;
             break;
-        case MODE_FMN:
+        case MODE_FM:
             filters=&fmnFilters;
             break;
         case MODE_DIGL:
@@ -2094,7 +2097,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  master 26 Dec 2012");
+                   + getversionstring() +  message + " " + QT_VERSION + " 17 Feb 2013");
     lastmessage = message;
 
 }
@@ -2264,7 +2267,7 @@ void UI::pttChange(int caller, bool ptt)
                     case MODE_DSB: actionDSB(); break;
                     case MODE_AM:  actionAM();  break;
                     case MODE_SAM: actionSAM(); break;
-                    case MODE_FMN: actionFMN(); break;
+                    case MODE_FM:  actionFMN(); break;
                     case MODE_DIGL:actionDIGL();break;
                     case MODE_DIGU:actionDIGU();break;
                 }
@@ -2455,9 +2458,7 @@ void UI::testButtonClick(bool state)
     qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
 }
 
-void UI::masterButtonClicked(void){
-    connection.sendCommand("setMaster " + configure.thisuser + " " + configure.thispass);
-}
+//>>>>>>> Connected test controls to main UI
 
  void UI::resetbandedges(double offset)
  {
@@ -2475,7 +2476,7 @@ void UI::masterButtonClicked(void){
 
 void UI :: hardware (QString answer)
 {
-   HardwareFactory :: processAnswer (answer, &connection, this);
+   HardwareFactory :: Instance() .processAnswer (answer, &connection, this);
 }
 
 
@@ -2515,4 +2516,20 @@ void UI::rigSetPTT(int enabled){
     }else{
        widget.ctlFrame->RigCtlTX(false);
     }
+}
+
+void UI::dcBlockChanged(bool state) {
+        QString command;
+        command.clear(); QTextStream(&command) << "setdcblock " << state;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+}
+
+void UI::windowTypeChanged(int type) {
+        QString command;
+        command.clear(); QTextStream(&command) << "setwindow " << type;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
 }

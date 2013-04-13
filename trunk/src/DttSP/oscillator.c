@@ -42,7 +42,8 @@ Released under the same terms as the original source.
 */
 
 #include <common.h>
-
+#define HUGE_PHASE 1256637061.43593
+/*
 void
 ComplexOSC (OSC p)
 {
@@ -112,6 +113,84 @@ newOSC (int size,
   OSCsize (p) = size;
   fixOSC(p, Frequency, Phase, SampleRate);
   OSCclock (p) = 1;
+  return p;
+}
+*/
+void
+ComplexOSC (OSC p)
+{
+  int i;
+  COMPLEX z, delta_z;
+
+  if (OSCphase (p) > TWOPI)
+    OSCphase (p) -= TWOPI;
+  else if (OSCphase (p) < -TWOPI)
+    OSCphase (p) += TWOPI;
+
+  z = Cmplx ((REAL) cos (OSCphase (p)), (IMAG) sin (OSCphase (p))),
+    delta_z = Cmplx ((REAL) cos (OSCfreq (p)), (IMAG) sin (OSCfreq (p)));
+
+  for (i = 0; i < OSCsize (p); i++)
+    /*z = CXBdata ((CXB) OSCbase (p), i)
+      = Cmul (z, delta_z), OSCphase (p) += OSCfreq (p);*/
+	  CXBdata((CXB)OSCbase(p), i) = Cmplx ((REAL) cos (OSCphase (p)), (IMAG) sin (OSCphase (p))),
+		OSCphase (p) += OSCfreq (p);
+
+}
+
+#ifdef notdef
+void
+ComplexOSC (OSC p)
+{
+  int i;
+/*  if (OSCphase (p) > 1256637061.43593)
+    OSCphase (p) -= 1256637061.43593; */
+  for (i = 0; i < OSCsize (p); i++)
+    {
+      OSCreal (p, i) = cos (OSCphase (p));
+      OSCimag (p, i) = sin (OSCphase (p));
+      OSCphase (p) += OSCfreq (p);
+    }
+}
+#endif
+
+PRIVATE double
+_phasemod (double angle)
+{
+  while (angle >= TWOPI)
+    angle -= TWOPI;
+  while (angle < 0.0)
+    angle += TWOPI;
+  return angle;
+}
+
+void
+RealOSC (OSC p)
+{
+  int i;
+  for (i = 0; i < OSCsize (p); i++)
+    {
+      OSCRdata (p, i) = (REAL) sin (OSCphase (p));
+      OSCphase (p) = _phasemod (OSCfreq (p) + OSCphase (p));
+    }
+}
+
+OSC
+newOSC (int size,
+	OscType TypeOsc,
+	double Frequency, double Phase, REAL SampleRate, char *tag)
+{
+  OSC p = (OSC) safealloc (1, sizeof (oscillator), tag);
+  if ((OSCtype (p) = TypeOsc) == ComplexTone)
+    OSCbase (p) = (void *) newCXB (size,
+				   NULL,
+				   "complex buffer for oscillator output");
+  else
+    OSCbase (p) = (void *) newRLB (size,
+				   NULL, "real buffer for oscillator output");
+  OSCsize (p) = size;
+  OSCfreq (p) = 2.0 * M_PI * Frequency / SampleRate;
+  OSCphase (p) = Phase;
   return p;
 }
 
