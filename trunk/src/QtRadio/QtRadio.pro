@@ -145,6 +145,7 @@ HEADERS  += \
     cusdr_queue.h \
     hardware.h\
     powermate.h \
+    hardware_sdr1000.h \
     hardware_sdr1000.h
 
 FORMS    += \   
