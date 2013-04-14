@@ -313,6 +313,22 @@ if test "x${have_event20_pthreads}" = xno; then
 ])
 fi
 
+if test "x${have_event20_openssl}" = xyes; then
+    AC_CHECK_HEADERS([event2/bufferevent_ssl.h], [], [have_event20_openssl=no])
+fi
+
+if test "x${have_event20_openssl}" = xyes; then
+    AC_CHECK_HEADERS([openssl/ssl.h], [], [have_event20_openssl=no])
+fi
+
+if test "x${have_event20_openssl}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The libevent-2.0 library and header file with Openssl support required.
+  Required lib is libevent-openssl.  You also need to install libssl-dev.
+-----------------------------------])
+fi
+
 if test "x${have_samplerate}" = xyes; then
     AC_CHECK_HEADERS([samplerate.h], [], [have_samplerate=no])
 fi
