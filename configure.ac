@@ -146,6 +146,9 @@ have_event20_pthreads=no
 AC_SEARCH_LIBS([evthread_use_pthreads], [event_pthreads],
                [have_event20_pthreads=yes])
 
+have_event20_openssl=no
+AC_SEARCH_LIBS([bufferevent_openssl_socket_new], [event_openssl],[have_event20_openssl=yes])
+
 have_samplerate=no
 AC_SEARCH_LIBS([src_new], [samplerate],[have_samplerate=yes])
 
