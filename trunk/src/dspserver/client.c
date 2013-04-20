@@ -1469,6 +1469,13 @@ void readcb(struct bufferevent *bev, void *ctx){
             threshold=atof(tokens[0]);
             SetSDROMvals(0,0,threshold);
             SetSDROMvals(0,1,threshold);
+        } else if(strncmp(cmd,"setpwsmode",10)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state = atoi(tokens[0]);
+            SetPWSmode(0,0,state);
+            SetPWSmode(0,1,state);
         } else if(strncmp(cmd,"setdcblock",10)==0) {
             int state;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1476,7 +1483,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             state=atoi(tokens[0]);
             SetRXDCBlock(0,0,state);
             SetRXDCBlock(0,1,state);
-            sdr_log(SDR_LOG_INFO,"SetDCBlock %d\n",state);
+            sdr_log(SDR_LOG_INFO,"SetDCBlock %d\n",state); // KD0OSS
         } else if(strncmp(cmd,"mox",3)==0) {
             int ntok;
             if ((ntok = tokenize_cmd(&saveptr, tokens, 3)) < 1)
