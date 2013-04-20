@@ -201,6 +201,10 @@ public slots:
     void actionLong();
 
     void actionPreamp();
+    void actionPwsMode0();
+    void actionPwsMode1();
+    void actionPwsMode2();
+    void actionPwsMode3();
 
     void connected();
     void disconnected(QString message);

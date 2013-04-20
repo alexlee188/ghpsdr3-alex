@@ -202,6 +202,11 @@ UI::UI(const QString server) {
 
     connect(widget.actionPreamp,SIGNAL(triggered()),this,SLOT(actionPreamp()));
 
+    connect(widget.actionPWS_Post_Filter,SIGNAL(triggered()),this,SLOT(actionPwsMode0()));
+    connect(widget.actionPWS_Pre_Filter,SIGNAL(triggered()),this,SLOT(actionPwsMode1()));
+    connect(widget.actionPWS_Semi_Raw,SIGNAL(triggered()),this,SLOT(actionPwsMode2()));
+    connect(widget.actionPWS_Post_Det,SIGNAL(triggered()),this,SLOT(actionPwsMode3()));
+
     connect(widget.actionBookmarkThisFrequency,SIGNAL(triggered()),this,SLOT(actionBookmark()));
     connect(widget.actionEditBookmarks,SIGNAL(triggered()),this,SLOT(editBookmarks()));
 
@@ -2532,4 +2537,52 @@ void UI::windowTypeChanged(int type) {
 //        qDebug("%s", command);
         connection.sendCommand(command);
         qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+}
+
+void UI::actionPwsMode0() {
+        QString command;
+        command.clear(); QTextStream(&command) << "setpwsmode " << 0;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+
+        widget.actionPWS_Pre_Filter->setChecked(FALSE);
+        widget.actionPWS_Semi_Raw->setChecked(FALSE);
+        widget.actionPWS_Post_Det->setChecked(FALSE);
+}
+
+void UI::actionPwsMode1() {
+        QString command;
+        command.clear(); QTextStream(&command) << "setpwsmode " << 1;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+
+        widget.actionPWS_Post_Filter->setChecked(FALSE);
+        widget.actionPWS_Semi_Raw->setChecked(FALSE);
+        widget.actionPWS_Post_Det->setChecked(FALSE);
+}
+
+void UI::actionPwsMode2() {
+        QString command;
+        command.clear(); QTextStream(&command) << "setpwsmode " << 2;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+
+        widget.actionPWS_Pre_Filter->setChecked(FALSE);
+        widget.actionPWS_Post_Filter->setChecked(FALSE);
+        widget.actionPWS_Post_Det->setChecked(FALSE);
+}
+
+void UI::actionPwsMode3() {
+        QString command;
+        command.clear(); QTextStream(&command) << "setpwsmode " << 3;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+
+        widget.actionPWS_Pre_Filter->setChecked(FALSE);
+        widget.actionPWS_Semi_Raw->setChecked(FALSE);
+        widget.actionPWS_Post_Filter->setChecked(FALSE);
 }

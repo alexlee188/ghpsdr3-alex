@@ -602,8 +602,8 @@
       <rect>
        <x>20</x>
        <y>10</y>
-       <width>291</width>
-       <height>101</height>
+       <width>231</width>
+       <height>164</height>
       </rect>
      </property>
      <property name="title">
@@ -686,7 +686,7 @@
        <x>20</x>
        <y>190</y>
        <width>231</width>
-       <height>111</height>
+       <height>125</height>
       </rect>
      </property>
      <property name="title">
@@ -1120,7 +1120,7 @@
       </rect>
      </property>
      <property name="title">
-      <string/>
+      <string>Blankers</string>
      </property>
      <widget class="QLabel" name="label_23">
       <property name="geometry">
@@ -1158,7 +1158,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>80</y>
+        <y>89</y>
         <width>67</width>
         <height>17</height>
        </rect>
@@ -1209,7 +1209,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>10</y>
+        <y>19</y>
         <width>67</width>
         <height>17</height>
        </rect>
