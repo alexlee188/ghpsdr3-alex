@@ -1665,6 +1665,53 @@ void readcb(struct bufferevent *bev, void *ctx){
             } else {
                 sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of mu sent = '%s'\n",tokens[0]);
             }
+        } else if(strncmp(cmd,"txiqcorrectval",14)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 2) != 2)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of IQ sent = '%s', '%s'\n",tokens[0], tokens[1]);
+                SetCorrectTXIQ(0, atof(tokens[0]), atof(tokens[1]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s', '%s'\n",tokens[0],tokens[1]);
+            }
+        } else if(strncmp(cmd,"txiqphasecorrectval",19)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Tx IQ phase sent = '%s'\n",tokens[0]);
+                SetCorrectTXIQPhase(0, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"txiqgaincorrectval",18)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Tx IQ gain sent = '%s'\n",tokens[0]);
+                SetCorrectTXIQGain(0, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"rxiqphasecorrectval",19)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Rx IQ phase sent = '%s'\n",tokens[0]);
+                SetCorrectIQPhase(0, 0, atof(tokens[0]));
+                SetCorrectIQPhase(0, 1, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"rxiqgaincorrectval",18)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Rx IQ gain sent = '%s'\n",tokens[0]);
+                SetCorrectIQGain(0, 0, atof(tokens[0]));
+                SetCorrectIQGain(0, 1, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ sent = '%s'\n",tokens[0]);
+            }
         } else if(strncmp(cmd,"setfps",6)==0) {
             if (tokenize_cmd(&saveptr, tokens, 2) != 2)
                 goto badcommand;
@@ -1717,12 +1764,12 @@ void readcb(struct bufferevent *bev, void *ctx){
                     }
             }
         } else {
-            fprintf(stderr,"Invalid command: token: '%s'\n",cmd);
+            fprintf(stderr,"Invalid command: '%s'\n",cmd);
         }
         continue;
 
       badcommand:
-        sdr_log(SDR_LOG_INFO, "Invalid command: '%s'\n", message);
+        sdr_log(SDR_LOG_INFO, "Invalid command token: '%s'\n", message);
     } // end while
 }
 
