@@ -1231,7 +1231,7 @@
        <x>20</x>
        <y>160</y>
        <width>181</width>
-       <height>121</height>
+       <height>161</height>
       </rect>
      </property>
      <property name="title">
@@ -1257,7 +1257,7 @@
       <property name="geometry">
        <rect>
         <x>90</x>
-        <y>77</y>
+        <y>120</y>
         <width>59</width>
         <height>29</height>
        </rect>
@@ -1279,7 +1279,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>87</y>
+        <y>130</y>
         <width>69</width>
         <height>19</height>
        </rect>
@@ -1292,7 +1292,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>50</y>
+        <y>97</y>
         <width>151</width>
         <height>25</height>
        </rect>
@@ -1302,6 +1302,64 @@
       </property>
       <property name="checked">
        <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="rxIQPhaseSpinBox">
+      <property name="geometry">
+       <rect>
+        <x>95</x>
+        <y>46</y>
+        <width>62</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="minimum">
+       <double>-99.000000000000000</double>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_38">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>50</y>
+        <width>69</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>RX Phase:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="rxIQGainSpinBox">
+      <property name="geometry">
+       <rect>
+        <x>95</x>
+        <y>73</y>
+        <width>62</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="minimum">
+       <double>-99.000000000000000</double>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_39">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>77</y>
+        <width>69</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>RX Gain:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
     </widget>
@@ -1464,6 +1522,64 @@
      </property>
      <property name="text">
       <string>DC Block</string>
+     </property>
+    </widget>
+    <widget class="QDoubleSpinBox" name="txIQPhaseSpinBox">
+     <property name="geometry">
+      <rect>
+       <x>450</x>
+       <y>19</y>
+       <width>62</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="minimum">
+      <double>-99.000000000000000</double>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_36">
+     <property name="geometry">
+      <rect>
+       <x>366</x>
+       <y>23</y>
+       <width>83</width>
+       <height>15</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Tx IQ Phase:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_37">
+     <property name="geometry">
+      <rect>
+       <x>366</x>
+       <y>53</y>
+       <width>83</width>
+       <height>15</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Tx IQ Gain:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QDoubleSpinBox" name="txIQGainSpinBox">
+     <property name="geometry">
+      <rect>
+       <x>450</x>
+       <y>49</y>
+       <width>62</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="minimum">
+      <double>-99.000000000000000</double>
      </property>
     </widget>
    </widget>
