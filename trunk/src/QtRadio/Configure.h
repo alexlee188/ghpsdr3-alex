@@ -130,6 +130,10 @@ signals:
     void addXVTR(QString title,long long minFrequency,long long maxFrequency,long long ifFrequency,long long freq,int m,int filt);
     void deleteXVTR(int index);
 
+    void txIQPhaseChanged(double arg1);
+    void txIQGainChanged(double arg1);
+    void rxIQPhaseChanged(double arg1);
+    void rxIQGainChanged(double arg1);
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
     void spinBox_cwPitchChanged(int pitch);
@@ -182,6 +186,10 @@ private slots:
     void on_encodingComboBox_currentIndexChanged(int index);
     void on_RxIQcheckBox_toggled(bool checked);
     void on_RxIQspinBox_valueChanged(int spinValue);
+    void on_RxIQPhaseChanged(double arg1);
+    void on_RxIQGainChanged(double arg1);
+    void on_TxIQPhaseChanged(double arg1);
+    void on_TxIQGainChanged(double arg1);
 
     void on_userpasssave_clicked();
 
