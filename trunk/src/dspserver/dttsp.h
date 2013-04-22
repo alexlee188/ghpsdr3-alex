@@ -208,6 +208,7 @@ extern void SetTXLevelerTop (unsigned int thread, double maxgain);
 extern void SetCorrectIQEnable(int setit);
 extern void SetCorrectRXIQMu (unsigned int thread, unsigned int subrx, double mu);
 
+// Following lines added by KD0OSS
 extern void SetRXManualNotchEnable(unsigned int thread, unsigned int subrx, unsigned int index, BOOLEAN setit);
 extern void SetRXManualNotchBW(unsigned int thread, unsigned int subrx, unsigned int index, double BW);
 extern void SetRXManualNotchFreq(unsigned int thread, unsigned int subrx, unsigned int index, double F0);
