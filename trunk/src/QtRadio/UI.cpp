@@ -202,10 +202,10 @@ UI::UI(const QString server) {
 
     connect(widget.actionPreamp,SIGNAL(triggered()),this,SLOT(actionPreamp()));
 
-    connect(widget.actionPWS_Post_Filter,SIGNAL(triggered()),this,SLOT(actionPwsMode0()));
-    connect(widget.actionPWS_Pre_Filter,SIGNAL(triggered()),this,SLOT(actionPwsMode1()));
-    connect(widget.actionPWS_Semi_Raw,SIGNAL(triggered()),this,SLOT(actionPwsMode2()));
-    connect(widget.actionPWS_Post_Det,SIGNAL(triggered()),this,SLOT(actionPwsMode3()));
+    connect(widget.actionPWS_Post_Filter,SIGNAL(triggered()),this,SLOT(actionPwsMode0()));  // KD0OSS
+    connect(widget.actionPWS_Pre_Filter,SIGNAL(triggered()),this,SLOT(actionPwsMode1()));  // KD0OSS
+    connect(widget.actionPWS_Semi_Raw,SIGNAL(triggered()),this,SLOT(actionPwsMode2()));  // KD0OSS
+    connect(widget.actionPWS_Post_Det,SIGNAL(triggered()),this,SLOT(actionPwsMode3()));  // KD0OSS
 
     connect(widget.actionBookmarkThisFrequency,SIGNAL(triggered()),this,SLOT(actionBookmark()));
     connect(widget.actionEditBookmarks,SIGNAL(triggered()),this,SLOT(editBookmarks()));
@@ -404,7 +404,7 @@ void UI::loadSettings() {
     if(settings.contains("gain")) gain=subRxGain=settings.value("gain").toInt();
     if(settings.contains("agc")) agc=settings.value("agc").toInt();
     if(settings.contains("squelch")) squelchValue=settings.value("squelch").toInt();
-    if(settings.contains("pwsmode")) pwsmode=settings.value("pwsmode").toInt();
+    if(settings.contains("pwsmode")) pwsmode=settings.value("pwsmode").toInt();  // KD0OSS
     settings.endGroup();
 
     settings.beginGroup("mainWindow");
@@ -414,6 +414,7 @@ void UI::loadSettings() {
     settings.endGroup();
 
     widget.vfoFrame->readSettings(&settings);
+    setPwsMode(pwsmode);  // KD0OSS
 }
 
 void UI::saveSettings() {
@@ -436,7 +437,7 @@ void UI::saveSettings() {
     settings.setValue("subRxGain",subRxGain);
     settings.setValue("agc",agc);
     settings.setValue("squelch",squelchValue);
-    settings.setValue("pwsmode",pwsmode);
+    settings.setValue("pwsmode",pwsmode);  // KD0OSS
     settings.endGroup();
 
     settings.beginGroup("mainWindow");
@@ -2441,7 +2442,7 @@ void UI::cwPitchChanged(int arg1)
     }
 }
 
-void UI::setRxIQPhase(double value)
+void UI::setRxIQPhase(double value)  // KD0OSS
 {
     QString command;
 
@@ -2451,7 +2452,7 @@ void UI::setRxIQPhase(double value)
     qDebug()<<Q_FUNC_INFO<<":   The value of Rx IQ Phase = "<<value;
 }
 
-void UI::setRxIQGain(double value)
+void UI::setRxIQGain(double value)  // KD0OSS
 {
     QString command;
 
@@ -2471,7 +2472,7 @@ void UI::setChkTX(bool chk){
    infotick2 = 0;
 }
 
-void UI::setTxIQPhase(double value)
+void UI::setTxIQPhase(double value)  // KD0OSS
 {
     QString command;
 
@@ -2481,7 +2482,7 @@ void UI::setTxIQPhase(double value)
     qDebug()<<Q_FUNC_INFO<<":   The value of Tx IQ Phase = "<<value;
 }
 
-void UI::setTxIQGain(double value)
+void UI::setTxIQGain(double value)  // KD0OSS
 {
     QString command;
 
@@ -2571,7 +2572,7 @@ void UI::rigSetPTT(int enabled){
     }
 }
 
-void UI::dcBlockChanged(bool state) {
+void UI::dcBlockChanged(bool state) {  // KD0OSS
         QString command;
         command.clear(); QTextStream(&command) << "setdcblock " << state;
 //        qDebug("%s", command);
@@ -2587,7 +2588,8 @@ void UI::windowTypeChanged(int type) {
         qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
 }
 
-void UI::setPwsMode(int mode){
+void UI::setPwsMode(int mode)  // KD0OSS
+{
     QString command;
     command.clear(); QTextStream(&command) << "setpwsmode " << mode;
 //        qDebug("%s", command);
@@ -2611,7 +2613,8 @@ void UI::setPwsMode(int mode){
     }
 }
 
-void UI::actionPwsMode0() {
+void UI::actionPwsMode0()   // KD0OSS
+{
         QString command;
         command.clear(); QTextStream(&command) << "setpwsmode " << 0;
 //        qDebug("%s", command);
@@ -2624,7 +2627,8 @@ void UI::actionPwsMode0() {
         pwsmode = 0;
 }
 
-void UI::actionPwsMode1() {
+void UI::actionPwsMode1()   // KD0OSS
+{
         QString command;
         command.clear(); QTextStream(&command) << "setpwsmode " << 1;
 //        qDebug("%s", command);
@@ -2637,7 +2641,8 @@ void UI::actionPwsMode1() {
         pwsmode = 1;
 }
 
-void UI::actionPwsMode2() {
+void UI::actionPwsMode2()   // KD0OSS
+{
         QString command;
         command.clear(); QTextStream(&command) << "setpwsmode " << 2;
 //        qDebug("%s", command);
@@ -2650,7 +2655,8 @@ void UI::actionPwsMode2() {
         pwsmode = 2;
 }
 
-void UI::actionPwsMode3() {
+void UI::actionPwsMode3()   // KD0OSS
+{
         QString command;
         command.clear(); QTextStream(&command) << "setpwsmode " << 3;
 //        qDebug("%s", command);

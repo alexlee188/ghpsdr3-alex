@@ -15,28 +15,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
-     <widget class="sMeter" name="sMeterFrame">
-      <property name="minimumSize">
-       <size>
-        <width>150</width>
-        <height>115</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>150</width>
-        <height>115</height>
-       </size>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="1">
      <widget class="vfo" name="vfoFrame">
       <property name="minimumSize">
@@ -84,18 +62,18 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="0" colspan="3">
-     <widget class="Spectrum" name="spectrumFrame">
+    <item row="0" column="0">
+     <widget class="sMeter" name="sMeterFrame">
       <property name="minimumSize">
        <size>
-        <width>927</width>
-        <height>0</height>
+        <width>150</width>
+        <height>115</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>16777215</width>
-        <height>256</height>
+        <width>150</width>
+        <height>115</height>
        </size>
       </property>
       <property name="frameShape">
@@ -106,7 +84,7 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="3" rowspan="2">
+    <item row="1" column="3" rowspan="3">
      <widget class="QSlider" name="zoomSpectrumSlider">
       <property name="focusPolicy">
        <enum>Qt::NoFocus</enum>
@@ -128,7 +106,51 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="0" colspan="3">
+    <item row="1" column="0" rowspan="3">
+     <widget class="sMeter" name="ctrl2Frame">
+      <property name="minimumSize">
+       <size>
+        <width>150</width>
+        <height>305</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>150</width>
+        <height>3000</height>
+       </size>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1" colspan="2">
+     <widget class="Spectrum" name="spectrumFrame">
+      <property name="minimumSize">
+       <size>
+        <width>798</width>
+        <height>150</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>3000</height>
+       </size>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1" colspan="2">
      <widget class="Waterfall" name="waterfallFrame">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -138,8 +160,8 @@
       </property>
       <property name="minimumSize">
        <size>
-        <width>927</width>
-        <height>0</height>
+        <width>798</width>
+        <height>150</height>
        </size>
       </property>
       <property name="frameShape">
