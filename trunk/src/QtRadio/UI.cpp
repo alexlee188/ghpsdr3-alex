@@ -61,6 +61,7 @@
 #include "servers.h"
 #include "ctl.h"
 #include "powermate.h"
+#include "EqualizerDialog.h"
 
 UI::UI(const QString server) {
 
@@ -128,6 +129,7 @@ UI::UI(const QString server) {
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
 
     connect(widget.actionConfig,SIGNAL(triggered()),this,SLOT(actionConfigure()));
+    connect(widget.actionEqualizer,SIGNAL(triggered()),this,SLOT(actionEqualizer())); // KD0OSS
 
     connect(widget.actionMuteMainRx,SIGNAL(triggered()),this,SLOT(actionMuteMainRx()));
     connect(widget.actionMuteSubRx,SIGNAL(triggered()),this,SLOT(actionMuteSubRx()));
@@ -194,6 +196,7 @@ UI::UI(const QString server) {
 
     connect(widget.actionPolyphase,SIGNAL(triggered()),this,SLOT(actionPolyphase()));
 
+    connect(widget.actionFixed,SIGNAL(triggered()),this,SLOT(actionFixed()));  // KD0OSS
     connect(widget.actionLong,SIGNAL(triggered()),this,SLOT(actionLong()));
     connect(widget.actionSlow,SIGNAL(triggered()),this,SLOT(actionSlow()));
     connect(widget.actionMedium,SIGNAL(triggered()),this,SLOT(actionMedium()));
@@ -206,6 +209,11 @@ UI::UI(const QString server) {
     connect(widget.actionPWS_Pre_Filter,SIGNAL(triggered()),this,SLOT(actionPwsMode1()));  // KD0OSS
     connect(widget.actionPWS_Semi_Raw,SIGNAL(triggered()),this,SLOT(actionPwsMode2()));  // KD0OSS
     connect(widget.actionPWS_Post_Det,SIGNAL(triggered()),this,SLOT(actionPwsMode3()));  // KD0OSS
+
+    connect(widget.agcTLevelSlider,SIGNAL(valueChanged(int)),this,SLOT(AGCTLevelChanged(int)));  // KD0OSS
+
+    connect(widget.rxEqEnableCB,SIGNAL(toggled(bool)),this,SLOT(enableRxEq(bool)));  // KD0OSS
+    connect(widget.txEqEnableCB,SIGNAL(toggled(bool)),this,SLOT(enableTxEq(bool)));  // KD0OSS
 
     connect(widget.actionBookmarkThisFrequency,SIGNAL(triggered()),this,SLOT(actionBookmark()));
     connect(widget.actionEditBookmarks,SIGNAL(triggered()),this,SLOT(editBookmarks()));
@@ -264,7 +272,8 @@ UI::UI(const QString server) {
 
     connect(&configure,SIGNAL(hostChanged(QString)),this,SLOT(hostChanged(QString)));
     connect(&configure,SIGNAL(receiverChanged(int)),this,SLOT(receiverChanged(int)));
-    connect(&configure,SIGNAL(dcBlockChanged(bool)),this,SLOT(dcBlockChanged(bool)));  // KD0OSS
+    connect(&configure,SIGNAL(rxDCBlockChanged(bool)),this,SLOT(rxDCBlockChanged(bool)));  // KD0OSS
+    connect(&configure,SIGNAL(txDCBlockChanged(bool)),this,SLOT(txDCBlockChanged(bool)));  // KD0OSS
     connect(&configure,SIGNAL(txIQPhaseChanged(double)),this,SLOT(setTxIQPhase(double)));  // KD0OSS
     connect(&configure,SIGNAL(txIQGainChanged(double)),this,SLOT(setTxIQGain(double)));  // KD0OSS
 
@@ -337,6 +346,9 @@ UI::UI(const QString server) {
     // load any saved settings
     loadSettings();
     switch(agc) {
+        case AGC_FIXED:  // KD0OSS
+            widget.actionFixed->setChecked(TRUE);
+            break;
         case AGC_SLOW:
             widget.actionSlow->setChecked(TRUE);
             break;
@@ -369,6 +381,8 @@ UI::UI(const QString server) {
 
     band.initBand(band.getBand());
 
+    equalizer = new EqualizerDialog(&connection); // KD0OSS
+
     // make spectrum timer
     spectrumTimer = new QTimer(this);
     connect ( spectrumTimer, SIGNAL ( timeout() ), this, SLOT ( updateSpectrum()) );
@@ -384,6 +398,7 @@ UI::~UI() {
     connection.disconnect();
     rtp->deleteLater();
     codec2_destroy(mic_codec2);
+    equalizer->deleteLater();
 }
 
 void UI::actionAbout() {
@@ -479,6 +494,10 @@ void UI::actionConfigure() {
     configure.show();
 }
 
+void UI::actionEqualizer() { // KD0OSS
+    equalizer->show();
+}
+
 void UI::spectrumHighChanged(int high) {
     //qDebug() << __FUNCTION__ << ": " << high;
 
@@ -569,7 +588,8 @@ void UI::actionConnect() {
 
     // Initialise RxIQMu. Set RxIQMu to disabled, set value and then enable if checked.
     RxIQspinChanged(configure.getRxIQspinBoxValue());
-    dcBlockChanged(configure.getDCBlockValue());
+    rxDCBlockChanged(configure.getRxDCBlockValue());
+    txDCBlockChanged(configure.getTxDCBlockValue());
     widget.zoomSpectrumSlider->setValue(0);
     on_zoomSpectrumSlider_sliderMoved(0);
 }
@@ -716,6 +736,9 @@ void UI::connected() {
     connection.sendCommand(command);
 
     command.clear(); QTextStream(&command) << "SetAGC " << agc;
+    connection.sendCommand(command);
+
+    command.clear(); QTextStream(&command) << "setpwsmode " << pwsmode; // KD0OSS
     connection.sendCommand(command);
 
     command.clear(); QTextStream(&command) << "SetANFVals " << configure.getAnfTaps() << " " << configure.getAnfDelay() << " "
@@ -1663,10 +1686,40 @@ void UI::actionPolyphase() {
     connection.sendCommand(command);
 }
 
+void UI::actionFixed() { // KD0OSS
+    QString command;
+    // reset the current selection
+    switch(agc) {
+    case AGC_FIXED:
+        widget.actionFixed->setChecked(FALSE);
+        break;
+    case AGC_LONG:
+        widget.actionLong->setChecked(FALSE);
+        break;
+    case AGC_SLOW:
+        widget.actionSlow->setChecked(FALSE);
+        break;
+    case AGC_MEDIUM:
+        widget.actionMedium->setChecked(FALSE);
+        break;
+    case AGC_FAST:
+        widget.actionFast->setChecked(FALSE);
+        break;
+    }
+    agc=AGC_FIXED;
+
+    command.clear(); QTextStream(&command) << "SetAGC " << agc;
+    connection.sendCommand(command);
+
+}
+
 void UI::actionSlow() {
     QString command;
     // reset the current selection
     switch(agc) {
+    case AGC_FIXED: // KD0OSS
+        widget.actionFixed->setChecked(FALSE);
+        break;
     case AGC_LONG:
         widget.actionLong->setChecked(FALSE);
         break;
@@ -1692,6 +1745,9 @@ void UI::actionMedium() {
 
     // reset the current selection
     switch(agc) {
+    case AGC_FIXED: // KD0OSS
+        widget.actionFixed->setChecked(FALSE);
+        break;
     case AGC_LONG:
         widget.actionLong->setChecked(FALSE);
         break;
@@ -1716,6 +1772,9 @@ void UI::actionFast() {
     QString command;
     // reset the current selection
     switch(agc) {
+    case AGC_FIXED: // KD0OSS
+        widget.actionFixed->setChecked(FALSE);
+        break;
     case AGC_LONG:
         widget.actionLong->setChecked(FALSE);
         break;
@@ -1739,6 +1798,9 @@ void UI::actionLong() {
     QString command;
     // reset the current selection
     switch(agc) {
+    case AGC_FIXED: // KD0OSS
+        widget.actionFixed->setChecked(FALSE);
+        break;
     case AGC_LONG:
         widget.actionLong->setChecked(FALSE);
         break;
@@ -2572,9 +2634,17 @@ void UI::rigSetPTT(int enabled){
     }
 }
 
-void UI::dcBlockChanged(bool state) {  // KD0OSS
+void UI::rxDCBlockChanged(bool state) {  // KD0OSS
         QString command;
-        command.clear(); QTextStream(&command) << "setdcblock " << state;
+        command.clear(); QTextStream(&command) << "setrxdcblock " << state;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+}
+
+void UI::txDCBlockChanged(bool state) {  // KD0OSS
+        QString command;
+        command.clear(); QTextStream(&command) << "settxdcblock " << state;
 //        qDebug("%s", command);
         connection.sendCommand(command);
         qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
@@ -2667,4 +2737,30 @@ void UI::actionPwsMode3()   // KD0OSS
         widget.actionPWS_Semi_Raw->setChecked(FALSE);
         widget.actionPWS_Post_Filter->setChecked(FALSE);
         pwsmode = 3;
+}
+
+void UI::AGCTLevelChanged(int level)
+{
+    QString command;
+    command.clear(); QTextStream(&command) << "setagctlevel " << level;
+//        qDebug("%s", command);
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+    widget.agcTLevelLabel->setText(QString("%1").arg(level));
+}
+
+void UI::enableRxEq(bool enable)
+{
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxgreqcmd " << enable;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+}
+
+void UI::enableTxEq(bool enable)
+{
+    QString command;
+    command.clear(); QTextStream(&command) << "settxgreqcmd " << enable;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
 }
