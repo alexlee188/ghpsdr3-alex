@@ -93,7 +93,8 @@ SOURCES += main.cpp\
     hardware.cpp\
     powermate.cpp \
     hardware_sdr1000.cpp \
-    calc.cpp
+    calc.cpp \
+    EqualizerDialog.cpp
 
 
 HEADERS  += \ 
@@ -148,7 +149,8 @@ HEADERS  += \
     powermate.h \
     hardware_sdr1000.h \
     hardware_sdr1000.h \
-    calc.h
+    calc.h \
+    EqualizerDialog.h
 
 FORMS    += \   
     UI.ui \
@@ -161,7 +163,8 @@ FORMS    += \
     KeypadDialog.ui \
     vfo.ui \
     ctl.ui \
-    servers.ui
+    servers.ui \
+    EqualizerDialog.ui
 
 OTHER_FILES +=
 
