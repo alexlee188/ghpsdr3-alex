@@ -103,7 +103,8 @@ Configure::Configure() {
     widget.userpass->setEditTriggers(QAbstractItemView::AllEditTriggers);
     //QTableWidgetItem *newitem = new QTableWidgetItem("Fill Item");
     //widget.userpass->setItem(0, 0, newitem);
-    widget.dcBlockCheckBox->setChecked(false);  //KD0OSS
+    widget.rxDCBlockCheckBox->setChecked(false);  //KD0OSS
+    widget.txDCBlockCheckBox->setChecked(false);  //KD0OSS
     widget.windowComboBox->setCurrentIndex(11);  //KD0OSS
 
     connect(widget.spectrumHighSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotSpectrumHighChanged(int)));
@@ -127,7 +128,8 @@ Configure::Configure() {
 
     connect(widget.hostComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotHostChanged(int)));
     connect(widget.rxSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotReceiverChanged(int)));
-    connect(widget.dcBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotDCBlock(bool)));   //KD0OSS
+    connect(widget.rxDCBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotRxDCBlock(bool)));   //KD0OSS
+    connect(widget.txDCBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotTxDCBlock(bool)));   //KD0OSS
     connect(widget.rxIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(on_RxIQPhaseChanged(double)));   //KD0OSS
     connect(widget.rxIQGainSpinBox,SIGNAL(valueChanged(double)),this,SLOT(on_RxIQGainChanged(double)));   //KD0OSS
     connect(widget.txIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(on_TxIQPhaseChanged(double)));   //KD0OSS
@@ -294,7 +296,8 @@ void Configure::loadSettings(QSettings* settings) {
 
     settings->beginGroup("TxSettings");
     widget.allowTx->setChecked(settings->value("allowTx",FALSE).toBool());
-    widget.dcBlockCheckBox->setChecked(settings->value("dcBlock",FALSE).toBool());  //KD0OSS
+    widget.rxDCBlockCheckBox->setChecked(settings->value("rxDCBlock",FALSE).toBool());  //KD0OSS
+    widget.txDCBlockCheckBox->setChecked(settings->value("txDCBlock",FALSE).toBool());  //KD0OSS
     widget.txIQPhaseSpinBox->setValue(settings->value("TxIQPhaseCorrect",0).toInt());  //KD0OSS
     widget.txIQGainSpinBox->setValue(settings->value("TxIQGainCorrect",0).toInt());  //KD0OSS
     settings->endGroup();
@@ -386,7 +389,8 @@ void Configure::saveSettings(QSettings* settings) {
     settings->endGroup();
     settings->beginGroup("TxSettings");
     settings->setValue("allowTx",widget.allowTx->checkState());
-    settings->setValue("dcBlock",widget.dcBlockCheckBox->checkState());  //KD0OSS
+    settings->setValue("rxDCBlock",widget.rxDCBlockCheckBox->checkState());  //KD0OSS
+    settings->setValue("txDCBlock",widget.txDCBlockCheckBox->checkState());  //KD0OSS
     settings->setValue("TxIQPhaseCorrect",widget.txIQPhaseSpinBox->value());  //KD0OSS
     settings->setValue("TxIQGainCorrect",widget.txIQGainSpinBox->value());  //KD0OSS
     settings->endGroup();
@@ -570,12 +574,20 @@ QString Configure::getHost() {
     return widget.hostComboBox->currentText();
 }
 
-void Configure::slotDCBlock(bool state) {   //KD0OSS
-    emit dcBlockChanged(state);
+void Configure::slotRxDCBlock(bool state) {   //KD0OSS
+    emit rxDCBlockChanged(state);
 }
 
-bool Configure::getDCBlockValue() {  //KD0OSS
-    return widget.dcBlockCheckBox->isChecked();
+void Configure::slotTxDCBlock(bool state) {   //KD0OSS
+    emit txDCBlockChanged(state);
+}
+
+bool Configure::getRxDCBlockValue() {  //KD0OSS
+    return widget.rxDCBlockCheckBox->isChecked();
+}
+
+bool Configure::getTxDCBlockValue() {  //KD0OSS
+    return widget.txDCBlockCheckBox->isChecked();
 }
 
 int Configure::getReceiver() {

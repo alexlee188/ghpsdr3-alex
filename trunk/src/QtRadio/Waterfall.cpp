@@ -132,7 +132,7 @@ void Waterfall::setGeometry(QRect rect) {
 
     samples = (float*) malloc(rect.width() * sizeof (float));
 
-    // no scroll algorithm needs 2 copies of waterfaull
+    // no scroll algorithm needs 2 copies of waterfall
     image = QImage(rect.width(), rect.height()*2, QImage::Format_RGB32);
     cy = rect.height()-1;
     qDebug() << "Waterfall::Waterfall " << rect.width() << ":" << rect.height();
@@ -263,8 +263,8 @@ void Waterfall::wheelEvent(QWheelEvent *event) {
 void Waterfall::paintEvent(QPaintEvent*) {
     QPainter painter(this);
 
-    //painter.fillRect(0, 0, width(), height(), Qt::black);
-
+  //  painter.fillRect(0, 0, width(), height(), Qt::black);
+  //  qDebug("paint");
     painter.drawImage(0,0,image,0,cy,image.width(),image.height()/2,Qt::AutoColor);
     if (cy <= 0) cy = image.height()/2 - 1;
     else cy--;          // "scroll"
