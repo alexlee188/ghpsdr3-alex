@@ -343,6 +343,8 @@ UI::UI(const QString server) {
     audio_channels=configure.getChannels();
     audio_byte_order=configure.getByteOrder();
 
+    equalizer = new EqualizerDialog(&connection); // KD0OSS
+
     // load any saved settings
     loadSettings();
     switch(agc) {
@@ -380,8 +382,6 @@ UI::UI(const QString server) {
     widget.actionMuteSubRx->setDisabled(TRUE);
 
     band.initBand(band.getBand());
-
-    equalizer = new EqualizerDialog(&connection); // KD0OSS
 
     // make spectrum timer
     spectrumTimer = new QTimer(this);
@@ -428,6 +428,28 @@ void UI::loadSettings() {
     }
     settings.endGroup();
 
+    if (settings.contains("eqMode"))
+    {
+        if (settings.value("eqMode") == 3)
+            equalizer->loadSettings3Band();
+        else
+            equalizer->loadSettings10Band();
+
+        if (settings.value("rxEqEnabled") == 1)
+        {
+            widget.rxEqEnableCB->setChecked(true);
+            enableRxEq(true);
+        }
+
+        if (settings.value("txEqEnabled") == 1)
+        {
+            widget.txEqEnableCB->setChecked(true);
+            enableTxEq(true);
+        }
+    }
+    else
+        equalizer->set10BandEqualizer();
+
     widget.vfoFrame->readSettings(&settings);
     setPwsMode(pwsmode);  // KD0OSS
 }
@@ -457,6 +479,11 @@ void UI::saveSettings() {
 
     settings.beginGroup("mainWindow");
     settings.setValue("geometry", saveGeometry());
+    settings.endGroup();
+
+    settings.beginGroup("AudioEqualizer");
+    settings.setValue("rxEqEnabled", widget.rxEqEnableCB->isChecked());
+    settings.setValue("txEqEnabled", widget.txEqEnableCB->isChecked());
     settings.endGroup();
 
     widget.vfoFrame->writeSettings(&settings);
