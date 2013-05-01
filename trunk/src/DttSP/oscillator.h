@@ -39,16 +39,18 @@ Bridgewater, NJ 08807
 #define RealTone 0
 typedef int OscType;
 
-#define RENORMALIZATION_CLOCK 1000000
+//#define RENORMALIZATION_CLOCK 1000000
 
 typedef struct _oscillator
 {
   int size;
   void *signalpoints;
-  COMPLEX z;		/* the oscillator */
-  COMPLEX dz;		/* the change in phase per sample */
-  int clock;		/* the samples until renormalization */
-  int on;		/* whether the frequency is non-zero */
+  double Phase;
+  double Frequency;
+//  COMPLEX z;		/* the oscillator */
+//  COMPLEX dz;		/* the change in phase per sample */
+//  int clock;		/* the samples until renormalization */
+//  int on;		/* whether the frequency is non-zero */
   OscType OscillatorType;
 } oscillator, *OSC;
 
@@ -63,11 +65,13 @@ typedef struct _oscillator
 #define OSCRdata(p, i) (RLBbase((RLB)((p)->signalpoints))[(i)])
 
 #define OSCsize(p)     ((p)->size)
-#define OSCz(p)	       ((p)->z)
-#define OSCdz(p)       ((p)->dz)
-#define OSCclock(p)    ((p)->clock)
+//#define OSCz(p)	       ((p)->z)
+//#define OSCdz(p)       ((p)->dz)
+//#define OSCclock(p)    ((p)->clock)
 #define OSCon(p)       ((p)->on)
 #define OSCtype(p)     ((p)->OscillatorType)
+#define OSCphase(p)    ((p)->Phase)
+#define OSCfreq(p)     ((p)->Frequency)
 
 extern void ComplexOSC (OSC);
 extern void RealOSC (OSC);
@@ -76,6 +80,6 @@ extern OSC newOSC (int size, OscType TypeOsc, double Frequency,
 extern void delOSC (OSC);
 extern void fixOSC (OSC p, double Frequency, double Phase, REAL SampleRate);
 extern void resetOSC(OSC p, double Frequency, double Phase, REAL SampleRate);
-extern void setFreqOSC(OSC p, double Frequency, REAL SampleRate);
-extern void setPhaseOSC(OSC p, double Phase);
+//extern void setFreqOSC(OSC p, double Frequency, REAL SampleRate);
+//extern void setPhaseOSC(OSC p, double Phase);
 #endif

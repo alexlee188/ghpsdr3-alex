@@ -92,4 +92,6 @@ trunk/src/usrp/ltmain.sh
 /branches/java/jmonitor/dist/
 /branches/java/jmonitor/build/
 branches/android/aHPSDR/gen/*
-
+branches/java/jmonitor/build/
+branches/java/jmonitor/dist/
+branches/java/jmonitor/nbproject/private/*

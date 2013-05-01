@@ -56,6 +56,25 @@
 #include <event2/listener.h>
 #include <event2/bufferevent_ssl.h>
 
+// added by KD0OSS
+enum Window
+{
+//    FIRST = -1,
+    RECTANGULAR,
+    HANNING,
+    WELCH,
+    PARZEN,
+    BARTLETT,
+    HAMMING,
+    BLACKMAN2,
+    BLACKMAN3,
+    BLACKMAN4,
+    EXPONENTIAL,
+    RIEMANN,
+    BLKHARRIS,
+//    LAST,
+};
+
 enum CLIENT_CONNECTION {
 	connection_unknown,
 	connection_tcp = 0,

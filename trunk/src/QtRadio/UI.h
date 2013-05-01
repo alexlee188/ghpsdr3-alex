@@ -201,6 +201,10 @@ public slots:
     void actionLong();
 
     void actionPreamp();
+    void actionPwsMode0(); //KD0OSS
+    void actionPwsMode1(); //KD0OSS
+    void actionPwsMode2(); //KD0OSS
+    void actionPwsMode3(); //KD0OSS
 
     void connected();
     void disconnected(QString message);
@@ -237,11 +241,15 @@ public slots:
 
     void hostChanged(QString host);
     void receiverChanged(int rx);
+    void dcBlockChanged(bool state); //KD0OSS
+    void setTxIQPhase(double value); //KD0OSS
+    void setTxIQGain(double value); //KD0OSS
 
     void nrValuesChanged(int,int,double,double);
     void anfValuesChanged(int,int,double,double);
     void nbThresholdChanged(double);
     void sdromThresholdChanged(double);
+    void windowTypeChanged(int); //KD0OSS
 
     void actionBookmark();
     void addBookmark();
@@ -272,11 +280,13 @@ public slots:
     void closeServers ();
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
+    void setRxIQPhase(double value); //KD0OSS
+    void setRxIQGain(double value); //KD0OSS
     void cwPitchChanged(int cwPitch);
     void testSliderChange(int value);
     void testButtonClick(bool state);
     void resetbandedges(double offset);
-    void masterButtonClicked(void);
+
     void hardware (QString);
 
 signals:
@@ -297,6 +307,7 @@ private:
     void actionGain(int g);
     void setGain(bool state);
     void initRigCtl();
+    void setPwsMode(int mode); //KD0OSS
     RigCtlServer *rigCtl;
     QString getversionstring();
     void appendBookmark(Bookmark* bookmark);
@@ -314,6 +325,7 @@ private:
     char* first_audio_buffer;
     char* first_audio_header;
     int gain;
+    int pwsmode; //KD0OSS
     int subRxGain;
     bool subRx;
     AudioInput* audioinput;

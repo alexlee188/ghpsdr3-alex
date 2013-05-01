@@ -39,6 +39,8 @@
 #include <fromsys.h>
 #include <defs.h>
 #include <datatypes.h>
+#include <unistd.h>
+#include <sys/time.h>
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))

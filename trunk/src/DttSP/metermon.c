@@ -1,6 +1,8 @@
 /* metermon.c */
 
 #include <common.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #define SLEEP (500000)
 

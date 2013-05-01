@@ -46,6 +46,7 @@
 * @return
 */
 extern void Setup_SDR();
+extern void Destroy_SDR();
 
 /* --------------------------------------------------------------------------*/
 /** 
@@ -178,11 +179,11 @@ extern void SetSquelchVal (unsigned int thread, unsigned int subrx, float setit)
 extern void SetSquelchState (unsigned int thread, unsigned int subrx, BOOLEAN setit);
 extern void SetRXDCBlock(unsigned int thread, unsigned int subrx, BOOLEAN setit);
 extern void SetNBvals (unsigned int thread, unsigned subrx, double threshold);
-extern void SetNRvals (unsigned int thread, unsigned subrx, int taps, int delay, double gain, double leakage);
+extern void SetANRvals (unsigned int thread, unsigned subrx, int taps, int delay, double gain, double leakage);
 extern void SetMode (unsigned int thread, unsigned int subrx, SDRMODE m);
 extern void SetRXFilter (unsigned int thread, unsigned int subrx, double low_frequency, double high_frequency);
 extern void SetRXAGC (unsigned int thread, unsigned subrx, AGCMODE setit);
-extern void SetNR (unsigned int thread, unsigned subrx, BOOLEAN setit);
+extern void SetANR (unsigned int thread, unsigned subrx, BOOLEAN setit);
 extern void SetNB (unsigned int thread, unsigned subrx, BOOLEAN setit);
 extern void SetSDROM (unsigned int thread, unsigned subrx, BOOLEAN setit);
 extern void SetANF (unsigned int thread, unsigned subrx, BOOLEAN setit);
@@ -196,14 +197,91 @@ extern void SetTXDCBlock (unsigned int thread, BOOLEAN setit);
 extern void SetTXFMDeviation(unsigned int thread, double deviation);
 extern int SetTXFilter (unsigned int thread, double low_frequency, double high_frequency);
 extern int SetTXOsc (unsigned int thread, double newfreq);
-extern void SetTXCompandSt (unsigned int thread, BOOLEAN setit);
-extern void SetTXCompand (unsigned int thread, double setit);
+//extern void SetTXCompandSt (unsigned int thread, BOOLEAN setit);
+//extern void SetTXCompand (unsigned int thread, double setit);
 extern void SetTXAMCarrierLevel (unsigned int thread, double setit);
 extern void SetTXLevelerSt (unsigned int thread, BOOLEAN state);
 extern void SetTXLevelerAttack (unsigned int thread, int attack);
 extern void SetTXLevelerHang (unsigned int thread, int decay);
 extern void SetTXLevelerTop (unsigned int thread, double maxgain);
-extern float CalculateTXMeter(int thread,unsigned int subrx);
+//extern float CalculateTXMeter(int thread,unsigned int subrx);
 extern void SetCorrectIQEnable(int setit);
 extern void SetCorrectRXIQMu (unsigned int thread, unsigned int subrx, double mu);
+
+// Following lines added by KD0OSS
+extern void SetRXManualNotchEnable(unsigned int thread, unsigned int subrx, unsigned int index, BOOLEAN setit);
+extern void SetRXManualNotchBW(unsigned int thread, unsigned int subrx, unsigned int index, double BW);
+extern void SetRXManualNotchFreq(unsigned int thread, unsigned int subrx, unsigned int index, double F0);
+extern void SetRXDCBlockGain(unsigned int thread, unsigned int subrx, REAL gain);
+extern void SetCTCSSFreq(unsigned int thread, double freq_hz);
+extern void SetCTCSSFlag(unsigned int thread, BOOLEAN flag);
+extern void SetFMSquelchThreshold(unsigned int thread, unsigned int k, REAL threshold);
+extern void SetOscPhase(double phase);
+extern void SetTXCompressorSt (unsigned int thread, BOOLEAN setit);
+extern void SetTXCompressor (unsigned int thread, double setit);
+extern void SetTXSquelchSt (unsigned int thread, BOOLEAN setit);
+extern void SetTXSquelchVal (unsigned int thread, float setit);
+extern void SetTXSquelchAtt (unsigned int thread, float setit);
+extern void SetANFposition (unsigned int thread, unsigned subrx, int position);
+extern void SetANRposition (unsigned int thread, unsigned subrx, int position);
+extern void SetBIN (unsigned int thread, unsigned subrx, BOOLEAN setit);
+extern void SetRXAGCAttack (unsigned int thread, unsigned subrx, int attack);
+extern void SetRXAGCDecay (unsigned int thread, unsigned subrx, int decay);
+extern void SetRXAGCHang (unsigned int thread, unsigned subrx, int hang);
+extern void GetRXAGCHangLevel(unsigned int thread, unsigned int subrx, double *hangLevel);
+extern void SetRXAGCHangLevel(unsigned int thread, unsigned int subrx, double hangLevel);
+extern void GetRXAGCHangThreshold(unsigned int thread, unsigned int subrx, int *hangthreshold);
+extern void SetRXAGCHangThreshold (unsigned int thread, unsigned int subrx, int hangthreshold);
+extern void GetRXAGCThresh(unsigned int thread, unsigned int subrx, double *thresh);
+extern void SetRXAGCThresh(unsigned int thread, unsigned int subrx, double thresh);
+extern void GetRXAGCTop(unsigned int thread, unsigned int subrx, double *max_agc);
+extern void SetRXAGCTop (unsigned int thread, unsigned int subrx, double max_agc);
+extern void SetRXAGCSlope (unsigned int thread, unsigned subrx, int slope);
+extern void SetTXALCAttack (unsigned int thread, int attack);
+extern void SetTXALCDecay (unsigned int thread, int decay);
+extern void SetTXALCBot (unsigned int thread, double max_agc);
+extern void SetTXALCHang (unsigned int thread, int decay);
+extern void SetTXALCSt (unsigned int thread, BOOLEAN state);
+extern void SetTXLevelerDecay (unsigned int thread, int decay);
+extern void SetFixedAGC (unsigned int thread, unsigned int subrx, double fixed_agc);
+extern void SetCorrectIQ (unsigned int thread, unsigned int subrx, double phase, double gain);
+extern void SetCorrectIQGain (unsigned int thread, unsigned int subrx, double gain);
+extern void SetCorrectIQPhase (unsigned int thread, unsigned int subrx, double phase);
+extern REAL GetCorrectRXIQMu(unsigned int thread, unsigned int subrx);
+extern void GetCorrectRXIQw(int thread, int subrx, REAL *realw, REAL *imagw, unsigned int index);
+extern void SetCorrectRXIQw (unsigned int thread, unsigned int subrx, REAL wr, REAL wi, unsigned int index);
+extern void SetCorrectRXIQwReal (unsigned int thread, unsigned int subrx, REAL wr, unsigned int index);
+extern void SetCorrectRXIQwImag (unsigned int thread, unsigned int subrx, REAL wi, unsigned int index);
+extern void SetCorrectTXIQ (unsigned int thread, double phase, double gain);
+extern void SetCorrectTXIQGain (unsigned int thread, double gain);
+extern void SetCorrectTXIQPhase (unsigned int thread, double phase);
+extern void SetCorrectTXIQMu (unsigned int thread, double mu);
+extern void SetCorrectTXIQW (unsigned int thread, double wr, double wi);
+extern void SetPWSmode (unsigned thread, unsigned subrx, int setit);
+extern void SetWindow (unsigned int thread, Windowtype window);
+extern void SetGrphTXEQ (unsigned int thread, int *txeq);
+extern void SetGrphTXEQ10(unsigned int thread, int *txeq); 
+extern void SetGrphTXEQcmd (unsigned int thread, BOOLEAN state);
+extern void SetGrphRXEQ (unsigned int thread, unsigned int subrx, int *rxeq);
+extern void SetGrphRXEQ10(unsigned int thread, unsigned int subrx, int *rxeq) ;
+extern void SetGrphRXEQcmd (unsigned int thread, unsigned int subrx,BOOLEAN state);
+extern void SetTXAGCFF (unsigned int thread, BOOLEAN setit);
+extern void SetTXAGCFFCompression (unsigned int thread, double txcompression);
+extern void FlushAllBufs (unsigned int thread, BOOLEAN trx);
+extern void SetDSPBuflen (unsigned int thread, int newBuffSize);
+extern void SetAudioSize (unsigned int size);
+extern void Process_ComplexSpectrum (unsigned int thread, float *results);
+extern float CalculateTXMeter (unsigned int thread, METERTYPE mt);
+extern void NewResampler (int samplerate_in, int samplerate_out);
+extern void DoResampler (COMPLEX * input, COMPLEX * output, int numsamps, int *outsamps,ResSt ptr);
+extern void DelPolyPhaseFIR (ResSt resst);
+extern void NewResamplerF (int samplerate_in, int samplerate_out);
+extern void DoResamplerF (float *input, float *output, int numsamps, int *outsamps, ResStF ptr);
+extern void DelPolyPhaseFIRF (ResSt resst);
+extern void SetDiversity (int setit);
+extern void SetDiversityScalar(REAL re, REAL im);
+extern void SetDiversityGain(REAL gain);
+extern void SetSBMode(unsigned int thread, unsigned int subrx, int sbmode);
+extern void SetFadeLevel(unsigned int thread, unsigned int subrx, int levelfade);
+
 #endif

@@ -50,9 +50,10 @@ Bridgewater, NJ 08807
 #include <fftw3_fix.h>
 #include <ovsv.h>
 #include <filter.h>
+#include <filt2p2z.h>
 #include <oscillator.h>
 #include <dttspagc.h>
-#include <am_demod.h>
+//#include <am_demod.h>
 #include <fm_demod.h>
 #include <resample.h>
 #include <resampleF.h>

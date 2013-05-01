@@ -202,6 +202,11 @@ UI::UI(const QString server) {
 
     connect(widget.actionPreamp,SIGNAL(triggered()),this,SLOT(actionPreamp()));
 
+    connect(widget.actionPWS_Post_Filter,SIGNAL(triggered()),this,SLOT(actionPwsMode0()));
+    connect(widget.actionPWS_Pre_Filter,SIGNAL(triggered()),this,SLOT(actionPwsMode1()));
+    connect(widget.actionPWS_Semi_Raw,SIGNAL(triggered()),this,SLOT(actionPwsMode2()));
+    connect(widget.actionPWS_Post_Det,SIGNAL(triggered()),this,SLOT(actionPwsMode3()));
+
     connect(widget.actionBookmarkThisFrequency,SIGNAL(triggered()),this,SLOT(actionBookmark()));
     connect(widget.actionEditBookmarks,SIGNAL(triggered()),this,SLOT(editBookmarks()));
 
@@ -259,11 +264,18 @@ UI::UI(const QString server) {
 
     connect(&configure,SIGNAL(hostChanged(QString)),this,SLOT(hostChanged(QString)));
     connect(&configure,SIGNAL(receiverChanged(int)),this,SLOT(receiverChanged(int)));
+    connect(&configure,SIGNAL(dcBlockChanged(bool)),this,SLOT(dcBlockChanged(bool)));  // KD0OSS
+    connect(&configure,SIGNAL(txIQPhaseChanged(double)),this,SLOT(setTxIQPhase(double)));  // KD0OSS
+    connect(&configure,SIGNAL(txIQGainChanged(double)),this,SLOT(setTxIQGain(double)));  // KD0OSS
 
     connect(&configure,SIGNAL(nrValuesChanged(int,int,double,double)),this,SLOT(nrValuesChanged(int,int,double,double)));
     connect(&configure,SIGNAL(anfValuesChanged(int,int,double,double)),this,SLOT(anfValuesChanged(int,int,double,double)));
     connect(&configure,SIGNAL(nbThresholdChanged(double)),this,SLOT(nbThresholdChanged(double)));
     connect(&configure,SIGNAL(sdromThresholdChanged(double)),this,SLOT(sdromThresholdChanged(double)));
+
+    connect(&configure,SIGNAL(rxIQPhaseChanged(double)),this,SLOT(setRxIQPhase(double)));  // KD0OSS
+    connect(&configure,SIGNAL(rxIQGainChanged(double)),this,SLOT(setRxIQGain(double)));  // KD0OSS
+    connect(&configure, SIGNAL(windowTypeChanged(int)),this,SLOT(windowTypeChanged(int))); //KD0OSS
 
     connect(&bookmarks,SIGNAL(bookmarkSelected(QAction*)),this,SLOT(selectBookmark(QAction*)));
     connect(&bookmarkDialog,SIGNAL(accepted()),this,SLOT(addBookmark()));
@@ -302,7 +314,6 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
     connect(&configure,SIGNAL(RxIQspinChanged(double)),this,SLOT(RxIQspinChanged(double)));
     connect(&configure,SIGNAL(spinBox_cwPitchChanged(int)),this,SLOT(cwPitchChanged(int)));
-    connect(widget.ctlFrame,SIGNAL(masterBtnClicked()),this,SLOT(masterButtonClicked()));
     connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
     connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
     connect(&connection,SIGNAL(hardware(QString)),this,SLOT(hardware(QString)));
@@ -393,6 +404,7 @@ void UI::loadSettings() {
     if(settings.contains("gain")) gain=subRxGain=settings.value("gain").toInt();
     if(settings.contains("agc")) agc=settings.value("agc").toInt();
     if(settings.contains("squelch")) squelchValue=settings.value("squelch").toInt();
+    if(settings.contains("pwsmode")) pwsmode=settings.value("pwsmode").toInt();
     settings.endGroup();
 
     settings.beginGroup("mainWindow");
@@ -424,6 +436,7 @@ void UI::saveSettings() {
     settings.setValue("subRxGain",subRxGain);
     settings.setValue("agc",agc);
     settings.setValue("squelch",squelchValue);
+    settings.setValue("pwsmode",pwsmode);
     settings.endGroup();
 
     settings.beginGroup("mainWindow");
@@ -555,6 +568,7 @@ void UI::actionConnect() {
 
     // Initialise RxIQMu. Set RxIQMu to disabled, set value and then enable if checked.
     RxIQspinChanged(configure.getRxIQspinBoxValue());
+    dcBlockChanged(configure.getDCBlockValue());
     widget.zoomSpectrumSlider->setValue(0);
     on_zoomSpectrumSlider_sliderMoved(0);
 }
@@ -655,6 +669,8 @@ void UI::connected() {
     widget.actionDisconnectFromServer->setDisabled(FALSE);
     widget.actionSubrx->setDisabled(FALSE);
     widget.actionMuteSubRx->setDisabled(TRUE);
+
+    setPwsMode(pwsmode);
 
     // select audio encoding
     command.clear(); QTextStream(&command) << "setEncoding " << audio->get_audio_encoding();
@@ -1181,7 +1197,7 @@ void UI::modeChanged(int previousMode,int newMode) {
         case MODE_SAM:
             widget.actionSAM->setChecked(FALSE);
             break;
-        case MODE_FMN:
+        case MODE_FM:
             widget.actionFMN->setChecked(FALSE);
             break;
         case MODE_DIGL:
@@ -1222,7 +1238,7 @@ void UI::modeChanged(int previousMode,int newMode) {
             widget.actionSAM->setChecked(TRUE);
             filters.selectFilters(&samFilters);
             break;
-        case MODE_FMN:
+        case MODE_FM:
             widget.actionFMN->setChecked(TRUE);
             filters.selectFilters(&fmnFilters);
             break;
@@ -1408,9 +1424,9 @@ void UI::actionSAM() {
 
 void UI::actionFMN() {
     modeFlag = true;
-    mode.setMode(MODE_FMN);
+    mode.setMode(MODE_FM);
     filters.selectFilters(&fmnFilters);
-    band.setMode(MODE_FMN);
+    band.setMode(MODE_FM);
     frequencyChanged(frequency);
     modeFlag = false;
 }
@@ -2030,7 +2046,7 @@ void UI::bookmarkSelected(int entry) {
         case MODE_SAM:
             filters=&samFilters;
             break;
-        case MODE_FMN:
+        case MODE_FM:
             filters=&fmnFilters;
             break;
         case MODE_DIGL:
@@ -2093,7 +2109,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + " opengl-ssl 1 Jan 2013");
+                   + getversionstring() +  message + " " + QT_VERSION + " opengl-ssl 1 May 2013");
     lastmessage = message;
 
 }
@@ -2263,7 +2279,7 @@ void UI::pttChange(int caller, bool ptt)
                     case MODE_DSB: actionDSB(); break;
                     case MODE_AM:  actionAM();  break;
                     case MODE_SAM: actionSAM(); break;
-                    case MODE_FMN: actionFMN(); break;
+                    case MODE_FM:  actionFMN(); break;
                     case MODE_DIGL:actionDIGL();break;
                     case MODE_DIGU:actionDIGU();break;
                 }
@@ -2424,6 +2440,26 @@ void UI::cwPitchChanged(int arg1)
     }
 }
 
+void UI::setRxIQPhase(double value)
+{
+    QString command;
+
+    command.clear(); QTextStream(&command) << "rxiqphasecorrectval " << value;
+    connection.sendCommand(command);
+
+    qDebug()<<Q_FUNC_INFO<<":   The value of Rx IQ Phase = "<<value;
+}
+
+void UI::setRxIQGain(double value)
+{
+    QString command;
+
+    command.clear(); QTextStream(&command) << "rxiqgaincorrectval " << value;
+    connection.sendCommand(command);
+
+    qDebug()<<Q_FUNC_INFO<<":   The value of Rx IQ Gain = "<<value;
+}
+
 void UI::setCanTX(bool tx){
     canTX = tx;
     emit HideTX(tx);
@@ -2432,6 +2468,26 @@ void UI::setCanTX(bool tx){
 void UI::setChkTX(bool chk){
    chkTX = true;
    infotick2 = 0;
+}
+
+void UI::setTxIQPhase(double value)
+{
+    QString command;
+
+    command.clear(); QTextStream(&command) << "txiqphasecorrectval " << value;
+    connection.sendCommand(command);
+
+    qDebug()<<Q_FUNC_INFO<<":   The value of Tx IQ Phase = "<<value;
+}
+
+void UI::setTxIQGain(double value)
+{
+    QString command;
+
+    command.clear(); QTextStream(&command) << "txiqgaincorrectval " << value;
+    connection.sendCommand(command);
+
+    qDebug()<<Q_FUNC_INFO<<":   The value of Tx IQ Gain = "<<value;
 }
 
 void UI::testSliderChange(int value)
@@ -2454,9 +2510,7 @@ void UI::testButtonClick(bool state)
     qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
 }
 
-void UI::masterButtonClicked(void){
-    connection.sendCommand("setMaster " + configure.thisuser + " " + configure.thispass);
-}
+//>>>>>>> Connected test controls to main UI
 
  void UI::resetbandedges(double offset)
  {
@@ -2474,7 +2528,7 @@ void UI::masterButtonClicked(void){
 
 void UI :: hardware (QString answer)
 {
-   HardwareFactory :: processAnswer (answer, &connection, this);
+   HardwareFactory :: Instance() .processAnswer (answer, &connection, this);
 }
 
 
@@ -2514,4 +2568,96 @@ void UI::rigSetPTT(int enabled){
     }else{
        widget.ctlFrame->RigCtlTX(false);
     }
+}
+
+void UI::dcBlockChanged(bool state) {
+        QString command;
+        command.clear(); QTextStream(&command) << "setdcblock " << state;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+}
+
+void UI::windowTypeChanged(int type) {
+        QString command;
+        command.clear(); QTextStream(&command) << "setwindow " << type;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+}
+
+void UI::setPwsMode(int mode){
+    QString command;
+    command.clear(); QTextStream(&command) << "setpwsmode " << mode;
+//        qDebug("%s", command);
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+
+    switch (mode)
+    {
+    case 0:
+        widget.actionPWS_Post_Filter->setChecked(TRUE);
+        break;
+    case 1:
+        widget.actionPWS_Pre_Filter->setChecked(TRUE);
+        break;
+    case 2:
+        widget.actionPWS_Semi_Raw->setChecked(TRUE);
+        break;
+    case 3:
+        widget.actionPWS_Post_Det->setChecked(TRUE);
+        break;
+    }
+}
+
+void UI::actionPwsMode0() {
+        QString command;
+        command.clear(); QTextStream(&command) << "setpwsmode " << 0;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+
+        widget.actionPWS_Pre_Filter->setChecked(FALSE);
+        widget.actionPWS_Semi_Raw->setChecked(FALSE);
+        widget.actionPWS_Post_Det->setChecked(FALSE);
+        pwsmode = 0;
+}
+
+void UI::actionPwsMode1() {
+        QString command;
+        command.clear(); QTextStream(&command) << "setpwsmode " << 1;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+
+        widget.actionPWS_Post_Filter->setChecked(FALSE);
+        widget.actionPWS_Semi_Raw->setChecked(FALSE);
+        widget.actionPWS_Post_Det->setChecked(FALSE);
+        pwsmode = 1;
+}
+
+void UI::actionPwsMode2() {
+        QString command;
+        command.clear(); QTextStream(&command) << "setpwsmode " << 2;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+
+        widget.actionPWS_Pre_Filter->setChecked(FALSE);
+        widget.actionPWS_Post_Filter->setChecked(FALSE);
+        widget.actionPWS_Post_Det->setChecked(FALSE);
+        pwsmode = 2;
+}
+
+void UI::actionPwsMode3() {
+        QString command;
+        command.clear(); QTextStream(&command) << "setpwsmode " << 3;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+
+        widget.actionPWS_Pre_Filter->setChecked(FALSE);
+        widget.actionPWS_Semi_Raw->setChecked(FALSE);
+        widget.actionPWS_Post_Filter->setChecked(FALSE);
+        pwsmode = 3;
 }
