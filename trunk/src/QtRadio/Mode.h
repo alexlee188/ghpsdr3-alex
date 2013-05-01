@@ -33,7 +33,7 @@
 #define MODE_DSB 2
 #define MODE_CWL 3
 #define MODE_CWU 4
-#define MODE_FMN 5
+#define MODE_FM 5
 #define MODE_AM 6
 #define MODE_DIGU 7
 #define MODE_SPEC 8

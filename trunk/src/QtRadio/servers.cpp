@@ -30,7 +30,7 @@ Servers::Servers(QDialog *parent) :  QDialog(parent), ui(new Ui::Servers)
     this->setAttribute(Qt::WA_DeleteOnClose);
     nam = new QNetworkAccessManager(this);
     QObject::connect(nam, SIGNAL(finished(QNetworkReply*)), this, SLOT(finishedSlot(QNetworkReply*)));
-    ui->treelist->setHeaderLabels(QString("Status;Call;Location;Band;Rig;6Antenna;Last Report;IP").split(";"));
+    ui->treelist->setHeaderLabels(QString("Status;Call;Location;Band;Rig;Antenna;Last Report;IP").split(";"));
     ui->treelist->setColumnWidth( 0,140);
     //ui->treelist->setColumnWidth( 0,125);
     ui->treelist->setColumnWidth( 1,100);

@@ -24,9 +24,12 @@
 *
 */
 
+
+
 #define MAX_RECEIVERS 8
 
 #define BUFFER_SIZE 1024
+
 
 typedef struct _receiver {
     int id;
@@ -35,6 +38,7 @@ typedef struct _receiver {
     CLIENT* client;
     int frequency_changed;
     long frequency;
+    long freq_cal_offset;
     float input_buffer[BUFFER_SIZE*2];
     float output_buffer[BUFFER_SIZE*2];
 } RECEIVER;
@@ -55,6 +59,11 @@ extern void init_receivers();
 extern char* attach_receiver(int rx,CLIENT* client);
 extern char* detach_receiver(int rx,CLIENT* client);
 extern char* set_frequency(CLIENT* client,long f);
+extern char* set_frequency_offset(CLIENT* client,long f);
+extern char* set_ptt(CLIENT* client, int ptt);
+extern char* set_attenuator(CLIENT* client, long value);
+extern char* set_spurreduction(CLIENT* client, unsigned char enabled);
+extern char* get_pa_adc(CLIENT* client, unsigned char channel);
 extern void send_IQ_buffer(int rx);
 #ifdef __cplusplus
  }

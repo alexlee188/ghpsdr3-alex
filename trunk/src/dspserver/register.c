@@ -367,7 +367,7 @@ int chkFreq(char *user,  long long freq2chk, int mode){
 							   modeOK = 0;
 						   }else if(mode == CWU && strcmp("CW",rulemode) == 0 ){
 							   modeOK = 0;
-						   }else if(mode == FMN && strcmp("FM",rulemode) == 0 ){
+						   }else if(mode == FM && strcmp("FM",rulemode) == 0 ){
 							   modeOK = 0;
 						   }else if(mode == AM && strcmp("AM",rulemode) == 0 ){
 							   modeOK = 0;

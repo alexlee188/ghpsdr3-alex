@@ -35,10 +35,12 @@ typedef unsigned char BOOLEAN;
 
 #ifndef TRUE
 #define TRUE 1
+#define true 1
 #endif
 
 #ifndef FALSE
 #define FALSE 0
+#define false 0
 #endif
 
 typedef unsigned char uint8;

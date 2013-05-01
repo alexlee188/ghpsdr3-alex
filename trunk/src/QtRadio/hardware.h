@@ -11,7 +11,8 @@
 #include <QSignalMapper>
 #endif
 #include "Connection.h"
-
+#include <stdexcept>
+ 
 class HardwareCommProxy 
 {
 public:
@@ -41,101 +42,55 @@ protected:
 
 class UI;
 
-class HardwarePerseus: public DlgHardware
-{ 
-   Q_OBJECT
-
-public:
-   HardwarePerseus (Connection *pC, QWidget *p);
-   ~HardwarePerseus ();
-private:
-   QSignalMapper *attMapper;
-private slots:
-   void attClicked(int state);
-   void ditherChanged(int);
-   void preampChanged(int);
-
-   void processAnswer (QStringList);
-};
-
-class HardwareSdriq: public DlgHardware
-{ 
-   Q_OBJECT
-
-public:
-   HardwareSdriq (Connection *pC, QWidget *p);
-   ~HardwareSdriq ();
-private:
-   QSignalMapper *attMapper;
-private slots:
-   void attClicked(int state);
-   void processAnswer (QStringList);
-};
-
-
-class QRadioButton;
-class QCheckBox;
-
-class HardwareHiqsdr: public DlgHardware
-{ 
-   Q_OBJECT
-
-public:
-   HardwareHiqsdr (Connection *pC, QWidget *p);
-   ~HardwareHiqsdr ();
-
-private:
-   QSignalMapper *attMapper;
-   int attenuatorVal;
-   QSignalMapper *antMapper;
-   int antennaVal;
-   QSignalMapper *preselMapper;
-   int preselVal;
-   QRadioButton *psel[16];
-   QCheckBox *preamp;
-   int preampVal;
-   
-
-private slots:
-   void attClicked(int state);
-   void antClicked(int n);
-   void preselClicked(int n);
-   void preampChanged(int n);
-   void processAnswer (QStringList);
-};
-
-
-class HardwareRtlsdr: public DlgHardware
-{ 
-   Q_OBJECT
-
-public:
-   HardwareRtlsdr (Connection *pC, QWidget *p);
-   ~HardwareRtlsdr ();
-
-private:
-   QSignalMapper *attMapper;
-   int attenuatorVal;
-
-private slots:
-   void attClicked(int state);
-   void processAnswer (QStringList);
-};
-
-
-
+//
+// Hardware factory
+//
+// implemented as Singleton and Object Factory
+// see "Modern C++ Design", A. Alexandrescu, Addison-Wesley 2001 
+// 
 class HardwareFactory {
 public:
+   typedef DlgHardware * (*CreateDlgHardwareCallback)(Connection *pConn);
 
-   static DlgHardware *Clone(Connection *pConn, const char *, QWidget *p);
+   // Factory public methods
+   DlgHardware *Clone(Connection *pConn, const char *, QWidget *p);
+   void processAnswer (QString a, Connection *pConn, UI *p );
 
-   static void processAnswer (QString a, Connection *pConn, UI *p );
+   bool Register (std::string id, CreateDlgHardwareCallback CreateFn)
+   { return callbacks_.insert (CallbackMap::value_type(id, CreateFn)).second; }
 
-   void get() {}
+   // Singleton methods
+   static HardwareFactory& Instance();
 
+private: 
 
+   // Factory Data
+   typedef std::map<std::string, CreateDlgHardwareCallback> CallbackMap;
+   CallbackMap callbacks_;
+
+   // Singleton Data
+   static HardwareFactory *pInstance_;
+   static bool destroyed_;
+
+   // Creat a new singleton and store a pinter to it into pInstance_
+   static void Create ();
+
+   static void OnDeadReference () { throw std::runtime_error("Dead reference detected");}
+   virtual ~HardwareFactory () { pInstance_ = 0; destroyed_ = true; }
+
+   // 
 };
 
-extern HardwareFactory hwFactory;
+template 
+<
+  class Base
+>  
+struct RegisterHw {
+ static DlgHardware *cb(Connection *pConn) { return new Base(pConn, 0); }
+ RegisterHw (std::string hwName) { HardwareFactory::Instance ().Register (hwName, cb); } ;
+};
+
+
+
 
 #endif

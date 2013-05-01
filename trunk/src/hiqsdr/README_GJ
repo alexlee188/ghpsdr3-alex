@@ -1,0 +1,67 @@
+
+0. HIQSDR SERVER
+================
+
+This file documents the changes to hiqsdr to enable automatic switching of the preselector filters when bandswitching or tuning to a frequency that is out of range of the current filter.
+
+1. The configuration file
+
+The configuration file is saved in the home directory of the user as hiqsdr.cfg in order to avoid overwriting the original hiqsdr.conf while development and testing are happening. The file is arranged as follows ...
+
+#
+# HiQSDR preselector configuration file template
+#
+0!0!FILTER BYPASS
+1!1800000!160 M
+0!2000000!FILTER BYPASS
+2!3500000!80 M
+0!4000000!FILTER BYPASS
+3!5000000!60 M
+0!5100000!FILTER BYPASS
+4!7000000!40 M
+0!7300000!FILTER BYPASS
+5!10100000!30M
+0!10150000!FILTER BYPASS
+6!14000000!20 M
+0!14350000!FILTER BYPASS
+7!18068000!17 M
+0!18168000!FILTER BYPASS
+8!21000000!15 M
+0!21450000!FILTER BYPASS
+9!24890000!12 M
+0!24990000!FILTER BYPASS
+10!28000000!10 M
+0!29700000!FILTER BYPASS
+11!51000000!6 M
+0!53000000!FILTER BYPASS
+
+Lines beginning with # are ignored by the parser and are used for user comments and version numbers etc. The example shown is the default template if no .cfg exists.
+
+The data is arranged as ...
+
+Filter N0.;   Frequency in Hz; Description of filter
+
+The first filter line (0!0!FILTER BYPASS) denotes that the filter starts at 0 Hz and stays switched in while the frequency is less than 1.8 MHz (freq of line 2)
+The second filter line (1!1800000!160 M) denotes that the filter starts at 1800000 Hz and stays switched in while the frequency is less than 3.5 MHz (freq of line 2) etc.
+
+Each time a frequency change is made the filter is checked to see if it still covers the new frequency and is switched if not.
+
+As set up the default table assumes a filter for each band and that the through filter (filter bypass) will be used if not in the range of a ham band filter. Your own filter setup may be for continuous filter coverage or wider filters than shown and it will be necessary to edit the table. The last entry should always be set to filter bypass.
+
+Assuming 1.5 octave filters starting at 1.8 MHz for continuous coverage plus a 6 M filter the table would look as follows ...
+
+0!0!FILTER BYPASS
+1!1800000!160 M
+2!2700000!80 M
+2!4050000!60 M
+3!6075000!40 M
+4!9112500!30 M
+5!13668750!20/17 M
+6!20503125!15/12/10 M
+0!30754668!FILTER BYPASS
+7!51000000!6 M
+0!53000000!FILTER BYPASS
+
+At present the when the filter autoswitches it does not reflect back to QtRadio's hiqsdr panel but the radio buttons will over ride the auto selected filter until a new frequency change occurs where another autoswitch will occur. I intend to add the feature of showing on the panel which filter hs been autoselected in the future.
+
+gvj

@@ -418,12 +418,12 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
         sem_wait(&spectrum_semaphore);
         if(mox) {
             Process_Panadapter(1,spectrumBuffer);
-            meter=CalculateTXMeter(1,5);        // MIC
+            meter=CalculateTXMeter(1,TX_PWR);        // enum added by KD0OSS
             subrx_meter=-121;
         } else {
             Process_Panadapter(0,spectrumBuffer);
-            meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-            subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+            meter=CalculateRXMeter(0,0,RX_AVG_SIGNAL_STRENGTH)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset(); // enum added by KD0OSS
+            subrx_meter=CalculateRXMeter(0,1,RX_SIGNAL_STRENGTH)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset(); // enum added by KD0OSS
         }
         sem_post(&spectrum_semaphore);
         sem_wait(&bufferevent_semaphore);
@@ -1208,7 +1208,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             case LSB: SetTXFilter(1,-2850, -150); break;
             case AM:
             case SAM: SetTXFilter(1, -2850, 2850); break;
-            case FMN: SetTXFilter(1, -4800, 4800); break;
+            case FM: SetTXFilter(1, -4800, 4800); break;
             default: SetTXFilter(1, -4800, 4800);
             }
         } else if(strncmp(cmd,"setfilter",9)==0) {
@@ -1232,8 +1232,8 @@ void readcb(struct bufferevent *bev, void *ctx){
             if(strcmp(tokens[0],"true")==0) {
                 nr=1;
             }
-            SetNR(0,0,nr);
-            SetNR(0,1,nr);
+            SetANR(0,0,nr);
+            SetANR(0,1,nr);
         } else if(strncmp(cmd,"setnb",5)==0) {
             int nb = 0;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1453,8 +1453,8 @@ void readcb(struct bufferevent *bev, void *ctx){
             delay = atoi(tokens[1]);
             gain = atof(tokens[2]);
             leakage = atof(tokens[3]);
-            SetNRvals(0,0,taps,delay,gain,leakage);
-            SetNRvals(0,1,taps,delay,gain,leakage);
+            SetANRvals(0,0,taps,delay,gain,leakage);
+            SetANRvals(0,1,taps,delay,gain,leakage);
         } else if(strncmp(cmd,"setnbvals",9)==0) {
             double threshold;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1469,6 +1469,13 @@ void readcb(struct bufferevent *bev, void *ctx){
             threshold=atof(tokens[0]);
             SetSDROMvals(0,0,threshold);
             SetSDROMvals(0,1,threshold);
+        } else if(strncmp(cmd,"setpwsmode",10)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state = atoi(tokens[0]);
+            SetPWSmode(0,0,state);
+            SetPWSmode(0,1,state);
         } else if(strncmp(cmd,"setdcblock",10)==0) {
             int state;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1476,6 +1483,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             state=atoi(tokens[0]);
             SetRXDCBlock(0,0,state);
             SetRXDCBlock(0,1,state);
+            sdr_log(SDR_LOG_INFO,"SetDCBlock %d\n",state); // KD0OSS
         } else if(strncmp(cmd,"mox",3)==0) {
             int ntok;
             if ((ntok = tokenize_cmd(&saveptr, tokens, 3)) < 1)
@@ -1537,13 +1545,15 @@ void readcb(struct bufferevent *bev, void *ctx){
                     if(chkPasswd(thisuser, thispasswd) == 0){ 
                         if(pwr >= 0 && pwr <= 1) {
                             //fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
+                            sdr_log(SDR_LOG_INFO,"SetTXAMCarrierLevel = %f\n", pwr);
                             SetTXAMCarrierLevel(1,pwr);
                         }
                     }else{
                         sdr_log(SDR_LOG_INFO,"SetTXAMCarrierLevel denied because user %s password check failed!\n",thisuser);
                     }
                 }
-            }if (txcfg == TXALL){
+            }
+            else if (txcfg == TXALL){  // KD0OSS --- Added 'else' or will get 'Invalid' if TXPASSWD
                 if(pwr >= 0 &&  pwr <= 1) {
                     sdr_log(SDR_LOG_INFO,"SetTXAMCarrierLevel = %f\n", pwr);
                     SetTXAMCarrierLevel(1,pwr);
@@ -1599,6 +1609,11 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             ozySetOpenCollectorOutputs(tokens[0]);
+        } else if(strncmp(cmd,"setwindow",9)==0) { // KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            int mode=atoi(tokens[0]);
+            SetWindow(0,mode);
         } else if(strncmp(cmd,"setclient",9)==0) {
             if (tokenize_cmd(&saveptr, tokens, 1) == 1) {
                 sdr_log(SDR_LOG_INFO, "RX%d: client is %s\n", receiver, tokens[0]);

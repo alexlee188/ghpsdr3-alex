@@ -52,7 +52,7 @@
 
 
 #ifdef PORTAUDIO
-static PaStream* stream;
+static PaStream *stream, *streamOut;
 #else
 static int fd;
 #endif
@@ -89,11 +89,12 @@ fprintf(stderr,"sdr1000_open: %s\n",sdr1000_get_device());
     } else {
         fprintf(stderr,"default input=%d output=%d devices=%d\n",Pa_GetDefaultInputDevice(),Pa_GetDefaultOutputDevice(),devices);
 
-        for(i=0;i<devices;i++) {
+        for(i=0;i<devices;i++) 
+        {
             deviceInfo=Pa_GetDeviceInfo(i);
             fprintf(stderr,"%d - %s\n",i,deviceInfo->name);
                 fprintf(stderr,"maxInputChannels: %d\n",deviceInfo->maxInputChannels);
-                fprintf(stderr,"maxOututChannels: %d\n",deviceInfo->maxOutputChannels);
+                fprintf(stderr,"maxOutputChannels: %d\n",deviceInfo->maxOutputChannels);
                 //fprintf(stderr,"defaultLowInputLatency: %f\n",deviceInfo->defaultLowInputLatency);
                 //fprintf(stderr,"defaultLowOutputLatency: %f\n",deviceInfo->defaultLowOutputLatency);
                 //fprintf(stderr,"defaultHighInputLatency: %f\n",deviceInfo->defaultHighInputLatency);
@@ -111,11 +112,12 @@ fprintf(stderr,"sdr1000_open: %s\n",sdr1000_get_device());
     outputParameters.device=atoi(sdr1000_get_output());
     outputParameters.channelCount=2;
     outputParameters.sampleFormat=paFloat32;
-    outputParameters.suggestedLatency=Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
+    outputParameters.suggestedLatency=Pa_GetDeviceInfo(outputParameters.device)->defaultHighOutputLatency;
     outputParameters.hostApiSpecificStreamInfo=NULL;
 
-fprintf(stderr,"input device=%d output device=%d\n",inputParameters.device,outputParameters.device);
-    rc=Pa_OpenStream(&stream,&inputParameters,&outputParameters,(double)sdr1000_get_sample_rate(),(unsigned long)SAMPLES_PER_BUFFER,paNoFlag,NULL,NULL);
+    fprintf(stderr,"input device=%d output device=%d\n",inputParameters.device,outputParameters.device);
+    
+    rc=Pa_OpenStream(&stream,&inputParameters,NULL,(double)sdr1000_get_sample_rate(),(unsigned long)SAMPLES_PER_BUFFER,paClipOff,NULL,NULL);
     if(rc!=paNoError) {
         fprintf(stderr,"Pa_OpenStream failed: %s\n",Pa_GetErrorText(rc));
         exit(1);
@@ -131,6 +133,27 @@ fprintf(stderr,"input device=%d output device=%d\n",inputParameters.device,outpu
     if(info!=NULL) {
         fprintf(stderr,"stream.sampleRate=%f\n",info->sampleRate);
         fprintf(stderr,"stream.inputLatency=%f\n",info->inputLatency);
+     //   fprintf(stderr,"stream.outputLatency=%f\n",info->outputLatency);
+    } else {
+        fprintf(stderr,"Pa_GetStreamInfo returned NULL\n");
+    }
+
+    rc=Pa_OpenStream(&streamOut,NULL,&outputParameters,(double)sdr1000_get_sample_rate(),(unsigned long)SAMPLES_PER_BUFFER,paClipOff,NULL,NULL);
+    if(rc!=paNoError) {
+        fprintf(stderr,"Pa_OpenStream failed: %s\n",Pa_GetErrorText(rc));
+        exit(1);
+    }
+
+    rc=Pa_StartStream(streamOut);
+    if(rc!=paNoError) {
+        fprintf(stderr,"Pa_StartStream failed: %s\n",Pa_GetErrorText(rc));
+        exit(1);
+    }
+
+    info=Pa_GetStreamInfo(streamOut);
+    if(info!=NULL) {
+        fprintf(stderr,"stream.sampleRate=%f\n",info->sampleRate);
+      //  fprintf(stderr,"stream.inputLatency=%f\n",info->inputLatency);
         fprintf(stderr,"stream.outputLatency=%f\n",info->outputLatency);
     } else {
         fprintf(stderr,"Pa_GetStreamInfo returned NULL\n");
@@ -166,7 +189,7 @@ fprintf(stderr,"input device=%d output device=%d\n",inputParameters.device,outpu
         perror("unable to set number of channels");
 
     arg = sdr1000_get_sample_rate();      /* sampling rate */
-fprintf(stderr,"sample_rate: %d\n",arg);
+    fprintf(stderr,"sample_rate: %d\n",arg);
     status = ioctl(fd, SOUND_PCM_WRITE_RATE, &arg);
     if (status == -1)
         perror("SOUND_PCM_WRITE_WRITE ioctl failed");
@@ -194,24 +217,32 @@ int sdr1000_close() {
 }
 
 #ifdef PORTAUDIO
-int sdr1000_write(float* left_samples,float* right_samples) {
+int sdr1000_write(float* left_samples,float* right_samples) 
+{
     int rc;
     int i;
     float audio_buffer[SAMPLES_PER_BUFFER*2];
 
+    if (!tx_mode) return;
+
     rc=0;
 
     // interleave samples
-    for(i=0;i<SAMPLES_PER_BUFFER;i++) {
+    for(i=0;i<SAMPLES_PER_BUFFER;i++) 
+    {
+//if (right_samples[i] != 0.0)
+//fprintf(stderr,"%d left=%f right=%f\n",i, left_samples[i],right_samples[i]);
         audio_buffer[i*2]=right_samples[i];
         audio_buffer[(i*2)+1]=left_samples[i];
     }
 
-    //fprintf(stderr,"write available=%ld\n",Pa_GetStreamWriteAvailable(stream));
-    rc=Pa_WriteStream(stream,audio_buffer,SAMPLES_PER_BUFFER);
+   // fprintf(stderr,"write available=%ld\n",Pa_GetStreamWriteAvailable(stream));
+    rc=Pa_WriteStream(streamOut,audio_buffer,SAMPLES_PER_BUFFER);
     if(rc!=0) {
         fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n",Pa_GetErrorText(rc),rc);
     }
+ //   else
+     //   fprintf(stderr,">");
 
 
     return rc;
