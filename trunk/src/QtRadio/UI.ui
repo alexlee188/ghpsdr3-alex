@@ -152,7 +152,7 @@
      <x>0</x>
      <y>0</y>
      <width>991</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuBand">
@@ -273,6 +273,11 @@
     <addaction name="separator"/>
     <addaction name="actionDither"/>
     <addaction name="actionRandom"/>
+    <addaction name="separator"/>
+    <addaction name="actionPWS_Post_Filter"/>
+    <addaction name="actionPWS_Pre_Filter"/>
+    <addaction name="actionPWS_Semi_Raw"/>
+    <addaction name="actionPWS_Post_Det"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -925,6 +930,38 @@
   <action name="actionSquelchReset">
    <property name="text">
     <string>Reset</string>
+   </property>
+  </action>
+  <action name="actionPWS_Pre_Filter">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>PWS Pre Filter</string>
+   </property>
+  </action>
+  <action name="actionPWS_Semi_Raw">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>PWS Semi Raw</string>
+   </property>
+  </action>
+  <action name="actionPWS_Post_Det">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>PWS Post Det</string>
+   </property>
+  </action>
+  <action name="actionPWS_Post_Filter">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>PWS Post Filter</string>
    </property>
   </action>
  </widget>

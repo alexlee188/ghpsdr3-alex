@@ -30,6 +30,8 @@
  extern "C" {
 #endif
 
+extern int tx_mode;
+
 extern int sdr1000_init();
 extern int create_sdr1000_thread();
 extern void sdr1000_set_device(char* d);
@@ -38,6 +40,7 @@ extern void sdr1000_set_receivers(int r);
 extern int sdr1000_get_receivers();
 extern void sdr1000_set_sample_rate(int r);
 extern int sdr1000_get_sample_rate();
+extern void sdr1000_set_frequency_offset(char* d);
 
 extern void sdr1000_set_input(char* d);
 extern char* sdr1000_get_input();

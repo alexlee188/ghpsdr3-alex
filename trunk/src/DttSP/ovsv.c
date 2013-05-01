@@ -66,6 +66,7 @@ filter_OvSv(FiltOvSv pflt) {
 void
 reset_OvSv(FiltOvSv pflt) 
 {
+  //printf("z: %d  f: %d   c: %d\n", sizeof(pflt->zrvec), pflt->fftlen, sizeof(COMPLEX));
   memset((char *) pflt->zrvec, 0, pflt->fftlen * sizeof(COMPLEX));
   memset((char *) pflt->zovec, 0, pflt->fftlen * sizeof(COMPLEX));
 }

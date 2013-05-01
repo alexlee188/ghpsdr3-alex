@@ -66,8 +66,8 @@ QString Mode::getStringMode(int mode) {
         case MODE_CWU:
             m="CWU";
             break;
-        case MODE_FMN:
-            m="FMN";
+        case MODE_FM:
+            m="FM";
             break;
         case MODE_AM:
             m="AM";

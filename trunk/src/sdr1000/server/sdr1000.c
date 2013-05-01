@@ -32,6 +32,7 @@
 #include <netdb.h>
 #include <pthread.h>
 
+#include <common.h>
 #include "client.h"
 #include "sdr1000.h"
 #include "sdr1000io.h"
@@ -62,6 +63,9 @@ static int iq_address_length;
 char device[80];
 char input[80];
 char output[80];
+long caloffset;
+
+int tx_mode;
 
 void* sdr1000_io_thread(void* arg);
 
@@ -88,6 +92,11 @@ int create_sdr1000_thread() {
 void sdr1000_set_device(char* d) {
 fprintf(stderr,"sdr1000_set_device %s\n",d);
     strcpy(device,d);
+}
+
+void sdr1000_set_frequency_offset(char* d) {
+fprintf(stderr,"sdr1000_set_frequency_offset %s hz\n",d);
+    caloffset = atol(d);
 }
 
 char* sdr1000_get_device() {
@@ -158,6 +167,8 @@ int sdr1000_init() {
     int rc;
     int i;
 
+    tx_mode = false;
+
     iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
     if(iq_socket<0) {
         perror("create socket failed for iq samples");
@@ -184,6 +195,7 @@ int sdr1000_init() {
 
     for(i=0;i<receivers;i++) {
         receiver[i].frequency=7056000L;
+        receiver[i].freq_cal_offset=caloffset;
         receiver[i].frequency_changed=1;
     }
 

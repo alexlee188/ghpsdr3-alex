@@ -1,4 +1,5 @@
-AC_INIT([QtRadio Build], [opengl-qt5], [andrew att montefusco dott com], [QtRadio])
+
+AC_INIT([QtRadio Build], [hermes], [andrew att montefusco dott com], [QtRadio])
 
 #AC_CONFIG_AUX_DIR([build-aux])
 #AC_CONFIG_MACRO_DIR([m4])

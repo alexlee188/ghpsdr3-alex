@@ -1,3 +1,4 @@
+
 /**
 * @file receiver.c
 * @brief manage client attachment to receivers
@@ -27,6 +28,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -118,6 +120,42 @@ char* detach_receiver(int rx,CLIENT* client) {
     return OK;
 }
 
+char* set_ptt(CLIENT* client, int ptt) { //kd0oss added
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+    SDR1000_set_ptt(ptt);
+    return OK;
+}
+
+char* set_attenuator(CLIENT* client, long value) { //kd0oss added
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+    SDR1000_set_attn(value);
+    return OK;
+}
+
+char* set_spurreduction(CLIENT* client, unsigned char enabled) { //kd0oss added
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+    SDR1000_set_sr(enabled);
+    return OK;
+}
+
 char* set_frequency(CLIENT* client,long frequency) {
     if(client->state==RECEIVER_DETACHED) {
         return CLIENT_DETACHED;
@@ -130,9 +168,41 @@ char* set_frequency(CLIENT* client,long frequency) {
     receiver[client->receiver].frequency=frequency;
     receiver[client->receiver].frequency_changed=1;
 
+    SDR1000_set_frequency_offset(receiver[client->receiver].freq_cal_offset);
     SDR1000_set_frequency(frequency);
 
     return OK;
+}
+
+char* set_frequency_offset(CLIENT* client,long frequency) {
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+
+    receiver[client->receiver].freq_cal_offset=frequency;
+    SDR1000_set_frequency_offset(frequency);
+
+    return OK;
+}
+
+char* get_pa_adc(CLIENT* client, unsigned char channel) {
+    char buffer[5];
+
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+
+    sprintf(buffer, "OK %d", SDR1000_get_pa_adc(channel));
+
+    return buffer;
 }
 
 void send_IQ_buffer(int rx) {

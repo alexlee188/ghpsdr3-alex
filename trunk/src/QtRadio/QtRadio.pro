@@ -89,7 +89,9 @@ SOURCES += main.cpp\
     RTP.cpp \
     Waterfallcl.cpp \
     hardware.cpp\
-    powermate.cpp
+    powermate.cpp \
+    hardware_sdr1000.cpp \
+    calc.cpp
 
 
 HEADERS  += \ 
@@ -143,7 +145,10 @@ HEADERS  += \
     cusdr_queue.h \
     Waterfallcl.h \
     hardware.h\
-    powermate.h
+    powermate.h \
+    hardware_sdr1000.h \
+    hardware_sdr1000.h \
+    calc.h
 
 FORMS    += \   
     UI.ui \
