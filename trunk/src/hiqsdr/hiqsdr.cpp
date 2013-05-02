@@ -68,9 +68,8 @@ struct Hiqsdr {
     long long bw;
     int  attDb;
     int  antSel;
-	//int  preselItemCnt; // Count of filter entries in hiqsdr.config
+    bool Xfilters; // Use the 80/40 extended filters
     unsigned int  preSel; // Holds filter number
-    //char *preselDesc[16];
 	std::vector<PreselItem> preInfo; //Holds presel filters table
     int  preamp;
 
@@ -110,6 +109,7 @@ int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
    hq.antSel = 0;
    hq.preSel = 0;
    hq.preamp = 0;
+   hq.Xfilters = false;
    hq.rx_data_port = 48247;
    hq.ctrl_port    = hq.rx_data_port+1;   
    hq.tx_data_port = hq.rx_data_port+2;
@@ -212,25 +212,25 @@ char *hiqsdr_get_ip_address ()
 
 int hiqsdr_set_frequency (long long f)
 {
-   unsigned int cnt;
+   unsigned int cnt = 0;
 	
    fprintf (stderr, "%s: %Ld\n", __FUNCTION__, f);
    hq.freq = f;
 	
 	// Check to see if freq change caused a band filter change.
-	for (cnt=0; cnt<(hq.preInfo.size()-1); ++cnt) {
-		if ((f >= hq.preInfo[cnt].freq) & (f < hq.preInfo[cnt+1].freq)){
-			break; // cnt indexes the filter associated with this frequency.
+	for (unsigned int x=0; x<(hq.preInfo.size()-1); ++x) {
+		if ((f >= hq.preInfo[x].freq) & (f < hq.preInfo[x+1].freq)){
+			cnt = x; // cnt indexes the filter associated with this frequency.
+			if (!hq.Xfilters) break; 
 		}
 	}
 	// If freq change caused a filter change then store new filter details.
    if (hq.preSel != hq.preInfo[cnt].filtNum) {
 		 hiqsdr_set_preselector(hq.preInfo[cnt].filtNum);
-	}
-	// else { TODO check and see if send_command sends all commands
+	}	// TODO check and see if send_command sends all commands, maybe
+		// we dont need to specifically set the preselector??
    send_command (&hq);
    return 0;
-	// }
 }
 
 int hiqsdr_set_bandwidth (long long b)
@@ -631,27 +631,29 @@ static int createConfigFile(FILE *fc, const char *fn)
 		fprintf(fc, "%d!%d!%s\n", 0, 2000000, "FILTER BYPASS");
 		fprintf(fc, "%d!%d!%s\n", 2, 3500000, "80 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 4000000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 3, 5000000, "60 M");
-		fprintf(fc, "%d!%d!%s\n", 0, 5100000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 4, 7000000, "40 M");
+		fprintf(fc, "%d!%d!%s\n", 3, 7000000, "40 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 7300000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 5, 10100000, "30M");
+		fprintf(fc, "%d!%d!%s\n", 4, 10100000, "30M");
 		fprintf(fc, "%d!%d!%s\n", 0, 10150000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 6, 14000000, "20 M");
+		fprintf(fc, "%d!%d!%s\n", 5, 14000000, "20 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 14350000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 7, 18068000, "17 M");
+		fprintf(fc, "%d!%d!%s\n", 6, 18068000, "17 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 18168000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 8, 21000000, "15 M");
+		fprintf(fc, "%d!%d!%s\n", 7, 21000000, "15 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 21450000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 9, 24890000, "12 M");
+		fprintf(fc, "%d!%d!%s\n", 8, 24890000, "12 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 24990000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 10, 28000000, "10 M");
+		fprintf(fc, "%d!%d!%s\n", 9, 28000000, "10 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 29700000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 11, 51000000, "6 M");
-		fprintf(fc, "%d!%d!%s\n", 0, 53000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 10, 51000000, "6 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 54000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 11, 3500000, "80 Xm");
+		fprintf(fc, "%d!%d!%s\n", 0, 4000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 12, 7000000, "40 Xm");
+		fprintf(fc, "%d!%d!%s\n", 0, 7200000, "FILTER BYPASS");		
 		fclose (fc);
         fprintf (stderr, "Configuration file created at: %s\n", fn);
-		nr = 23;
+		nr = 25;
     } else {
 		perror ("The following error occurred");
 	}
@@ -843,16 +845,16 @@ static int ping_hardware (struct Hiqsdr *hiq, int tmo_s)
             } else {
                 if (bytes_read >= 14 && bytes_read <= 22) {
                    if (ma.fwv == 0) {
-                       fprintf (stderr, "Frame lenght is %d and firmware version is %02x\n", bytes_read, ma.fwv);
+                       fprintf (stderr, "Frame length is %d and firmware version is %02x\n", bytes_read, ma.fwv);
                        hiq->fwv = ma.fwv;
                        rc = 0; //OK, old firmware
                    } else { // new
-                       fprintf (stderr, "Frame lenght is %d and firmware version is %02x\n", bytes_read, ma.fwv);
+                       fprintf (stderr, "Frame length is %d and firmware version is %02x\n", bytes_read, ma.fwv);
                        hiq->fwv = ma.fwv;
                        rc = 0;
                    }
                 } else {
-                    fprintf (stderr, "Unxpected frame lenght: %d proceed at your risk !\n", bytes_read);
+                    fprintf (stderr, "Unxpected frame length: %d proceed at your risk !\n", bytes_read);
                     rc = 0;
                 }
             } 
