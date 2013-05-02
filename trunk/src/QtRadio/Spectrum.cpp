@@ -27,11 +27,108 @@
 
 #define MAX_WIDTH 4096
 
+/****************** Added by KD0OSS **********************************************/
+notchFilterObject::notchFilterObject(SpectrumScene *scene, QPoint location, float fwidth, QColor color)
+{
+    itemLocation = location;
+    itemWidth = fwidth;
+    itemColor = color;
+    width = scene->width();
+    height = scene->height();
+}
+
+void notchFilterObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    painter->setBrush(Qt::SolidPattern);
+    painter->setOpacity(0.5);
+    painter->fillRect(itemLocation.x(),itemLocation.y(),itemWidth,height,itemColor);
+}
+
+QRectF notchFilterObject::boundingRect() const
+{
+    return QRectF(QPointF(0.0, 0.0), QPointF(width, height));
+}
+
+filterObject::filterObject(SpectrumScene *scene, QPoint location, float fwidth, QColor color)
+{
+    itemLocation = location;
+    itemWidth = fwidth;
+    itemColor = color;
+    width = scene->width();
+    height = scene->height();
+}
+
+void filterObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    painter->setBrush(Qt::SolidPattern);
+    painter->setOpacity(0.5);
+    painter->fillRect(itemLocation.x(),itemLocation.y(),itemWidth,height,itemColor);
+}
+
+QRectF filterObject::boundingRect() const
+{
+    return QRectF(QPointF(0.0, 0.0), QPointF(width, height));
+}
+
+textObject::textObject(SpectrumScene *scene, QString text, QPoint location, QColor color)
+{
+    itemText = text;
+    itemLocation = location;
+    itemColor = color;
+    width = scene->width();
+    height = scene->height();
+}
+
+void textObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    painter->setOpacity(1.0);
+    painter->setPen(QPen(itemColor, 1));
+    painter->setFont(QFont("Arial", 10));
+    painter->drawText(itemLocation.x(),itemLocation.y(),itemText);
+}
+
+QRectF textObject::boundingRect() const
+{
+    return QRectF(QPointF(0.0, 0.0), QPointF(width, height));
+}
+
+spectrumObject::spectrumObject(int width, int height){
+    setZValue(0.0);
+    plot.clear();
+    plotWidth = width;
+    plotHeight = height;
+}
+
+void spectrumObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
+    // plot Spectrum
+    painter->setOpacity(0.9);
+    painter->setPen(QPen(Qt::yellow, 1));
+    if(plot.count()==plotWidth) {
+        painter->drawPolyline(plot.constData(),plot.count());
+    }
+}
+
+QRectF spectrumObject::boundingRect() const
+{
+    return QRectF(QPointF(0.0, 0.0), QPointF(plotWidth, plotHeight));
+} /** end boundingRect **/
+
+SpectrumScene::SpectrumScene(QObject *parent) : QGraphicsScene(parent){
+}
+
+void SpectrumScene::updatePlot(void)
+{
+    spectrumPlot = new spectrumObject(width(), height());
+    addItem(spectrumPlot);
+    update();
+}
+/***********************************************************************************/
+
 Spectrum::Spectrum() {
 }
 
 Spectrum::Spectrum(QWidget*& widget) {
-    QFrame::setParent(widget);
+    QGraphicsView::setParent(widget);
 
     //qDebug() << "Spectrum::Spectrum " << width() << ":" << height();
 
@@ -68,10 +165,13 @@ Spectrum::Spectrum(QWidget*& widget) {
     showSquelchControl=false;
     settingSquelch=false;
 
-    plot.clear();
-
     samples = (float*) malloc(MAX_WIDTH * sizeof (float));
     for (int i=0; i < MAX_WIDTH; i++) samples[i] = -120;
+
+    spectrumScene = new SpectrumScene();
+    this->setScene(spectrumScene);
+
+    drawSpectrum();
 }
 
 Spectrum::~Spectrum() {
@@ -103,7 +203,7 @@ void Spectrum::setAvg(int value){
 }
 
 void Spectrum::initialize() {
-    QFrame::setVisible(true);
+    QGraphicsView::setVisible(true);
 }
 
 void Spectrum::setSampleRate(int r) {
@@ -122,11 +222,11 @@ void Spectrum::setBandLimits(long long min,long long max) {
 }
 
 void Spectrum::setObjectName(QString name) {
-    QFrame::setObjectName(name);
+    QGraphicsView::setObjectName(name);
 }
 
 void Spectrum::setGeometry(QRect rect) {
-    QFrame::setGeometry(rect);
+    QGraphicsView::setGeometry(rect);
 
     //qDebug() << "Spectrum:setGeometry: width=" << rect.width() << " height=" << rect.height();
 
@@ -307,19 +407,19 @@ void Spectrum::wheelEvent(QWheelEvent *event) {
     }
 }
 
-void Spectrum::paintEvent(QPaintEvent*) {
-    QPainter painter(this);
+void Spectrum::drawSpectrum(void) {
     int filterLeft;
     int filterRight;
     QString text;
     float step=(float)sampleRate/(float)width();
     int offset=(int)((float)LO_offset/step);
 
+    spectrumScene->clear();
+
     QLinearGradient gradient(0, 0, 0,height());
     gradient.setColorAt(0, Qt::black);
     gradient.setColorAt(1, Qt::gray);
-    painter.setBrush(gradient);
-    painter.drawRect(0, 0, width(), height());
+    spectrumScene->setBackgroundBrush(gradient);
 
     if(sampleRate==0) {
         qDebug() << "sampleRate is 0";
@@ -329,15 +429,14 @@ void Spectrum::paintEvent(QPaintEvent*) {
     float zoom_factor = 1.0f + zoom/25.0f;
 
     // draw cursor
-    painter.setPen(QPen(Qt::red, 1));
-    painter.drawLine((width()/2)+offset*zoom_factor,0,(width()/2)+offset*zoom_factor,height());
+    spectrumScene->addLine((width()/2)+offset*zoom_factor,0,(width()/2)+offset*zoom_factor,height(),QPen(QBrush(Qt::red,Qt::SolidPattern), 1));
 
     // draw filter
     filterLeft = width()/2 + (float)(filterLow+LO_offset)* (float)width()*zoom_factor/(float)sampleRate;
     filterRight = width()/2 + (float)(filterHigh+LO_offset)*(float)width()*zoom_factor/(float)sampleRate;
-    painter.setBrush(Qt::SolidPattern);
-    painter.setOpacity(0.5);
-    painter.fillRect(filterLeft,0,filterRight-filterLeft,height(),Qt::gray);
+    filterObject *filterItem = new filterObject(spectrumScene, QPoint(filterLeft,0), (float)(filterRight-filterLeft), Qt::gray);
+    spectrumScene->addItem(filterItem);
+    filterItem->update();
 
     // draw sub rx filter and cursor
     if(subRx) {
@@ -348,12 +447,11 @@ void Spectrum::paintEvent(QPaintEvent*) {
                 * (float)width()*zoom_factor/(float)sampleRate;
         filterRight = width()/2 + (float)(filterHigh+LO_offset+subRxFrequency-frequency)
                 * (float)width()*zoom_factor/(float)sampleRate;
-        painter.setBrush(Qt::SolidPattern);
-        painter.setOpacity(0.5);
-        painter.fillRect(filterLeft, 0, filterRight - filterLeft, height(), Qt::lightGray);
+        filterObject *filterItem = new filterObject(spectrumScene, QPoint(filterLeft,0), (float)(filterRight-filterLeft), Qt::lightGray);
+        spectrumScene->addItem(filterItem);
+        filterItem->update();
 
-        painter.setPen(QPen(Qt::red, 1));
-        painter.drawLine(cursor,0,cursor,height());
+        spectrumScene->addLine(cursor,0,cursor,height(),QPen(QBrush(Qt::red,Qt::SolidPattern), 1));
     }
 
     // plot horizontal dBm lines
@@ -363,14 +461,11 @@ void Spectrum::paintEvent(QPaintEvent*) {
         int num = spectrumHigh - i * 20;
         int y = (int) floor((spectrumHigh - num) * height() / V);
 
-        painter.setOpacity(0.5);
-        painter.setPen(QPen(Qt::white, 1,Qt::DotLine));
-        painter.drawLine(0, y, width(), y);
+        spectrumScene->addLine(0, y, width(), y, QPen(QColor(255,255,255,128), 1,Qt::DotLine));
 
-        painter.setOpacity(1.0);
-        painter.setPen(QPen(Qt::green, 1));
-        painter.setFont(QFont("Arial", 10));
-        painter.drawText(3,y,QString::number(num)+" dBm");
+        textObject *textItem = new textObject(spectrumScene, QString::number(num)+" dBm", QPoint(3,y), Qt::green);
+        spectrumScene->addItem(textItem);
+        textItem->update();
     }
     
     // plot the vertical frequency lines
@@ -384,15 +479,12 @@ void Spectrum::paintEvent(QPaintEvent*) {
         long long f=frequency-((float)sampleRate/zoom_factor/2.0)-(float)LO_offset+(long long)(hzPerPixel*(float)i);
         if(f>0) {
             if((f % lineStep)<(long long)hzPerPixel) {
-                painter.setOpacity(0.5);
-                painter.setPen(QPen(Qt::white, 1,Qt::DotLine));
-                painter.drawLine(i, 0, i, height());
+                spectrumScene->addLine(i, 0, i, height(), QPen(QColor(255,255,255,128), 1,Qt::DotLine));
 
-                painter.setOpacity(1.0);
-                painter.setPen(QPen(Qt::black, 1));
-                painter.setFont(QFont("Arial", 10));
                 text.sprintf("%lld.%02lld",f/1000000,f%1000000/10000);
-                painter.drawText(i,height(),text);
+                textObject *textItem = new textObject(spectrumScene, text, QPoint(i,height()-5), Qt::black);
+                spectrumScene->addItem(textItem);
+                textItem->update();
             }
         }
     }
@@ -402,50 +494,48 @@ void Spectrum::paintEvent(QPaintEvent*) {
     long long max_display=frequency+((float)sampleRate/zoom_factor/2.0);
     if(band_min!=0LL && band_max!=0LL) {
         int i;
-        painter.setPen(QPen(Qt::red, 2));
         if((min_display<band_min)&&(max_display>band_min)) {
             i=(band_min-min_display)/(long long)hzPerPixel;
-            painter.drawLine(i,0,i,height());
+            spectrumScene->addLine(i, 0, i, height(), QPen(QColor(Qt::red), 2,Qt::DotLine));
         }
         if((min_display<band_max)&&(max_display>band_max)) {
             i=(band_max-min_display)/(long long)hzPerPixel;
-            painter.drawLine(i+1,0,i+1,height());
+            spectrumScene->addLine(i+1,0,i+1,height(), QPen(QColor(Qt::red), 2,Qt::DotLine));
         }
     }
 
     // draw the squelch
     if(settingSquelch || showSquelchControl) {
         squelchY=(int) floor(((float) spectrumHigh - squelchVal)*(float) height() / (float) (spectrumHigh - spectrumLow));
-        painter.setPen(QPen(Qt::red, 1,Qt::DashLine));
-        painter.drawLine(0,squelchY,width(),squelchY);
-        painter.setFont(QFont("Arial", 10));
+        spectrumScene->addLine(0, squelchY, width(), squelchY, QPen(QColor(Qt::red), 1,Qt::DashLine));
         text.sprintf("%s","Squelch");
-        painter.drawText(width()-48,squelchY,text);
+        textObject *textItem = new textObject(spectrumScene, text, QPoint(width()-48,squelchY), Qt::red);
+        spectrumScene->addItem(textItem);
+        textItem->update();
     } else if(squelch) {
         squelchY=(int) floor(((float) spectrumHigh - squelchVal)*(float) height() / (float) (spectrumHigh - spectrumLow));
-        painter.setPen(QPen(Qt::red, 1));
-        painter.drawLine(0,squelchY,width(),squelchY);
-        painter.setFont(QFont("Arial", 10));
+        spectrumScene->addLine(0, squelchY, width(), squelchY, QPen(QColor(Qt::red), 1,Qt::DotLine));
         text.sprintf("%s","Squelch");
-        painter.drawText(width()-48,squelchY,text);
+        textObject *textItem = new textObject(spectrumScene, text, QPoint(width()-48,squelchY), Qt::red);
+        spectrumScene->addItem(textItem);
+        textItem->update();
     }
 
     emit meterValue(meter, subrx_meter);
 
-    // plot Spectrum
-    painter.setOpacity(0.9);
-    painter.setPen(QPen(Qt::yellow, 1));
-    if(plot.count()==width()) {
-        painter.drawPolyline(plot.constData(),plot.count());
-    }
-
+    // KD0OSS
+    spectrumScene->updatePlot();
+    spectrumScene->spectrumPlot->plot = plot;
+    spectrumScene->spectrumPlot->update();
 
     // show the subrx frequency
     if(subRx) {
         // show the frequency
-        painter.setPen(QPen(Qt::green,1));
-        painter.setFont(QFont("Verdana", 30));
+      //  painter.setPen(QPen(Qt::green,1));
+      //  painter.setFont(QFont("Verdana", 30));
     }
+
+    QTimer::singleShot(0,this,SLOT(update()));
 }
 
 void Spectrum::setZoom(int value){
@@ -536,16 +626,18 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
     }
 
     //qDebug() << "updateSpectrum: create plot points";
+    spectrumScene->setSceneRect(0,0,width,height());
     plot.clear();
     for (i = 0; i < width; i++) {
         plot << QPoint(i, (int) floor(((float) spectrumHigh - samples[i])*(float) height() / (float) (spectrumHigh - spectrumLow)));
     }
-    QTimer::singleShot(0,this,SLOT(update()));
+
+    QTimer::singleShot(0,this,SLOT(drawSpectrum()));
 }
 
 void Spectrum::setSquelch(bool state) {
     squelch=state;
-    QFrame::setMouseTracking(state);
+    QGraphicsView::setMouseTracking(state);
 }
 
 void Spectrum::setSquelchVal(float val) {

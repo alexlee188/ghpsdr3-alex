@@ -46,17 +46,17 @@
 #include <QtCore>
 
 #if QT_VERSION >= 0x050000
-#include <QtWidgets/QFrame>
-#include <QtWidgets/QFrame>
+#include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QGraphicsScene>
 #else
-#include <QFrame>
-#include <QFrame>
+#include <QGraphicsView>
+#include <QGraphicsScene>
 #endif
 
 #include <QPainter>
 #include <QMouseEvent>
 
-class Waterfall: public QFrame {
+class Waterfall: public QGraphicsView {
     Q_OBJECT
 public:
     Waterfall();
@@ -66,6 +66,8 @@ public:
     void setGeometry(QRect rect);
     void initialize();
     void updateWaterfall(char* header,char* buffer,int width);
+
+    QGraphicsScene *waterfallScene;
 
     void setLow(int low);
     void setHigh(int high);
@@ -88,10 +90,11 @@ signals:
 
 private slots:
     void updateWaterfall_2(void);
-    void updateWaterfall_3(void);
     void updateWaterfall_4(void);
+    void drawWaterfall(void);
+
 protected:
-    void paintEvent(QPaintEvent*);
+  //  void paintEvent(QPaintEvent*);
 
     void mousePressEvent(QMouseEvent* event);
     void mouseMoveEvent(QMouseEvent* event);

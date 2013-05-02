@@ -29,9 +29,13 @@
 #include <QtCore>
 
 #if QT_VERSION >= 0x050000
-#include <QtWidgets/QFrame>
+#include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QGraphicsItem>
 #else
-#include <QFrame>
+#include <QGraphicsView>
+#include <QGraphicsScene>
+#include <QGraphicsItem>
 #endif
 
 #include <QPainter>
@@ -40,13 +44,100 @@
 
 #include <Meter.h>
 
+/****************** Added by KD0OSS **********************************************/
+class SpectrumScene;
 
-class Spectrum: public QFrame {
+class spectrumObject : public QObject, public QGraphicsItem
+{
+    Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
+
+public:
+    spectrumObject(int width, int height);
+    QVector <QPoint> plot;
+    void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+    QRectF  boundingRect() const;
+
+private:
+    int plotWidth;
+    int plotHeight;
+};
+
+
+class filterObject : public QObject, public QGraphicsItem
+{
+    Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
+
+public:
+    filterObject(SpectrumScene *scene,QPoint location, float fwidth, QColor color);
+    void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+    QRectF  boundingRect() const;
+
+    QPoint  itemLocation;
+    QColor  itemColor;
+    float   itemWidth;
+    float   width;
+    float   height;
+};
+
+
+class textObject : public QObject, public QGraphicsItem
+{
+    Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
+
+public:
+    textObject(SpectrumScene *scene, QString text, QPoint location, QColor color);
+    void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+    QRectF  boundingRect() const;
+
+    QString itemText;
+    QPoint  itemLocation;
+    QColor  itemColor;
+    float   width;
+    float   height;
+};
+
+
+class notchFilterObject : public QObject, public QGraphicsItem
+{
+    Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
+
+public:
+    notchFilterObject();
+    void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+    QRectF  boundingRect() const;
+
+    QPoint  itemLocation;
+    QColor  itemColor;
+    float   itemWidth;
+    float   width;
+    float   height;
+};
+
+
+class SpectrumScene : public QGraphicsScene
+{
+    Q_OBJECT
+
+public:
+    SpectrumScene(QObject *parent = 0);
+
+    spectrumObject *spectrumPlot;
+    void updatePlot(void);
+};
+/*******************************************************************************/
+
+class Spectrum: public QGraphicsView {
     Q_OBJECT
 public:
     Spectrum();
     Spectrum(QWidget*& widget);
     virtual ~Spectrum();
+
+    SpectrumScene *spectrumScene;  // KD0OSS
 
     void setObjectName(QString name);
     void setGeometry(QRect rect);
@@ -90,7 +181,7 @@ signals:
     void squelchValueChanged(int step);
 
 protected:
-    void paintEvent(QPaintEvent*);
+ //   void paintEvent(QPaintEvent*);
 
     void mousePressEvent(QMouseEvent* event);
     void mouseMoveEvent(QMouseEvent* event);
@@ -103,6 +194,8 @@ protected:
 
 public slots:
     void setAvg(int value);
+    void drawSpectrum(void);  // KD0OSS
+
 private:
     float* samples;
     int spectrumHigh;
@@ -145,10 +238,10 @@ private:
     long long band_min;
     long long band_max;
 
-    QVector <QPoint> plot;
-
     Meter* sMeterMain;
     Meter* sMeterSub;
+
+    QVector <QPoint> plot;
 
     short LO_offset;
     int zoom;

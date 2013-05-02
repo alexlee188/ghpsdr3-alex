@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>991</width>
+    <width>992</width>
     <height>470</height>
    </rect>
   </property>
@@ -31,28 +31,69 @@
      <number>4</number>
     </property>
     <item row="1" column="1" colspan="2">
-     <widget class="Spectrum" name="spectrumFrame">
+     <widget class="Spectrum" name="spectrumView">
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="viewportUpdateMode">
+       <enum>QGraphicsView::SmartViewportUpdate</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3" rowspan="3">
+     <widget class="QSlider" name="zoomSpectrumSlider">
+      <property name="focusPolicy">
+       <enum>Qt::NoFocus</enum>
+      </property>
+      <property name="maximum">
+       <number>100</number>
+      </property>
+      <property name="singleStep">
+       <number>5</number>
+      </property>
+      <property name="value">
+       <number>0</number>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="tickPosition">
+       <enum>QSlider::TicksBelow</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="vfo" name="vfoFrame">
       <property name="minimumSize">
        <size>
-        <width>798</width>
-        <height>152</height>
+        <width>575</width>
+        <height>115</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>16777215</width>
-        <height>16777215</height>
+        <width>575</width>
+        <height>115</height>
        </size>
       </property>
       <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+       <enum>QFrame::Box</enum>
       </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
+      <property name="lineWidth">
+       <number>2</number>
+      </property>
      </widget>
     </item>
-    <item row="1" column="0" rowspan="2">
+    <item row="1" column="0" rowspan="3">
      <widget class="QFrame" name="ctrl2Frame">
       <property name="minimumSize">
        <size>
@@ -151,53 +192,6 @@
       </widget>
      </widget>
     </item>
-    <item row="1" column="3" rowspan="2">
-     <widget class="QSlider" name="zoomSpectrumSlider">
-      <property name="focusPolicy">
-       <enum>Qt::NoFocus</enum>
-      </property>
-      <property name="maximum">
-       <number>100</number>
-      </property>
-      <property name="singleStep">
-       <number>5</number>
-      </property>
-      <property name="value">
-       <number>0</number>
-      </property>
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="tickPosition">
-       <enum>QSlider::TicksBelow</enum>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="vfo" name="vfoFrame">
-      <property name="minimumSize">
-       <size>
-        <width>575</width>
-        <height>115</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>575</width>
-        <height>115</height>
-       </size>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::Box</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <property name="lineWidth">
-       <number>2</number>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="2" colspan="2">
      <widget class="Ctl" name="ctlFrame">
       <property name="minimumSize">
@@ -243,12 +237,18 @@
      </widget>
     </item>
     <item row="2" column="1" colspan="2">
-     <widget class="Waterfall" name="waterfallFrame">
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
+     <widget class="Waterfall" name="waterfallView">
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="viewportUpdateMode">
+       <enum>QGraphicsView::SmartViewportUpdate</enum>
       </property>
      </widget>
     </item>
@@ -259,7 +259,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>991</width>
+     <width>992</width>
      <height>21</height>
     </rect>
    </property>
@@ -1091,12 +1091,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Spectrum</class>
-   <extends>QFrame</extends>
-   <header>Spectrum.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>sMeter</class>
    <extends>QFrame</extends>
    <header>smeter.h</header>
@@ -1116,9 +1110,13 @@
   </customwidget>
   <customwidget>
    <class>Waterfall</class>
-   <extends>QFrame</extends>
+   <extends>QGraphicsView</extends>
    <header>Waterfall.h</header>
-   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Spectrum</class>
+   <extends>QGraphicsView</extends>
+   <header>Spectrum.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
