@@ -27,6 +27,7 @@
 
 #define MAX_WIDTH 4096
 
+
 /****************** Added by KD0OSS **********************************************/
 notchFilterObject::notchFilterObject(SpectrumScene *scene, QPoint location, float fwidth, QColor color)
 {

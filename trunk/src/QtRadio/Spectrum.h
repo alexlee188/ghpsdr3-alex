@@ -106,7 +106,7 @@ class notchFilterObject : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
-    notchFilterObject();
+    notchFilterObject(SpectrumScene *scene,QPoint location, float fwidth, QColor color);
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
 
