@@ -32,10 +32,12 @@
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsItem>
+#include <QtWidgets/QGraphicsItemGroup>
 #else
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsItem>
+#include <QGraphicsItemGroup>
 #endif
 
 #include <QPainter>
@@ -70,7 +72,7 @@ class filterObject : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
-    filterObject(SpectrumScene *scene,QPoint location, float fwidth, QColor color);
+    filterObject(SpectrumScene *scene, QPoint location, float fwidth, QColor color);
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
 
@@ -106,13 +108,30 @@ class notchFilterObject : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
-    notchFilterObject(SpectrumScene *scene,QPoint location, float fwidth, QColor color);
+    notchFilterObject(SpectrumScene *scene, QPoint location, float fwidth, QColor color);
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
 
     QPoint  itemLocation;
     QColor  itemColor;
     float   itemWidth;
+    float   width;
+    float   height;
+};
+
+class lineObject : public QObject, public QGraphicsItem
+{
+    Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
+
+public:
+    lineObject(SpectrumScene *scene, QPoint start, QPoint stop, QPen pen);
+    void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+    QRectF  boundingRect() const;
+
+    QPoint  itemStart;
+    QPoint  itemStop;
+    QPen    itemPen;
     float   width;
     float   height;
 };
@@ -125,12 +144,16 @@ class SpectrumScene : public QGraphicsScene
 public:
     SpectrumScene(QObject *parent = 0);
 
+    QMap<QString, QGraphicsItem*> sceneItems;
+
+
     spectrumObject *spectrumPlot;
     void updatePlot(void);
 };
 /*******************************************************************************/
 
-class Spectrum: public QGraphicsView {
+class Spectrum: public QGraphicsView
+{
     Q_OBJECT
 public:
     Spectrum();
@@ -194,6 +217,12 @@ protected:
 
 public slots:
     void setAvg(int value);
+    void drawCursor(int vfo);  // KD0OSS
+    void drawFilter(int vfo);  // KD0OSS
+    void drawdBmLines(void);  // KD0OSS
+    void drawFrequencyLines(void);  // KD0OSS
+    void drawBandLimits(void);  // KD0OSS
+    void drawSquelch(void);  // KD0OSS
     void drawSpectrum(void);  // KD0OSS
 
 private:
