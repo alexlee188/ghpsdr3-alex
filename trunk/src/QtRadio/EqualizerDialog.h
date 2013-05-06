@@ -2,6 +2,7 @@
 #define EQUALIZERDIALOG_H
 
 #include <QDialog>
+#include <QSettings>
 #include "Connection.h"
 
 namespace Ui {
@@ -25,6 +26,11 @@ public slots:
     void txSliderChanged(void);
     void set3BandEqualizer(void);
     void set10BandEqualizer(void);
+    void saveSettings(void);
+    void saveSettings3Band(void);
+    void loadSettings3Band(void);
+    void saveSettings10Band(void);
+    void loadSettings10Band(void);
 
 private:
     Ui::EqualizerDialog *ui;

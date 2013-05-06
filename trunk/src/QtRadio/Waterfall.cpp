@@ -50,7 +50,7 @@ Waterfall::Waterfall() {
 }
 
 Waterfall::Waterfall(QWidget*& widget) {
-    QFrame::setParent(widget);
+    QGraphicsView::setParent(widget);
     
     sampleRate=96000;
 
@@ -73,6 +73,8 @@ Waterfall::Waterfall(QWidget*& widget) {
     samples=NULL;
     zoom = 0;
 
+ //   fitInView(sceneRect().x()-1, sceneRect().y()+1, sceneRect().width()+1, sceneRect().height()-1, Qt::KeepAspectRatio);
+
     image = QImage(width()*2, height(), QImage::Format_RGB32);
 
     int x, y;
@@ -84,13 +86,17 @@ Waterfall::Waterfall(QWidget*& widget) {
   }
     cy = image.height()/2 - 1;
 
+    waterfallScene = new QGraphicsScene(); //0,0,image.width(),image.height()/2);
+    this->setScene(waterfallScene);
+
+    QTimer::singleShot(0,this,SLOT(drawWaterfall()));
 }
 
 Waterfall::~Waterfall() {
 }
 
 void Waterfall::initialize() {
-    QFrame::setVisible(true);
+    QGraphicsView::setVisible(true);
 }
 
 int Waterfall::getHigh() {
@@ -118,7 +124,7 @@ bool Waterfall::getAutomatic() {
 }
 
 void Waterfall::setObjectName(QString name) {
-    QFrame::setObjectName(name);
+    QGraphicsView::setObjectName(name);
 }
 
 void Waterfall::setZoom(int value){
@@ -126,7 +132,7 @@ void Waterfall::setZoom(int value){
 }
 
 void Waterfall::setGeometry(QRect rect) {
-    QFrame::setGeometry(rect);
+    QGraphicsView::setGeometry(rect);
 
     qDebug() << "Waterfall::setGeometry: width=" << rect.width() << " height=" << rect.height();
 
@@ -259,7 +265,19 @@ void Waterfall::wheelEvent(QWheelEvent *event) {
 
 }
 
+void Waterfall::drawWaterfall(void)
+{
+    static QGraphicsPixmapItem *pm=NULL;
 
+    //drawImage(0,0,image,0,cy,image.width(),image.height()/2,Qt::AutoColor);
+    waterfallScene->clear();
+    pm = waterfallScene->addPixmap(QPixmap::fromImage(image.copy(0,cy,image.width(),image.height())));
+    waterfallScene->update();
+    if (cy <= 0) cy = image.height()/2 - 1;
+    else cy--;          // "scroll"
+} // end drawWaterfall
+
+/*
 void Waterfall::paintEvent(QPaintEvent*) {
     QPainter painter(this);
 
@@ -269,7 +287,7 @@ void Waterfall::paintEvent(QPaintEvent*) {
     if (cy <= 0) cy = image.height()/2 - 1;
     else cy--;          // "scroll"
 }
-
+*/
 
 void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
     int i,j;
@@ -307,9 +325,7 @@ void Waterfall::updateWaterfall(char*header,char* buffer,int length) {
 void Waterfall::updateWaterfall_2(void){
     int x,y;
 
-    if(image.width()!=width() ||
-       (image.height()/2) != (height())) {
-
+    if(image.width()!=width() || (image.height()/2) != (height())) {
         qDebug() << "Waterfall::updateWaterfall " << size << "(" << width() << ")," << height();
         image = QImage(width(), height()*2, QImage::Format_RGB32);
         cy = image.height()/2 - 1;
@@ -322,12 +338,6 @@ void Waterfall::updateWaterfall_2(void){
     }
     QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
 }
-
-void Waterfall::updateWaterfall_3(void){
-
-}
-
-
 
 void Waterfall::updateWaterfall_4(void){
     int x;
@@ -348,8 +358,8 @@ void Waterfall::updateWaterfall_4(void){
         waterfallHigh=waterfallLow+60;
     }
 
-    QTimer::singleShot(0,this,SLOT(repaint()));
-
+ //   QTimer::singleShot(0,this,SLOT(repaint()));
+    QTimer::singleShot(0,this,SLOT(drawWaterfall()));
 }
 
 uint Waterfall::calculatePixel(int sample) {
@@ -415,7 +425,6 @@ uint Waterfall::calculatePixel(int sample) {
 
     int pixel = (255 << 24)+(R << 16)+(G << 8) + B;
     return pixel;
-
 }
 
 void Waterfall::setSampleRate(int r) {

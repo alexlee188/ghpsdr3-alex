@@ -22,10 +22,10 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 #    INCLUDEPATH += /opt/qt5/include/QtMultimedia
 #    INCLUDEPATH += /opt/qt5/include/QtNetwork
 
-    INCLUDEPATH += /home/gvj/Qt5.0.0beta1/Desktop/Qt/5.0.0-beta1/gcc/include/QtCore
-    INCLUDEPATH += /home/gvj/Qt5.0.0beta1/Desktop/Qt/5.0.0-beta1/gcc/include/QtGui
-    INCLUDEPATH += /home/gvj/Qt5.0.0beta1/Desktop/Qt/5.0.0-beta1/gcc/include/QtWidgets
-    INCLUDEPATH += /home/gvj/Qt5.0.0beta1/Desktop/Qt/5.0.0-beta1/gcc/include/QtMultimedia
+    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtCore
+    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtGui
+    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtWidgets
+    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtMultimedia
 } else {
     $$_UsingSDK {
         message("Using the Nokia Qt SDK installation")
@@ -94,7 +94,12 @@ SOURCES += main.cpp\
     powermate.cpp \
     hardware_sdr1000.cpp \
     calc.cpp \
-    EqualizerDialog.cpp
+    EqualizerDialog.cpp \
+    hardware_sdriq.cpp \
+    hardware_rtlsdr.cpp \
+    hardware_perseus.cpp \
+    hardware_hiqsdr.cpp \
+    hardware_hermes.cpp
 
 
 HEADERS  += \ 
@@ -150,7 +155,12 @@ HEADERS  += \
     hardware_sdr1000.h \
     hardware_sdr1000.h \
     calc.h \
-    EqualizerDialog.h
+    EqualizerDialog.h \
+    hardware_sdriq.h \
+    hardware_perseus.h \
+    hardware_hiqsdr.h \
+    hardware_hermes.h \
+    hardware_rtlsdr.h
 
 FORMS    += \   
     UI.ui \
