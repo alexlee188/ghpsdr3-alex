@@ -1225,6 +1225,35 @@ void readcb(struct bufferevent *bev, void *ctx){
             agc=atoi(tokens[0]);
             SetRXAGC(0,0,agc);
             SetRXAGC(0,1,agc);
+        } else if(strncmp(cmd,"enablenotchfilter",17)==0) {
+            int vfo, i;
+            int index;
+            int enabled;
+            if (tokenize_cmd(&saveptr, tokens, 3) != 3)
+                goto badcommand;
+            vfo=atoi(tokens[0]);
+            index=atoi(tokens[1]);
+            enabled=atoi(tokens[2]);
+            if (index == -1)
+            {
+                for (i=0;i<9;i++)
+                    SetRXManualNotchEnable(0, (unsigned int)vfo, (unsigned int)i, enabled);
+            }
+            else
+                SetRXManualNotchEnable(0, (unsigned int)vfo, (unsigned int)index, enabled);
+        } else if(strncmp(cmd,"setnotchfilter",14)==0) {
+            int vfo;
+            int index;
+            double BW;
+            double FO;
+            if (tokenize_cmd(&saveptr, tokens, 4) != 4)
+                goto badcommand;
+            vfo=atoi(tokens[0]);
+            index=atoi(tokens[1]);
+            BW=atof(tokens[2]);
+            FO=atof(tokens[3]);
+            SetRXManualNotchBW(0, (unsigned int)vfo, (unsigned int)index, BW);
+            SetRXManualNotchFreq(0, (unsigned int)vfo, (unsigned int)index, FO);
         } else if(strncmp(cmd,"setagctlevel",12)==0) { // KD0OSS
             int level;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
