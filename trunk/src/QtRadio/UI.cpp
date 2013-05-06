@@ -2817,14 +2817,18 @@ void UI::enableNotchFilter(bool enable)   // KD0OSS
 void UI::addNotchFilter(void)   // KD0OSS
 {
     if (notchFilterIndex >= 9)
+    {
+        QMessageBox::warning(this, "Tracking Notch Filter Error", "Maximum of 9 notch filters reached!");
         notchFilterIndex = 0;
+    }
     widget.spectrumView->addNotchFilter(notchFilterIndex++);
 }
 
 void UI::notchFilterAdded(int index, double FO, double BW)
 {
     QString command;
-    command.clear(); QTextStream(&command) << "setnotchfilter " << subRx << " " << index << " " << BW << " " << FO;
+    double audio_freq = abs((FO - frequency)); // now in Hz
+    command.clear(); QTextStream(&command) << "setnotchfilter " << subRx << " " << index << " " << BW << " " << audio_freq;
     connection.sendCommand(command);
     qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }

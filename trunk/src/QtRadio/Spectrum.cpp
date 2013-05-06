@@ -65,7 +65,7 @@ notchFilterObject::notchFilterObject(SpectrumScene *scene, int index, QPoint loc
 
 void notchFilterObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    painter->setBrush(Qt::SolidPattern);
+    painter->setBrush(Qt::BDiagPattern);
     painter->setOpacity(0.6);
     painter->fillRect(itemLocation.x(),itemLocation.y(),itemWidth,height,itemColor);
 }
@@ -351,8 +351,11 @@ void Spectrum::mouseMoveEvent(QMouseEvent* event){
             else if (move_ratio > 0.5f) move_step = 10;
             else if (move_ratio > 0.25f) move_step = 5;
             else move_step = 1;
-            notchFilterFO[notchFilterSelected] += move * move_step;
-            notchFilterBW[notchFilterSelected] += movey * move_step;
+            notchFilterFO[notchFilterSelected] += (move * move_step);
+            if ((notchFilterBW[notchFilterSelected] - (movey * move_step)) < 1)
+                notchFilterBW[notchFilterSelected] = 1;
+            else
+                notchFilterBW[notchFilterSelected] -= (movey * move_step);
             drawNotchFilter(subRx+1, notchFilterSelected, false);
         }
     } else {
@@ -590,17 +593,17 @@ void Spectrum:: drawNotchFilter(int vfo, int index, bool disable)
 
     if (vfo == 1)
     {
-        filterLeft =  width()/2 + (float)(notchFilterFO[index]+LO_offset)*(float)width()*zoom_factor/(float)sampleRate;
-        filterRight = width()/2 + (float)(notchFilterBW[index]+notchFilterFO[index]+LO_offset)*(float)width()*zoom_factor/(float)sampleRate;
+        filterLeft =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset-(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
+        filterRight =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset+(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
         color = Qt::darkGreen;
         qDebug("NFL: %d  NFR: %d", filterLeft, filterRight);
+        if ((filterRight - filterLeft) < 1)
+            filterRight = filterLeft + 1;
     }
     else
     {
-        filterLeft = width()/2 + (float)(notchFilterFO[index]+LO_offset+subRxFrequency-frequency)
-                * (float)width()*zoom_factor/(float)sampleRate;
-        filterRight = width()/2 + (float)(notchFilterBW[index]+notchFilterFO[index]+LO_offset+subRxFrequency-frequency)
-                * (float)width()*zoom_factor/(float)sampleRate;
+        filterLeft = width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset+subRxFrequency-frequency-(notchFilterBW[index]/2)) * (float)width()*zoom_factor/(float)sampleRate;
+        filterRight = width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset+subRxFrequency-frequency+(notchFilterBW[index]/2)) * (float)width()*zoom_factor/(float)sampleRate;
         color = Qt::green;
     }
 
@@ -631,17 +634,15 @@ void Spectrum:: updateNotchFilter(int vfo)
 
         if (vfo == 1)
         {
-            filterLeft =  width()/2 + (float)(notchFilterFO[index]+LO_offset)*(float)width()*zoom_factor/(float)sampleRate;
-            filterRight = width()/2 + (float)(notchFilterBW[index]+notchFilterFO[index]+LO_offset)*(float)width()*zoom_factor/(float)sampleRate;
+            filterLeft =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset-(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
+            filterRight =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset+(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
             color = Qt::darkGreen;
             qDebug("NFL: %d  NFR: %d", filterLeft, filterRight);
         }
         else
         {
-            filterLeft = width()/2 + (float)(notchFilterFO[index]+LO_offset+subRxFrequency-frequency)
-                    * (float)width()*zoom_factor/(float)sampleRate;
-            filterRight = width()/2 + (float)(notchFilterBW[index]+notchFilterFO[index]+LO_offset+subRxFrequency-frequency)
-                    * (float)width()*zoom_factor/(float)sampleRate;
+            filterLeft = width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset+subRxFrequency-frequency-(notchFilterBW[index]/2)) * (float)width()*zoom_factor/(float)sampleRate;
+            filterRight = width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset+subRxFrequency-frequency+(notchFilterBW[index]/2)) * (float)width()*zoom_factor/(float)sampleRate;
             color = Qt::green;
         }
 
@@ -1011,8 +1012,8 @@ void Spectrum::addNotchFilter(int index){
         notchFilterVFO[notchFilterIndex] = 1;
     else
         notchFilterVFO[notchFilterIndex] = 2;
-    notchFilterFO[notchFilterIndex] = -480.0;
-    notchFilterBW[notchFilterIndex] = -1550.0;
+    notchFilterFO[notchFilterIndex] = frequency-480.0;
+    notchFilterBW[notchFilterIndex] = 1550.0;
     drawNotchFilter(notchFilterVFO[notchFilterIndex], notchFilterIndex, false);
-    emit notchFilterAdded(index, -480.0, -1550.0);
+    emit notchFilterAdded(index, frequency-480.0, 1550.0);
 }
