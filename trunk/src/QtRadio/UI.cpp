@@ -215,6 +215,9 @@ UI::UI(const QString server) {
     connect(widget.rxEqEnableCB,SIGNAL(toggled(bool)),this,SLOT(enableRxEq(bool)));  // KD0OSS
     connect(widget.txEqEnableCB,SIGNAL(toggled(bool)),this,SLOT(enableTxEq(bool)));  // KD0OSS
 
+    connect(widget.tnfButton, SIGNAL(clicked(bool)),this,SLOT(enableNotchFilter(bool)));  // KD0OSS
+    connect(widget.tnfAddButton,SIGNAL(clicked()),this,SLOT(addNotchFilter(void)));  // KD0OSS
+
     connect(widget.actionBookmarkThisFrequency,SIGNAL(triggered()),this,SLOT(actionBookmark()));
     connect(widget.actionEditBookmarks,SIGNAL(triggered()),this,SLOT(editBookmarks()));
 
@@ -251,6 +254,8 @@ UI::UI(const QString server) {
     // connect up waterfall frame
     connect(widget.waterfallView, SIGNAL(frequencyMoved(int,int)),
             this, SLOT(frequencyMoved(int,int)));
+
+    connect(widget.spectrumView, SIGNAL(notchFilterAdded(int,double,double)), this, SLOT(notchFilterAdded(int, double, double)));
 
     // connect up configuration changes
     connect(&configure,SIGNAL(spectrumHighChanged(int)),this,SLOT(spectrumHighChanged(int)));
@@ -327,6 +332,7 @@ UI::UI(const QString server) {
     connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
     connect(&connection,SIGNAL(hardware(QString)),this,SLOT(hardware(QString)));
 
+
     bandscope=NULL;
 
     fps=15;
@@ -337,6 +343,7 @@ UI::UI(const QString server) {
     cwPitch=configure.getCwPitch();
     squelchValue=-100;
     squelch=false;
+    notchFilterIndex = 0;    // KD0OSS
 
     audio->get_audio_device(&audio_device);
     audio_sample_rate=configure.getSampleRate();
@@ -2604,7 +2611,7 @@ void UI::testButtonClick(bool state)
     command.clear(); QTextStream(&command) << "testbutton " << (state ? "true":"false");
     connection.sendCommand(command);
 
-    qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }
 
 //>>>>>>> Connected test controls to main UI
@@ -2672,7 +2679,7 @@ void UI::rxDCBlockChanged(bool state) {  // KD0OSS
         command.clear(); QTextStream(&command) << "setrxdcblock " << state;
 //        qDebug("%s", command);
         connection.sendCommand(command);
-        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }
 
 void UI::txDCBlockChanged(bool state) {  // KD0OSS
@@ -2680,7 +2687,7 @@ void UI::txDCBlockChanged(bool state) {  // KD0OSS
         command.clear(); QTextStream(&command) << "settxdcblock " << state;
 //        qDebug("%s", command);
         connection.sendCommand(command);
-        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }
 
 void UI::windowTypeChanged(int type) {
@@ -2688,7 +2695,7 @@ void UI::windowTypeChanged(int type) {
         command.clear(); QTextStream(&command) << "setwindow " << type;
 //        qDebug("%s", command);
         connection.sendCommand(command);
-        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }
 
 void UI::setPwsMode(int mode)  // KD0OSS
@@ -2697,7 +2704,7 @@ void UI::setPwsMode(int mode)  // KD0OSS
     command.clear(); QTextStream(&command) << "setpwsmode " << mode;
 //        qDebug("%s", command);
     connection.sendCommand(command);
-    qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 
     switch (mode)
     {
@@ -2722,7 +2729,7 @@ void UI::actionPwsMode0()   // KD0OSS
         command.clear(); QTextStream(&command) << "setpwsmode " << 0;
 //        qDebug("%s", command);
         connection.sendCommand(command);
-        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 
         widget.actionPWS_Pre_Filter->setChecked(FALSE);
         widget.actionPWS_Semi_Raw->setChecked(FALSE);
@@ -2736,7 +2743,7 @@ void UI::actionPwsMode1()   // KD0OSS
         command.clear(); QTextStream(&command) << "setpwsmode " << 1;
 //        qDebug("%s", command);
         connection.sendCommand(command);
-        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 
         widget.actionPWS_Post_Filter->setChecked(FALSE);
         widget.actionPWS_Semi_Raw->setChecked(FALSE);
@@ -2750,7 +2757,7 @@ void UI::actionPwsMode2()   // KD0OSS
         command.clear(); QTextStream(&command) << "setpwsmode " << 2;
 //        qDebug("%s", command);
         connection.sendCommand(command);
-        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 
         widget.actionPWS_Pre_Filter->setChecked(FALSE);
         widget.actionPWS_Post_Filter->setChecked(FALSE);
@@ -2764,7 +2771,7 @@ void UI::actionPwsMode3()   // KD0OSS
         command.clear(); QTextStream(&command) << "setpwsmode " << 3;
 //        qDebug("%s", command);
         connection.sendCommand(command);
-        qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 
         widget.actionPWS_Pre_Filter->setChecked(FALSE);
         widget.actionPWS_Semi_Raw->setChecked(FALSE);
@@ -2772,28 +2779,52 @@ void UI::actionPwsMode3()   // KD0OSS
         pwsmode = 3;
 }
 
-void UI::AGCTLevelChanged(int level)
+void UI::AGCTLevelChanged(int level)   // KD0OSS
 {
     QString command;
     command.clear(); QTextStream(&command) << "setagctlevel " << level;
 //        qDebug("%s", command);
     connection.sendCommand(command);
-    qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
     widget.agcTLevelLabel->setText(QString("%1").arg(level));
 }
 
-void UI::enableRxEq(bool enable)
+void UI::enableRxEq(bool enable)   // KD0OSS
 {
     QString command;
     command.clear(); QTextStream(&command) << "setrxgreqcmd " << enable;
     connection.sendCommand(command);
-    qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }
 
-void UI::enableTxEq(bool enable)
+void UI::enableTxEq(bool enable)   // KD0OSS
 {
     QString command;
     command.clear(); QTextStream(&command) << "settxgreqcmd " << enable;
     connection.sendCommand(command);
-    qDebug()<<Q_FUNC_INFO<<":   The command sent is is "<< command;
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::enableNotchFilter(bool enable)   // KD0OSS
+{
+    QString command;
+    command.clear(); QTextStream(&command) << "enablenotchfilter " << subRx << " " << 0 << " " << enable;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+    //emit enableNotchFilterSig(enable);
+}
+
+void UI::addNotchFilter(void)   // KD0OSS
+{
+    if (notchFilterIndex >= 9)
+        notchFilterIndex = 0;
+    widget.spectrumView->addNotchFilter(notchFilterIndex++);
+}
+
+void UI::notchFilterAdded(int index, double FO, double BW)
+{
+    QString command;
+    command.clear(); QTextStream(&command) << "setnotchfilter " << subRx << " " << index << " " << BW << " " << FO;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }

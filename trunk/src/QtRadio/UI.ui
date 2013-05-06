@@ -30,24 +30,14 @@
     <property name="bottomMargin">
      <number>4</number>
     </property>
-    <item row="1" column="1" colspan="2">
-     <widget class="Spectrum" name="spectrumView">
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <property name="verticalScrollBarPolicy">
-       <enum>Qt::ScrollBarAlwaysOff</enum>
-      </property>
-      <property name="horizontalScrollBarPolicy">
-       <enum>Qt::ScrollBarAlwaysOff</enum>
-      </property>
-      <property name="viewportUpdateMode">
-       <enum>QGraphicsView::SmartViewportUpdate</enum>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="3" rowspan="3">
      <widget class="QSlider" name="zoomSpectrumSlider">
+      <property name="minimumSize">
+       <size>
+        <width>30</width>
+        <height>0</height>
+       </size>
+      </property>
       <property name="focusPolicy">
        <enum>Qt::NoFocus</enum>
       </property>
@@ -190,6 +180,35 @@
         <string>TX Equalizer</string>
        </property>
       </widget>
+      <widget class="QPushButton" name="tnfButton">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>110</y>
+         <width>45</width>
+         <height>24</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>TNF</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="tnfAddButton">
+       <property name="geometry">
+        <rect>
+         <x>80</x>
+         <y>110</y>
+         <width>45</width>
+         <height>24</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>+TNF</string>
+       </property>
+      </widget>
      </widget>
     </item>
     <item row="0" column="2" colspan="2">
@@ -236,19 +255,35 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="1" colspan="2">
-     <widget class="Waterfall" name="waterfallView">
+    <item row="1" column="1" colspan="2">
+     <widget class="Spectrum" name="spectrumView">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>150</height>
+       </size>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <property name="verticalScrollBarPolicy">
-       <enum>Qt::ScrollBarAlwaysOff</enum>
+     </widget>
+    </item>
+    <item row="2" column="1" colspan="2">
+     <widget class="Waterfall" name="waterfallView">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>150</height>
+       </size>
       </property>
-      <property name="horizontalScrollBarPolicy">
-       <enum>Qt::ScrollBarAlwaysOff</enum>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
       </property>
-      <property name="viewportUpdateMode">
-       <enum>QGraphicsView::SmartViewportUpdate</enum>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
       </property>
      </widget>
     </item>
@@ -1091,6 +1126,12 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>Spectrum</class>
+   <extends>QFrame</extends>
+   <header>Spectrum.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>sMeter</class>
    <extends>QFrame</extends>
    <header>smeter.h</header>
@@ -1110,13 +1151,9 @@
   </customwidget>
   <customwidget>
    <class>Waterfall</class>
-   <extends>QGraphicsView</extends>
+   <extends>QFrame</extends>
    <header>Waterfall.h</header>
-  </customwidget>
-  <customwidget>
-   <class>Spectrum</class>
-   <extends>QGraphicsView</extends>
-   <header>Spectrum.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -59,6 +59,7 @@ public:
     QVector <QPoint> plot;
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
+    int     itemType;
 
 private:
     int plotWidth;
@@ -81,6 +82,7 @@ public:
     float   itemWidth;
     float   width;
     float   height;
+    int     itemType;
 };
 
 
@@ -99,6 +101,7 @@ public:
     QColor  itemColor;
     float   width;
     float   height;
+    int     itemType;
 };
 
 
@@ -108,7 +111,7 @@ class notchFilterObject : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
-    notchFilterObject(SpectrumScene *scene, QPoint location, float fwidth, QColor color);
+    notchFilterObject(SpectrumScene *scene, int index, QPoint location, float fwidth, QColor color);
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
 
@@ -117,6 +120,8 @@ public:
     float   itemWidth;
     float   width;
     float   height;
+    int     itemIndex;
+    int     itemType;
 };
 
 class lineObject : public QObject, public QGraphicsItem
@@ -134,6 +139,7 @@ public:
     QPen    itemPen;
     float   width;
     float   height;
+    int     itemType;
 };
 
 
@@ -149,6 +155,7 @@ public:
 
     spectrumObject *spectrumPlot;
     void updatePlot(void);
+    int  itemType;
 };
 /*******************************************************************************/
 
@@ -202,6 +209,8 @@ signals:
     void waterfallLowChanged(int low);
     void meterValue(int meter, int subrx_meter);
     void squelchValueChanged(int step);
+    void enableNotchFilterSig(bool);   // KD0OSS
+    void notchFilterAdded(int, double, double);   // KD0OSS
 
 protected:
  //   void paintEvent(QPaintEvent*);
@@ -214,16 +223,22 @@ protected:
     */
 
     void wheelEvent(QWheelEvent *event);
+    void resizeEvent(QResizeEvent *event);
 
 public slots:
     void setAvg(int value);
-    void drawCursor(int vfo);  // KD0OSS
-    void drawFilter(int vfo);  // KD0OSS
+    void addNotchFilter(int index);    // KD0OSS
+
+private slots:
+    void drawCursor(int vfo, bool disable);  // KD0OSS
+    void drawFilter(int vfo, bool diabale);  // KD0OSS
+    void drawNotchFilter(int vfo, int index, bool disable);  // KD0OSS
     void drawdBmLines(void);  // KD0OSS
     void drawFrequencyLines(void);  // KD0OSS
     void drawBandLimits(void);  // KD0OSS
     void drawSquelch(void);  // KD0OSS
     void drawSpectrum(void);  // KD0OSS
+    void updateNotchFilter(int vfo);  // KD0OSS
 
 private:
     float* samples;
@@ -239,6 +254,7 @@ private:
     int button;
     int startX;
     int lastX;
+    int lastY; // KD0OSS
     int moved;
 
     long sampleRate;
@@ -271,6 +287,14 @@ private:
     Meter* sMeterSub;
 
     QVector <QPoint> plot;
+
+    bool initialized; // KD0OSS
+
+    int   notchFilterIndex; // KD0OSS
+    int   notchFilterVFO[9]; // KD0OSS
+    float notchFilterBW[9]; // KD0OSS
+    float notchFilterFO[9]; // KD0OSS
+    int   notchFilterSelected; // KD0OSS
 
     short LO_offset;
     int zoom;
