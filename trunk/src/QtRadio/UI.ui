@@ -1126,12 +1126,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Spectrum</class>
-   <extends>QFrame</extends>
-   <header>Spectrum.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>sMeter</class>
    <extends>QFrame</extends>
    <header>smeter.h</header>
@@ -1151,9 +1145,14 @@
   </customwidget>
   <customwidget>
    <class>Waterfall</class>
-   <extends>QFrame</extends>
+   <extends>QGraphicsView</extends>
    <header>Waterfall.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Spectrum</class>
+   <extends>QGraphicsView</extends>
+   <header>Spectrum.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

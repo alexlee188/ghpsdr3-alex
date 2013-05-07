@@ -215,7 +215,7 @@ UI::UI(const QString server) {
     connect(widget.rxEqEnableCB,SIGNAL(toggled(bool)),this,SLOT(enableRxEq(bool)));  // KD0OSS
     connect(widget.txEqEnableCB,SIGNAL(toggled(bool)),this,SLOT(enableTxEq(bool)));  // KD0OSS
 
-    connect(widget.tnfButton, SIGNAL(clicked(bool)),this,SLOT(enableNotchFilter(bool)));  // KD0OSS
+    connect(widget.tnfButton, SIGNAL(clicked(bool)),widget.spectrumView,SLOT(enableNotchFilter(bool)));  // KD0OSS
     connect(widget.tnfAddButton,SIGNAL(clicked()),this,SLOT(addNotchFilter(void)));  // KD0OSS
 
     connect(widget.actionBookmarkThisFrequency,SIGNAL(triggered()),this,SLOT(actionBookmark()));
@@ -349,6 +349,8 @@ UI::UI(const QString server) {
     audio_sample_rate=configure.getSampleRate();
     audio_channels=configure.getChannels();
     audio_byte_order=configure.getByteOrder();
+
+    widget.spectrumView->connection = &connection; // KD0OSS
 
     equalizer = new EqualizerDialog(&connection); // KD0OSS
 
@@ -2805,30 +2807,13 @@ void UI::enableTxEq(bool enable)   // KD0OSS
     qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }
 
-void UI::enableNotchFilter(bool enable)   // KD0OSS
-{
-    QString command;
-    command.clear(); QTextStream(&command) << "enablenotchfilter " << subRx << " " << 0 << " " << enable;
-    connection.sendCommand(command);
-    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
-    //emit enableNotchFilterSig(enable);
-}
-
 void UI::addNotchFilter(void)   // KD0OSS
 {
     if (notchFilterIndex >= 9)
     {
         QMessageBox::warning(this, "Tracking Notch Filter Error", "Maximum of 9 notch filters reached!");
-        notchFilterIndex = 0;
+        return;
     }
+    widget.tnfButton->setChecked(true);
     widget.spectrumView->addNotchFilter(notchFilterIndex++);
-}
-
-void UI::notchFilterAdded(int index, double FO, double BW)
-{
-    QString command;
-    double audio_freq = abs((FO - frequency)); // now in Hz
-    command.clear(); QTextStream(&command) << "setnotchfilter " << subRx << " " << index << " " << BW << " " << audio_freq;
-    connection.sendCommand(command);
-    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }

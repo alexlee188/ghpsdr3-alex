@@ -41,10 +41,13 @@
 #endif
 
 #include <QPainter>
+#include <QAction>
+#include <QMenu>
 #include <QMouseEvent>
 //#include <QGLWidget>
 
-#include <Meter.h>
+#include "Meter.h"
+#include "Connection.h"
 
 /****************** Added by KD0OSS **********************************************/
 class SpectrumScene;
@@ -167,6 +170,7 @@ public:
     Spectrum(QWidget*& widget);
     virtual ~Spectrum();
 
+    Connection *connection;  // KD0OSS
     SpectrumScene *spectrumScene;  // KD0OSS
 
     void setObjectName(QString name);
@@ -209,8 +213,6 @@ signals:
     void waterfallLowChanged(int low);
     void meterValue(int meter, int subrx_meter);
     void squelchValueChanged(int step);
-    void enableNotchFilterSig(bool);   // KD0OSS
-    void notchFilterAdded(int, double, double);   // KD0OSS
 
 protected:
  //   void paintEvent(QPaintEvent*);
@@ -228,6 +230,8 @@ protected:
 public slots:
     void setAvg(int value);
     void addNotchFilter(int index);    // KD0OSS
+    void enableNotchFilter(bool enable);   // KD0OSS
+    void enableNotchFilter(int index, bool enable);   // KD0OSS
 
 private slots:
     void drawCursor(int vfo, bool disable);  // KD0OSS
@@ -238,7 +242,9 @@ private slots:
     void drawBandLimits(void);  // KD0OSS
     void drawSquelch(void);  // KD0OSS
     void drawSpectrum(void);  // KD0OSS
-    void updateNotchFilter(int vfo);  // KD0OSS
+    void drawUpdatedNotchFilter(int vfo);  // KD0OSS
+    void updateNotchFilter(int index);  // KD0OSS
+    void deleteNotchFilter(void);
 
 private:
     float* samples;
@@ -294,7 +300,10 @@ private:
     int   notchFilterVFO[9]; // KD0OSS
     float notchFilterBW[9]; // KD0OSS
     float notchFilterFO[9]; // KD0OSS
+    bool  notchFilterEnabled[9]; // KD0OSS
     int   notchFilterSelected; // KD0OSS
+
+    QAction *notchFilterDeleteAction;
 
     short LO_offset;
     int zoom;

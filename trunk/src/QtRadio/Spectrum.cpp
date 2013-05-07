@@ -65,9 +65,10 @@ notchFilterObject::notchFilterObject(SpectrumScene *scene, int index, QPoint loc
 
 void notchFilterObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    painter->setBrush(Qt::BDiagPattern);
-    painter->setOpacity(0.6);
-    painter->fillRect(itemLocation.x(),itemLocation.y(),itemWidth,height,itemColor);
+    painter->setOpacity(1.0);
+    painter->setPen(itemColor);
+    painter->drawRect(itemLocation.x(),itemLocation.y(),itemWidth,height);
+    painter->fillRect(itemLocation.x(),itemLocation.y(),itemWidth,height,QBrush(itemColor, Qt::BDiagPattern));
 }
 
 QRectF notchFilterObject::boundingRect() const
@@ -212,6 +213,10 @@ Spectrum::Spectrum(QWidget*& widget) {
     spectrumScene->setBackgroundBrush(gradient);
     spectrumScene->update();
 
+    notchFilterDeleteAction = new QAction(tr("&Delete"), this);
+    notchFilterDeleteAction->setToolTip("Delete selected notch filter.");
+    connect(notchFilterDeleteAction, SIGNAL(triggered()), this, SLOT(deleteNotchFilter()));
+
  //   qDebug("View Rect: %d  %d   %d   %d", sceneRect().x(), sceneRect().y(), sceneRect().width(), sceneRect().height());
  //   setSceneRect(1, 1, width()/3, height()/3);
 }
@@ -313,13 +318,22 @@ void Spectrum::mousePressEvent(QMouseEvent* event) {
     }
 
     // Notch filter  KD0OSS
-    if (static_cast<notchFilterObject*>(itemAt(event->pos().x(), event->pos().y()))->itemType == 1)
+    if (static_cast<notchFilterObject*>(itemAt(event->pos().x(), event->pos().y()))->itemType == 1 && button == 1)
         notchFilterSelected = static_cast<notchFilterObject*>(itemAt(event->pos().x(), event->pos().y()))->itemIndex;
     else
         notchFilterSelected = -1;
+
+    if (static_cast<notchFilterObject*>(itemAt(event->pos().x(), event->pos().y()))->itemType == 1 && button == 2)
+    {
+        notchFilterSelected = static_cast<notchFilterObject*>(itemAt(event->pos().x(), event->pos().y()))->itemIndex;
+        QMenu menu;
+        menu.addAction(notchFilterDeleteAction);
+        menu.exec(event->globalPos());
+    }
 }
 
 void Spectrum::mouseMoveEvent(QMouseEvent* event){
+    if (button == 2) return;
     int move=event->pos().x()-lastX;
     lastX=event->pos().x();
     int movey=event->pos().y()-lastY;
@@ -338,8 +352,7 @@ void Spectrum::mouseMoveEvent(QMouseEvent* event){
             showSquelchControl=false;
             this->setCursor(Qt::ArrowCursor);
         }
-    } else if (button == 1) {
-        if (notchFilterSelected > -1) {
+    } else if (button == 1 && notchFilterSelected > -1) {
             this->setCursor(Qt::SizeHorCursor);
             float zoom_factor = 1.0f + zoom/25.0f;
             float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
@@ -357,7 +370,6 @@ void Spectrum::mouseMoveEvent(QMouseEvent* event){
             else
                 notchFilterBW[notchFilterSelected] -= (movey * move_step);
             drawNotchFilter(subRx+1, notchFilterSelected, false);
-        }
     } else {
         if(settingSquelch) {
             int delta=squelchY-event->pos().y();
@@ -390,9 +402,9 @@ void Spectrum::mouseReleaseEvent(QMouseEvent* event) {
     lastX=event->pos().x();
     //qDebug() << __FUNCTION__ << ": " << event->pos().x() << " move:" << move;
 
-    if (notchFilterSelected > -1)
+    if (notchFilterSelected > -1 && button == 1)
     {
-        emit notchFilterAdded(notchFilterSelected, notchFilterFO[notchFilterSelected], notchFilterBW[notchFilterSelected]);
+        updateNotchFilter(notchFilterSelected);
         this->setCursor(Qt::ArrowCursor);
         button=-1;
         notchFilterSelected = -1;
@@ -511,6 +523,7 @@ void Spectrum::drawCursor(int vfo, bool disable)
     if (!spectrumScene->sceneItems.isEmpty() && spectrumScene->sceneItems.value(QString("c%1").arg(vfo), 0))
     {
         spectrumScene->removeItem((lineObject*)spectrumScene->sceneItems.find(QString("c%1").arg(vfo)).value());
+        delete (lineObject*)spectrumScene->sceneItems.find(QString("c%1").arg(vfo)).value();
         spectrumScene->sceneItems.remove(QString("c%1").arg(vfo));
     }
 
@@ -545,6 +558,7 @@ void Spectrum::drawFilter(int vfo, bool disable)
     if (!spectrumScene->sceneItems.isEmpty() && spectrumScene->sceneItems.value(QString("flt%1").arg(vfo), 0))
     {
         spectrumScene->removeItem(spectrumScene->sceneItems.find(QString("flt%1").arg(vfo)).value());
+        delete (filterObject*)spectrumScene->sceneItems.find(QString("flt%1").arg(vfo)).value();
         spectrumScene->sceneItems.remove(QString("flt%1").arg(vfo));
     }
 
@@ -584,6 +598,7 @@ void Spectrum:: drawNotchFilter(int vfo, int index, bool disable)
     if (!spectrumScene->sceneItems.isEmpty() && spectrumScene->sceneItems.value(QString("nf%1%2").arg(vfo).arg(index), 0))
     {
         spectrumScene->removeItem(spectrumScene->sceneItems.find(QString("nf%1%2").arg(vfo).arg(index)).value());
+        delete (notchFilterObject*)spectrumScene->sceneItems.find(QString("nf%1%2").arg(vfo).arg(index)).value();
         spectrumScene->sceneItems.remove(QString("nf%1%2").arg(vfo).arg(index));
     }
 
@@ -596,7 +611,7 @@ void Spectrum:: drawNotchFilter(int vfo, int index, bool disable)
         filterLeft =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset-(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
         filterRight =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset+(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
         color = Qt::darkGreen;
-        qDebug("NFL: %d  NFR: %d", filterLeft, filterRight);
+ //       qDebug("NFL: %d  NFR: %d", filterLeft, filterRight);
         if ((filterRight - filterLeft) < 1)
             filterRight = filterLeft + 1;
     }
@@ -614,7 +629,7 @@ void Spectrum:: drawNotchFilter(int vfo, int index, bool disable)
 }
 
 // KD0OSS
-void Spectrum:: updateNotchFilter(int vfo)
+void Spectrum:: drawUpdatedNotchFilter(int vfo)
 {
     int filterLeft;
     int filterRight;
@@ -625,6 +640,7 @@ void Spectrum:: updateNotchFilter(int vfo)
         if (!spectrumScene->sceneItems.isEmpty() && spectrumScene->sceneItems.value(QString("nf%1%2").arg(vfo).arg(index), 0))
         {
             spectrumScene->removeItem(spectrumScene->sceneItems.find(QString("nf%1%2").arg(vfo).arg(index)).value());
+            delete (notchFilterObject*)spectrumScene->sceneItems.find(QString("nf%1%2").arg(vfo).arg(index)).value();
             spectrumScene->sceneItems.remove(QString("nf%1%2").arg(vfo).arg(index));
         }
         else
@@ -637,7 +653,7 @@ void Spectrum:: updateNotchFilter(int vfo)
             filterLeft =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset-(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
             filterRight =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset+(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
             color = Qt::darkGreen;
-            qDebug("NFL: %d  NFR: %d", filterLeft, filterRight);
+      //      qDebug("NFL: %d  NFR: %d", filterLeft, filterRight);
         }
         else
         {
@@ -663,8 +679,10 @@ void Spectrum::drawdBmLines(void)
         for (int i=0;i<lines;i++)
         {
             spectrumScene->removeItem(spectrumScene->sceneItems.find(QString("dl%1").arg(i)).value());
+            delete (lineObject*)spectrumScene->sceneItems.find(QString("dl%1").arg(i)).value();
             spectrumScene->sceneItems.remove(QString("dl%1").arg(i));
             spectrumScene->removeItem(spectrumScene->sceneItems.find(QString("dt%1").arg(i)).value());
+            delete (textObject*)spectrumScene->sceneItems.find(QString("dt%1").arg(i)).value();
             spectrumScene->sceneItems.remove(QString("dt%1").arg(i));
         }
     }
@@ -707,8 +725,10 @@ void Spectrum::drawFrequencyLines(void)
         for (int i=0;i<lines;i++)
         {
             spectrumScene->removeItem(spectrumScene->sceneItems.find(QString("fl%1").arg(i)).value());
+            delete (lineObject*)spectrumScene->sceneItems.find(QString("fl%1").arg(i)).value();
             spectrumScene->sceneItems.remove(QString("fl%1").arg(i));
             spectrumScene->removeItem(spectrumScene->sceneItems.find(QString("ft%1").arg(i)).value());
+            delete (textObject*)spectrumScene->sceneItems.find(QString("ft%1").arg(i)).value();
             spectrumScene->sceneItems.remove(QString("ft%1").arg(i));
         }
     }
@@ -746,11 +766,13 @@ void Spectrum::drawBandLimits(void)
         if (spectrumScene->sceneItems.value(QString("bl%1").arg(0), 0))
         {
             spectrumScene->removeItem(spectrumScene->sceneItems.find(QString("bl%1").arg(0)).value());
+            delete (lineObject*)spectrumScene->sceneItems.find(QString("bl%1").arg(0)).value();
             spectrumScene->sceneItems.remove(QString("bl%1").arg(0));
         }
         if (spectrumScene->sceneItems.value(QString("bl%1").arg(1), 0))
         {
             spectrumScene->removeItem(spectrumScene->sceneItems.find(QString("bl%1").arg(1)).value());
+            delete (lineObject*)spectrumScene->sceneItems.find(QString("bl%1").arg(0)).value();
             spectrumScene->sceneItems.remove(QString("bl%1").arg(1));
         }
     }
@@ -782,8 +804,10 @@ void Spectrum::drawSquelch(void)
     if (!spectrumScene->sceneItems.isEmpty() && spectrumScene->sceneItems.value("sl", 0))
     {
         spectrumScene->removeItem(spectrumScene->sceneItems.find("sl").value());
+        delete (lineObject*)spectrumScene->sceneItems.find(QString("sl")).value();
         spectrumScene->sceneItems.remove("sl");
         spectrumScene->removeItem(spectrumScene->sceneItems.find("st").value());
+        delete (textObject*)spectrumScene->sceneItems.find(QString("st")).value();
         spectrumScene->sceneItems.remove("st");
     }
 
@@ -852,8 +876,8 @@ void Spectrum::setZoom(int value){
     drawFilter(1, false);
     drawCursor(2, !subRx);
     drawFilter(2, !subRx);
-    updateNotchFilter(1);
-    updateNotchFilter(2);
+    drawUpdatedNotchFilter(1);
+    drawUpdatedNotchFilter(2);
 }
 
 void Spectrum::setFrequency(long long f) {
@@ -985,7 +1009,7 @@ void Spectrum::updateSpectrumFrame(char* header,char* buffer,int width) {
         drawdBmLines();
         drawCursor(1, false);
         drawFilter(1, false);
-        updateNotchFilter(1);
+        drawUpdatedNotchFilter(1);
     }
 
     QTimer::singleShot(0,this,SLOT(drawSpectrum()));
@@ -1007,13 +1031,67 @@ void Spectrum::setSquelchVal(float val) {
 }
 
 void Spectrum::addNotchFilter(int index){
+    QString command;
+
     notchFilterIndex = index;
     if (!subRx)
         notchFilterVFO[notchFilterIndex] = 1;
     else
         notchFilterVFO[notchFilterIndex] = 2;
-    notchFilterFO[notchFilterIndex] = frequency-480.0;
-    notchFilterBW[notchFilterIndex] = 1550.0;
+    notchFilterFO[notchFilterIndex] = frequency+((filterLow+filterHigh)/2);
+    notchFilterBW[notchFilterIndex] = 200.0;
+    notchFilterEnabled[notchFilterIndex] = true;
     drawNotchFilter(notchFilterVFO[notchFilterIndex], notchFilterIndex, false);
-    emit notchFilterAdded(index, frequency-480.0, 1550.0);
+
+    double audio_freq = abs((notchFilterFO[notchFilterIndex] - frequency)); // Convert to audio frequency in Hz
+    command.clear();
+    QTextStream(&command) << "setnotchfilter " << notchFilterVFO[notchFilterIndex]-1 << " " << index << " " << notchFilterBW[notchFilterIndex] << " " << audio_freq;
+    connection->sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+
+    enableNotchFilter(notchFilterIndex, true);
+}
+
+void Spectrum::updateNotchFilter(int index)
+{
+    QString command;
+
+    double audio_freq = abs((notchFilterFO[index] - frequency)); // Convert to audio frequency in Hz
+    command.clear();
+    QTextStream(&command) << "setnotchfilter " << notchFilterVFO[index]-1 << " " << index << " " << notchFilterBW[index] << " " << audio_freq;
+    connection->sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void Spectrum::enableNotchFilter(bool enable)   // KD0OSS
+{
+    QString command;
+
+    for (int index=0;index<=notchFilterIndex;index++)
+    {
+        notchFilterEnabled[index] = enable;
+        command.clear();
+        QTextStream(&command) << "enablenotchfilter " << notchFilterVFO[index]-1 << " " << index << " " << enable;
+        connection->sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+    }
+    //emit enableNotchFilterSig(enable);
+}
+
+void Spectrum::enableNotchFilter(int index, bool enable)   // KD0OSS
+{
+    QString command;
+
+    notchFilterEnabled[index] = enable;
+    command.clear();
+    QTextStream(&command) << "enablenotchfilter " << notchFilterVFO[index]-1 << " " << index << " " << enable;
+    connection->sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+    //emit enableNotchFilterSig(enable);
+}
+
+void Spectrum::deleteNotchFilter(void)   // KD0OSS
+{
+    drawNotchFilter(notchFilterVFO[notchFilterSelected], notchFilterSelected, true);
+    enableNotchFilter(notchFilterSelected, false);
 }

@@ -309,9 +309,7 @@ protected:
 
 private slots:
     void on_zoomSpectrumSlider_sliderMoved(int position);
-    void enableNotchFilter(bool enable);   // KD0OSS
     void addNotchFilter(void);   // KD0OSS
-    void notchFilterAdded(int index, double FO, double BW);   // KD0OSS
 
 private:
     void printWindowTitle(QString message);
