@@ -42,7 +42,7 @@
 #include "Audio.h"
 #include "Audioinput.h"
 #include "Connection.h"
-#include "Spectrum.h"
+#include "Panadapter.h"
 #include "Band.h"
 #include "BandLimit.h"
 #include "Mode.h"

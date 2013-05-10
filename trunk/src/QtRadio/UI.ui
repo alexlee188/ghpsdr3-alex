@@ -30,7 +30,7 @@
     <property name="bottomMargin">
      <number>4</number>
     </property>
-    <item row="1" column="3" rowspan="3">
+    <item row="1" column="3" rowspan="2">
      <widget class="QSlider" name="zoomSpectrumSlider">
       <property name="minimumSize">
        <size>
@@ -58,32 +58,7 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="1">
-     <widget class="vfo" name="vfoFrame">
-      <property name="minimumSize">
-       <size>
-        <width>575</width>
-        <height>115</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>575</width>
-        <height>115</height>
-       </size>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::Box</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <property name="lineWidth">
-       <number>2</number>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0" rowspan="3">
+    <item row="1" column="0" rowspan="2">
      <widget class="QFrame" name="ctrl2Frame">
       <property name="minimumSize">
        <size>
@@ -211,28 +186,6 @@
       </widget>
      </widget>
     </item>
-    <item row="0" column="2" colspan="2">
-     <widget class="Ctl" name="ctlFrame">
-      <property name="minimumSize">
-       <size>
-        <width>236</width>
-        <height>115</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>115</height>
-       </size>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="0">
      <widget class="sMeter" name="sMeterFrame">
       <property name="minimumSize">
@@ -255,12 +208,18 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="1" colspan="2">
-     <widget class="Spectrum" name="spectrumView">
+    <item row="0" column="2" colspan="2">
+     <widget class="Ctl" name="ctlFrame">
       <property name="minimumSize">
        <size>
-        <width>0</width>
-        <height>150</height>
+        <width>236</width>
+        <height>115</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>115</height>
        </size>
       </property>
       <property name="frameShape">
@@ -271,8 +230,33 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="1" colspan="2">
-     <widget class="Waterfall" name="waterfallView">
+    <item row="0" column="1">
+     <widget class="vfo" name="vfoFrame">
+      <property name="minimumSize">
+       <size>
+        <width>575</width>
+        <height>115</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>575</width>
+        <height>115</height>
+       </size>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <property name="lineWidth">
+       <number>2</number>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1" colspan="2">
+     <widget class="Panadapter" name="spectrumView">
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -1144,15 +1128,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>Waterfall</class>
+   <class>Panadapter</class>
    <extends>QGraphicsView</extends>
-   <header>Waterfall.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>Spectrum</class>
-   <extends>QGraphicsView</extends>
-   <header>Spectrum.h</header>
+   <header>Panadapter.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

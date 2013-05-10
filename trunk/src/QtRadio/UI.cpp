@@ -55,7 +55,7 @@
 #include "XvtrEntry.h"
 #include "vfo.h"
 #include "Meter.h"
-#include "Spectrum.h"
+#include "Panadapter.h"
 #include "smeter.h"
 #include "codec2.h"
 #include "servers.h"
@@ -252,8 +252,8 @@ UI::UI(const QString server) {
             this,SLOT(squelchValueChanged(int)));
 
     // connect up waterfall frame
-    connect(widget.waterfallView, SIGNAL(frequencyMoved(int,int)),
-            this, SLOT(frequencyMoved(int,int)));
+//    connect(widget.waterfallView, SIGNAL(frequencyMoved(int,int)),
+  //          this, SLOT(frequencyMoved(int,int)));
 
     connect(widget.spectrumView, SIGNAL(notchFilterAdded(int,double,double)), this, SLOT(notchFilterAdded(int, double, double)));
 
@@ -582,7 +582,7 @@ void UI::setProtocol3(bool p){
 void UI::waterfallHighChanged(int high) {
     //qDebug() << __LINE__ << __FUNCTION__ << ": " << high;
 
-    widget.waterfallView->setHigh(high);
+//    widget.waterfallView->setHigh(high);
     configure.setWaterfallHigh(high);
     band.setWaterfallHigh(high);
 }
@@ -590,13 +590,13 @@ void UI::waterfallHighChanged(int high) {
 void UI::waterfallLowChanged(int low) {
     //qDebug() << __FUNCTION__ << ": " << low;
 
-    widget.waterfallView->setLow(low);
+//    widget.waterfallView->setLow(low);
     configure.setWaterfallLow(low);
     band.setWaterfallLow(low);
 }
 
 void UI::waterfallAutomaticChanged(bool state) {
-    widget.waterfallView->setAutomatic(state);
+//    widget.waterfallView->setAutomatic(state);
 }
 
 void UI::audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder) {
@@ -701,7 +701,7 @@ void UI::connected() {
     command.clear(); QTextStream(&command) << "setFrequency " << frequency;
     connection.sendCommand(command);
     widget.spectrumView->setFrequency(frequency);
-    widget.waterfallView->setFrequency(frequency);
+    //widget.waterfallView->setFrequency(frequency);
 
 //    gvj code
     widget.vfoFrame->setFrequency(frequency);
@@ -726,7 +726,7 @@ void UI::connected() {
     // qDebug() << "connected calling widget.spectrumView.setFilter";
 
     widget.spectrumView->setFilter(low,high);
-    widget.waterfallView->setFilter(low,high);
+//    widget.waterfallView->setFilter(low,high);
 
     widget.actionConnectToServer->setDisabled(TRUE);
     widget.actionDisconnectFromServer->setDisabled(FALSE);
@@ -891,7 +891,8 @@ void UI::spectrumBuffer(char* header,char* buffer) {
     sampleRate=((header[9]&0xFF)<<24)+((header[10]&0xFF)<<16)+((header[11]&0xFF)<<8)+(header[12]&0xFF);
 
     widget.spectrumView->updateSpectrumFrame(header,buffer,length);
-    widget.waterfallView->updateWaterfall(header,buffer,length);
+//    widget.spectrumView->panadapterScene->waterfallItem->updateWaterfall(header,buffer,length);
+//    widget.waterfallView->updateWaterfall(header,buffer,length);
     connection.freeBuffers(header,buffer);
 }
 
@@ -979,7 +980,7 @@ void UI::actionSubRx() {
         // on, so turn off
         subRx=FALSE;
         widget.spectrumView->setSubRxState(FALSE);
-        widget.waterfallView->setSubRxState(FALSE);
+//        widget.waterfallView->setSubRxState(FALSE);
         widget.sMeterFrame->setSubRxState(FALSE);
         widget.actionMuteSubRx->setChecked(FALSE);
         widget.actionMuteSubRx->setDisabled(TRUE);
@@ -1001,7 +1002,7 @@ void UI::actionSubRx() {
             subRxFrequency=band.getFrequency();
         }
         widget.spectrumView->setSubRxState(TRUE);
-        widget.waterfallView->setSubRxState(TRUE);
+//        widget.waterfallView->setSubRxState(TRUE);
         widget.sMeterFrame->setSubRxState(TRUE);
 
         command.clear(); QTextStream(&command) << "SetSubRXFrequency " << frequency - subRxFrequency;
@@ -1221,10 +1222,10 @@ void UI::bandChanged(int previousBand,int newBand) {
     widget.spectrumView->setSubRxFrequency(subRxFrequency);
     widget.spectrumView->setHigh(band.getSpectrumHigh());
     widget.spectrumView->setLow(band.getSpectrumLow());
-    widget.waterfallView->setFrequency(frequency);
-    widget.waterfallView->setSubRxFrequency(subRxFrequency);
-    widget.waterfallView->setHigh(band.getWaterfallHigh());
-    widget.waterfallView->setLow(band.getWaterfallLow());
+//    widget.waterfallView->setFrequency(frequency);
+//    widget.waterfallView->setSubRxFrequency(subRxFrequency);
+//    widget.waterfallView->setHigh(band.getWaterfallHigh());
+//    widget.waterfallView->setLow(band.getWaterfallLow());
     widget.vfoFrame->setSubRxFrequency(subRxFrequency);
 
 
@@ -1320,7 +1321,7 @@ void UI::modeChanged(int previousMode,int newMode) {
     }
     qDebug()<<Q_FUNC_INFO<<":  1043: value of band.getFilter after filters.selectFilters has been called = "<<band.getFilter();
     widget.spectrumView->setMode(mode.getStringMode());
-    widget.waterfallView->setMode(mode.getStringMode());
+//    widget.waterfallView->setMode(mode.getStringMode());
     command.clear(); QTextStream(&command) << "setMode " << mode.getMode();
     connection.sendCommand(command);
 }
@@ -1643,7 +1644,7 @@ void UI::filterChanged(int previousFilter,int newFilter) {
     connection.sendCommand(command);
     widget.spectrumView->setFilter(low,high);
     widget.spectrumView->setFilter(filters.getText());
-    widget.waterfallView->setFilter(low,high);
+//    widget.waterfallView->setFilter(low,high);
     band.setFilter(newFilter);
 }
 
@@ -1666,7 +1667,7 @@ void UI::frequencyChanged(long long f) {
     band.setFrequency(frequency);
     widget.spectrumView->setFrequency(frequency);
     widget.vfoFrame->setFrequency(frequency);
-    widget.waterfallView->setFrequency(frequency);
+//    widget.waterfallView->setFrequency(frequency);
 }
 
 void UI::frequencyMoved(int increment,int step) {
@@ -1689,7 +1690,7 @@ void UI::frequencyMoved(int increment,int step) {
         command.clear(); QTextStream(&command) << "SetSubRXFrequency " << diff;
         connection.sendCommand(command);
         widget.spectrumView->setSubRxFrequency(subRxFrequency);
-        widget.waterfallView->setSubRxFrequency(subRxFrequency);
+//        widget.waterfallView->setSubRxFrequency(subRxFrequency);
         widget.vfoFrame->setSubRxFrequency(subRxFrequency);// gvj subRxFrequency
         setSubRxPan();
 
@@ -2075,7 +2076,7 @@ void UI::selectBookmark(QAction* action) {
     connection.sendCommand(command);
 
     widget.spectrumView->setFrequency(frequency);
-    widget.waterfallView->setFrequency(frequency);
+//    widget.waterfallView->setFrequency(frequency);
 
 //    gvj code
     widget.vfoFrame->setFrequency(frequency);
@@ -2305,13 +2306,13 @@ void UI::slaveSetMode(int m)
 
 void UI::slaveSetFilter(int low, int high){
     widget.spectrumView->setFilter(low,high);
-    widget.waterfallView->setFilter(low,high);
+//    widget.waterfallView->setFilter(low,high);
 }
 
 void UI::slaveSetZoom(int position){
     widget.zoomSpectrumSlider->setValue(position);
     widget.spectrumView->setZoom(position);
-    widget.waterfallView->setZoom(position);
+ //   widget.waterfallView->setZoom(position);
 }
 
 void UI::getBandFrequency()
@@ -2665,7 +2666,7 @@ void UI::on_zoomSpectrumSlider_sliderMoved(int position)
     connection.sendCommand(command);
 
     widget.spectrumView->setZoom(position);
-    widget.waterfallView->setZoom(position);
+//    widget.waterfallView->setZoom(position);
 }
 
 void UI::rigSetPTT(int enabled){

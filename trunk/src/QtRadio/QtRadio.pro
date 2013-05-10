@@ -48,7 +48,6 @@ SOURCES += main.cpp\
     Waterfall.cpp \
     USBFilters.cpp \
     UI.cpp \
-    Spectrum.cpp \
     SAMFilters.cpp \
     Mode.cpp \
     LSBFilters.cpp \
@@ -99,14 +98,14 @@ SOURCES += main.cpp\
     hardware_rtlsdr.cpp \
     hardware_perseus.cpp \
     hardware_hiqsdr.cpp \
-    hardware_hermes.cpp
+    hardware_hermes.cpp \
+    Panadapter.cpp
 
 
 HEADERS  += \ 
     Waterfall.h \
     USBFilters.h \
     UI.h \
-    Spectrum.h \
     SAMFilters.h \
     Mode.h \
     LSBFilters.h \
@@ -160,7 +159,8 @@ HEADERS  += \
     hardware_perseus.h \
     hardware_hiqsdr.h \
     hardware_hermes.h \
-    hardware_rtlsdr.h
+    hardware_rtlsdr.h \
+    Panadapter.h
 
 FORMS    += \   
     UI.ui \

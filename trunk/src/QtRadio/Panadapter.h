@@ -1,5 +1,5 @@
    /*
- * File:   Spectrum.h
+ * File:   PANADAPTER.h
  * Author: John Melton, G0ORX/N6LYT
  *
  * Created on 16 August 2010, 10:03
@@ -23,8 +23,8 @@
 *
 */
 
-#ifndef SPECTRUM_H
-#define	SPECTRUM_H
+#ifndef PANADAPTER_H
+#define	PANADAPTER_H
 
 #include <QtCore>
 
@@ -50,7 +50,60 @@
 #include "Connection.h"
 
 /****************** Added by KD0OSS **********************************************/
-class SpectrumScene;
+
+class PanadapterScene;
+
+class waterfallObject : public QObject, public QGraphicsItem
+{
+    Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
+
+public:
+    waterfallObject(int width, int height);
+    void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+    QRectF  boundingRect() const;
+    int     itemType;
+
+    void setLow(int low);
+    void setHigh(int high);
+    int getLow();
+    int getHigh();
+
+    void setAutomatic(bool state);
+    bool getAutomatic();
+
+public slots:
+    void updateWaterfall(short, int, char*, int);
+
+private slots:
+    void updateWaterfall_2(void);
+    void updateWaterfall_4(void);
+
+private:
+    uint calculatePixel(int sample);
+
+    int itemWidth;
+    int itemHeight;
+
+    float* samples;
+    int waterfallHigh;
+    int waterfallLow;
+    bool waterfallAutomatic;
+    int cy;         // current row
+    int colorLowR;
+    int colorLowG;
+    int colorLowB;
+    int colorMidR;
+    int colorMidG;
+    int colorMidB;
+    int colorHighR;
+    int colorHighG;
+    int colorHighB;
+    int size;
+    int sampleRate;
+    short LO_offset;
+    QImage image;
+};
 
 class spectrumObject : public QObject, public QGraphicsItem
 {
@@ -76,7 +129,7 @@ class filterObject : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
-    filterObject(SpectrumScene *scene, QPoint location, float fwidth, QColor color);
+    filterObject(PanadapterScene *scene, QPoint location, float fwidth, QColor color);
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
 
@@ -95,7 +148,7 @@ class textObject : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
-    textObject(SpectrumScene *scene, QString text, QPoint location, QColor color);
+    textObject(PanadapterScene *scene, QString text, QPoint location, QColor color);
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
 
@@ -114,7 +167,7 @@ class notchFilterObject : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
-    notchFilterObject(SpectrumScene *scene, int index, QPoint location, float fwidth, QColor color);
+    notchFilterObject(PanadapterScene *scene, int index, QPoint location, float fwidth, QColor color);
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
 
@@ -133,7 +186,7 @@ class lineObject : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
-    lineObject(SpectrumScene *scene, QPoint start, QPoint stop, QPen pen);
+    lineObject(PanadapterScene *scene, QPoint start, QPoint stop, QPen pen);
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
 
@@ -146,32 +199,33 @@ public:
 };
 
 
-class SpectrumScene : public QGraphicsScene
+class PanadapterScene : public QGraphicsScene
 {
     Q_OBJECT
 
 public:
-    SpectrumScene(QObject *parent = 0);
+    PanadapterScene(QObject *parent = 0);
 
     QMap<QString, QGraphicsItem*> sceneItems;
 
 
     spectrumObject *spectrumPlot;
+    waterfallObject *waterfallItem;
     void updatePlot(void);
     int  itemType;
 };
-/*******************************************************************************/
+/********************************KD0OSS*****************************************/
 
-class Spectrum: public QGraphicsView
+class Panadapter: public QGraphicsView
 {
     Q_OBJECT
 public:
-    Spectrum();
-    Spectrum(QWidget*& widget);
-    virtual ~Spectrum();
+    Panadapter();
+    Panadapter(QWidget*& widget);
+    virtual ~Panadapter();
 
     Connection *connection;  // KD0OSS
-    SpectrumScene *spectrumScene;  // KD0OSS
+    PanadapterScene *panadapterScene;  // KD0OSS
 
     void setObjectName(QString name);
     void setGeometry(QRect rect);
@@ -232,6 +286,7 @@ public slots:
     void addNotchFilter(int index);    // KD0OSS
     void enableNotchFilter(bool enable);   // KD0OSS
     void enableNotchFilter(int index, bool enable);   // KD0OSS
+    void updateWaterfall(void);
 
 private slots:
     void drawCursor(int vfo, bool disable);  // KD0OSS
@@ -244,10 +299,12 @@ private slots:
     void drawSpectrum(void);  // KD0OSS
     void drawUpdatedNotchFilter(int vfo);  // KD0OSS
     void updateNotchFilter(int index);  // KD0OSS
-    void deleteNotchFilter(void);
+    void deleteNotchFilter(void);  // KD0OSS
+    void deleteAllNotchFilters(void);  // KD0OSS
 
 private:
     float* samples;
+    char* wsamples;
     int spectrumHigh;
     int spectrumLow;
 
@@ -274,6 +331,7 @@ private:
     int filterLow;
     int filterHigh;
     int avg;
+    int size;
     long long frequency;
     QString strFrequency;
     long long subRxFrequency;
@@ -300,15 +358,16 @@ private:
     int   notchFilterVFO[9]; // KD0OSS
     float notchFilterBW[9]; // KD0OSS
     float notchFilterFO[9]; // KD0OSS
+    int   notchFilterDepth[9]; // KD0OSS
     bool  notchFilterEnabled[9]; // KD0OSS
     int   notchFilterSelected; // KD0OSS
 
-    QAction *notchFilterDeleteAction;
+    QAction *notchFilterDeleteAction;  // KD0OSS
 
     short LO_offset;
     int zoom;
 };
 
 
-#endif	/* SPECTRUM_H */
+#endif	/* PANADAPTER_H */
 
