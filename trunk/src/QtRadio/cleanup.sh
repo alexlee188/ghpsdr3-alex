@@ -1,5 +1,6 @@
 rm -f -r	.deps/
 rm -f -r	*.moc.cpp
+rm -f -r	moc_*
 rm -f -r	Makefile
 rm -f -r	Makefile.in
 rm -f -r	aclocal.m4
