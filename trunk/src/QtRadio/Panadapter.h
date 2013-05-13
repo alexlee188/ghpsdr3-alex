@@ -63,6 +63,7 @@ public:
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
     int     itemType;
+    bool    zoomSet;
 
     void setLow(int low);
     void setHigh(int high);
@@ -211,7 +212,6 @@ public:
 
     spectrumObject *spectrumPlot;
     waterfallObject *waterfallItem;
-    void updatePlot(void);
     int  itemType;
 };
 /********************************KD0OSS*****************************************/
@@ -226,6 +226,8 @@ public:
 
     Connection *connection;  // KD0OSS
     PanadapterScene *panadapterScene;  // KD0OSS
+
+    bool sampleZoom; // KD0OSS
 
     void setObjectName(QString name);
     void setGeometry(QRect rect);

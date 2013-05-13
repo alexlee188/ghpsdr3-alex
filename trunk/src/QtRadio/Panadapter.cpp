@@ -67,13 +67,13 @@ void notchFilterObject::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 {
     painter->setOpacity(1.0);
     painter->setPen(itemColor);
-    painter->drawRect(itemLocation.x(),itemLocation.y(),itemWidth,height);
-    painter->fillRect(itemLocation.x(),itemLocation.y(),itemWidth,height,QBrush(itemColor, Qt::BDiagPattern));
+    painter->drawRect(itemLocation.x(),itemLocation.y(),itemWidth,height/2);
+    painter->fillRect(itemLocation.x(),itemLocation.y(),itemWidth,height/2,QBrush(itemColor, Qt::BDiagPattern));
 }
 
 QRectF notchFilterObject::boundingRect() const
 {
-    return QRectF(itemLocation, QPointF(itemLocation.x()+itemWidth, height));
+    return QRectF(itemLocation, QPointF(itemLocation.x()+itemWidth, height/2));
 }
 
 filterObject::filterObject(PanadapterScene *scene, QPoint location, float fwidth, QColor color)
@@ -90,12 +90,12 @@ void filterObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *opti
 {
     painter->setBrush(Qt::SolidPattern);
     painter->setOpacity(0.5);
-    painter->fillRect(itemLocation.x(),itemLocation.y(),itemWidth,height,itemColor);
+    painter->fillRect(itemLocation.x(),itemLocation.y(),itemWidth,height/2,itemColor);
 }
 
 QRectF filterObject::boundingRect() const
 {
-    return QRectF(itemLocation, QPointF(itemLocation.x()+itemWidth, height));
+    return QRectF(itemLocation, QPointF(itemLocation.x()+itemWidth, height/2));
 }
 
 textObject::textObject(PanadapterScene *scene, QString text, QPoint location, QColor color)
@@ -145,13 +145,6 @@ QRectF spectrumObject::boundingRect() const
 
 PanadapterScene::PanadapterScene(QObject *parent) : QGraphicsScene(parent){
 }
-
-void PanadapterScene::updatePlot(void)
-{
-    spectrumPlot = new spectrumObject(width(), height());
-    addItem(spectrumPlot);
-    update();
-}
 /***********************************KD0OSS******************************************/
 
 Panadapter::Panadapter() {
@@ -173,6 +166,7 @@ Panadapter::Panadapter(QWidget*& widget) {
     mode="LSB";
 
     zoom = 0;
+    sampleZoom = false;
     subRxFrequency=0LL;
     subRx=false;
 
@@ -223,6 +217,9 @@ Panadapter::Panadapter(QWidget*& widget) {
     connect(notchFilterDeleteAction, SIGNAL(triggered()), this, SLOT(deleteNotchFilter()));
 
     panadapterScene->update();
+
+    panadapterScene->spectrumPlot = new spectrumObject(panadapterScene->width(), panadapterScene->height());
+    panadapterScene->waterfallItem = new waterfallObject(panadapterScene->width(), panadapterScene->height());
     //*************************************************************************************************
 }
 
@@ -240,6 +237,8 @@ void Panadapter::resizeEvent(QResizeEvent *event)
     drawFilter(1, false);
     drawCursor(2, !subRx);
     drawFilter(2, !subRx);
+    drawUpdatedNotchFilter(1);
+//    drawUpdatedNotchFilter(2);
     //******************************
 }
 
@@ -377,7 +376,7 @@ void Panadapter::mouseMoveEvent(QMouseEvent* event){
                 notchFilterBW[notchFilterSelected] = 1;
             else
                 notchFilterBW[notchFilterSelected] -= (movey * move_step);
-            drawNotchFilter(subRx+1, notchFilterSelected, false);
+            drawNotchFilter(1, notchFilterSelected, false);
     } else {
         if(settingSquelch) {
             int delta=squelchY-event->pos().y();
@@ -400,7 +399,7 @@ void Panadapter::mouseMoveEvent(QMouseEvent* event){
             if (!move==0) {
                 if (subRx) emit frequencyMoved(-move,move_step);
                 else emit frequencyMoved(move,move_step);
-                drawUpdatedNotchFilter(subRx+1);
+                drawUpdatedNotchFilter(1);
                 updateNotchFilter(-1);
             }
         }
@@ -414,7 +413,6 @@ void Panadapter::mouseReleaseEvent(QMouseEvent* event) {
 
     if (notchFilterSelected > -1 && button == 1)   // KD0OSS
     {
-        updateNotchFilter(notchFilterSelected);
         this->setCursor(Qt::ArrowCursor);
         button=-1;
         notchFilterSelected = -1;
@@ -473,9 +471,10 @@ void Panadapter::mouseReleaseEvent(QMouseEvent* event) {
                 }
                 emit frequencyMoved(-(long long)(freqOffsetPixel*hzPixel)/100,100);
             }
-
         }
         button = -1;
+        drawUpdatedNotchFilter(1);
+        updateNotchFilter(-1);
     }
 }
 
@@ -497,10 +496,12 @@ void Panadapter::wheelEvent(QWheelEvent *event) {
         } else {
             emit frequencyMoved(event->delta()/8/15,10);
         }
+        drawUpdatedNotchFilter(1);
+        updateNotchFilter(-1);
     } else {
         // wheel event on the left side, change the vertical axis values
         float shift =  (float)(event->delta()/8/15 * 5)                    // phy steps of wheel * 5
-                     * ((float)(spectrumHigh - spectrumLow) / height());   // dBm / pixel on vertical axis
+                     * ((float)(spectrumHigh - spectrumLow) / (height()/2));   // dBm / pixel on vertical axis
        
         if (event->buttons() == Qt::MidButton) {
            // change the vertical axis range
@@ -581,7 +582,7 @@ void Panadapter::drawFilter(int vfo, bool disable)
         filterLeft = width()/2 + (float)(filterLow+LO_offset)* (float)width()*zoom_factor/(float)sampleRate;
         filterRight = width()/2 + (float)(filterHigh+LO_offset)*(float)width()*zoom_factor/(float)sampleRate;
         color = Qt::gray;
-        qDebug("FL: %d  FR: %d", filterLow, filterHigh);
+     //   qDebug("FL: %d  FR: %d", filterLow, filterHigh);
     }
     else
     {
@@ -592,7 +593,7 @@ void Panadapter::drawFilter(int vfo, bool disable)
         color = Qt::lightGray;
     }
 
-    filterObject *filterItem = new filterObject(panadapterScene, QPoint(filterLeft,height()/2), (float)(filterRight-filterLeft), color);
+    filterObject *filterItem = new filterObject(panadapterScene, QPoint(filterLeft,0), (float)(filterRight-filterLeft), color);
     panadapterScene->addItem(filterItem);
     filterItem->update();
     panadapterScene->sceneItems.insert(QString("flt%1").arg(vfo), filterItem);
@@ -620,10 +621,8 @@ void Panadapter:: drawNotchFilter(int vfo, int index, bool disable)
     {
         filterLeft =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset-(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
         filterRight =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset+(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
-        color = Qt::darkGreen;
+        color = Qt::green;
  //       qDebug("NFL: %d  NFR: %d", filterLeft, filterRight);
-        if ((filterRight - filterLeft) < 1)
-            filterRight = filterLeft + 1;
     }
     else
     {
@@ -632,7 +631,10 @@ void Panadapter:: drawNotchFilter(int vfo, int index, bool disable)
         color = Qt::green;
     }
 
-    notchFilterObject *filterItem = new notchFilterObject(panadapterScene, index, QPoint(filterLeft,height()/2), (float)(filterRight-filterLeft), color);
+    if ((filterRight - filterLeft) < 1)
+        filterRight = filterLeft + 1;
+
+    notchFilterObject *filterItem = new notchFilterObject(panadapterScene, index, QPoint(filterLeft,0), (float)(filterRight-filterLeft), color);
     panadapterScene->addItem(filterItem);
     filterItem->update();
     panadapterScene->sceneItems.insert(QString("nf%1%2").arg(vfo).arg(index), filterItem);
@@ -662,7 +664,7 @@ void Panadapter:: drawUpdatedNotchFilter(int vfo)
         {
             filterLeft =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset-(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
             filterRight =  width()/2 + (float)(notchFilterFO[index]-frequency+LO_offset+(notchFilterBW[index]/2))*(float)width()*zoom_factor/(float)sampleRate;
-            color = Qt::darkGreen;
+            color = Qt::green;
       //      qDebug("NFL: %d  NFR: %d", filterLeft, filterRight);
         }
         else
@@ -672,7 +674,7 @@ void Panadapter:: drawUpdatedNotchFilter(int vfo)
             color = Qt::green;
         }
 
-        notchFilterObject *filterItem = new notchFilterObject(panadapterScene, index, QPoint(filterLeft,height()/2), (float)(filterRight-filterLeft), color);
+        notchFilterObject *filterItem = new notchFilterObject(panadapterScene, index, QPoint(filterLeft,0), (float)(filterRight-filterLeft), color);
         panadapterScene->addItem(filterItem);
         filterItem->update();
         panadapterScene->sceneItems.insert(QString("nf%1%2").arg(vfo).arg(index), filterItem);
@@ -754,7 +756,7 @@ void Panadapter::drawFrequencyLines(void)
                 panadapterScene->sceneItems.insert(QString("fl%1").arg(lines), lineItem);
 
                 text.sprintf("%lld.%02lld",f/1000000,f%1000000/10000);
-                textObject *textItem = new textObject(panadapterScene, text, QPoint(i,(height()/2)-5), Qt::gray);
+                textObject *textItem = new textObject(panadapterScene, text, QPoint(i,(height()/2)-10), Qt::lightGray);
                 panadapterScene->addItem(textItem);
                 textItem->update();
                 panadapterScene->sceneItems.insert(QString("ft%1").arg(lines), textItem);
@@ -774,17 +776,17 @@ void Panadapter::drawBandLimits(void)
 
     if (!panadapterScene->sceneItems.isEmpty())
     {
-        if (panadapterScene->sceneItems.value(QString("bl%1").arg(0), 0))
+        if (panadapterScene->sceneItems.value(QString("bl0"), 0))
         {
-            panadapterScene->removeItem(panadapterScene->sceneItems.find(QString("bl%1").arg(0)).value());
-            delete (lineObject*)panadapterScene->sceneItems.find(QString("bl%1").arg(0)).value();
-            panadapterScene->sceneItems.remove(QString("bl%1").arg(0));
+            panadapterScene->removeItem(panadapterScene->sceneItems.find(QString("bl0")).value());
+            delete (lineObject*)panadapterScene->sceneItems.find(QString("bl0")).value();
+            panadapterScene->sceneItems.remove(QString("bl0"));
         }
-        if (panadapterScene->sceneItems.value(QString("bl%1").arg(1), 0))
+        if (panadapterScene->sceneItems.value(QString("bl1"), 0))
         {
-            panadapterScene->removeItem(panadapterScene->sceneItems.find(QString("bl%1").arg(1)).value());
-            delete (lineObject*)panadapterScene->sceneItems.find(QString("bl%1").arg(0)).value();
-            panadapterScene->sceneItems.remove(QString("bl%1").arg(1));
+            panadapterScene->removeItem(panadapterScene->sceneItems.find(QString("bl1")).value());
+            delete (lineObject*)panadapterScene->sceneItems.find(QString("bl1")).value();
+            panadapterScene->sceneItems.remove(QString("bl1"));
         }
     }
 
@@ -792,17 +794,17 @@ void Panadapter::drawBandLimits(void)
         int i;
         if((min_display<band_min)&&(max_display>band_min)) {
             i=(band_min-min_display)/(long long)hzPerPixel;
-            lineObject *lineItem = new lineObject(panadapterScene, QPoint(i,height()/2), QPoint(i,height()), QPen(Qt::red, 2,Qt::DotLine));
+            lineObject *lineItem = new lineObject(panadapterScene, QPoint(i,height()/2), QPoint(i,0), QPen(Qt::red, 2,Qt::DotLine));
             panadapterScene->addItem(lineItem);
             lineItem->update();
-            panadapterScene->sceneItems.insert(QString("bl%1").arg(0), lineItem);
+            panadapterScene->sceneItems.insert(QString("bl0"), lineItem);
         }
         if((min_display<band_max)&&(max_display>band_max)) {
             i=(band_max-min_display)/(long long)hzPerPixel;
-            lineObject *lineItem = new lineObject(panadapterScene, QPoint(i+1,height()/2), QPoint(i+1,height()), QPen(Qt::red, 2,Qt::DotLine));
+            lineObject *lineItem = new lineObject(panadapterScene, QPoint(i+1,height()/2), QPoint(i+1,0), QPen(Qt::red, 2,Qt::DotLine));
             panadapterScene->addItem(lineItem);
             lineItem->update();
-            panadapterScene->sceneItems.insert(QString("bl%1").arg(1), lineItem);
+            panadapterScene->sceneItems.insert(QString("bl1"), lineItem);
         }
     }
 }
@@ -863,7 +865,9 @@ void Panadapter::drawSpectrum(void)
         delete panadapterScene->spectrumPlot;
         panadapterScene->spectrumPlot = NULL;
     }
-    panadapterScene->updatePlot();
+    panadapterScene->spectrumPlot = new spectrumObject(panadapterScene->width(), panadapterScene->height());
+    panadapterScene->addItem(panadapterScene->spectrumPlot);
+    panadapterScene->update();
     panadapterScene->spectrumPlot->plot = plot;
     panadapterScene->spectrumPlot->update();
     //************************************************************
@@ -879,8 +883,12 @@ void Panadapter::drawSpectrum(void)
 }
 
 void Panadapter::setZoom(int value){
-    zoom = value;
     // KD0OSS ***************************
+    if (sampleZoom)
+        zoom = value;
+    else
+        setMatrix(QMatrix((value * 0.01)+1, 0.0, 0.0, (1.0), 1.0, 1.0));
+
     if (!initialized)
         return;
     drawFrequencyLines();
@@ -890,7 +898,9 @@ void Panadapter::setZoom(int value){
     drawCursor(2, !subRx);
     drawFilter(2, !subRx);
     drawUpdatedNotchFilter(1);
-    drawUpdatedNotchFilter(2);
+    panadapterScene->removeItem(panadapterScene->waterfallItem);
+    panadapterScene->addItem(panadapterScene->waterfallItem);
+ //   drawUpdatedNotchFilter(2);
     //***********************************
 }
 
@@ -1008,7 +1018,7 @@ void Panadapter::updateSpectrumFrame(char* header,char* buffer,int width) {
     //qDebug() << "updateSpectrum: create plot points";
     if (width != lastWidth || height() != lastHeight)
     {
-        panadapterScene->setSceneRect(0, 0, width, height());
+        panadapterScene->setSceneRect(0, 0, width, height()-18);
         lastWidth = width;
         lastHeight = height();
         qDebug("Scene width: %d  ht: %d", width, height());
@@ -1022,13 +1032,14 @@ void Panadapter::updateSpectrumFrame(char* header,char* buffer,int width) {
     {
         initialized = true;
         panadapterScene->clear();
-        panadapterScene->waterfallItem = new waterfallObject(width, height());
+        panadapterScene->addItem(panadapterScene->spectrumPlot);
         panadapterScene->addItem(panadapterScene->waterfallItem);
         drawFrequencyLines();
         drawdBmLines();
         drawCursor(1, false);
         drawFilter(1, false);
         drawUpdatedNotchFilter(1);
+//        drawUpdatedNotchFilter(2);
     }
 
     QTimer::singleShot(0,this,SLOT(drawSpectrum()));
@@ -1063,11 +1074,16 @@ void Panadapter::addNotchFilter(int index)   // KD0OSS
     notchFilterBW[notchFilterIndex] = 200.0;
     notchFilterDepth[notchFilterIndex] = 1;
     notchFilterEnabled[notchFilterIndex] = true;
-    drawNotchFilter(notchFilterVFO[notchFilterIndex], notchFilterIndex, false);
+    drawNotchFilter(1, notchFilterIndex, false);
 
     double audio_freq = abs((notchFilterFO[notchFilterIndex] - frequency)); // Convert to audio frequency in Hz
     command.clear();
-    QTextStream(&command) << "setnotchfilter " << notchFilterVFO[notchFilterIndex]-1 << " " << index << " " << notchFilterBW[notchFilterIndex] << " " << audio_freq;
+    QTextStream(&command) << "setnotchfilter " << 0 << " " << index << " " << notchFilterBW[notchFilterIndex] << " " << audio_freq;
+    connection->sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+
+    command.clear();
+    QTextStream(&command) << "setnotchfilter " << 1 << " " << index << " " << notchFilterBW[notchFilterIndex] << " " << audio_freq;
     connection->sendCommand(command);
     qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 
@@ -1087,7 +1103,12 @@ void Panadapter::updateNotchFilter(int index)   // KD0OSS
             {
                 audio_freq = abs((notchFilterFO[i] - frequency)); // Convert to audio frequency in Hz
                 command.clear();
-                QTextStream(&command) << "setnotchfilter " << notchFilterVFO[i]-1 << " " << i << " " << notchFilterBW[i] << " " << audio_freq;
+                QTextStream(&command) << "setnotchfilter " << 0 << " " << i << " " << notchFilterBW[i] << " " << audio_freq;
+                connection->sendCommand(command);
+                qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+
+                command.clear();
+                QTextStream(&command) << "setnotchfilter " << 1 << " " << i << " " << notchFilterBW[i] << " " << audio_freq;
                 connection->sendCommand(command);
                 qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
             }
@@ -1097,7 +1118,12 @@ void Panadapter::updateNotchFilter(int index)   // KD0OSS
     {
         audio_freq = abs((notchFilterFO[index] - frequency)); // Convert to audio frequency in Hz
         command.clear();
-        QTextStream(&command) << "setnotchfilter " << notchFilterVFO[index]-1 << " " << index << " " << notchFilterBW[index] << " " << audio_freq;
+        QTextStream(&command) << "setnotchfilter " << 0 << " " << index << " " << notchFilterBW[index] << " " << audio_freq;
+        connection->sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+
+        command.clear();
+        QTextStream(&command) << "setnotchfilter " << 1 << " " << index << " " << notchFilterBW[index] << " " << audio_freq;
         connection->sendCommand(command);
         qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
     }
@@ -1112,7 +1138,12 @@ void Panadapter::enableNotchFilter(bool enable)   // KD0OSS
     {
         if (!notchFilterEnabled[index]) continue;
         command.clear();
-        QTextStream(&command) << "enablenotchfilter " << notchFilterVFO[index]-1 << " " << index << " " << enable;
+        QTextStream(&command) << "enablenotchfilter " << 0 << " " << index << " " << enable;
+        connection->sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+
+        command.clear();
+        QTextStream(&command) << "enablenotchfilter " << 1 << " " << index << " " << enable;
         connection->sendCommand(command);
         qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
     }
@@ -1126,7 +1157,12 @@ void Panadapter::enableNotchFilter(int index, bool enable)   // KD0OSS
 
     if (!notchFilterEnabled[index]) return;
     command.clear();
-    QTextStream(&command) << "enablenotchfilter " << notchFilterVFO[index]-1 << " " << index << " " << enable;
+    QTextStream(&command) << "enablenotchfilter " << 0 << " " << index << " " << enable;
+    connection->sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+
+    command.clear();
+    QTextStream(&command) << "enablenotchfilter " << 1 << " " << index << " " << enable;
     connection->sendCommand(command);
     qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
     //emit enableNotchFilterSig(enable);
@@ -1135,7 +1171,7 @@ void Panadapter::enableNotchFilter(int index, bool enable)   // KD0OSS
 // Delete filter selected with mouse pointer
 void Panadapter::deleteNotchFilter(void)   // KD0OSS
 {
-    drawNotchFilter(notchFilterVFO[notchFilterSelected], notchFilterSelected, true);
+    drawNotchFilter(1, notchFilterSelected, true);
     enableNotchFilter(notchFilterSelected, false);
     notchFilterEnabled[notchFilterSelected] = false;
 }
@@ -1144,7 +1180,7 @@ void Panadapter::deleteAllNotchFilters(void)   // KD0OSS
 {
     for (int index=0;index<notchFilterIndex;index++)
     {
-        drawNotchFilter(notchFilterVFO[index], index, true);
+        drawNotchFilter(1, index, true);
         enableNotchFilter(index, false);
         notchFilterEnabled[index] = false;
     }
@@ -1159,6 +1195,7 @@ void Panadapter::updateWaterfall(void)
 
 waterfallObject::waterfallObject(int width, int height) {
 
+    setZValue(10.0);
     waterfallHigh=-60;
     waterfallLow=-125;
 
@@ -1173,7 +1210,9 @@ waterfallObject::waterfallObject(int width, int height) {
     colorHighB=0;
 
     samples=NULL;
-    waterfallAutomatic = true;
+    zoomSet = false;
+
+//    waterfallAutomatic = true;
 
     itemWidth = width;
     itemHeight = height;
@@ -1239,10 +1278,11 @@ void waterfallObject::updateWaterfall(short offset, int sampr, char* buffer, int
     if(samples!=NULL) {
         free(samples);
     }
-    samples = (float*) malloc(itemWidth * sizeof (float));
 
     itemWidth = this->scene()->width();
     itemHeight = this->scene()->height()/2;
+
+    samples = (float*) malloc(itemWidth * sizeof (float));
 
     // do not rotate spectrum display.  It is done by dspserver now
         #pragma omp parallel for schedule(static)
@@ -1258,7 +1298,7 @@ void waterfallObject::updateWaterfall(short offset, int sampr, char* buffer, int
 void waterfallObject::updateWaterfall_2(void){
     int x,y;
 
-    if(image.width()!=itemWidth || (image.height()/2) != (itemHeight)) {
+    if(image.width()!=itemWidth || (image.height()/2) != (itemHeight) || zoomSet) {
         qDebug() << "Waterfall::updateWaterfall " << size << "(" << itemWidth << ")," << itemHeight;
         image = QImage(itemWidth, itemHeight*2, QImage::Format_RGB32);
         cy = image.height()/2 - 1;
@@ -1268,6 +1308,7 @@ void waterfallObject::updateWaterfall_2(void){
                 image.setPixel(x, y, 0xFF000000);
             }
         }
+        zoomSet = false;
     }
     QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
    // updateWaterfall_4();
@@ -1287,12 +1328,12 @@ void waterfallObject::updateWaterfall_4(void){
         average+=samples[x];
     }
 
-    if(waterfallAutomatic) {
+    if (waterfallAutomatic) {
         waterfallLow=(average/size)-10;
         waterfallHigh=waterfallLow+60;
     }
 
-    //update();
+    update();
 }
 
 uint waterfallObject::calculatePixel(int sample) {

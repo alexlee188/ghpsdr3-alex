@@ -309,6 +309,7 @@ protected:
 
 private slots:
     void on_zoomSpectrumSlider_sliderMoved(int position);
+    void setSampleZoom(bool);  // KD0OSS
     void addNotchFilter(void);   // KD0OSS
 
 private:
@@ -387,6 +388,9 @@ private:
     Bandscope* bandscope;
 
     EqualizerDialog *equalizer; // KD0OSS
+
+    int sampleZoomLevel; // KD0OSS
+    int viewZoomLevel; // KD0OSS
 
     int notchFilterIndex; // KD0OSS
 

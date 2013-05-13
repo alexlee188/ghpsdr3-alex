@@ -78,6 +78,8 @@ UI::UI(const QString server) {
     audio = new Audio;
     loffset =0;
     protocol3 = false;
+    sampleZoomLevel = 0; // KD0OSS
+    viewZoomLevel = 0; // KD0OSS
 
     rtp = new RTP;
     rtp_thread = new QThread(this);
@@ -217,6 +219,8 @@ UI::UI(const QString server) {
 
     connect(widget.tnfButton, SIGNAL(clicked(bool)),widget.spectrumView,SLOT(enableNotchFilter(bool)));  // KD0OSS
     connect(widget.tnfAddButton,SIGNAL(clicked()),this,SLOT(addNotchFilter(void)));  // KD0OSS
+
+    connect(widget.zoomSampRadio, SIGNAL(toggled(bool)), this, SLOT(setSampleZoom(bool))); // KD0OSS
 
     connect(widget.actionBookmarkThisFrequency,SIGNAL(triggered()),this,SLOT(actionBookmark()));
     connect(widget.actionEditBookmarks,SIGNAL(triggered()),this,SLOT(editBookmarks()));
@@ -582,7 +586,7 @@ void UI::setProtocol3(bool p){
 void UI::waterfallHighChanged(int high) {
     //qDebug() << __LINE__ << __FUNCTION__ << ": " << high;
 
-//    widget.waterfallView->setHigh(high);
+    widget.spectrumView->panadapterScene->waterfallItem->setHigh(high);
     configure.setWaterfallHigh(high);
     band.setWaterfallHigh(high);
 }
@@ -590,13 +594,13 @@ void UI::waterfallHighChanged(int high) {
 void UI::waterfallLowChanged(int low) {
     //qDebug() << __FUNCTION__ << ": " << low;
 
-//    widget.waterfallView->setLow(low);
+    widget.spectrumView->panadapterScene->waterfallItem->setLow(low);
     configure.setWaterfallLow(low);
     band.setWaterfallLow(low);
 }
 
 void UI::waterfallAutomaticChanged(bool state) {
-//    widget.waterfallView->setAutomatic(state);
+    widget.spectrumView->panadapterScene->waterfallItem->setAutomatic(state);
 }
 
 void UI::audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder) {
@@ -1224,8 +1228,8 @@ void UI::bandChanged(int previousBand,int newBand) {
     widget.spectrumView->setLow(band.getSpectrumLow());
 //    widget.waterfallView->setFrequency(frequency);
 //    widget.waterfallView->setSubRxFrequency(subRxFrequency);
-//    widget.waterfallView->setHigh(band.getWaterfallHigh());
-//    widget.waterfallView->setLow(band.getWaterfallLow());
+    widget.spectrumView->panadapterScene->waterfallItem->setHigh(band.getWaterfallHigh());
+    widget.spectrumView->panadapterScene->waterfallItem->setLow(band.getWaterfallLow());
     widget.vfoFrame->setSubRxFrequency(subRxFrequency);
 
 
@@ -2662,9 +2666,14 @@ void UI::on_zoomSpectrumSlider_sliderMoved(int position)
 {
     QString command;
 
-    command.clear(); QTextStream(&command) << "zoom " << position;
-    connection.sendCommand(command);
-
+    if (widget.zoomSampRadio->isChecked()) // KD0OSS
+    {
+        command.clear(); QTextStream(&command) << "zoom " << position;
+        connection.sendCommand(command);
+        sampleZoomLevel = position;
+    }
+    else
+        viewZoomLevel = position;
     widget.spectrumView->setZoom(position);
 //    widget.waterfallView->setZoom(position);
 }
@@ -2817,4 +2826,19 @@ void UI::addNotchFilter(void)   // KD0OSS
     }
     widget.tnfButton->setChecked(true);
     widget.spectrumView->addNotchFilter(notchFilterIndex++);
+}
+
+void UI::setSampleZoom(bool enable) // KD0OSS
+{
+    QString command;
+
+    if (enable)
+    {
+        command.clear(); QTextStream(&command) << "zoom " << sampleZoomLevel;
+        connection.sendCommand(command);
+        widget.zoomSpectrumSlider->setValue(sampleZoomLevel);
+    }
+    else
+        widget.zoomSpectrumSlider->setValue(viewZoomLevel);
+    widget.spectrumView->sampleZoom = enable;
 }

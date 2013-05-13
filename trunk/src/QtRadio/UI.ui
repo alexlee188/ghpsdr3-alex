@@ -42,7 +42,7 @@
        <enum>Qt::NoFocus</enum>
       </property>
       <property name="maximum">
-       <number>100</number>
+       <number>200</number>
       </property>
       <property name="singleStep">
        <number>5</number>
@@ -182,6 +182,35 @@
        </property>
        <property name="text">
         <string>+TNF</string>
+       </property>
+      </widget>
+      <widget class="QRadioButton" name="zoomSampRadio">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>150</y>
+         <width>119</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Sample Zoom</string>
+       </property>
+      </widget>
+      <widget class="QRadioButton" name="zoomViewRadio">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>170</y>
+         <width>102</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>View Zoom</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </widget>
