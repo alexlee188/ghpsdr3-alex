@@ -126,11 +126,7 @@ Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.
 ctl.cpp rigctl.cpp\
 Audioinput.cpp \
 servers.cpp\
-<<<<<<< HEAD
-G711A.cpp RTP.cpp hardware.cpp hardware_hermes.cpp hardware_perseus.cpp hardware_sdriq.cpp hardware_hiqsdr.cpp hardware_rtlsdr.cpp hardware_sdr1000.cpp powermate.cpp \
-=======
 G711A.cpp RTP.cpp hardware.cpp hardware_hermes.cpp hardware_perseus.cpp hardware_sdr1000.cpp hardware_hiqsdr.cpp hardware_rtlsdr.cpp powermate.cpp \
->>>>>>> 60a8e72df5916007e1a8fe2fefee8187c8f2e648
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  EqualizerDialog.h \
 Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Panadapter.h    XvtrEntry.h  \
