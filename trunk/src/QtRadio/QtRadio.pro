@@ -45,7 +45,6 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 
 
 SOURCES += main.cpp\
-    Waterfall.cpp \
     USBFilters.cpp \
     UI.cpp \
     SAMFilters.cpp \
@@ -103,7 +102,6 @@ SOURCES += main.cpp\
 
 
 HEADERS  += \ 
-    Waterfall.h \
     USBFilters.h \
     UI.h \
     SAMFilters.h \

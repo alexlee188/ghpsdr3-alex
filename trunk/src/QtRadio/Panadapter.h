@@ -63,7 +63,6 @@ public:
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
     int     itemType;
-    bool    zoomSet;
 
     void setLow(int low);
     void setHigh(int high);
@@ -74,7 +73,7 @@ public:
     bool getAutomatic();
 
 public slots:
-    void updateWaterfall(short, int, char*, int);
+    void updateWaterfall(short, int, char*, int, int);
 
 private slots:
     void updateWaterfall_2(void);
@@ -130,7 +129,7 @@ class filterObject : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
-    filterObject(PanadapterScene *scene, QPoint location, float fwidth, QColor color);
+    filterObject(PanadapterScene *scene, QPoint location, float fwidth, float fheight, QColor color);
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
 
@@ -168,7 +167,7 @@ class notchFilterObject : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
-    notchFilterObject(PanadapterScene *scene, int index, QPoint location, float fwidth, QColor color);
+    notchFilterObject(PanadapterScene *scene, int index, QPoint location, float fwidth, float fheight, QColor color);
     void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF  boundingRect() const;
 
@@ -228,6 +227,7 @@ public:
     PanadapterScene *panadapterScene;  // KD0OSS
 
     bool sampleZoom; // KD0OSS
+    int splitViewBoundary; // KD0OSS
 
     void setObjectName(QString name);
     void setGeometry(QRect rect);
@@ -306,7 +306,7 @@ private slots:
 
 private:
     float* samples;
-    char* wsamples;
+    char* wsamples; // KD0OSS
     int spectrumHigh;
     int spectrumLow;
 
@@ -321,6 +321,7 @@ private:
     int lastX;
     int lastY; // KD0OSS
     int moved;
+    bool adjustSplitViewBoundary; // KD0OSS
 
     long sampleRate;
     short meter;

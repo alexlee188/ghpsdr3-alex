@@ -2675,7 +2675,6 @@ void UI::on_zoomSpectrumSlider_sliderMoved(int position)
     else
         viewZoomLevel = position;
     widget.spectrumView->setZoom(position);
-//    widget.waterfallView->setZoom(position);
 }
 
 void UI::rigSetPTT(int enabled){
