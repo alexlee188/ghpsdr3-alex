@@ -9,7 +9,7 @@ QtRadio_CXXFLAGS = $(QT_CXXFLAGS) $(AM_CXXFLAGS)
 QtRadio_CPPFLAGS = $(QT_ADDITIONAL_INCLUDE_PATH) $(QT_CPPFLAGS) $(AM_CPPFLAGS) -DGITREV="\"$(GITSTR)\""
 
 QtRadio_LDFLAGS  = $(QT_LDFLAGS) $(LDFLAGS) $(QT_ADDITIONAL_LDFLAG)
-QtRadio_LDADD    = $(QT_LIBS) $(LDADD) $(QtRadio_LDFLAGS)
+QtRadio_LDADD    = $(QT_LIBS) $(LDADD) $(QtRadio_LDFLAGS) -lssl -lcrypto
 
 # For a program:
 bin_PROGRAMS = QtRadio
@@ -61,7 +61,6 @@ hardware_perseus.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \
-hardware_sdr1000.moc.cpp \
 powermate.moc.cpp \
 EqualizerDialog.moc.cpp
 	
@@ -111,7 +110,6 @@ hardware_perseus.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \
-hardware_sdr1000.moc.cpp \
 powermate.moc.cpp \
 EqualizerDialog.moc.cpp
 
@@ -143,7 +141,6 @@ hardware_perseus.h \
 hardware_sdr1000.h \
 hardware_hiqsdr.h \
 hardware_rtlsdr.h \
-hardware_sdr1000.h \
 powermate.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui servers.ui EqualizerDialog.ui
@@ -197,7 +194,6 @@ hardware_perseus.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \
-hardware_sdr1000.moc.cpp \
 powermate.moc.cpp \
 EqualizerDialog.moc.cpp
 
