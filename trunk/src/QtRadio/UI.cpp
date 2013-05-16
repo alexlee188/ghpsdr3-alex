@@ -1203,6 +1203,8 @@ void UI::bandChanged(int previousBand,int newBand) {
     qDebug()<<Q_FUNC_INFO<<":   The value of filters.getFilter is  "<<filters.getFilter();
 
 
+    widget.spectrumView->setBand(band.getStringBand()); // KD0OSS
+
     if(band.getFilter() != filters.getFilter()) {
         emit filterChanged(filters.getFilter(), band.getFilter());
     }
@@ -1233,7 +1235,6 @@ void UI::bandChanged(int previousBand,int newBand) {
     widget.vfoFrame->setSubRxFrequency(subRxFrequency);
 
 
-//    widget.spectrumView->setBand(band.getStringBand()); //gvj obsolete code as spectrum no longer paints text data
     BandLimit limits=band.getBandLimits(band.getFrequency()-(samplerate/2),band.getFrequency()+(samplerate/2));
     widget.spectrumView->setBandLimits(limits.min() + loffset,limits.max()+loffset);
     if((mode.getStringMode()=="CWU")||(mode.getStringMode()=="CWL")) frequencyChanged(frequency); //gvj dummy call to set Rx offset for cw

@@ -362,6 +362,7 @@ private:
     float notchFilterBW[9]; // KD0OSS
     float notchFilterFO[9]; // KD0OSS
     int   notchFilterDepth[9]; // KD0OSS
+    QString notchFilterBand[9]; // KD0OSS
     bool  notchFilterEnabled[9]; // KD0OSS
     int   notchFilterSelected; // KD0OSS
 
