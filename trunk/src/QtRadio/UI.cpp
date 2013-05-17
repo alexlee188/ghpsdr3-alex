@@ -110,6 +110,8 @@ UI::UI(const QString server) {
     widget.gridLayout->setVerticalSpacing(0);
     widget.gridLayout->setHorizontalSpacing(0);
 
+    widget.statusbar->showMessage("QtRadio branch: kd0oss 2013");
+
     connect(widget.vfoFrame,SIGNAL(getBandFrequency()),this,SLOT(getBandFrequency()));
 
     // connect up all the menus
@@ -259,7 +261,7 @@ UI::UI(const QString server) {
 //    connect(widget.waterfallView, SIGNAL(frequencyMoved(int,int)),
   //          this, SLOT(frequencyMoved(int,int)));
 
-//    connect(widget.spectrumView, SIGNAL(notchFilterAdded(int,double,double)), this, SLOT(notchFilterAdded(int, double, double))); // KD0OSS
+    connect(widget.spectrumView, SIGNAL(statusMessage(QString)), this, SLOT(statusMessage(QString))); // KD0OSS
 
     // connect up configuration changes
     connect(&configure,SIGNAL(spectrumHighChanged(int)),this,SLOT(spectrumHighChanged(int)));
@@ -2794,7 +2796,7 @@ void UI::actionPwsMode3()   // KD0OSS
 void UI::AGCTLevelChanged(int level)   // KD0OSS
 {
     QString command;
-    command.clear(); QTextStream(&command) << "setagctlevel " << level;
+    command.clear(); QTextStream(&command) << "setagc " << level;
 //        qDebug("%s", command);
     connection.sendCommand(command);
     qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
@@ -2841,4 +2843,9 @@ void UI::setSampleZoom(bool enable) // KD0OSS
     else
         widget.zoomSpectrumSlider->setValue(viewZoomLevel);
     widget.spectrumView->sampleZoom = enable;
+}
+
+void UI::statusMessage(QString message)
+{
+    widget.statusbar->showMessage(message);
 }

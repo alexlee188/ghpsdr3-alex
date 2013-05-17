@@ -260,6 +260,7 @@ public slots:
     void nbThresholdChanged(double);
     void sdromThresholdChanged(double);
     void windowTypeChanged(int); //KD0OSS
+    void statusMessage(QString); //KD0OSS
 
     void actionBookmark();
     void addBookmark();

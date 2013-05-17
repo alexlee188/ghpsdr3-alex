@@ -269,6 +269,7 @@ signals:
     void waterfallLowChanged(int low);
     void meterValue(int meter, int subrx_meter);
     void squelchValueChanged(int step);
+    void statusMessage(QString);
 
 protected:
  //   void paintEvent(QPaintEvent*);

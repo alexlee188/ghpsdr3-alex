@@ -88,7 +88,7 @@
         </rect>
        </property>
        <property name="toolTip">
-        <string extracomment="AGC max gain"/>
+        <string extracomment="AGC max gain">Variable fixed gain control.</string>
        </property>
        <property name="minimum">
         <number>-20</number>
@@ -138,6 +138,9 @@
          <height>21</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>Enable/Disable RX audio equalizer.</string>
+       </property>
        <property name="text">
         <string>RX Equalizer</string>
        </property>
@@ -151,6 +154,9 @@
          <height>21</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>Enable/Disable TX audio equalizer.</string>
+       </property>
        <property name="text">
         <string>TX Equalizer</string>
        </property>
@@ -163,6 +169,9 @@
          <width>45</width>
          <height>24</height>
         </rect>
+       </property>
+       <property name="toolTip">
+        <string>Enable/Disable tracking notch filters.</string>
        </property>
        <property name="text">
         <string>TNF</string>
@@ -180,6 +189,9 @@
          <height>24</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>Add tracking notch filter to current band.</string>
+       </property>
        <property name="text">
         <string>+TNF</string>
        </property>
@@ -193,6 +205,9 @@
          <height>21</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>Enable original zoom.</string>
+       </property>
        <property name="text">
         <string>Sample Zoom</string>
        </property>
@@ -205,6 +220,9 @@
          <width>102</width>
          <height>21</height>
         </rect>
+       </property>
+       <property name="toolTip">
+        <string>Enable view zoom.</string>
        </property>
        <property name="text">
         <string>View Zoom</string>

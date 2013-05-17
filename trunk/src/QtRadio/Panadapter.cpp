@@ -350,6 +350,16 @@ void Panadapter::mousePressEvent(QMouseEvent* event) {
             this->setCursor(Qt::ArrowCursor);
   //          qDebug("Item: %d", notchFilterSelected);
         }
+
+        if (static_cast<filterObject*>(itemAt(event->pos().x(), event->pos().y()))->itemType == 2)
+        {
+            filterObject *filt = static_cast<filterObject*>(itemAt(event->pos().x(), event->pos().y()));
+            if (event->pos().x() >= (filt->itemLocation.x()-1) && event->pos().x() <= (filt->itemLocation.x()+1) ||
+                    event->pos().x() >= (filt->itemLocation.x()+filt->itemWidth-1) && event->pos().x() <= (filt->itemLocation.x()+filt->itemWidth+1))
+                this->setCursor(Qt::SizeHorCursor);
+            else
+                this->setCursor(Qt::ArrowCursor);
+        }
     }
 }
 
@@ -380,7 +390,18 @@ void Panadapter::mouseMoveEvent(QMouseEvent* event){
             showSquelchControl=false;
             adjustSplitViewBoundary = false;
             if (static_cast<notchFilterObject*>(itemAt(event->pos().x(), event->pos().y()))->itemType == 8)
+            {
                 this->setCursor(Qt::SizeAllCursor);
+                emit statusMessage("Right click on notch filter for more actions");
+            } else if (static_cast<filterObject*>(itemAt(event->pos().x(), event->pos().y()))->itemType == 2)
+            {
+                filterObject *filt = static_cast<filterObject*>(itemAt(event->pos().x(), event->pos().y()));
+                if (event->pos().x() >= (filt->itemLocation.x()-1) && event->pos().x() <= (filt->itemLocation.x()+1) ||
+                    event->pos().x() >= (filt->itemLocation.x()+filt->itemWidth-1) && event->pos().x() <= (filt->itemLocation.x()+filt->itemWidth+1))
+                    this->setCursor(Qt::SizeHorCursor);
+                else
+                    this->setCursor(Qt::ArrowCursor);
+            }
             else
                 this->setCursor(Qt::ArrowCursor);
         }
@@ -391,7 +412,6 @@ void Panadapter::mouseMoveEvent(QMouseEvent* event){
             this->setCursor(Qt::ArrowCursor);
         }
     } else if (button == 1 && notchFilterSelected > -1) {   // KD0OSS
-            this->setCursor(Qt::SizeHorCursor);
             float zoom_factor = 1.0f + zoom/25.0f;
             float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
             int move_step;
@@ -694,8 +714,8 @@ void Panadapter:: drawUpdatedNotchFilter(int vfo)
             delete (notchFilterObject*)panadapterScene->sceneItems.find(QString("nf%1%2").arg(vfo).arg(index)).value();
             panadapterScene->sceneItems.remove(QString("nf%1%2").arg(vfo).arg(index));
         }
-        else
-            continue;
+   //     else
+       //     continue;
 
         if (notchFilterBand[index] != band) continue;
 
@@ -966,7 +986,7 @@ void Panadapter::setFrequency(long long f) {
 
 //    strFrequency.sprintf("%lld.%03lld.%03lld",f/1000000,f%1000000/1000,f%1000);
 //    strSubRxFrequency.sprintf("%lld.%03lld.%03lld",f/1000000,f%1000000/1000,f%1000);
-    //qDebug() << "Panadapter:setFrequency: " << f;
+    qDebug() << "Panadapter:setFrequency: " << f;
 }
 
 void Panadapter::setSubRxFrequency(long long f) {
@@ -1146,7 +1166,6 @@ void Panadapter::updateNotchFilter(int index)   // KD0OSS
     QString command;
     double audio_freq;
 
-    qDebug("Update notch %d************************************",index);
     updateNfTimer->stop();
     if (index < 0) // Update all active notch filters
     {

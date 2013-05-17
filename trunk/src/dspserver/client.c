@@ -1225,6 +1225,13 @@ void readcb(struct bufferevent *bev, void *ctx){
             agc=atoi(tokens[0]);
             SetRXAGC(0,0,agc);
             SetRXAGC(0,1,agc);
+        } else if(strncmp(cmd,"setfixedagc",11)==0) {
+            int agc;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            agc=atoi(tokens[0]);
+            SetFixedAGC(0,0,agc);
+            SetFixedAGC(0,1,agc);
         } else if(strncmp(cmd,"enablenotchfilter",17)==0) {
             int vfo, i;
             int index;
