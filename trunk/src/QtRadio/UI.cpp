@@ -259,7 +259,7 @@ UI::UI(const QString server) {
 //    connect(widget.waterfallView, SIGNAL(frequencyMoved(int,int)),
   //          this, SLOT(frequencyMoved(int,int)));
 
-    connect(widget.spectrumView, SIGNAL(notchFilterAdded(int,double,double)), this, SLOT(notchFilterAdded(int, double, double)));
+//    connect(widget.spectrumView, SIGNAL(notchFilterAdded(int,double,double)), this, SLOT(notchFilterAdded(int, double, double))); // KD0OSS
 
     // connect up configuration changes
     connect(&configure,SIGNAL(spectrumHighChanged(int)),this,SLOT(spectrumHighChanged(int)));

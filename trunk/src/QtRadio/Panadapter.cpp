@@ -221,6 +221,9 @@ Panadapter::Panadapter(QWidget*& widget) {
 
     panadapterScene->spectrumPlot = new spectrumObject(panadapterScene->width(), panadapterScene->height()/2);
     panadapterScene->waterfallItem = new waterfallObject(panadapterScene->width(), panadapterScene->height()/2);
+
+    updateNfTimer = new QTimer(this);
+    connect(updateNfTimer, SIGNAL(timeout()), this, SLOT(updateNotchFilter()));
     //*************************************************************************************************
 }
 
@@ -431,8 +434,8 @@ void Panadapter::mouseMoveEvent(QMouseEvent* event){
             if (!move==0) {
                 if (subRx) emit frequencyMoved(-move,move_step);
                 else emit frequencyMoved(move,move_step);
-                drawUpdatedNotchFilter(1);
-                updateNotchFilter(-1);
+       //         drawUpdatedNotchFilter(1);
+       //         updateNotchFilter(-1);
             }
         }
     }
@@ -694,7 +697,7 @@ void Panadapter:: drawUpdatedNotchFilter(int vfo)
         else
             continue;
 
-        if (!notchFilterEnabled[index] || notchFilterBand[index] != band) continue;
+        if (notchFilterBand[index] != band) continue;
 
         float zoom_factor = 1.0f + zoom/25.0f;
 
@@ -956,8 +959,7 @@ void Panadapter::setFrequency(long long f) {
     drawCursor(2, !subRx);
     drawFilter(2, !subRx);
     drawUpdatedNotchFilter(1);
-    settimer
-    updateNotchFilter(-1);
+    updateNfTimer->start(1000);
     //***********************************
 
 //    gvj code
@@ -1134,11 +1136,18 @@ void Panadapter::addNotchFilter(int index)   // KD0OSS
     enableNotchFilter(notchFilterIndex, true);
 }
 
+void Panadapter::updateNotchFilter(void)
+{
+    updateNotchFilter(-1);
+}
+
 void Panadapter::updateNotchFilter(int index)   // KD0OSS
 {
     QString command;
     double audio_freq;
 
+    qDebug("Update notch %d************************************",index);
+    updateNfTimer->stop();
     if (index < 0) // Update all active notch filters
     {
         for (int i=0;i<=notchFilterIndex;i++)
@@ -1146,6 +1155,7 @@ void Panadapter::updateNotchFilter(int index)   // KD0OSS
             if (notchFilterEnabled[i] && notchFilterBand[i] == band)
             {
                 audio_freq = abs((notchFilterFO[i] - frequency)); // Convert to audio frequency in Hz
+                if (audio_freq < filterLow) enableNotchFilter(i, false);
                 command.clear();
                 QTextStream(&command) << "setnotchfilter " << 0 << " " << i << " " << notchFilterBW[i] << " " << audio_freq;
                 connection->sendCommand(command);
@@ -1161,6 +1171,7 @@ void Panadapter::updateNotchFilter(int index)   // KD0OSS
     else // Update selected notch filter
     {
         audio_freq = abs((notchFilterFO[index] - frequency)); // Convert to audio frequency in Hz
+        if (audio_freq < filterLow) enableNotchFilter(index, false);
         command.clear();
         QTextStream(&command) << "setnotchfilter " << 0 << " " << index << " " << notchFilterBW[index] << " " << audio_freq;
         connection->sendCommand(command);
@@ -1180,7 +1191,7 @@ void Panadapter::enableNotchFilter(bool enable)   // KD0OSS
 
     for (int index=0;index<=notchFilterIndex;index++)
     {
-        if (!notchFilterEnabled[index] || notchFilterBand[index] != band) continue;
+        if (notchFilterBand[index] != band) continue;
         command.clear();
         QTextStream(&command) << "enablenotchfilter " << 0 << " " << index << " " << enable;
         connection->sendCommand(command);
@@ -1199,7 +1210,7 @@ void Panadapter::enableNotchFilter(int index, bool enable)   // KD0OSS
 {
     QString command;
 
-    if (!notchFilterEnabled[index] || notchFilterBand[index] != band) return;
+    if (notchFilterBand[index] != band) return;
     command.clear();
     QTextStream(&command) << "enablenotchfilter " << 0 << " " << index << " " << enable;
     connection->sendCommand(command);
@@ -1217,6 +1228,7 @@ void Panadapter::deleteNotchFilter(void)   // KD0OSS
 {
     drawNotchFilter(1, notchFilterSelected, true);
     enableNotchFilter(notchFilterSelected, false);
+    notchFilterBand[notchFilterSelected] = "na";
     notchFilterEnabled[notchFilterSelected] = false;
 }
 
@@ -1227,6 +1239,7 @@ void Panadapter::deleteAllNotchFilters(void)   // KD0OSS
         drawNotchFilter(1, index, true);
         enableNotchFilter(index, false);
         notchFilterEnabled[index] = false;
+        notchFilterBand[index] = "na";
     }
 }
 

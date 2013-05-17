@@ -300,7 +300,8 @@ private slots:
     void drawSquelch(void);  // KD0OSS
     void drawSpectrum(void);  // KD0OSS
     void drawUpdatedNotchFilter(int vfo);  // KD0OSS
-    void updateNotchFilter(int index);  // KD0OSS
+    void updateNotchFilter(void);  // KD0OSS
+    void updateNotchFilter(int);  // KD0OSS
     void deleteNotchFilter(void);  // KD0OSS
     void deleteAllNotchFilters(void);  // KD0OSS
 
@@ -356,6 +357,7 @@ private:
     QVector <QPoint> plot;
 
     bool initialized; // KD0OSS
+    QTimer *updateNfTimer;
 
     int   notchFilterIndex; // KD0OSS
     int   notchFilterVFO[9]; // KD0OSS
