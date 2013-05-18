@@ -1760,7 +1760,7 @@ void UI::actionFixed() { // KD0OSS
 
     command.clear(); QTextStream(&command) << "SetAGC " << agc;
     connection.sendCommand(command);
-
+    AGCTLevelChanged(90);
 }
 
 void UI::actionSlow() {
@@ -2796,7 +2796,7 @@ void UI::actionPwsMode3()   // KD0OSS
 void UI::AGCTLevelChanged(int level)   // KD0OSS
 {
     QString command;
-    command.clear(); QTextStream(&command) << "setagc " << level;
+    command.clear(); QTextStream(&command) << "setfixedagc " << level;
 //        qDebug("%s", command);
     connection.sendCommand(command);
     qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
