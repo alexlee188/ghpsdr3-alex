@@ -101,7 +101,8 @@ public:
     double getRxIQspinBoxValue();
     int getCwPitch();
     bool getRxIQdivCheckBoxState();
-    bool getDCBlockValue(); //KD0OSS
+    bool getRxDCBlockValue(); //KD0OSS
+    bool getTxDCBlockValue(); //KD0OSS
 
 signals:
     void hostChanged(QString host);
@@ -139,7 +140,8 @@ signals:
     void spinBox_cwPitchChanged(int pitch);
     void avgSpinChanged(int value);
 
-    void dcBlockChanged(bool state);  //KD0OSS
+    void rxDCBlockChanged(bool state);  //KD0OSS
+    void txDCBlockChanged(bool state);  //KD0OSS
     void windowTypeChanged(int type); //KD0OSS
 
 public slots:
@@ -159,7 +161,8 @@ public slots:
     void slotMicSampleRateChanged(int rate);
     void slotMicChannelsChanged(int channels);
     void slotMicOrderChanged(int selection);
-    void slotDCBlock(bool state);  //KD0OSS
+    void slotRxDCBlock(bool state);  //KD0OSS
+    void slotTxDCBlock(bool state);  //KD0OSS
     void slotWindowType(int type); //KD0OSS
 
     void slotUseRTP(bool state);

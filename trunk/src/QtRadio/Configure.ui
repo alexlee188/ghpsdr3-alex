@@ -1454,6 +1454,19 @@
       </item>
      </widget>
     </widget>
+    <widget class="QCheckBox" name="rxDCBlockCheckBox">
+     <property name="geometry">
+      <rect>
+       <x>260</x>
+       <y>245</y>
+       <width>111</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>RX DC Block</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="Transmit">
     <attribute name="title">
@@ -1511,7 +1524,7 @@
       <string>Save</string>
      </property>
     </widget>
-    <widget class="QCheckBox" name="dcBlockCheckBox">
+    <widget class="QCheckBox" name="txDCBlockCheckBox">
      <property name="geometry">
       <rect>
        <x>250</x>
