@@ -337,6 +337,7 @@ UI::UI(const QString server) {
     connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
     connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
     connect(&connection,SIGNAL(hardware(QString)),this,SLOT(hardware(QString)));
+    connect(widget.ctlFrame,SIGNAL(masterBtnClicked()),this,SLOT(masterButtonClicked()));
 
 
     bandscope=NULL;
@@ -2848,4 +2849,8 @@ void UI::setSampleZoom(bool enable) // KD0OSS
 void UI::statusMessage(QString message)
 {
     widget.statusbar->showMessage(message);
+}
+
+void UI::masterButtonClicked(void){
+    connection.sendCommand("setMaster " + configure.thisuser + " " + configure.thispass);
 }

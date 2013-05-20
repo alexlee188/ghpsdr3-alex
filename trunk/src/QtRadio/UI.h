@@ -223,6 +223,7 @@ public slots:
     void frequencyChanged(long long frequency);
 
     void updateSpectrum();
+    void masterButtonClicked(void);
 
     void audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void encodingChanged(int choice);

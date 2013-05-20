@@ -349,6 +349,7 @@ void Panadapter::mousePressEvent(QMouseEvent* event) {
             menu.exec(event->globalPos());
             this->setCursor(Qt::ArrowCursor);
   //          qDebug("Item: %d", notchFilterSelected);
+            return;
         }
 
         if (static_cast<filterObject*>(itemAt(event->pos().x(), event->pos().y()))->itemType == 2)
