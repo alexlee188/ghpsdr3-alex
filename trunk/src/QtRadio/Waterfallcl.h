@@ -48,7 +48,7 @@ public:
     void setLO_offset(GLfloat offset);
 
 public slots:
-    void updateWaterfall(char* header,char* buffer,int width);
+    void updateWaterfall(char* buffer,int width);
     void updateWaterfallgl(void);
 protected:
     void resizeGL( int width, int height );

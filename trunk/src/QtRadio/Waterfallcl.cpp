@@ -152,7 +152,7 @@ void Waterfallcl::paintGL()
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
 }
 
-void Waterfallcl::updateWaterfall(char *header, char *buffer, int width){
+void Waterfallcl::updateWaterfall(char *buffer, int width){
     int data_length = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
     if (cy-- <= 0) cy = MAX_CL_HEIGHT - 1;
 

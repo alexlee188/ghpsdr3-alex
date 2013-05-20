@@ -1,5 +1,5 @@
 #include "smeter.h"
-#include "Spectrum.h"
+#include "Panadapter.h"
 #include "UI.h"
 sMeter::sMeter(QWidget*& widget) {
     QFrame::setParent(widget);

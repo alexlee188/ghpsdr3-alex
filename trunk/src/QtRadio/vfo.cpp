@@ -66,6 +66,7 @@ vfo::vfo(QWidget *parent) :
     connect(ui->hSlider, SIGNAL(valueChanged(int)),
                 this, SLOT(processRIT(int)));
 
+
 #if !defined(WIN32)
     //  Powermate related stuff
     PmInput *input = new PmInput();
