@@ -270,6 +270,7 @@ signals:
     void meterValue(int meter, int subrx_meter);
     void squelchValueChanged(int step);
     void statusMessage(QString);
+    void removeNotchFilter(void);
 
 protected:
  //   void paintEvent(QPaintEvent*);

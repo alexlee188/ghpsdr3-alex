@@ -262,6 +262,7 @@ UI::UI(const QString server) {
   //          this, SLOT(frequencyMoved(int,int)));
 
     connect(widget.spectrumView, SIGNAL(statusMessage(QString)), this, SLOT(statusMessage(QString))); // KD0OSS
+    connect(widget.spectrumView, SIGNAL(removeNotchFilter()), this, SLOT(removeNotchFilter()));
 
     // connect up configuration changes
     connect(&configure,SIGNAL(spectrumHighChanged(int)),this,SLOT(spectrumHighChanged(int)));
@@ -831,6 +832,8 @@ void UI::connected() {
     printWindowTitle("Remote connected");
     connection_valid = TRUE;
     if((mode.getStringMode()=="CWU")||(mode.getStringMode()=="CWL")) frequencyChanged(frequency); //gvj dummy call to set Rx offset for cw
+
+    widget.spectrumView->enableNotchFilter(false);
 }
 
 void UI::disconnected(QString message) {
@@ -1761,7 +1764,7 @@ void UI::actionFixed() { // KD0OSS
 
     command.clear(); QTextStream(&command) << "SetAGC " << agc;
     connection.sendCommand(command);
-    AGCTLevelChanged(90);
+    AGCTLevelChanged(widget.agcTLevelSlider->value());
 }
 
 void UI::actionSlow() {
@@ -2831,6 +2834,15 @@ void UI::addNotchFilter(void)   // KD0OSS
     widget.spectrumView->addNotchFilter(notchFilterIndex++);
 }
 
+void UI::removeNotchFilter(void)
+{
+    notchFilterIndex--;
+    if (notchFilterIndex < 0)
+        notchFilterIndex = 0;
+    if (notchFilterIndex == 0)
+        widget.tnfButton->setChecked(false);
+}
+
 void UI::setSampleZoom(bool enable) // KD0OSS
 {
     QString command;
@@ -2851,6 +2863,7 @@ void UI::statusMessage(QString message)
     widget.statusbar->showMessage(message);
 }
 
-void UI::masterButtonClicked(void){
+void UI::masterButtonClicked(void)
+{
     connection.sendCommand("setMaster " + configure.thisuser + " " + configure.thispass);
 }

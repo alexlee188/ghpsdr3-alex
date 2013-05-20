@@ -262,6 +262,7 @@ public slots:
     void sdromThresholdChanged(double);
     void windowTypeChanged(int); //KD0OSS
     void statusMessage(QString); //KD0OSS
+    void removeNotchFilter(void);
 
     void actionBookmark();
     void addBookmark();
