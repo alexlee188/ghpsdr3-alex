@@ -608,6 +608,10 @@ public class Connection extends Thread {
 	public void setStatus(String message) {
 		status = message;
 	}
+	
+	public void setMaster(){
+		sendCommand("setMaster " + txUser + " " + txPass);
+	}
 
 	public String getStatus() {
 		return status;

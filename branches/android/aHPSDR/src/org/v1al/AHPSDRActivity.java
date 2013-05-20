@@ -299,6 +299,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		menu.add(0, MENU_TX, 0, "ALLOW TX");
 		menu.add(0, MENU_TX_USER, 0, "TX User Password");
 		menu.add(0, MENU_MIC_GAIN, 0, "MIC GAIN");
+		menu.add(0, MENU_MASTER, 0, "MASTER");
 		menu.add(0, MENU_ABOUT, 0, "About");
 		menu.add(0, MENU_QUIT, 0, "Quit");
 		return true;
@@ -1154,6 +1155,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
             dialog = builder.create();
 			spectrumView.setAverage(-100);
             break;
+        case MENU_MASTER:
+        	connection.setMaster();
+        	break;
 		case MENU_GAIN:
 			builder = new AlertDialog.Builder(this);
 			builder.setTitle("Select Gain");
@@ -1342,9 +1346,10 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int MENU_SERVERS = 11;
 	public static final int MENU_TX = 12;
 	public static final int MENU_TX_USER = 13;
-	public static final int MENU_MIC_GAIN = 14;
-	public static final int MENU_SPECTRUM_AVERAGE = 15;
-	public static final int MENU_ABOUT = 16;
+	public static final int MENU_MASTER = 14;
+	public static final int MENU_MIC_GAIN = 15;
+	public static final int MENU_SPECTRUM_AVERAGE = 16;
+	public static final int MENU_ABOUT = 17;
 
 	public static final CharSequence[] bands = { "160", "80", "60", "40", "30",
 			"20", "17", "15", "12", "10", "6", "GEN", "WWV", "Reset" };
