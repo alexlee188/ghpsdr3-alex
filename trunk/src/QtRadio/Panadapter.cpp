@@ -155,8 +155,6 @@ Panadapter::Panadapter(QWidget*& widget) {
 
     //qDebug() << "Panadapter::Panadapter " << width() << ":" << height();
 
-    sMeterMain=new Meter("Main Rx");
-    sMeterSub=new Meter("Sub Rx");
     sampleRate=96000;
     spectrumHigh=-40;
     spectrumLow=-160;

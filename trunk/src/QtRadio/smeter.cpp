@@ -7,7 +7,7 @@ sMeter::sMeter(QWidget*& widget) {
     sMeterMain=new Meter("Main Rx");
     sMeterSub=new Meter("Sub Rx");
     meter_dbm = -121;
-    sub_meter_dbm =-121;
+    sub_meter_dbm = -121;
     subRx = FALSE;
 }
 
