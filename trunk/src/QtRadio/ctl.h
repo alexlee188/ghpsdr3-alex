@@ -53,6 +53,7 @@ signals:
     void pwrSlider_valueChanged(double pwr);
     void testBtnClick(bool state);
     void testSliderChange(int value);
+    void masterBtnClicked(void);
 
 public slots:
     void update_mic_level(qreal level);
@@ -65,6 +66,7 @@ private slots:
     void on_checkBox_stateChanged(int arg1);
     void on_pwrSlider_2_valueChanged(int value);
     void on_spinBox_valueChanged(int arg1);
+    void on_btnMaster_clicked(void);
 
     void on_pushButton_pressed();
 

@@ -107,9 +107,9 @@
   <widget class="QProgressBar" name="MicProgressBar">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>70</x>
      <y>46</y>
-     <width>221</width>
+     <width>161</width>
      <height>20</height>
     </rect>
    </property>
@@ -194,6 +194,19 @@
    </property>
    <property name="text">
     <string>Toggle</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnMaster">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>45</y>
+     <width>56</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Master</string>
    </property>
   </widget>
  </widget>

@@ -1307,7 +1307,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             state=atoi(tokens[0]);
-            SetGrphTXEQcmd(0,state);
+            SetGrphTXEQcmd(1,state);
         } else if(strncmp(cmd,"settx3bdgreq",10)==0) { // KD0OSS
             int value[4];
             if (tokenize_cmd(&saveptr, tokens, 4) != 4)
@@ -1316,7 +1316,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             value[1]=atoi(tokens[1]);
             value[2]=atoi(tokens[2]);
             value[3]=atoi(tokens[3]);
-            SetGrphTXEQ(0,&value);
+            SetGrphTXEQ(1,&value);
         } else if(strncmp(cmd,"settx10bdgreq",11)==0) { // KD0OSS
             int value[11];
             if (tokenize_cmd(&saveptr, tokens, 11) != 11)
@@ -1332,7 +1332,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             value[8]=atoi(tokens[8]);
             value[9]=atoi(tokens[9]);
             value[10]=atoi(tokens[10]);
-            SetGrphTXEQ10(0,&value);
+            SetGrphTXEQ10(1,&value);
         } else if(strncmp(cmd,"setnr",5)==0) {
             int nr = 0;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1597,7 +1597,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             state=atoi(tokens[0]);
-            SetTXDCBlock(0,state);
+            SetTXDCBlock(1,state);
             sdr_log(SDR_LOG_INFO,"SetTXDCBlock %d\n",state);
         } else if(strncmp(cmd,"mox",3)==0) {
             int ntok;
@@ -1785,7 +1785,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                 goto badcommand;
             if (config.no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of IQ sent = '%s', '%s'\n",tokens[0], tokens[1]);
-                SetCorrectTXIQ(0, atof(tokens[0]), atof(tokens[1]));
+                SetCorrectTXIQ(1, atof(tokens[0]), atof(tokens[1]));
             } else {
                 sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s', '%s'\n",tokens[0],tokens[1]);
             }
@@ -1794,7 +1794,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                 goto badcommand;
             if (config.no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of Tx IQ phase sent = '%s'\n",tokens[0]);
-                SetCorrectTXIQPhase(0, atof(tokens[0]));
+                SetCorrectTXIQPhase(1, atof(tokens[0]));
             } else {
                 sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s'\n",tokens[0]);
             }
@@ -1803,7 +1803,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                 goto badcommand;
             if (config.no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of Tx IQ gain sent = '%s'\n",tokens[0]);
-                SetCorrectTXIQGain(0, atof(tokens[0]));
+                SetCorrectTXIQGain(1, atof(tokens[0]));
             } else {
                 sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s'\n",tokens[0]);
             }
