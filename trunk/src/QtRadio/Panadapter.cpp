@@ -1148,7 +1148,7 @@ void Panadapter::addNotchFilter(int index)   // KD0OSS
         if (abs(notchFilterFO[notchFilterIndex] - notchFilterFO[i]) <= 100)
             return;
     }
-    notchFilterBW[notchFilterIndex] = 200.0;
+    notchFilterBW[notchFilterIndex] = 400.0;
     notchFilterDepth[notchFilterIndex] = 1;
     notchFilterBand[notchFilterIndex] = band;
     notchFilterEnabled[notchFilterIndex] = true;
