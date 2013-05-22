@@ -53,6 +53,7 @@
 // There are problems running at 8000 samples per second on Mac OS X
 // The resolution is to run at 8011 samples persecond.
 #define SAMPLE_RATE_FUDGE 11
+//#define SAMPLE_RATE_FUDGE 0
 
 class Audio;
 

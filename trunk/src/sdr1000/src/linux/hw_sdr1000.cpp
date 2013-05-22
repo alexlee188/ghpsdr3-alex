@@ -650,8 +650,8 @@ void SDR1000::SetPTT(bool ptt)
     UpdateHW(false);
     if (ptt)
     {
-         current_freq += 0.011025;
-         current_freq += 0.005500;
+         current_freq -= 0.011025;
+//        current_freq += 0.005500;
          SetFreq(current_freq);
          tmpSpuron = spur_reduction_enabled;
          SetSpurReduction(false);
@@ -681,8 +681,8 @@ void SDR1000::SetPTT(bool ptt)
          SetPA_TR(false);
          SetATTOn(tmpATTNon);
          SetSpurReduction(tmpSpuron);
-         current_freq -= 0.011025;
-         current_freq -= 0.005500;
+         current_freq += 0.011025;
+  //       current_freq -= 0.005500;
          SetFreq(current_freq);
          printf("Transmitting...stopped\n");
     }
