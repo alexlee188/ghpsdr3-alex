@@ -1284,50 +1284,29 @@ waterfallObject::waterfallObject(int width, int height) {
     colorHighR=255;
     colorHighG=255;
     colorHighB=0;
-
     samples=NULL;
 
-//    waterfallAutomatic = true;
 
     itemWidth = width;
     itemHeight = height;
 
  //   fitInView(sceneRect().x()-1, sceneRect().y()+1, sceneRect().width()+1, sceneRect().height()-1, Qt::KeepAspectRatio);
 
-#ifdef WATERFALL_2D
-    image = QImage(width*2, height, QImage::Format_RGB32);
-
-    int x, y;
-    #pragma omp parallel for schedule(static)
-    for (x = 0; x < image.width(); x++) {
-        for (y = 0; y < image.height(); y++) {
-            image.setPixel(x, y, 0xFF000000);
-        }
-    }
-    cy = image.height()/2 - 1;
-#endif
-
-
     waterfallcl = new Waterfallcl;
     waterfallcl->initialize(width,256);
     waterfallcl->resize(width*3,height*2);
-    //waterfallcl->setParent((QWidget*)this);
+    //waterfallcl->setParent(this);
+    // This does not work until Qt5.1 with the container method
+    // to embed native opengl draw (QWindow) child in a QWidget container
     waterfallcl->show();
 }
 
 void waterfallObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
-
-#ifdef WATERFALL_2D
-    // plot waterfall
-    painter->drawImage(0,itemHeight,image,0,cy,image.width(),image.height()/2,Qt::AutoColor);
-    if (cy <= 0) cy = image.height()/2 - 1;
-    else cy--;          // "scroll"
-#endif
 }
 
 QRectF waterfallObject::boundingRect() const
 {
-    return QRectF(QPointF(0.0, itemHeight), QPointF(image.width(), image.height()/2));
+    return QRectF(QPointF(0.0, itemHeight), QPointF(itemWidth, itemHeight));
 } /** end boundingRect **/
 
 int waterfallObject::getHigh() {
@@ -1362,23 +1341,8 @@ void waterfallObject::updateWaterfall(short offset, int sampr, char* buffer, int
     sampleRate = sampr;
     LO_offset = offset;
 
-    if(samples!=NULL) {
-        free(samples);
-    }
-
     itemWidth = this->scene()->width();
     itemHeight = starty;
-
-#ifdef WATERFALL_2D
-    samples = (float*) malloc(itemWidth * sizeof (float));
-
-    // do not rotate spectrum display.  It is done by dspserver now
-        #pragma omp parallel for schedule(static)
-        for(i=0;i<itemWidth;i++) {
-            samples[i] = -(buffer[i] & 0xFF);
-        }
-#endif
-
 
     waterfallcl->setLO_offset(0.0);
     size = length;
@@ -1389,59 +1353,10 @@ void waterfallObject::updateWaterfall(short offset, int sampr, char* buffer, int
 
     waterfallcl->updateWaterfall(buffer, length);
 
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_2()));
-  // updateWaterfall_2();
-}
-
-void waterfallObject::updateWaterfall_2(void){
-#if WATERFALL_2D
-    int x,y;
-
-    if(image.width()!=itemWidth || (image.height()/2) != (this->scene()->height() - itemHeight)) {
-        qDebug() << "Waterfall::updateWaterfall " << size << "(" << itemWidth << ")," << this->scene()->height() - itemHeight;
-        image = QImage(itemWidth, (this->scene()->height() - itemHeight)*2, QImage::Format_RGB32);
-        cy = image.height()/2 - 1;
-        #pragma omp parallel for schedule(static)
-        for (x = 0; x < itemWidth; x++) {
-            for (y = 0; y < image.height(); y++) {
-                image.setPixel(x, y, 0xFF000000);
-            }
-        }
-    }
-#endif
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_4()));
-   // updateWaterfall_4();
-}
-
-void waterfallObject::updateWaterfall_4(void){
-#if WATERFALL_2D
-    int x;
-    int average=0;
-
-    // draw the new line
-    #pragma omp parallel for schedule(static)
-    for(x=0;x<size;x++){
-        uint pixel = calculatePixel(samples[x]);
-        image.setPixel(x,cy,pixel);
-        image.setPixel(x,cy+(this->scene()->height() - itemHeight),pixel);
-        #pragma omp critical
-        average+=samples[x];
-    }
-#endif
-
-    if (waterfallAutomatic) {
-#ifdef WATERFALL_2D
-        waterfallLow=(average/size)-10;
-        waterfallHigh=waterfallLow+60;
-#else
-        waterfallcl->setLow(average - 10);
-        waterfallcl->setHigh(average + 50);
-#endif
-    }
+    waterfallcl->setLow(average - 10);
+    waterfallcl->setHigh(average + 50);
     waterfallcl->updateWaterfallgl();
-#ifdef WATERFALL_2D
-    update();
-#endif
+
 }
 
 uint waterfallObject::calculatePixel(int sample) {
