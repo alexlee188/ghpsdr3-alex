@@ -268,6 +268,7 @@ signals:
     void meterValue(int meter, int subrx_meter);
     void squelchValueChanged(int step);
     void statusMessage(QString);
+    void removeNotchFilter(void);
 
 protected:
  //   void paintEvent(QPaintEvent*);
@@ -349,9 +350,6 @@ private:
 
     long long band_min;
     long long band_max;
-
-    Meter* sMeterMain;
-    Meter* sMeterSub;
 
     QVector <QPoint> plot;
 

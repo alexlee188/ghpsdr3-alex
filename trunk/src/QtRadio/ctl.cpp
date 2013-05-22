@@ -37,8 +37,8 @@ Ctl::Ctl(QWidget *parent) :
 
     HideTX(false); // Hide buttons because we have not connected to anything yet
 
-    ui->pwrSlider_2->setValue(0);
-    ui->spinBox->setMaximum(100);
+    //ui->pwrSlider_2->setValue(0);
+    //ui->spinBox->setMaximum(100);
 }
 
 Ctl::~Ctl()
@@ -115,7 +115,7 @@ void Ctl::HideTX(bool cantx){
         ui->btnTune->setEnabled(false);
     }
 }
-
+/*
 void Ctl::on_checkBox_stateChanged(int arg1)
 {
     if(ui->checkBox->isChecked()){
@@ -163,6 +163,7 @@ void Ctl::on_pushButton_toggled(bool checked)
 //    qDebug()<<Q_FUNC_INFO<<":   The state of the pushbutton is "<<checked;
     emit testBtnClick(checked);
 }
+*/
 
 void Ctl::RigCtlTX(bool rigctlptt){
     if (rigctlptt && ui->btnMox->isEnabled()){
@@ -170,4 +171,9 @@ void Ctl::RigCtlTX(bool rigctlptt){
     }else{
         on_btnMox_clicked(false);
     }
+}
+
+void Ctl::on_btnMaster_clicked()
+{
+    emit masterBtnClicked();
 }

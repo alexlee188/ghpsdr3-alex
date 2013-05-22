@@ -68,7 +68,7 @@ UI::UI(const QString server) {
     widget.setupUi(this);
     servers = 0;
     pHwDlg = 0;
-    meter=-121;
+    meter = -121;
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
     servername = "Unknown";
@@ -76,7 +76,7 @@ UI::UI(const QString server) {
     configure.thispass= "None";
     canTX = true;  // set to false if dspserver says so
     audio = new Audio;
-    loffset =0;
+    loffset = 0;
     protocol3 = false;
     sampleZoomLevel = 0; // KD0OSS
     viewZoomLevel = 0; // KD0OSS
@@ -109,6 +109,10 @@ UI::UI(const QString server) {
     widget.gridLayout->setContentsMargins(0,0,0,0);
     widget.gridLayout->setVerticalSpacing(0);
     widget.gridLayout->setHorizontalSpacing(0);
+
+    widget.sMeterFrame->setFrameShape(QFrame::Box);
+    widget.sMeterFrame->setFrameShadow(QFrame::Raised);
+    widget.sMeterFrame->setLineWidth(2);
 
     widget.statusbar->showMessage("QtRadio branch: kd0oss 2013");
 
@@ -262,6 +266,7 @@ UI::UI(const QString server) {
   //          this, SLOT(frequencyMoved(int,int)));
 
     connect(widget.spectrumView, SIGNAL(statusMessage(QString)), this, SLOT(statusMessage(QString))); // KD0OSS
+    connect(widget.spectrumView, SIGNAL(removeNotchFilter()), this, SLOT(removeNotchFilter()));
 
     // connect up configuration changes
     connect(&configure,SIGNAL(spectrumHighChanged(int)),this,SLOT(spectrumHighChanged(int)));
@@ -337,18 +342,19 @@ UI::UI(const QString server) {
     connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
     connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
     connect(&connection,SIGNAL(hardware(QString)),this,SLOT(hardware(QString)));
+    connect(widget.ctlFrame,SIGNAL(masterBtnClicked()),this,SLOT(masterButtonClicked()));
 
 
-    bandscope=NULL;
+    bandscope = NULL;
 
-    fps=15;
-    gain=100;
-    subRx=FALSE;
-    subRxGain=100;
-    agc=AGC_SLOW;
+    fps = 15;
+    gain = 100;
+    subRx = FALSE;
+    subRxGain = 100;
+    agc = AGC_SLOW;
     cwPitch=configure.getCwPitch();
-    squelchValue=-100;
-    squelch=false;
+    squelchValue = -100;
+    squelch = false;
     notchFilterIndex = 0;    // KD0OSS
 
     audio->get_audio_device(&audio_device);
@@ -380,7 +386,7 @@ UI::UI(const QString server) {
             break;
     }
 
-    fps=configure.getFps();
+    fps = configure.getFps();
 
     configure.updateXvtrList(&xvtr);
     xvtr.buildMenu(widget.menuXVTR);
@@ -830,6 +836,8 @@ void UI::connected() {
     printWindowTitle("Remote connected");
     connection_valid = TRUE;
     if((mode.getStringMode()=="CWU")||(mode.getStringMode()=="CWL")) frequencyChanged(frequency); //gvj dummy call to set Rx offset for cw
+
+    widget.spectrumView->enableNotchFilter(false);
 }
 
 void UI::disconnected(QString message) {
@@ -1760,7 +1768,7 @@ void UI::actionFixed() { // KD0OSS
 
     command.clear(); QTextStream(&command) << "SetAGC " << agc;
     connection.sendCommand(command);
-    AGCTLevelChanged(90);
+    AGCTLevelChanged(widget.agcTLevelSlider->value());
 }
 
 void UI::actionSlow() {
@@ -2223,7 +2231,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + " " +  " 22 May 2013");
+                   + getversionstring() +  message + " 22 May 2013");
     lastmessage = message;
 
 }
@@ -2830,6 +2838,15 @@ void UI::addNotchFilter(void)   // KD0OSS
     widget.spectrumView->addNotchFilter(notchFilterIndex++);
 }
 
+void UI::removeNotchFilter(void)
+{
+    notchFilterIndex--;
+    if (notchFilterIndex < 0)
+        notchFilterIndex = 0;
+    if (notchFilterIndex == 0)
+        widget.tnfButton->setChecked(false);
+}
+
 void UI::setSampleZoom(bool enable) // KD0OSS
 {
     QString command;
@@ -2848,4 +2865,9 @@ void UI::setSampleZoom(bool enable) // KD0OSS
 void UI::statusMessage(QString message)
 {
     widget.statusbar->showMessage(message);
+}
+
+void UI::masterButtonClicked(void)
+{
+    connection.sendCommand("setMaster " + configure.thisuser + " " + configure.thispass);
 }

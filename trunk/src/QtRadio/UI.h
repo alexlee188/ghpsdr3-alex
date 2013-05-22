@@ -223,6 +223,7 @@ public slots:
     void frequencyChanged(long long frequency);
 
     void updateSpectrum();
+    void masterButtonClicked(void);
 
     void audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void encodingChanged(int choice);
@@ -261,6 +262,7 @@ public slots:
     void sdromThresholdChanged(double);
     void windowTypeChanged(int); //KD0OSS
     void statusMessage(QString); //KD0OSS
+    void removeNotchFilter(void);
 
     void actionBookmark();
     void addBookmark();

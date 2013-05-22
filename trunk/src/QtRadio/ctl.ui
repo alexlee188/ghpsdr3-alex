@@ -14,7 +14,7 @@
    <string>Frame</string>
   </property>
   <property name="frameShape">
-   <enum>QFrame::StyledPanel</enum>
+   <enum>QFrame::NoFrame</enum>
   </property>
   <property name="frameShadow">
    <enum>QFrame::Raised</enum>
@@ -22,9 +22,9 @@
   <widget class="QPushButton" name="btnMox">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>2</y>
-     <width>51</width>
+     <x>5</x>
+     <y>10</y>
+     <width>60</width>
      <height>22</height>
     </rect>
    </property>
@@ -41,9 +41,9 @@
   <widget class="QPushButton" name="btnTune">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>23</y>
-     <width>51</width>
+     <x>5</x>
+     <y>45</y>
+     <width>60</width>
      <height>22</height>
     </rect>
    </property>
@@ -57,8 +57,8 @@
   <widget class="QSlider" name="pwrSlider">
    <property name="geometry">
     <rect>
-     <x>70</x>
-     <y>18</y>
+     <x>73</x>
+     <y>47</y>
      <width>160</width>
      <height>19</height>
     </rect>
@@ -94,8 +94,8 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>70</x>
-     <y>0</y>
+     <x>73</x>
+     <y>30</y>
      <width>161</width>
      <height>20</height>
     </rect>
@@ -103,13 +103,16 @@
    <property name="text">
     <string>0      Power out      100</string>
    </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
   </widget>
   <widget class="QProgressBar" name="MicProgressBar">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>46</y>
-     <width>221</width>
+     <x>73</x>
+     <y>81</y>
+     <width>161</width>
      <height>20</height>
     </rect>
    </property>
@@ -117,83 +120,17 @@
     <number>24</number>
    </property>
   </widget>
-  <widget class="QSlider" name="pwrSlider_2">
+  <widget class="QPushButton" name="btnMaster">
    <property name="geometry">
     <rect>
-     <x>130</x>
-     <y>70</y>
-     <width>101</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="focusPolicy">
-    <enum>Qt::NoFocus</enum>
-   </property>
-   <property name="maximum">
-    <number>100</number>
-   </property>
-   <property name="singleStep">
-    <number>5</number>
-   </property>
-   <property name="value">
-    <number>0</number>
-   </property>
-   <property name="orientation">
-    <enum>Qt::Horizontal</enum>
-   </property>
-   <property name="invertedAppearance">
-    <bool>false</bool>
-   </property>
-   <property name="invertedControls">
-    <bool>false</bool>
-   </property>
-   <property name="tickPosition">
-    <enum>QSlider::TicksBelow</enum>
-   </property>
-   <property name="tickInterval">
-    <number>10</number>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>70</y>
-     <width>51</width>
-     <height>22</height>
+     <x>5</x>
+     <y>79</y>
+     <width>60</width>
+     <height>24</height>
     </rect>
    </property>
    <property name="text">
-    <string>Test</string>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="spinBox">
-   <property name="geometry">
-    <rect>
-     <x>68</x>
-     <y>66</y>
-     <width>59</width>
-     <height>29</height>
-    </rect>
-   </property>
-   <property name="focusPolicy">
-    <enum>Qt::NoFocus</enum>
-   </property>
-   <property name="maximum">
-    <number>100</number>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="checkBox">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>90</y>
-     <width>71</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Toggle</string>
+    <string>Master</string>
    </property>
   </widget>
  </widget>
