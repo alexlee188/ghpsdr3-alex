@@ -104,11 +104,6 @@ void Waterfallgl::resizeGL( int width, int height )
     glViewport( 0, 0, (GLint)width, (GLint)height );
 }
 
-
-void Waterfallgl::updateWaterfallgl(){
-    updateGL();
-}
-
 void Waterfallgl::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -152,7 +147,17 @@ void Waterfallgl::paintGL()
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
 }
 
-void Waterfallgl::updateWaterfall(char *buffer, int width){
+void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
+
+
+    setLO_offset(0.0);
+
+    int sum = 0;
+    for(int i=0;i<width;i++) sum += -(buffer[i] & 0xFF);
+    average = average * 0.99f + (float)sum/(float)width * 0.01f; // running avera
+    setLow(average - 10);
+    setHigh(average + 50);
+
     int data_length = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
     if (cy-- <= 0) cy = MAX_CL_HEIGHT - 1;
 
@@ -164,6 +169,8 @@ void Waterfallgl::updateWaterfall(char *buffer, int width){
     // Update Texture
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
+
+    updateGL();
 }
 
 static char const vertexShader[] =

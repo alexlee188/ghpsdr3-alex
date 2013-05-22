@@ -30,13 +30,12 @@
 #include <QtGui/QApplication>
 #endif
 
-#include <QtOpenGL>
-#include <QtOpenGL/QGLWidget>
 #include "UI.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <OpenGLWindow.h>
+#include "Waterfallgl.h"
 
 int fOutputDisabled = 0;
 
@@ -106,8 +105,17 @@ int main(int argc, char *argv[]) {
 
     if ( args.size() >1 ) srv = args.at(1) ;
     // create and show your widgets here
-    UI widget(srv);
 
+    // Show an opengl window
+    QSurfaceFormat format;
+    format.setSamples(4);
+    TriangleWindow window;
+    window.setFormat(format);
+    window.resize(640, 480);
+    window.show();
+    window.setAnimating(true);
+
+    UI widget(srv);
     widget.show();
     return app.exec();
 }

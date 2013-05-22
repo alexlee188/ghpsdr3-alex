@@ -55,7 +55,7 @@ Audioinput.moc.cpp \
 servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
-Waterfallcl.moc.cpp\
+Waterfallgl.moc.cpp OpenGLWindow.moc.cpp\
 hardware.moc.cpp \
 hardware_hermes.moc.cpp \
 hardware_perseus.moc.cpp \
@@ -105,7 +105,7 @@ rigctl.moc.cpp \
 servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
-Waterfallcl.moc.cpp\
+Waterfallgl.moc.cpp OpenGLWindow.moc.cpp\
 hardware.moc.cpp \
 hardware_hermes.moc.cpp \
 hardware_perseus.moc.cpp \
@@ -125,7 +125,7 @@ Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.
 ctl.cpp rigctl.cpp\
 Audioinput.cpp \
 servers.cpp\
-Waterfallcl.cpp \
+Waterfallgl.cpp OpenGLWindow.cpp\
 G711A.cpp RTP.cpp hardware.cpp hardware_hermes.cpp hardware_perseus.cpp hardware_sdr1000.cpp hardware_hiqsdr.cpp hardware_rtlsdr.cpp powermate.cpp \
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  EqualizerDialog.h \
@@ -136,7 +136,7 @@ ctl.h rigctl.h\
 Audioinput.h \
 servers.h \
 G711A.h RTP.h \
-Watefallcl.h \
+Watefallgl.h OpenGLWindow.h\
 cusdr_queue.h \
 hardware.h \
 hardware_hermes.h \
@@ -191,7 +191,7 @@ Audioinput.moc.cpp		\
 servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
-Waterfallcl.moc.cpp\
+Waterfallgl.moc.cpp OpenGLWindow.moc.cpp\
 hardware.moc.cpp \
 hardware_hermes.moc.cpp \
 hardware_perseus.moc.cpp \

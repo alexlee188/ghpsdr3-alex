@@ -69,6 +69,7 @@ public:
     void setHigh(int high);
     int getLow();
     int getHigh();
+    void setWaterfallgl(Waterfallgl*);
 
     void setAutomatic(bool state);
     bool getAutomatic();

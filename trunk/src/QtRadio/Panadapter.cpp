@@ -24,6 +24,7 @@
 */
 
 #include "Panadapter.h"
+#include "OpenGLWindow.h"
 
 #define MAX_WIDTH 4096
 
@@ -1292,13 +1293,6 @@ waterfallObject::waterfallObject(int width, int height) {
 
  //   fitInView(sceneRect().x()-1, sceneRect().y()+1, sceneRect().width()+1, sceneRect().height()-1, Qt::KeepAspectRatio);
 
-    waterfallgl = new Waterfallgl;
-    waterfallgl->initialize(width,height);
-    waterfallgl->resize(width,height);
-    //waterfallgl->setParent(this);
-    // This does not work until Qt5.1 with the container method
-    // to embed native opengl draw (QWindow) child in a QWidget container
-    waterfallgl->show();
 }
 
 void waterfallObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
@@ -1325,6 +1319,10 @@ void waterfallObject::setLow(int low) {
     waterfallLow=low;
 }
 
+void waterfallObject::setWaterfallgl(Waterfallgl * wgl){
+    waterfallgl = wgl;
+}
+
 void waterfallObject::setAutomatic(bool state) {
     waterfallAutomatic=state;
 }
@@ -1334,25 +1332,8 @@ bool waterfallObject::getAutomatic() {
 }
 
 void waterfallObject::updateWaterfall(char* buffer, int length, int starty) {
-    int i;
-
-    //qDebug() << "updateWaterfall: " << width() << ":" << height();
-
     //itemWidth = this->scene()->width();
     //itemHeight = starty;
-
-    waterfallgl->setLO_offset(0.0);
-
-    int sum = 0;
-    for(i=0;i<length;i++) sum += -(buffer[i] & 0xFF);
-    average = average * 0.99f + (float)(sum/length) * 0.01f; // running average
-
-    waterfallgl->updateWaterfall(buffer, length);
-
-    waterfallgl->setLow(average - 10);
-    waterfallgl->setHigh(average + 50);
-    waterfallgl->updateWaterfallgl();
-
 }
 
 uint waterfallObject::calculatePixel(int sample) {

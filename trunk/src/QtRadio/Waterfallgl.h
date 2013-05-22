@@ -48,8 +48,7 @@ public:
     void setLO_offset(GLfloat offset);
 
 public slots:
-    void updateWaterfall(char* buffer,int width);
-    void updateWaterfallgl(void);
+    void updateWaterfall(char* buffer,int width, int starty);
 protected:
     void resizeGL( int width, int height );
     void paintGL();
@@ -65,6 +64,7 @@ private:
     int waterfallHigh;
     int waterfallLow;
     bool waterfallAutomatic;
+    float average;
     int cy;
     GLfloat LO_offset;
 };
