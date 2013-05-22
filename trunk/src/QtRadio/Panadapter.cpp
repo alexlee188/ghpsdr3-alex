@@ -1264,7 +1264,7 @@ void Panadapter::deleteAllNotchFilters(void)   // KD0OSS
 
 void Panadapter::updateWaterfall(void)
 {
-    panadapterScene->waterfallItem->updateWaterfall(LO_offset, sampleRate, wsamples, size, splitViewBoundary);
+    panadapterScene->waterfallItem->updateWaterfall(wsamples, size, splitViewBoundary);
 }
 
 //*************************************************************************Waterfall**************************************************
@@ -1293,8 +1293,8 @@ waterfallObject::waterfallObject(int width, int height) {
  //   fitInView(sceneRect().x()-1, sceneRect().y()+1, sceneRect().width()+1, sceneRect().height()-1, Qt::KeepAspectRatio);
 
     waterfallcl = new Waterfallcl;
-    waterfallcl->initialize(width,256);
-    waterfallcl->resize(width*3,height*2);
+    waterfallcl->initialize(width,height);
+    waterfallcl->resize(width,height);
     //waterfallcl->setParent(this);
     // This does not work until Qt5.1 with the container method
     // to embed native opengl draw (QWindow) child in a QWidget container
@@ -1306,7 +1306,7 @@ void waterfallObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *o
 
 QRectF waterfallObject::boundingRect() const
 {
-    return QRectF(QPointF(0.0, itemHeight), QPointF(itemWidth, itemHeight));
+    return QRectF(QPointF(0.0, itemHeight), QPointF(itemWidth, itemHeight*2));
 } /** end boundingRect **/
 
 int waterfallObject::getHigh() {
@@ -1333,19 +1333,15 @@ bool waterfallObject::getAutomatic() {
     return waterfallAutomatic;
 }
 
-void waterfallObject::updateWaterfall(short offset, int sampr, char* buffer, int length, int starty) {
+void waterfallObject::updateWaterfall(char* buffer, int length, int starty) {
     int i;
 
     //qDebug() << "updateWaterfall: " << width() << ":" << height();
 
-    sampleRate = sampr;
-    LO_offset = offset;
-
-    itemWidth = this->scene()->width();
-    itemHeight = starty;
+    //itemWidth = this->scene()->width();
+    //itemHeight = starty;
 
     waterfallcl->setLO_offset(0.0);
-    size = length;
 
     int sum = 0;
     for(i=0;i<length;i++) sum += -(buffer[i] & 0xFF);

@@ -74,7 +74,7 @@ public:
     bool getAutomatic();
 
 public slots:
-    void updateWaterfall(short, int, char*, int, int);
+    void updateWaterfall(char*, int, int);
 
 private:
     uint calculatePixel(int sample);
@@ -96,10 +96,8 @@ private:
     int colorHighR;
     int colorHighG;
     int colorHighB;
-    int size;
     int sampleRate;
-    short LO_offset;
-    QImage image;  
+    short LO_offset; 
     Waterfallcl *waterfallcl;
     float average;
 };
