@@ -16,8 +16,8 @@
 * Foundation, Inc., 59 Temple Pl
 */
 
-#ifndef WATERFALLCL_H
-#define	WATERFALLCL_H
+#ifndef waterfallgl_H
+#define	waterfallgl_H
 
 #define GL_GLEXT_PROTOTYPES
 #include <QtCore>
@@ -35,12 +35,12 @@
 #define MAX_CL_WIDTH 2048
 #define MAX_CL_HEIGHT 1024
 
-class Waterfallcl : public QGLWidget {
+class Waterfallgl : public QGLWidget {
     Q_OBJECT
 
 public:
-    Waterfallcl();
-    ~Waterfallcl();
+    Waterfallgl();
+    ~Waterfallgl();
     void initialize(int wid, int ht);
     void setLow(int low);
     void setHigh(int high);
@@ -73,4 +73,4 @@ private:
 
 
 
-#endif // WATERFALLCL_H
+#endif // waterfallgl_H

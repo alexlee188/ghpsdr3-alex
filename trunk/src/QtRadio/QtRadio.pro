@@ -85,7 +85,6 @@ SOURCES += main.cpp\
     servers.cpp \
     G711A.cpp \
     RTP.cpp \
-    Waterfallcl.cpp \
     hardware.cpp\
     powermate.cpp \
     hardware_sdr1000.cpp \
@@ -96,11 +95,12 @@ SOURCES += main.cpp\
     hardware_perseus.cpp \
     hardware_hiqsdr.cpp \
     hardware_hermes.cpp \
-    Panadapter.cpp
+    Panadapter.cpp \
+    OpenGLWindow.cpp \
+    Waterfallgl.cpp
 
 
 HEADERS  += \
-   Waterfallcl.h \
     USBFilters.h \
     UI.h \
     SAMFilters.h \
@@ -146,7 +146,6 @@ HEADERS  += \
     G711A.h \
     RTP.h \
     cusdr_queue.h \
-    Waterfallcl.h \
     hardware.h\
     powermate.h \
     hardware_sdr1000.h \
@@ -158,7 +157,9 @@ HEADERS  += \
     hardware_hiqsdr.h \
     hardware_hermes.h \
     hardware_rtlsdr.h \
-    Panadapter.h
+    Panadapter.h \
+    OpenGLWindow.h \
+    Waterfallgl.h
 
 FORMS    += \   
     UI.ui \

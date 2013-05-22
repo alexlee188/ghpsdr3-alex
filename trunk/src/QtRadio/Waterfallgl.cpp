@@ -16,17 +16,17 @@
 * Foundation, Inc., 59 Temple Pl
 */
 
-#include "Waterfallcl.h"
+#include "Waterfallgl.h"
 
-Waterfallcl::Waterfallcl(){
+Waterfallgl::Waterfallgl(){
     makeCurrent();
 }
 
-Waterfallcl::~Waterfallcl(){
+Waterfallgl::~Waterfallgl(){
 
 }
 
-void Waterfallcl::initialize(int wid, int ht){
+void Waterfallgl::initialize(int wid, int ht){
 
     data_width = wid;
     data_height = ht;
@@ -73,29 +73,29 @@ void Waterfallcl::initialize(int wid, int ht){
 
 }
 
-void Waterfallcl::setHigh(int high) {
+void Waterfallgl::setHigh(int high) {
     float wfHigh = (float) (waterfallHigh) / 256.0f;
     glUniform1f(waterfallHigh_location, wfHigh);
     waterfallHigh=high;
 }
 
-void Waterfallcl::setLow(int low) {
+void Waterfallgl::setLow(int low) {
     waterfallLow=low;
     float wfLow = (float) (waterfallLow) / 256.0f;
     glUniform1f(waterfallLow_location, wfLow);
 }
 
-void Waterfallcl::setAutomatic(bool state) {
+void Waterfallgl::setAutomatic(bool state) {
     waterfallAutomatic=state;
 }
 
-void Waterfallcl::setLO_offset(GLfloat offset){
+void Waterfallgl::setLO_offset(GLfloat offset){
     LO_offset = offset;
     glUniform1f(offset_location, LO_offset);
 }
 
 
-void Waterfallcl::resizeGL( int width, int height )
+void Waterfallgl::resizeGL( int width, int height )
 {
     data_width = width;
     data_height = height;
@@ -105,11 +105,11 @@ void Waterfallcl::resizeGL( int width, int height )
 }
 
 
-void Waterfallcl::updateWaterfallgl(){
+void Waterfallgl::updateWaterfallgl(){
     updateGL();
 }
 
-void Waterfallcl::paintGL()
+void Waterfallgl::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glActiveTexture(GL_TEXTURE0);
@@ -152,7 +152,7 @@ void Waterfallcl::paintGL()
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
 }
 
-void Waterfallcl::updateWaterfall(char *buffer, int width){
+void Waterfallgl::updateWaterfall(char *buffer, int width){
     int data_length = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
     if (cy-- <= 0) cy = MAX_CL_HEIGHT - 1;
 
@@ -219,7 +219,7 @@ static char const fragmentShader[] =
             "gl_FragColor = texel;\n"
         "}\n";
 
-void Waterfallcl::LoadShader(){
+void Waterfallgl::LoadShader(){
     if(ShaderProgram)
         {
         ShaderProgram->release();

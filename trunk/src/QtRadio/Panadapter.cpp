@@ -1292,13 +1292,13 @@ waterfallObject::waterfallObject(int width, int height) {
 
  //   fitInView(sceneRect().x()-1, sceneRect().y()+1, sceneRect().width()+1, sceneRect().height()-1, Qt::KeepAspectRatio);
 
-    waterfallcl = new Waterfallcl;
-    waterfallcl->initialize(width,height);
-    waterfallcl->resize(width,height);
-    //waterfallcl->setParent(this);
+    waterfallgl = new Waterfallgl;
+    waterfallgl->initialize(width,height);
+    waterfallgl->resize(width,height);
+    //waterfallgl->setParent(this);
     // This does not work until Qt5.1 with the container method
     // to embed native opengl draw (QWindow) child in a QWidget container
-    waterfallcl->show();
+    waterfallgl->show();
 }
 
 void waterfallObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
@@ -1341,17 +1341,17 @@ void waterfallObject::updateWaterfall(char* buffer, int length, int starty) {
     //itemWidth = this->scene()->width();
     //itemHeight = starty;
 
-    waterfallcl->setLO_offset(0.0);
+    waterfallgl->setLO_offset(0.0);
 
     int sum = 0;
     for(i=0;i<length;i++) sum += -(buffer[i] & 0xFF);
     average = average * 0.99f + (float)(sum/length) * 0.01f; // running average
 
-    waterfallcl->updateWaterfall(buffer, length);
+    waterfallgl->updateWaterfall(buffer, length);
 
-    waterfallcl->setLow(average - 10);
-    waterfallcl->setHigh(average + 50);
-    waterfallcl->updateWaterfallgl();
+    waterfallgl->setLow(average - 10);
+    waterfallgl->setHigh(average + 50);
+    waterfallgl->updateWaterfallgl();
 
 }
 

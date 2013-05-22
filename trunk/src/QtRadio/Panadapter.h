@@ -48,7 +48,7 @@
 
 #include "Meter.h"
 #include "Connection.h"
-#include "Waterfallcl.h"
+#include "Waterfallgl.h"
 
 /****************** Added by KD0OSS **********************************************/
 
@@ -98,7 +98,7 @@ private:
     int colorHighB;
     int sampleRate;
     short LO_offset; 
-    Waterfallcl *waterfallcl;
+    Waterfallgl *waterfallgl;
     float average;
 };
 
