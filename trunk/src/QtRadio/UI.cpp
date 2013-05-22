@@ -68,7 +68,7 @@ UI::UI(const QString server) {
     widget.setupUi(this);
     servers = 0;
     pHwDlg = 0;
-    meter=-121;
+    meter = -121;
     initRigCtl();
     fprintf(stderr, "rigctl: Calling init\n");
     servername = "Unknown";
@@ -76,7 +76,7 @@ UI::UI(const QString server) {
     configure.thispass= "None";
     canTX = true;  // set to false if dspserver says so
     audio = new Audio;
-    loffset =0;
+    loffset = 0;
     protocol3 = false;
     sampleZoomLevel = 0; // KD0OSS
     viewZoomLevel = 0; // KD0OSS
@@ -109,6 +109,10 @@ UI::UI(const QString server) {
     widget.gridLayout->setContentsMargins(0,0,0,0);
     widget.gridLayout->setVerticalSpacing(0);
     widget.gridLayout->setHorizontalSpacing(0);
+
+    widget.sMeterFrame->setFrameShape(QFrame::Box);
+    widget.sMeterFrame->setFrameShadow(QFrame::Raised);
+    widget.sMeterFrame->setLineWidth(2);
 
     widget.statusbar->showMessage("QtRadio branch: kd0oss 2013");
 
@@ -341,16 +345,16 @@ UI::UI(const QString server) {
     connect(widget.ctlFrame,SIGNAL(masterBtnClicked()),this,SLOT(masterButtonClicked()));
 
 
-    bandscope=NULL;
+    bandscope = NULL;
 
-    fps=15;
-    gain=100;
-    subRx=FALSE;
-    subRxGain=100;
-    agc=AGC_SLOW;
+    fps = 15;
+    gain = 100;
+    subRx = FALSE;
+    subRxGain = 100;
+    agc = AGC_SLOW;
     cwPitch=configure.getCwPitch();
-    squelchValue=-100;
-    squelch=false;
+    squelchValue = -100;
+    squelch = false;
     notchFilterIndex = 0;    // KD0OSS
 
     audio->get_audio_device(&audio_device);
@@ -382,7 +386,7 @@ UI::UI(const QString server) {
             break;
     }
 
-    fps=configure.getFps();
+    fps = configure.getFps();
 
     configure.updateXvtrList(&xvtr);
     xvtr.buildMenu(widget.menuXVTR);
