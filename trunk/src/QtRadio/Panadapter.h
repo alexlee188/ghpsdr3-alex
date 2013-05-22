@@ -353,9 +353,6 @@ private:
     long long band_min;
     long long band_max;
 
-    Meter* sMeterMain;
-    Meter* sMeterSub;
-
     QVector <QPoint> plot;
 
     bool initialized; // KD0OSS
