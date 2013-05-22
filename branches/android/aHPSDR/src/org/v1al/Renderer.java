@@ -13,9 +13,6 @@ import java.nio.ShortBuffer;
 import java.nio.IntBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
-
-import org.v1al.R;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;

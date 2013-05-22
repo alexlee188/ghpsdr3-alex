@@ -1,5 +1,5 @@
 #include "smeter.h"
-#include "Spectrum.h"
+#include "Panadapter.h"
 #include "UI.h"
 sMeter::sMeter(QWidget*& widget) {
     QFrame::setParent(widget);
@@ -7,7 +7,7 @@ sMeter::sMeter(QWidget*& widget) {
     sMeterMain=new Meter("Main Rx");
     sMeterSub=new Meter("Sub Rx");
     meter_dbm = -121;
-    sub_meter_dbm =-121;
+    sub_meter_dbm = -121;
     subRx = FALSE;
 }
 

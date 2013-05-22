@@ -1039,7 +1039,7 @@ static char *slave_commands[] = {
 /* The maximum number of arguments a command can have and pass through
  * the tokenize_cmd tokenizer.  If you need more than this, bump it
  * up. */
-#define MAX_CMD_TOKENS 4
+#define MAX_CMD_TOKENS 11
 
 /*
  * Tokenize the remaining words of a command, saving them to list and
@@ -1225,6 +1225,114 @@ void readcb(struct bufferevent *bev, void *ctx){
             agc=atoi(tokens[0]);
             SetRXAGC(0,0,agc);
             SetRXAGC(0,1,agc);
+        } else if(strncmp(cmd,"setfixedagc",11)==0) {
+            int agc;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            agc=atoi(tokens[0]);
+            SetFixedAGC(0,0,agc);
+            SetFixedAGC(0,1,agc);
+        } else if(strncmp(cmd,"enablenotchfilter",17)==0) {
+            int vfo, i;
+            int index;
+            int enabled;
+            if (tokenize_cmd(&saveptr, tokens, 3) != 3)
+                goto badcommand;
+            vfo=atoi(tokens[0]);
+            index=atoi(tokens[1]);
+            enabled=atoi(tokens[2]);
+            if (index == -1)
+            {
+                for (i=0;i<9;i++)
+                    SetRXManualNotchEnable(0, (unsigned int)vfo, (unsigned int)i, enabled);
+            }
+            else
+                SetRXManualNotchEnable(0, (unsigned int)vfo, (unsigned int)index, enabled);
+        } else if(strncmp(cmd,"setnotchfilter",14)==0) {
+            int vfo;
+            int index;
+            double BW;
+            double FO;
+            if (tokenize_cmd(&saveptr, tokens, 4) != 4)
+                goto badcommand;
+            vfo=atoi(tokens[0]);
+            index=atoi(tokens[1]);
+            BW=atof(tokens[2]);
+            FO=atof(tokens[3]);
+            SetRXManualNotchBW(0, (unsigned int)vfo, (unsigned int)index, BW);
+            SetRXManualNotchFreq(0, (unsigned int)vfo, (unsigned int)index, FO);
+        } else if(strncmp(cmd,"setagctlevel",12)==0) { // KD0OSS
+            int level;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            level=atoi(tokens[0]);
+            SetRXAGCThresh(0,0,(double)level);
+            SetRXAGCThresh(0,1,(double)level);
+        } else if(strncmp(cmd,"setrxgreqcmd",12)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state=atoi(tokens[0]);
+            SetGrphRXEQcmd(0,0,state);
+            SetGrphRXEQcmd(0,1,state);
+        } else if(strncmp(cmd,"setrx3bdgreq",10)==0) { // KD0OSS
+            int value[4];
+            if (tokenize_cmd(&saveptr, tokens, 4) != 4)
+                goto badcommand;
+            value[0]=atoi(tokens[0]);
+            value[1]=atoi(tokens[1]);
+            value[2]=atoi(tokens[2]);
+            value[3]=atoi(tokens[3]);
+            SetGrphRXEQ(0,0,&value);
+            SetGrphRXEQ(0,1,&value);
+        } else if(strncmp(cmd,"setrx10bdgreq",11)==0) { // KD0OSS
+            int value[11];
+            if (tokenize_cmd(&saveptr, tokens, 11) != 11)
+                goto badcommand;
+            value[0]=atoi(tokens[0]);
+            value[1]=atoi(tokens[1]);
+            value[2]=atoi(tokens[2]);
+            value[3]=atoi(tokens[3]);
+            value[4]=atoi(tokens[4]);
+            value[5]=atoi(tokens[5]);
+            value[6]=atoi(tokens[6]);
+            value[7]=atoi(tokens[7]);
+            value[8]=atoi(tokens[8]);
+            value[9]=atoi(tokens[9]);
+            value[10]=atoi(tokens[10]);
+            SetGrphRXEQ10(0,0,&value);
+            SetGrphRXEQ10(0,1,&value);
+        } else if(strncmp(cmd,"settxgreqcmd",12)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state=atoi(tokens[0]);
+            SetGrphTXEQcmd(1,state);
+        } else if(strncmp(cmd,"settx3bdgreq",10)==0) { // KD0OSS
+            int value[4];
+            if (tokenize_cmd(&saveptr, tokens, 4) != 4)
+                goto badcommand;
+            value[0]=atoi(tokens[0]);
+            value[1]=atoi(tokens[1]);
+            value[2]=atoi(tokens[2]);
+            value[3]=atoi(tokens[3]);
+            SetGrphTXEQ(1,&value);
+        } else if(strncmp(cmd,"settx10bdgreq",11)==0) { // KD0OSS
+            int value[11];
+            if (tokenize_cmd(&saveptr, tokens, 11) != 11)
+                goto badcommand;
+            value[0]=atoi(tokens[0]);
+            value[1]=atoi(tokens[1]);
+            value[2]=atoi(tokens[2]);
+            value[3]=atoi(tokens[3]);
+            value[4]=atoi(tokens[4]);
+            value[5]=atoi(tokens[5]);
+            value[6]=atoi(tokens[6]);
+            value[7]=atoi(tokens[7]);
+            value[8]=atoi(tokens[8]);
+            value[9]=atoi(tokens[9]);
+            value[10]=atoi(tokens[10]);
+            SetGrphTXEQ10(1,&value);
         } else if(strncmp(cmd,"setnr",5)==0) {
             int nr = 0;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1476,14 +1584,21 @@ void readcb(struct bufferevent *bev, void *ctx){
             state = atoi(tokens[0]);
             SetPWSmode(0,0,state);
             SetPWSmode(0,1,state);
-        } else if(strncmp(cmd,"setdcblock",10)==0) {
+        } else if(strncmp(cmd,"setrxdcblock",10)==0) {
             int state;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             state=atoi(tokens[0]);
             SetRXDCBlock(0,0,state);
             SetRXDCBlock(0,1,state);
-            sdr_log(SDR_LOG_INFO,"SetDCBlock %d\n",state); // KD0OSS
+            sdr_log(SDR_LOG_INFO,"SetRXDCBlock %d\n",state); // KD0OSS
+        } else if(strncmp(cmd,"settxdcblock",10)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state=atoi(tokens[0]);
+            SetTXDCBlock(1,state);
+            sdr_log(SDR_LOG_INFO,"SetTXDCBlock %d\n",state);
         } else if(strncmp(cmd,"mox",3)==0) {
             int ntok;
             if ((ntok = tokenize_cmd(&saveptr, tokens, 3)) < 1)
@@ -1665,6 +1780,53 @@ void readcb(struct bufferevent *bev, void *ctx){
             } else {
                 sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of mu sent = '%s'\n",tokens[0]);
             }
+        } else if(strncmp(cmd,"txiqcorrectval",14)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 2) != 2)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of IQ sent = '%s', '%s'\n",tokens[0], tokens[1]);
+                SetCorrectTXIQ(1, atof(tokens[0]), atof(tokens[1]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s', '%s'\n",tokens[0],tokens[1]);
+            }
+        } else if(strncmp(cmd,"txiqphasecorrectval",19)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Tx IQ phase sent = '%s'\n",tokens[0]);
+                SetCorrectTXIQPhase(1, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"txiqgaincorrectval",18)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Tx IQ gain sent = '%s'\n",tokens[0]);
+                SetCorrectTXIQGain(1, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"rxiqphasecorrectval",19)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Rx IQ phase sent = '%s'\n",tokens[0]);
+                SetCorrectIQPhase(0, 0, atof(tokens[0]));
+                SetCorrectIQPhase(0, 1, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"rxiqgaincorrectval",18)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Rx IQ gain sent = '%s'\n",tokens[0]);
+                SetCorrectIQGain(0, 0, atof(tokens[0]));
+                SetCorrectIQGain(0, 1, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ sent = '%s'\n",tokens[0]);
+            }
         } else if(strncmp(cmd,"setfps",6)==0) {
             if (tokenize_cmd(&saveptr, tokens, 2) != 2)
                 goto badcommand;
@@ -1717,12 +1879,12 @@ void readcb(struct bufferevent *bev, void *ctx){
                     }
             }
         } else {
-            fprintf(stderr,"Invalid command: token: '%s'\n",cmd);
+            fprintf(stderr,"Invalid command: '%s'\n",cmd);
         }
         continue;
 
       badcommand:
-        sdr_log(SDR_LOG_INFO, "Invalid command: '%s'\n", message);
+        sdr_log(SDR_LOG_INFO, "Invalid command token: '%s'\n", message);
     } // end while
 }
 

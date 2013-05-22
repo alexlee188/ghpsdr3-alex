@@ -9,7 +9,7 @@ QtRadio_CXXFLAGS = $(QT_CXXFLAGS) $(AM_CXXFLAGS)
 QtRadio_CPPFLAGS = $(QT_ADDITIONAL_INCLUDE_PATH) $(QT_CPPFLAGS) $(AM_CPPFLAGS) -DGITREV="\"$(GITSTR)\""
 
 QtRadio_LDFLAGS  = $(QT_LDFLAGS) $(LDFLAGS) $(QT_ADDITIONAL_LDFLAG)
-QtRadio_LDADD    = $(QT_LIBS) $(LDADD) $(QtRadio_LDFLAGS)
+QtRadio_LDADD    = $(QT_LIBS) $(LDADD) $(QtRadio_LDFLAGS) -lssl -lcrypto
 
 # For a program:
 bin_PROGRAMS = QtRadio
@@ -26,6 +26,7 @@ BUILT_SOURCES=                  \
     ui_vfo.h \
     ui_ctl.h \
     ui_servers.h \
+    ui_EqualizerDialog.h \
 About.moc.cpp                    \
 Audio.moc.cpp                    \
 Band.moc.cpp                     \
@@ -43,10 +44,9 @@ FiltersBase.moc.cpp              \
 Filters.moc.cpp                  \
 KeypadDialog.moc.cpp             \
 Mode.moc.cpp                     \
-Spectrum.moc.cpp                 \
+Panadapter.moc.cpp               \
 UI.moc.cpp                       \
 vfo.moc.cpp                      \
-Waterfall.moc.cpp                \
 Xvtr.moc.cpp \
 smeter.moc.cpp \
 ctl.moc.cpp \
@@ -55,15 +55,15 @@ Audioinput.moc.cpp \
 servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
-Waterfallcl.moc.cpp\
+Waterfallgl.moc.cpp OpenGLWindow.moc.cpp\
 hardware.moc.cpp \
 hardware_hermes.moc.cpp \
 hardware_perseus.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \
-powermate.moc.cpp 
-
+powermate.moc.cpp \
+EqualizerDialog.moc.cpp
 	
 nodist_QtRadio_SOURCES = \
     ui_UI.h \
@@ -76,6 +76,7 @@ nodist_QtRadio_SOURCES = \
     ui_KeypadDialog.h \
     ui_vfo.h \
     ui_ctl.h \
+    ui_EqualizerDialog.h \
 About.moc.cpp                  \
 Audio.moc.cpp                  \
 Audioinput.moc.cpp		\
@@ -94,10 +95,9 @@ FiltersBase.moc.cpp            \
 Filters.moc.cpp                \
 KeypadDialog.moc.cpp           \
 Mode.moc.cpp                   \
-Spectrum.moc.cpp               \
+Panadapter.moc.cpp             \
 UI.moc.cpp                     \
 vfo.moc.cpp                    \
-Waterfall.moc.cpp              \
 Xvtr.moc.cpp                   \
 smeter.moc.cpp                 \
 ctl.moc.cpp \
@@ -105,40 +105,38 @@ rigctl.moc.cpp \
 servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
-Waterfallcl.moc.cpp\
+Waterfallgl.moc.cpp OpenGLWindow.moc.cpp\
 hardware.moc.cpp \
 hardware_hermes.moc.cpp \
 hardware_perseus.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \
-powermate.moc.cpp
+powermate.moc.cpp \
+EqualizerDialog.moc.cpp
 
 QtRadio_SOURCES = \
-About.cpp      BandStackEntry.cpp       Buffer.cpp       DIGUFilters.cpp  Frequency.cpp      Mode.cpp        Waterfall.cpp  \
+About.cpp      BandStackEntry.cpp       Buffer.cpp       DIGUFilters.cpp  Frequency.cpp      Mode.cpp        EqualizerDialog.cpp  \
 AMFilters.cpp  Bookmark.cpp             Configure.cpp    DSBFilters.cpp   FrequencyInfo.cpp  SAMFilters.cpp  Xvtr.cpp       \
-Audio.cpp      BookmarkDialog.cpp       Connection.cpp   Filter.cpp       KeypadDialog.cpp   Spectrum.cpp    XvtrEntry.cpp  \
+Audio.cpp      BookmarkDialog.cpp       Connection.cpp   Filter.cpp       KeypadDialog.cpp   Panadapter.cpp  XvtrEntry.cpp  \
 Band.cpp       Bookmarks.cpp            CWLFilters.cpp   FiltersBase.cpp  LSBFilters.cpp     UI.cpp                         \
 BandLimit.cpp  BookmarksDialog.cpp      CWUFilters.cpp   Filters.cpp      main.cpp           USBFilters.cpp                 \
 Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.cpp          vfo.cpp         smeter.cpp     \
 ctl.cpp rigctl.cpp\
 Audioinput.cpp \
 servers.cpp\
-G711A.cpp RTP.cpp \
-Waterfallcl.cpp \
-hardware.cpp \
-hardware_hermes.cpp hardware_perseus.cpp hardware_sdr1000.cpp hardware_hiqsdr.cpp hardware_rtlsdr.cpp powermate.cpp \
-About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h\
-Mode.h        vfo.h        \
-AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  Waterfall.h  \
-Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Spectrum.h    XvtrEntry.h  \
+Waterfallgl.cpp OpenGLWindow.cpp\
+G711A.cpp RTP.cpp hardware.cpp hardware_hermes.cpp hardware_perseus.cpp hardware_sdr1000.cpp hardware_hiqsdr.cpp hardware_rtlsdr.cpp powermate.cpp \
+About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
+AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  EqualizerDialog.h \
+Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Panadapter.h    XvtrEntry.h  \
 Band.h       Bookmark.h         codec2.h               DIGLFilters.h  Filters.h      LSBFilters.h     UI.h          Xvtr.h       \
 BandLimit.h  BookmarksDialog.h  Configure.h            DIGUFilters.h  FMNFilters.h   Meter.h          USBFilters.h  smeter.h \
 ctl.h rigctl.h\
 Audioinput.h \
 servers.h \
 G711A.h RTP.h \
-Watefallcl.h \
+Watefallgl.h OpenGLWindow.h\
 cusdr_queue.h \
 hardware.h \
 hardware_hermes.h \
@@ -148,7 +146,7 @@ hardware_hiqsdr.h \
 hardware_rtlsdr.h \
 powermate.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
-ctl.ui servers.ui
+ctl.ui servers.ui EqualizerDialog.ui
 
 
 CLEANFILES =                  \
@@ -163,6 +161,7 @@ CLEANFILES =                  \
     ui_vfo.h \
     ui_ctl.h \
     ui_servers.h \
+    ui_EqualizerDialog.h \
 About.moc.cpp                    \
 Audio.moc.cpp                    \
 Band.moc.cpp                     \
@@ -180,10 +179,9 @@ FiltersBase.moc.cpp              \
 Filters.moc.cpp                  \
 KeypadDialog.moc.cpp             \
 Mode.moc.cpp                     \
-Spectrum.moc.cpp                 \
+Panadapter.moc.cpp               \
 UI.moc.cpp                       \
 vfo.moc.cpp                      \
-Waterfall.moc.cpp                \
 Xvtr.moc.cpp                     \
 smeter.moc.cpp                   \
 ctl.moc.cpp \
@@ -193,14 +191,15 @@ Audioinput.moc.cpp		\
 servers.moc.cpp \
 G711A.moc.cpp \
 RTP.moc.cpp \
-Waterfallcl.moc.cpp\
+Waterfallgl.moc.cpp OpenGLWindow.moc.cpp\
 hardware.moc.cpp \
 hardware_hermes.moc.cpp \
 hardware_perseus.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \
-powermate.moc.cpp
+powermate.moc.cpp \
+EqualizerDialog.moc.cpp
 
 #
 # auxiliary services, git string, icons

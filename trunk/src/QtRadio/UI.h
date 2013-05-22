@@ -42,7 +42,7 @@
 #include "Audio.h"
 #include "Audioinput.h"
 #include "Connection.h"
-#include "Spectrum.h"
+#include "Panadapter.h"
 #include "Band.h"
 #include "BandLimit.h"
 #include "Mode.h"
@@ -73,9 +73,11 @@
 #include "RTP.h"
 #include "hardware.h"
 #include "powermate.h"
+#include "EqualizerDialog.h"
 
 #define DSPSERVER_BASE_PORT 9000
 
+#define AGC_FIXED 0
 #define AGC_LONG 1
 #define AGC_SLOW 2
 #define AGC_MEDIUM 3
@@ -107,6 +109,7 @@ public:
     void setHwDlg(DlgHardware *);
     DlgHardware * getHwDlg() { return pHwDlg; }
     void rmHwDlg();
+    Connection connection;
 
 signals:
     void initialize_audio(int length);
@@ -119,6 +122,7 @@ public slots:
     void getMeterValue(int m, int s);
 
     void actionConfigure();
+    void actionEqualizer(); // KD0OSS
     void actionAbout();
     void actionConnect();
     void actionConnectNow(QString IP);
@@ -195,6 +199,7 @@ public slots:
 
     void actionPolyphase();
 
+    void actionFixed(); //KD0OSS
     void actionSlow();
     void actionMedium();
     void actionFast();
@@ -218,6 +223,7 @@ public slots:
     void frequencyChanged(long long frequency);
 
     void updateSpectrum();
+    void masterButtonClicked(void);
 
     void audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void encodingChanged(int choice);
@@ -241,15 +247,22 @@ public slots:
 
     void hostChanged(QString host);
     void receiverChanged(int rx);
-    void dcBlockChanged(bool state); //KD0OSS
+    void rxDCBlockChanged(bool state); //KD0OSS
+    void txDCBlockChanged(bool state); //KD0OSS
     void setTxIQPhase(double value); //KD0OSS
     void setTxIQGain(double value); //KD0OSS
+
+    void AGCTLevelChanged(int level); //KD0OSS
+    void enableRxEq(bool); // KD0OSS
+    void enableTxEq(bool); // KD0OSS
 
     void nrValuesChanged(int,int,double,double);
     void anfValuesChanged(int,int,double,double);
     void nbThresholdChanged(double);
     void sdromThresholdChanged(double);
     void windowTypeChanged(int); //KD0OSS
+    void statusMessage(QString); //KD0OSS
+    void removeNotchFilter(void);
 
     void actionBookmark();
     void addBookmark();
@@ -299,6 +312,8 @@ protected:
 
 private slots:
     void on_zoomSpectrumSlider_sliderMoved(int position);
+    void setSampleZoom(bool);  // KD0OSS
+    void addNotchFilter(void);   // KD0OSS
 
 private:
     void printWindowTitle(QString message);
@@ -339,7 +354,6 @@ private:
 
     unsigned char *rtp_send_buffer;
     long long subRxFrequency;
-    Connection connection;
     bool connection_valid;
 
     Band band;
@@ -375,6 +389,13 @@ private:
     DlgHardware *pHwDlg;
 
     Bandscope* bandscope;
+
+    EqualizerDialog *equalizer; // KD0OSS
+
+    int sampleZoomLevel; // KD0OSS
+    int viewZoomLevel; // KD0OSS
+
+    int notchFilterIndex; // KD0OSS
 
     BookmarkDialog bookmarkDialog;
     BookmarksDialog* bookmarksDialog;
