@@ -40,7 +40,7 @@ public slots:
     void updateWaterfall(char* buffer,int width, int starty);
 
 protected:
-    void    resizeGL(int, int);
+    void  resizeGL(int, int);
 
 private:
     GLuint loadShader(GLenum type, const char *source);

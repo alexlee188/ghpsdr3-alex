@@ -115,12 +115,6 @@ int main(int argc, char *argv[]) {
     window.show();
     window.setAnimating(true);
 
-    Waterfallgl waterfallgl;
-    waterfallgl.setFormat(format);
-    waterfallgl.resize(640,480);
-    waterfallgl.initialize(640, 480);
-    //waterfallgl.show();
-
     UI widget(srv);
     widget.show();
     return app.exec();

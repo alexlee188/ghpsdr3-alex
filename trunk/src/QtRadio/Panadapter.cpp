@@ -225,6 +225,14 @@ Panadapter::Panadapter(QWidget*& widget) {
     panadapterScene->spectrumPlot = new spectrumObject(panadapterScene->width(), panadapterScene->height()/2);
     panadapterScene->waterfallItem = new waterfallObject(panadapterScene->width(), panadapterScene->height()/2);
 
+    QSurfaceFormat format;
+    format.setSamples(4);
+    waterfallgl = new Waterfallgl;
+    waterfallgl->setFormat(format);
+    waterfallgl->resize(1024,256);
+    waterfallgl->initialize(1024, 256);
+    waterfallgl->show();
+
     updateNfTimer = new QTimer(this);
     connect(updateNfTimer, SIGNAL(timeout()), this, SLOT(updateNotchFilter()));
 
@@ -1289,7 +1297,8 @@ void Panadapter::deleteAllNotchFilters(void)   // KD0OSS
 
 void Panadapter::updateWaterfall(void)
 {
-    panadapterScene->waterfallItem->updateWaterfall(wsamples, size, splitViewBoundary);
+    //panadapterScene->waterfallItem->updateWaterfall(wsamples, size, splitViewBoundary);
+    waterfallgl->updateWaterfall(wsamples, size, splitViewBoundary);
 }
 
 //*************************************************************************Waterfall**************************************************
@@ -1341,10 +1350,6 @@ void waterfallObject::setHigh(int high) {
 
 void waterfallObject::setLow(int low) {
     waterfallLow=low;
-}
-
-void waterfallObject::setWaterfallgl(Waterfallgl * wgl){
-    waterfallgl = wgl;
 }
 
 void waterfallObject::setAutomatic(bool state) {

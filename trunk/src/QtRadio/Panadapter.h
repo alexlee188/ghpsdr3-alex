@@ -69,7 +69,6 @@ public:
     void setHigh(int high);
     int getLow();
     int getHigh();
-    void setWaterfallgl(Waterfallgl*);
 
     void setAutomatic(bool state);
     bool getAutomatic();
@@ -99,7 +98,6 @@ private:
     int colorHighB;
     int sampleRate;
     short LO_offset; 
-    Waterfallgl *waterfallgl;
     float average;
 };
 
@@ -369,6 +367,7 @@ private:
 
     short LO_offset;
     int zoom;
+    Waterfallgl *waterfallgl;
 };
 
 

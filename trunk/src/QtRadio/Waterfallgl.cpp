@@ -101,9 +101,6 @@ void Waterfallgl::initialize(int wid, int ht){
     textureCoord_location = ShaderProgram->attributeLocation("aTextureCoord");
     uMVPMatrix_location = ShaderProgram->uniformLocation("uMVPMatrix");
 
-    /*
-    ShaderProgram->bind();
-
     static unsigned char data[MAX_CL_WIDTH][MAX_CL_HEIGHT];
     for (int i = 0; i < MAX_CL_HEIGHT; i++){
         for (int j = 0; j < MAX_CL_WIDTH; j++){
@@ -123,12 +120,6 @@ void Waterfallgl::initialize(int wid, int ht){
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 #endif
-
-    //Bind to tex unit 0
-    glUniform1i(spectrumTexture_location, 0);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    ShaderProgram->release();
-    */
 
 }
 
@@ -165,8 +156,11 @@ void Waterfallgl::resizeGL( int width, int height )
 
 void Waterfallgl::render()
 {
-    ShaderProgram->bind();
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //Bind to tex unit 0
+    glUniform1i(spectrumTexture_location, 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, spectrumTex);
     float current_line = (float) cy /  MAX_CL_HEIGHT;
@@ -205,12 +199,9 @@ void Waterfallgl::render()
     };
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
-
-    ShaderProgram->release();
 }
 
 void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
-
 
     setLO_offset(0.0);
 
@@ -228,11 +219,9 @@ void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
         data[i] = buffer[i];
     }
 
-    ShaderProgram->bind();
     // Update Texture
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
-    ShaderProgram->release();
 
     //updateGL();
 }

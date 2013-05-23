@@ -9,6 +9,13 @@ OpenGLWindow::OpenGLWindow(QWindow *parent)
     , m_device(0)
 {
     setSurfaceType(QWindow::OpenGLSurface);
+
+    if (!m_context) {
+        m_context = new QOpenGLContext(this);
+        m_context->setFormat(requestedFormat());
+        m_context->create();
+    }
+    m_context->makeCurrent(this);
 }
 
 OpenGLWindow::~OpenGLWindow(){
@@ -79,23 +86,9 @@ void OpenGLWindow::renderNow()
 
     m_update_pending = false;
 
-    bool needsInitialize = false;
-
-    if (!m_context) {
-        m_context = new QOpenGLContext(this);
-        m_context->setFormat(requestedFormat());
-        m_context->create();
-
-        needsInitialize = true;
-    }
-
     m_context->makeCurrent(this);
-
-    if (needsInitialize) {
-        initializeOpenGLFunctions();
-        initialize();
-    }
-
+    initializeOpenGLFunctions();
+    initialize();
     render();
 
     m_context->swapBuffers(this);
@@ -132,15 +125,6 @@ static const char *fragmentShaderSource =
     "void main() {\n"
     "   gl_FragColor = col;\n"
     "}\n";
-
-
-GLuint TriangleWindow::loadShader(GLenum type, const char *source)
-{
-    GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &source, 0);
-    glCompileShader(shader);
-    return shader;
-}
 
 void TriangleWindow::initialize()
 {
