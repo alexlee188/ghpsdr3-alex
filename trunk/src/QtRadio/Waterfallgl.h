@@ -19,24 +19,12 @@
 #ifndef waterfallgl_H
 #define	waterfallgl_H
 
-#define GL_GLEXT_PROTOTYPES
-#include <QtCore>
-#include <QPainter>
-#include <QImage>
-#include <QMouseEvent>
-#include <QDebug>
-#include <GL/gl.h>
-#include <QtOpenGL>
-#include <QtOpenGL/QGLBuffer>
-#include <QtOpenGL/QGLWidget>
-#include <QtOpenGL/qglfunctions.h>
-#include <QGLShader>
+#include "OpenGLWindow.h"
 
 #define MAX_CL_WIDTH 2048
 #define MAX_CL_HEIGHT 1024
 
-class Waterfallgl : public QGLWidget {
-    Q_OBJECT
+class Waterfallgl : public OpenGLWindow {
 
 public:
     Waterfallgl();
@@ -46,15 +34,17 @@ public:
     void setHigh(int high);
     void setAutomatic(bool state);
     void setLO_offset(GLfloat offset);
+    void render();
 
 public slots:
     void updateWaterfall(char* buffer,int width, int starty);
+
 protected:
-    void resizeGL( int width, int height );
-    void paintGL();
+    void    resizeGL(int, int);
+
 private:
-    void LoadShader(void);
-    QGLShaderProgram *ShaderProgram;
+    GLuint loadShader(GLenum type, const char *source);
+    QOpenGLShaderProgram *ShaderProgram;
     GLuint spectrumTexture_location, spectrumTex;
     GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location, width_location; 
     GLuint aPosition_location, textureCoord_location;

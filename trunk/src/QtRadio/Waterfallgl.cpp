@@ -18,159 +18,13 @@
 
 #include "Waterfallgl.h"
 
-Waterfallgl::Waterfallgl(){
-    makeCurrent();
+Waterfallgl::Waterfallgl()
+    : ShaderProgram(0)
+{
 }
 
 Waterfallgl::~Waterfallgl(){
 
-}
-
-void Waterfallgl::initialize(int wid, int ht){
-
-    data_width = wid;
-    data_height = ht;
-    cy = MAX_CL_HEIGHT - 1;
-
-    static unsigned char data[MAX_CL_WIDTH][MAX_CL_HEIGHT];
-    for (int i = 0; i < MAX_CL_HEIGHT; i++){
-        for (int j = 0; j < MAX_CL_WIDTH; j++){
-            data[i][j]= (unsigned char) 0xff;
-        }
-    }
-    glGenTextures(1, &spectrumTex);
-    glBindTexture(GL_TEXTURE_2D, spectrumTex);
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_LUMINANCE, MAX_CL_WIDTH, MAX_CL_HEIGHT, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*) data);
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-
-#ifdef GL_CLAMP_TO_EDGE
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#else
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-#endif
-
-    //glEnable(GL_DEPTH_TEST);
-    //glDepthFunc(GL_LEQUAL);
-
-    ShaderProgram = NULL;
-    LoadShader();
-    spectrumTexture_location = glGetUniformLocation(ShaderProgram->programId(), "spectrumTexture");
-    cy_location =  glGetUniformLocation(ShaderProgram->programId(), "cy");
-    offset_location =  glGetUniformLocation(ShaderProgram->programId(), "offset");
-    waterfallLow_location =  glGetUniformLocation(ShaderProgram->programId(), "waterfallLow");
-    waterfallHigh_location =  glGetUniformLocation(ShaderProgram->programId(), "waterfallHigh");
-    width_location =  glGetUniformLocation(ShaderProgram->programId(), "width");
-    aPosition_location = glGetAttribLocation(ShaderProgram->programId(),"aPosition");
-    textureCoord_location = glGetAttribLocation(ShaderProgram->programId(), "aTextureCoord");
-    uMVPMatrix_location = glGetUniformLocation(ShaderProgram->programId(), "uMVPMatrix");
-    glUseProgram(ShaderProgram->programId());
-    //Bind to tex unit 0
-    glUniform1i(spectrumTexture_location, 0);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-}
-
-void Waterfallgl::setHigh(int high) {
-    float wfHigh = (float) (waterfallHigh) / 256.0f;
-    glUniform1f(waterfallHigh_location, wfHigh);
-    waterfallHigh=high;
-}
-
-void Waterfallgl::setLow(int low) {
-    waterfallLow=low;
-    float wfLow = (float) (waterfallLow) / 256.0f;
-    glUniform1f(waterfallLow_location, wfLow);
-}
-
-void Waterfallgl::setAutomatic(bool state) {
-    waterfallAutomatic=state;
-}
-
-void Waterfallgl::setLO_offset(GLfloat offset){
-    LO_offset = offset;
-    glUniform1f(offset_location, LO_offset);
-}
-
-
-void Waterfallgl::resizeGL( int width, int height )
-{
-    data_width = width;
-    data_height = height;
-
-    height = height?height:1;
-    glViewport( 0, 0, (GLint)width, (GLint)height );
-}
-
-void Waterfallgl::paintGL()
-{
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, spectrumTex);
-    float current_line = (float) cy /  MAX_CL_HEIGHT;
-    glUniform1f(cy_location, current_line);
-    GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
-
-    glUniform1f(width_location, tex_width);
-
-    // Ortho2D projection
-    const GLfloat mMVPMatrix[] = {2.0f/data_width, 0.0f, 0.0f, 0.0f,
-                           0.0f, -2.0f/data_height, 0.0f, 0.0f,
-                           0.0f, 0.0f, 1.0f, 0.0f,
-                           -1.0f, 1.0f, 0.0f, 1.0f
-                           };
-
-    glUniformMatrix4fv(uMVPMatrix_location, 1, false, mMVPMatrix);
-
-    const GLfloat mVertices[] =  {
-        0.0f, 0.0f,  // Position 0
-        0.0f, 0.0f,  // TexCoord 0
-        (float)data_width, 0.0f,  // Position 1
-        tex_width, 0.0f, // TexCoord 1
-        (float)data_width, MAX_CL_HEIGHT, // Position 2
-        tex_width, 1.0f, // TexCoord 2
-        0.0f, MAX_CL_HEIGHT, // Position 3
-        0.0f, 1.0f // TexCoord 3
-    };
-    glVertexAttribPointer(aPosition_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, mVertices);
-    glEnableVertexAttribArray(aPosition_location);
-    glVertexAttribPointer(textureCoord_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, &mVertices[2]);
-    glEnableVertexAttribArray(textureCoord_location);
-
-    const GLshort mIndices[] =
-    {
-        0, 1, 2, 0, 2, 3
-    };
-
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
-}
-
-void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
-
-
-    setLO_offset(0.0);
-
-    int sum = 0;
-    for(int i=0;i<width;i++) sum += -(buffer[i] & 0xFF);
-    average = average * 0.99f + (float)sum/(float)width * 0.01f; // running avera
-    setLow(average - 10);
-    setHigh(average + 50);
-
-    int data_length = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
-    if (cy-- <= 0) cy = MAX_CL_HEIGHT - 1;
-
-    unsigned char data[MAX_CL_WIDTH];
-    for (int i = 0; i < data_length; i++){
-        data[i] = buffer[i];
-    }
-
-    // Update Texture
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
-                    GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
-
-    updateGL();
 }
 
 static char const vertexShader[] =
@@ -226,29 +80,159 @@ static char const fragmentShader[] =
             "gl_FragColor = texel;\n"
         "}\n";
 
-void Waterfallgl::LoadShader(){
-    if(ShaderProgram)
-        {
-        ShaderProgram->release();
-        ShaderProgram->removeAllShaders();
+void Waterfallgl::initialize(int wid, int ht){
+
+    data_width = wid;
+    data_height = ht;
+    cy = MAX_CL_HEIGHT - 1;
+
+    static unsigned char data[MAX_CL_WIDTH][MAX_CL_HEIGHT];
+    for (int i = 0; i < MAX_CL_HEIGHT; i++){
+        for (int j = 0; j < MAX_CL_WIDTH; j++){
+            data[i][j]= (unsigned char) 0xff;
         }
-    else ShaderProgram = new QGLShaderProgram;
+    }
+    glGenTextures(1, &spectrumTex);
+    glBindTexture(GL_TEXTURE_2D, spectrumTex);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_LUMINANCE, MAX_CL_WIDTH, MAX_CL_HEIGHT, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*) data);
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+
+#ifdef GL_CLAMP_TO_EDGE
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#else
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+#endif
 
 
-    if (!ShaderProgram->addShaderFromSourceCode(QGLShader::Vertex, vertexShader)){
-        qWarning() << ShaderProgram->log();
-        qFatal("Fatal");
-    };
-    if (!ShaderProgram->addShaderFromSourceCode(QGLShader::Fragment, fragmentShader)){
-        qWarning() << ShaderProgram->log();
-        qFatal("Fatal");
-    };
+    ShaderProgram = new QOpenGLShaderProgram(this);
+    ShaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader);
+    ShaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader);
+    ShaderProgram->link();
 
-    if(!ShaderProgram->link())
-        {
-        qWarning() << "Shader Program Linker Error" << ShaderProgram->log();
-        qFatal("Fatal");
-        }
-    else ShaderProgram->bind();
+    spectrumTexture_location = ShaderProgram->uniformLocation("spectrumTexture");
+    cy_location =  ShaderProgram->uniformLocation("cy");
+    offset_location =  ShaderProgram->uniformLocation("offset");
+    waterfallLow_location =  ShaderProgram->uniformLocation("waterfallLow");
+    waterfallHigh_location =  ShaderProgram->uniformLocation("waterfallHigh");
+    width_location =  ShaderProgram->uniformLocation("width");
+    aPosition_location = ShaderProgram->attributeLocation("aPosition");
+    textureCoord_location = ShaderProgram->attributeLocation("aTextureCoord");
+    uMVPMatrix_location = ShaderProgram->uniformLocation("uMVPMatrix");
+
+    ShaderProgram->bind();
+    //Bind to tex unit 0
+    glUniform1i(spectrumTexture_location, 0);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    ShaderProgram->release();
+
 }
+
+void Waterfallgl::setHigh(int high) {
+    float wfHigh = (float) (waterfallHigh) / 256.0f;
+    glUniform1f(waterfallHigh_location, wfHigh);
+    waterfallHigh=high;
+}
+
+void Waterfallgl::setLow(int low) {
+    waterfallLow=low;
+    float wfLow = (float) (waterfallLow) / 256.0f;
+    glUniform1f(waterfallLow_location, wfLow);
+}
+
+void Waterfallgl::setAutomatic(bool state) {
+    waterfallAutomatic=state;
+}
+
+void Waterfallgl::setLO_offset(GLfloat offset){
+    LO_offset = offset;
+    glUniform1f(offset_location, LO_offset);
+}
+
+
+void Waterfallgl::resizeGL( int width, int height )
+{
+    data_width = width;
+    data_height = height;
+
+    height = height?height:1;
+    glViewport( 0, 0, (GLint)width, (GLint)height );
+}
+
+void Waterfallgl::render()
+{
+    ShaderProgram->bind();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, spectrumTex);
+    float current_line = (float) cy /  MAX_CL_HEIGHT;
+    glUniform1f(cy_location, current_line);
+    GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
+
+    glUniform1f(width_location, tex_width);
+
+    // Ortho2D projection
+    const GLfloat mMVPMatrix[] = {2.0f/data_width, 0.0f, 0.0f, 0.0f,
+                           0.0f, -2.0f/data_height, 0.0f, 0.0f,
+                           0.0f, 0.0f, 1.0f, 0.0f,
+                           -1.0f, 1.0f, 0.0f, 1.0f
+                           };
+
+    glUniformMatrix4fv(uMVPMatrix_location, 1, false, mMVPMatrix);
+
+    const GLfloat mVertices[] =  {
+        0.0f, 0.0f,  // Position 0
+        0.0f, 0.0f,  // TexCoord 0
+        (float)data_width, 0.0f,  // Position 1
+        tex_width, 0.0f, // TexCoord 1
+        (float)data_width, MAX_CL_HEIGHT, // Position 2
+        tex_width, 1.0f, // TexCoord 2
+        0.0f, MAX_CL_HEIGHT, // Position 3
+        0.0f, 1.0f // TexCoord 3
+    };
+    glVertexAttribPointer(aPosition_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, mVertices);
+    glEnableVertexAttribArray(aPosition_location);
+    glVertexAttribPointer(textureCoord_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, &mVertices[2]);
+    glEnableVertexAttribArray(textureCoord_location);
+
+    const GLshort mIndices[] =
+    {
+        0, 1, 2, 0, 2, 3
+    };
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
+
+    ShaderProgram->release();
+}
+
+void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
+
+
+    setLO_offset(0.0);
+
+    int sum = 0;
+    for(int i=0;i<width;i++) sum += -(buffer[i] & 0xFF);
+    average = average * 0.99f + (float)sum/(float)width * 0.01f; // running avera
+    setLow(average - 10);
+    setHigh(average + 50);
+
+    int data_length = (width < MAX_CL_WIDTH) ? width : MAX_CL_WIDTH;
+    if (cy-- <= 0) cy = MAX_CL_HEIGHT - 1;
+
+    unsigned char data[MAX_CL_WIDTH];
+    for (int i = 0; i < data_length; i++){
+        data[i] = buffer[i];
+    }
+
+    ShaderProgram->bind();
+    // Update Texture
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
+                    GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
+    ShaderProgram->release();
+
+    //updateGL();
+}
+
 
