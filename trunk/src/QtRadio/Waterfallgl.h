@@ -25,7 +25,7 @@
 #define MAX_CL_HEIGHT 1024
 
 class Waterfallgl : public OpenGLWindow {
-
+    Q_OBJECT
 public:
     Waterfallgl();
     ~Waterfallgl();
