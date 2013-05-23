@@ -203,6 +203,7 @@ void Waterfallgl::render()
 
 void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
 
+    renderNow();
     setLO_offset(0.0);
 
     int sum = 0;
@@ -223,7 +224,7 @@ void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
 
-    //updateGL();
+    renderNow();
 }
 
 
