@@ -86,6 +86,24 @@ void Waterfallgl::initialize(int wid, int ht){
     data_height = ht;
     cy = MAX_CL_HEIGHT - 1;
 
+    ShaderProgram = new QOpenGLShaderProgram(this);
+    ShaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader);
+    ShaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader);
+    ShaderProgram->link();
+
+    spectrumTexture_location = ShaderProgram->uniformLocation("spectrumTexture");
+    cy_location =  ShaderProgram->uniformLocation("cy");
+    offset_location =  ShaderProgram->uniformLocation("offset");
+    waterfallLow_location =  ShaderProgram->uniformLocation("waterfallLow");
+    waterfallHigh_location =  ShaderProgram->uniformLocation("waterfallHigh");
+    width_location =  ShaderProgram->uniformLocation("width");
+    aPosition_location = ShaderProgram->attributeLocation("aPosition");
+    textureCoord_location = ShaderProgram->attributeLocation("aTextureCoord");
+    uMVPMatrix_location = ShaderProgram->uniformLocation("uMVPMatrix");
+
+    /*
+    ShaderProgram->bind();
+
     static unsigned char data[MAX_CL_WIDTH][MAX_CL_HEIGHT];
     for (int i = 0; i < MAX_CL_HEIGHT; i++){
         for (int j = 0; j < MAX_CL_WIDTH; j++){
@@ -106,27 +124,11 @@ void Waterfallgl::initialize(int wid, int ht){
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 #endif
 
-
-    ShaderProgram = new QOpenGLShaderProgram(this);
-    ShaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader);
-    ShaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader);
-    ShaderProgram->link();
-
-    spectrumTexture_location = ShaderProgram->uniformLocation("spectrumTexture");
-    cy_location =  ShaderProgram->uniformLocation("cy");
-    offset_location =  ShaderProgram->uniformLocation("offset");
-    waterfallLow_location =  ShaderProgram->uniformLocation("waterfallLow");
-    waterfallHigh_location =  ShaderProgram->uniformLocation("waterfallHigh");
-    width_location =  ShaderProgram->uniformLocation("width");
-    aPosition_location = ShaderProgram->attributeLocation("aPosition");
-    textureCoord_location = ShaderProgram->attributeLocation("aTextureCoord");
-    uMVPMatrix_location = ShaderProgram->uniformLocation("uMVPMatrix");
-
-    ShaderProgram->bind();
     //Bind to tex unit 0
     glUniform1i(spectrumTexture_location, 0);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     ShaderProgram->release();
+    */
 
 }
 

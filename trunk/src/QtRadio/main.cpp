@@ -118,6 +118,7 @@ int main(int argc, char *argv[]) {
     Waterfallgl waterfallgl;
     waterfallgl.setFormat(format);
     waterfallgl.resize(640,480);
+    waterfallgl.initialize(640, 480);
     //waterfallgl.show();
 
     UI widget(srv);
