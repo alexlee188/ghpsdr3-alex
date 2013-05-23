@@ -156,8 +156,9 @@ void Waterfallgl::resizeGL( int width, int height )
 
 void Waterfallgl::render()
 {
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glViewport(0, 0, width(), height());
+    glClear(GL_COLOR_BUFFER_BIT);
 
     //Bind to tex unit 0
     glUniform1i(spectrumTexture_location, 0);
@@ -199,6 +200,7 @@ void Waterfallgl::render()
     };
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
+
 }
 
 void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
@@ -224,7 +226,6 @@ void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
 
-    renderNow();
 }
 
 
