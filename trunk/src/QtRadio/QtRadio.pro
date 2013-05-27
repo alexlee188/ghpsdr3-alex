@@ -96,7 +96,6 @@ SOURCES += main.cpp\
     hardware_hiqsdr.cpp \
     hardware_hermes.cpp \
     Panadapter.cpp \
-    OpenGLWindow.cpp \
     Waterfallgl.cpp
 
 
@@ -158,7 +157,6 @@ HEADERS  += \
     hardware_hermes.h \
     hardware_rtlsdr.h \
     Panadapter.h \
-    OpenGLWindow.h \
     Waterfallgl.h
 
 FORMS    += \   

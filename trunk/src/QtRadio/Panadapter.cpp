@@ -24,7 +24,6 @@
 */
 
 #include "Panadapter.h"
-#include "OpenGLWindow.h"
 
 #define MAX_WIDTH 4096
 

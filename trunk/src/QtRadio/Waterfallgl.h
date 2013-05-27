@@ -19,12 +19,11 @@
 #ifndef waterfallgl_H
 #define	waterfallgl_H
 
-#include "OpenGLWindow.h"
-
+#include <QtGui>
 #define MAX_CL_WIDTH 2048
 #define MAX_CL_HEIGHT 1024
 
-class Waterfallgl : public OpenGLWindow {
+class Waterfallgl : public QWindow,  protected QOpenGLFunctions {
     Q_OBJECT
 public:
     Waterfallgl();
@@ -40,7 +39,9 @@ public slots:
     void updateWaterfall(char* buffer,int width, int starty);
 
 protected:
+    void  initializeGL();
     void  resizeGL(int, int);
+    void  paintGL();
 
 private:
     GLuint loadShader(GLenum type, const char *source);
