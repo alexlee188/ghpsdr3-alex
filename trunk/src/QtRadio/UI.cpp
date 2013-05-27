@@ -1664,6 +1664,9 @@ void UI::filterChanged(int previousFilter,int newFilter) {
             break;
     }
 
+    if (previousFilter != 10 && newFilter == 10)
+        return;
+
     if(mode.getMode()==MODE_CWL) {
         low=-cwPitch-filters.getLow();
         high=-cwPitch+filters.getHigh();
@@ -1725,6 +1728,7 @@ void UI::variableFilter(int low, int high)
     command.clear(); QTextStream(&command) << "setFilter " << low << " " << high;
     connection.sendCommand(command);
     band.setFilter(10);
+    filters.selectFilter(10);
 }
 
 void UI::frequencyChanged(long long f) {
@@ -2209,7 +2213,6 @@ void UI::selectBookmark(QAction* action) {
 
     filters.selectFilter(bookmarks.getFilter());
     qDebug() << "Bookmark Filter: " << bookmarks.getFilter();
-
 }
 
 void UI::selectABookmark() {
@@ -2340,9 +2343,8 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + " " + QT_VERSION + " 27 May 2013");
+                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  27 May 2013");
     lastmessage = message;
-
 }
 
 void UI::printStatusBar(QString message)
@@ -2352,8 +2354,7 @@ void UI::printStatusBar(QString message)
 
 void UI::initRigCtl ()
 {
-        rigCtl = new RigCtlServer ( this, this );
-
+    rigCtl = new RigCtlServer ( this, this );
 }
 
 long long UI::rigctlGetFreq()
