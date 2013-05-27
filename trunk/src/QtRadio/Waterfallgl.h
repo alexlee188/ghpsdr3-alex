@@ -39,7 +39,6 @@ public slots:
     void updateWaterfall(char* buffer,int width, int starty);
 
 protected:
-    void  initializeGL();
     void  resizeGL(int, int);
     void  paintGL();
 

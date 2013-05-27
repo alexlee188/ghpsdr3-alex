@@ -27,10 +27,6 @@ Waterfallgl::Waterfallgl()
 Waterfallgl::~Waterfallgl(){
 }
 
-void Waterfallgl::initializeGL(){
-    initializeOpenGLFunctions();
-}
-
 static char const vertexShader[] =
         "attribute vec4 aPosition;\n"
         "attribute vec2 aTextureCoord;\n"
@@ -94,7 +90,7 @@ void Waterfallgl::initialize(int wid, int ht){
         m_context = new QOpenGLContext(this);
         m_context->setFormat(requestedFormat());
         m_context->create();
-        initializeGL();
+        initializeOpenGLFunctions();
     }
     m_context->makeCurrent(this);
 
@@ -168,6 +164,7 @@ void Waterfallgl::resizeGL( int width, int height )
 
 void Waterfallgl::paintGL()
 {
+
     m_context->makeCurrent(this);
 
     glViewport(0, 0, width(), height());
@@ -213,7 +210,6 @@ void Waterfallgl::paintGL()
     };
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
-
 }
 
 void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
