@@ -18,8 +18,10 @@
 #include "Waterfallgl.h"
 
 Waterfallgl::Waterfallgl()
-    : ShaderProgram(0)
+    : ShaderProgram(0),
+      m_context(0)
 {
+    setSurfaceType(QWindow::OpenGLSurface);
 }
 
 Waterfallgl::~Waterfallgl(){
@@ -87,6 +89,14 @@ void Waterfallgl::initialize(int wid, int ht){
     data_width = wid;
     data_height = ht;
     cy = MAX_CL_HEIGHT - 1;
+
+    if (!m_context){
+        m_context = new QOpenGLContext(this);
+        m_context->setFormat(requestedFormat());
+        m_context->create();
+        initializeGL();
+    }
+    m_context->makeCurrent(this);
 
     ShaderProgram = new QOpenGLShaderProgram(this);
     ShaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader);
@@ -158,6 +168,7 @@ void Waterfallgl::resizeGL( int width, int height )
 
 void Waterfallgl::paintGL()
 {
+    m_context->makeCurrent(this);
 
     glViewport(0, 0, width(), height());
     glClear(GL_COLOR_BUFFER_BIT);
@@ -222,6 +233,7 @@ void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
         data[i] = buffer[i];
     }
 
+    m_context->makeCurrent(this);
     // Update Texture
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);

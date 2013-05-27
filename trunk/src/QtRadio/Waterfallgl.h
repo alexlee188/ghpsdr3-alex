@@ -44,6 +44,7 @@ protected:
     void  paintGL();
 
 private:
+    QOpenGLContext *m_context;
     GLuint loadShader(GLenum type, const char *source);
     QOpenGLShaderProgram *ShaderProgram;
     GLuint spectrumTexture_location, spectrumTex;
