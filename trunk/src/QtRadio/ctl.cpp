@@ -33,10 +33,13 @@ Ctl::Ctl(QWidget *parent) :
 
     moxPwr = 100;
     TunePwr = 50;
+    audioGain = 100;
+    ui->audioSlider->setValue(audioGain);
     ui->pwrSlider->setValue(moxPwr);
 
     HideTX(false); // Hide buttons because we have not connected to anything yet
-
+    connect(this, SIGNAL(audioGainInitalized(int)), this, SLOT(setAudioSlider(int)));
+    connect(this, SIGNAL(setAudioMuted(bool)), this, SLOT(setAudioMute(bool)));
     //ui->pwrSlider_2->setValue(0);
     //ui->spinBox->setMaximum(100);
 }
@@ -176,4 +179,27 @@ void Ctl::RigCtlTX(bool rigctlptt){
 void Ctl::on_btnMaster_clicked()
 {
     emit masterBtnClicked();
+}
+
+void Ctl::on_btnMute_clicked(bool checked)
+{
+    ui->audioSlider->setEnabled(!checked);
+    emit audioMuted(checked);
+}
+
+void Ctl::on_audioSlider_valueChanged(int value)
+{
+    audioGain = value;
+    emit audioGainChanged();
+}
+
+void Ctl::setAudioSlider(int gain)
+{
+    ui->audioSlider->setValue(gain);
+}
+
+void Ctl::setAudioMute(bool muted)
+{
+    ui->btnMute->setChecked(muted);
+    ui->audioSlider->setEnabled(!muted);
 }

@@ -38,6 +38,7 @@ AMFilters::AMFilters() {
     filters[7].init("3.1k",-1550,1550);
     filters[8].init("2.9k",-1450,1450);
     filters[9].init("2.4k",-1200,1200);
+    filters[10].init("Vari",-2600,2600);
 
     selectFilter(3);
 }

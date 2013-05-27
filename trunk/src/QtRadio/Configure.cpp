@@ -130,10 +130,10 @@ Configure::Configure() {
     connect(widget.rxSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotReceiverChanged(int)));
     connect(widget.rxDCBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotRxDCBlock(bool)));   //KD0OSS
     connect(widget.txDCBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotTxDCBlock(bool)));   //KD0OSS
-    connect(widget.rxIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(on_RxIQPhaseChanged(double)));   //KD0OSS
-    connect(widget.rxIQGainSpinBox,SIGNAL(valueChanged(double)),this,SLOT(on_RxIQGainChanged(double)));   //KD0OSS
-    connect(widget.txIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(on_TxIQPhaseChanged(double)));   //KD0OSS
-    connect(widget.txIQGainSpinBox,SIGNAL(valueChanged(double)),this,SLOT(on_TxIQGainChanged(double)));   //KD0OSS
+    connect(widget.rxIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onRxIQPhaseChanged(double)));   //KD0OSS
+    connect(widget.rxIQGainSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onRxIQGainChanged(double)));   //KD0OSS
+    connect(widget.txIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onTxIQPhaseChanged(double)));   //KD0OSS
+    connect(widget.txIQGainSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onTxIQGainChanged(double)));   //KD0OSS
 
     connect(widget.nrTapsSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrTapsChanged(int)));
     connect(widget.nrDelaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrDelayChanged(int)));
@@ -900,22 +900,22 @@ void Configure::on_avgSpinBox_valueChanged(int arg1)
     emit avgSpinChanged(arg1);
 }
 
-void Configure::on_RxIQPhaseChanged(double arg1)   //KD0OSS
+void Configure::onRxIQPhaseChanged(double arg1)   //KD0OSS
 {
     emit rxIQPhaseChanged(arg1);
 }
 
-void Configure::on_RxIQGainChanged(double arg1)   //KD0OSS
+void Configure::onRxIQGainChanged(double arg1)   //KD0OSS
 {
     emit rxIQGainChanged(arg1);
 }
 
-void Configure::on_TxIQPhaseChanged(double arg1)   //KD0OSS
+void Configure::onTxIQPhaseChanged(double arg1)   //KD0OSS
 {
     emit txIQPhaseChanged(arg1);
 }
 
-void Configure::on_TxIQGainChanged(double arg1)   //KD0OSS
+void Configure::onTxIQGainChanged(double arg1)   //KD0OSS
 {
     emit txIQGainChanged(arg1);
 }

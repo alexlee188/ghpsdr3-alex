@@ -271,6 +271,7 @@ signals:
     void squelchValueChanged(int step);
     void statusMessage(QString);
     void removeNotchFilter(void);
+    void variableFilter(int low, int high);
 
 protected:
  //   void paintEvent(QPaintEvent*);
@@ -336,6 +337,7 @@ private:
 
     int filterLow;
     int filterHigh;
+    bool filterSelected;
     int avg;
     int size;
     long long frequency;
