@@ -85,7 +85,7 @@ void Ctl::on_btnTune_clicked(bool checked)
 
 void Ctl::on_pwrSlider_valueChanged(int value)
 {
-    if(ui->btnMox->isChecked()) {
+    if(!ui->btnTune->isChecked()) {
         moxPwr = ui->pwrSlider->value(); //Do nothing until Tx power level adj written for DttSP
     } else if(ui->btnTune->isChecked()) {
         TunePwr = ui->pwrSlider->value();

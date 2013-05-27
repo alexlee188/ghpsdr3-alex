@@ -398,6 +398,7 @@ UI::UI(const QString server) {
     //widget.spectrumView->setReceiver(configure.getReceiver()); //deleted by gvj
 
     //Configure statusBar
+ //   modeInfo.setMinimumWidth(350);
     widget.statusbar->addPermanentWidget(&modeInfo);
 
     widget.actionSubrx->setDisabled(TRUE);
@@ -1449,7 +1450,7 @@ qDebug()<<Q_FUNC_INFO<<":   1092 band.getFilter = "<<band.getFilter()<<", modeFl
 
     filters.selectFilter(filters.getFilter());
     widget.spectrumView->setFilter(filters.getText());
-    printStatusBar(" .. Initial frequency");    //added by gvj
+    printStatusBar(" .. Initial frequency. ");    //added by gvj
 }
 
 void UI::actionCWL() {
@@ -1727,8 +1728,11 @@ void UI::variableFilter(int low, int high)
 
     command.clear(); QTextStream(&command) << "setFilter " << low << " " << high;
     connection.sendCommand(command);
-    band.setFilter(10);
-    filters.selectFilter(10);
+    if (filters.getFilter() != 10)
+    {
+        band.setFilter(10);
+        filters.selectFilter(10);
+    }
 }
 
 void UI::frequencyChanged(long long f) {
