@@ -307,6 +307,7 @@ private slots:
     void updateNotchFilter(int);  // KD0OSS
     void deleteNotchFilter(void);  // KD0OSS
     void deleteAllNotchFilters(void);  // KD0OSS
+    void redrawItems(void);
 
 private:
     float* samples;

@@ -168,7 +168,6 @@ Panadapter::Panadapter(QWidget*& widget) {
     filterSelected = false; // KD0OSS
     avg = 0;
     mode="LSB";
-    splitViewBoundary = 0;
 
     zoom = 0;
     sampleZoom = false;
@@ -227,12 +226,12 @@ Panadapter::Panadapter(QWidget*& widget) {
 
     panadapterScene->update();
 
-    panadapterScene->spectrumPlot = new spectrumObject(panadapterScene->width(), panadapterScene->height()/2);
-    panadapterScene->waterfallItem = new waterfallObject(panadapterScene->width(), panadapterScene->height()/2);
+    panadapterScene->spectrumPlot = new spectrumObject(width(), height()/2);
+    panadapterScene->waterfallItem = new waterfallObject(width(), height()/2);
+    splitViewBoundary = panadapterScene->height()/2;
 
     updateNfTimer = new QTimer(this);
     connect(updateNfTimer, SIGNAL(timeout()), this, SLOT(updateNotchFilter()));
-
     //*************************************************************************************************
 }
 
@@ -259,6 +258,23 @@ void Panadapter::resizeEvent(QResizeEvent *event)
     drawUpdatedNotchFilter(1);
 //    drawUpdatedNotchFilter(2);
     //******************************
+}
+
+void Panadapter::redrawItems(void)
+{
+    if (!initialized || splitViewBoundary > height())
+    {
+        splitViewBoundary = (height() / 2) - 3;
+        if (!initialized) return;
+    }
+    drawFrequencyLines();
+    drawdBmLines();
+    drawBandLimits();
+    drawCursor(1, false);
+    drawFilter(1, false);
+    drawCursor(2, !subRx);
+    drawFilter(2, !subRx);
+    drawUpdatedNotchFilter(1);
 }
 
 void Panadapter::setHigh(int high) {
@@ -972,10 +988,16 @@ void Panadapter::drawSpectrum(void)
 
 void Panadapter::setZoom(int value){
     // KD0OSS ***************************
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
     if (sampleZoom)
         zoom = value;
     else
+    {
+        if (value > 0)
+           setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
         setMatrix(QMatrix((value * 0.01)+1, 0.0, 0.0, 1.0, 1.0, 1.0));
+    }
 
     if (!initialized)
         return;
@@ -1096,6 +1118,7 @@ void Panadapter::updateSpectrumFrame(char* header,char* buffer,int width) {
     } else {
         LO_offset=0;
     }
+//    qDebug("Meter: %d", meter);
 
     sampleRate = header_sampleRate;
     size = width;
@@ -1109,7 +1132,7 @@ void Panadapter::updateSpectrumFrame(char* header,char* buffer,int width) {
     //qDebug() << "updateSpectrum: create plot points";
     if (width != lastWidth || height() != lastHeight)
     {
-        panadapterScene->setSceneRect(0, 0, width, height()-18);
+        panadapterScene->setSceneRect(0, 0, width, height());
         lastWidth = width;
         lastHeight = height();
         qDebug("Scene width: %d  ht: %d", width, height());
@@ -1132,6 +1155,9 @@ void Panadapter::updateSpectrumFrame(char* header,char* buffer,int width) {
         drawUpdatedNotchFilter(1);
 //        drawUpdatedNotchFilter(2);
         QGraphicsView::setMouseTracking(true);
+        splitViewBoundary = panadapterScene->height()/2;
+
+//        QTimer::singleShot(1000,this,SLOT(redrawItems()));
     }
 
     QTimer::singleShot(0,this,SLOT(drawSpectrum()));
@@ -1234,6 +1260,8 @@ void Panadapter::updateNotchFilter(int index)   // KD0OSS
             return;
         }
         else
+            QTimer::singleShot(1000,this,SLOT(redrawItems()));
+
             enableNotchFilter(index, true);
         audio_freq = abs((notchFilterFO[index] - frequency)); // Convert to audio frequency in Hz
         command.clear();
@@ -1341,7 +1369,7 @@ waterfallObject::waterfallObject(int width, int height) {
 
  //   fitInView(sceneRect().x()-1, sceneRect().y()+1, sceneRect().width()+1, sceneRect().height()-1, Qt::KeepAspectRatio);
 
-    image = QImage(width*2, height, QImage::Format_RGB32);
+    image = QImage(width, height * 2, QImage::Format_RGB32);
 
     int x, y;
     #pragma omp parallel for schedule(static)

@@ -61,6 +61,7 @@
 #include "servers.h"
 #include "ctl.h"
 #include "powermate.h"
+#include "Frequency.h"
 #include "EqualizerDialog.h"
 
 UI::UI(const QString server) {
@@ -364,6 +365,8 @@ UI::UI(const QString server) {
     audio_byte_order=configure.getByteOrder();
 
     widget.spectrumView->connection = &connection; // KD0OSS
+    widget.spectrumView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    widget.spectrumView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     equalizer = new EqualizerDialog(&connection); // KD0OSS
 
@@ -2347,13 +2350,15 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  27 May 2013");
+                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  27 May 2013"); // KD0OSS  Fixed Qt version format
     lastmessage = message;
 }
 
 void UI::printStatusBar(QString message)
 {
-    modeInfo.setText(band.getStringMem()+", "+mode.getStringMode()+", "+filters.getText()+message);
+    Frequency freqInfo;
+
+    modeInfo.setText(freqInfo.getFrequencyInfo(frequency).getDescription() + "  " + band.getStringMem()+", "+mode.getStringMode()+", "+filters.getText()+message);
 }
 
 void UI::initRigCtl ()
