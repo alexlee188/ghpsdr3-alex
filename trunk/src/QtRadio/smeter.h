@@ -20,7 +20,7 @@ class sMeter: public QFrame {
 
 public:
     sMeter();
-    sMeter(QWidget*& widget);
+    sMeter(QWidget* parent=0);
     virtual ~sMeter();
     int meter_dbm;
     int sub_meter_dbm;
