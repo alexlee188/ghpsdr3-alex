@@ -31,9 +31,7 @@ public:
     void initialize(int wid, int ht);
     void setLow(int low);
     void setHigh(int high);
-    void setAutomatic(bool state);
     void setLO_offset(GLfloat offset);
-    void render();
 
 public slots:
     void updateWaterfall(char* buffer,int width, int starty);
@@ -45,7 +43,6 @@ protected:
 private:
     QOpenGLContext *m_context;
     QOpenGLFunctions* m_funcs;
-    GLuint loadShader(GLenum type, const char *source);
     QOpenGLShaderProgram *ShaderProgram;
     GLuint spectrumTexture_location, spectrumTex;
     GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location, width_location; 
@@ -55,7 +52,6 @@ private:
     int data_height;
     int waterfallHigh;
     int waterfallLow;
-    bool waterfallAutomatic;
     float average;
     int cy;
     GLfloat LO_offset;

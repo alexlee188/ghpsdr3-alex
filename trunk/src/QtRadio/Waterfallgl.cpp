@@ -30,7 +30,7 @@ Waterfallgl::Waterfallgl(QScreen* screen)
     //format.setMinorVersion( 3 );
     format.setSamples( 4 );
     //format.setProfile( QSurfaceFormat::CoreProfile );
-    setFormat( format );
+    setFormat(format);
     create();
 
     // Create an OpenGL context
@@ -49,6 +49,7 @@ Waterfallgl::Waterfallgl(QScreen* screen)
         exit( 1 );
     }
     m_funcs->initializeOpenGLFunctions();
+    paintGL();
 }
 
 Waterfallgl::~Waterfallgl(){
@@ -66,9 +67,6 @@ static char const vertexShader[] =
         "}\n";
 
 static char const fragmentShader[] =
-        "#ifdef GL_ES\n"
-        "precision mediump float;\n"
-        "#endif\n"
         "uniform sampler2D spectrumTexture;\n"
         "uniform float cy;\n"
         "uniform float offset;\n"
@@ -114,10 +112,11 @@ void Waterfallgl::initialize(int wid, int ht){
     cy = MAX_CL_HEIGHT - 1;
 
     m_context->makeCurrent(this);
-    ShaderProgram = new QOpenGLShaderProgram(this);
+    ShaderProgram = new QOpenGLShaderProgram(m_context);
     ShaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader);
     ShaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader);
     ShaderProgram->link();
+    ShaderProgram->bind();
 
     spectrumTexture_location = ShaderProgram->uniformLocation("spectrumTexture");
     cy_location =  ShaderProgram->uniformLocation("cy");
@@ -163,15 +162,10 @@ void Waterfallgl::setLow(int low) {
     m_funcs->glUniform1f(waterfallLow_location, wfLow);
 }
 
-void Waterfallgl::setAutomatic(bool state) {
-    waterfallAutomatic=state;
-}
-
 void Waterfallgl::setLO_offset(GLfloat offset){
     LO_offset = offset;
     m_funcs->glUniform1f(offset_location, LO_offset);
 }
-
 
 void Waterfallgl::resizeGL( int width, int height )
 {
@@ -185,26 +179,32 @@ void Waterfallgl::resizeGL( int width, int height )
 void Waterfallgl::paintGL()
 {
     m_context->makeCurrent(this);
+
     glClear(GL_COLOR_BUFFER_BIT);
+    glViewport(0, 0, (GLint) width(), (GLint) height());
+
+    //qWarning("paintGL: before BindTexture");
     glBindTexture(GL_TEXTURE_2D, spectrumTex);
+
+    qWarning("paintGL: before set spectrumTexture_location");
     //Bind to tex unit 0
-    m_funcs->glUniform1i(spectrumTexture_location, 0);
+    ShaderProgram->setUniformValue(spectrumTexture_location, 0);
+
+    qWarning("paintGL: before ActiveTexture");
     m_funcs->glActiveTexture(GL_TEXTURE0);
 
     float current_line = (float) cy /  MAX_CL_HEIGHT;
-    m_funcs->glUniform1f(cy_location, current_line);
+    ShaderProgram->setUniformValue(cy_location, current_line);
     GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
 
-    m_funcs->glUniform1f(width_location, tex_width);
+    ShaderProgram->setUniformValue(width_location, tex_width);
 
+    qWarning("paintGL: before Ortho2D");
     // Ortho2D projection
-    const GLfloat mMVPMatrix[] = {2.0f/data_width, 0.0f, 0.0f, 0.0f,
-                           0.0f, -2.0f/data_height, 0.0f, 0.0f,
-                           0.0f, 0.0f, 1.0f, 0.0f,
-                           -1.0f, 1.0f, 0.0f, 1.0f
-                           };
+    QMatrix4x4 MVPMatrix;
+    MVPMatrix.ortho(0, data_width, 0, data_height, -1.0, 100.0);
 
-    m_funcs->glUniformMatrix4fv(uMVPMatrix_location, 1, false, mMVPMatrix);
+    ShaderProgram->setUniformValue(uMVPMatrix_location, MVPMatrix);
 
     const GLfloat mVertices[] =  {
         0.0f, 0.0f,  // Position 0
@@ -216,16 +216,19 @@ void Waterfallgl::paintGL()
         0.0f, MAX_CL_HEIGHT, // Position 3
         0.0f, 1.0f // TexCoord 3
     };
-    m_funcs->glVertexAttribPointer(aPosition_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, mVertices);
-    m_funcs->glEnableVertexAttribArray(aPosition_location);
-    m_funcs->glVertexAttribPointer(textureCoord_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, &mVertices[2]);
-    m_funcs->glEnableVertexAttribArray(textureCoord_location);
+
+    ShaderProgram->enableAttributeArray(aPosition_location);
+    ShaderProgram->setAttributeArray(aPosition_location, mVertices, 2, sizeof(GLfloat)*4);
+    ShaderProgram->enableAttributeArray(textureCoord_location);
+    ShaderProgram->setAttributeArray(textureCoord_location, &mVertices[2], 2, sizeof(GLfloat)*4);
+
 
     const GLshort mIndices[] =
     {
         0, 1, 2, 0, 2, 3
     };
 
+    qWarning("paintGL: before DrawElements");
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
 
     m_context->swapBuffers(this);
