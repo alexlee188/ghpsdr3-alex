@@ -25,7 +25,7 @@ Waterfallgl::Waterfallgl(QScreen* screen)
     setSurfaceType(QWindow::OpenGLSurface);
     // Specify the format and create platform-specific surface
     QSurfaceFormat format;
-    format.setDepthBufferSize( 24 );
+    //format.setDepthBufferSize( 24 );
     //format.setMajorVersion( 4 );
     //format.setMinorVersion( 3 );
     format.setSamples( 4 );
@@ -133,19 +133,18 @@ void Waterfallgl::initialize(int wid, int ht){
             data[i][j]= (unsigned char) 0xff;
         }
     }
+
+    /*
+    // Wait for QOpengGLTexture class in Qt5.1 or Qt5.2 to re-implement these
     glGenTextures(1, &spectrumTex);
     glBindTexture(GL_TEXTURE_2D, spectrumTex);
     glTexImage2D( GL_TEXTURE_2D, 0, GL_LUMINANCE, MAX_CL_WIDTH, MAX_CL_HEIGHT, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*) data);
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-
-#ifdef GL_CLAMP_TO_EDGE
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#else
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-#endif
+    */
+
     m_context->doneCurrent();
 }
 
@@ -183,11 +182,11 @@ void Waterfallgl::paintGL()
     glClear(GL_COLOR_BUFFER_BIT);
     glViewport(0, 0, (GLint) width(), (GLint) height());
 
-    glBindTexture(GL_TEXTURE_2D, spectrumTex);
+    //glBindTexture(GL_TEXTURE_2D, spectrumTex);
 
     //Bind to tex unit 0
     ShaderProgram->setUniformValue(spectrumTexture_location, 0);
-    glActiveTexture(GL_TEXTURE0);
+    //glActiveTexture(GL_TEXTURE0);
 
     float current_line = (float) cy /  MAX_CL_HEIGHT;
 
@@ -224,7 +223,7 @@ void Waterfallgl::paintGL()
         0, 1, 2, 0, 2, 3
     };
 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
+    //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
 
     m_context->swapBuffers(this);
     m_context->doneCurrent();
@@ -253,7 +252,7 @@ void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
     // Update Texture
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
-    //paintGL();
+    paintGL();
     m_context->doneCurrent();
 }
 

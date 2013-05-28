@@ -1316,7 +1316,6 @@ void Panadapter::deleteAllNotchFilters(void)   // KD0OSS
 
 void Panadapter::updateWaterfall(void)
 {
-    //panadapterScene->waterfallItem->updateWaterfall(wsamples, size, splitViewBoundary);
     waterfallgl->updateWaterfall(wsamples, size, splitViewBoundary);
 }
 
@@ -1378,29 +1377,6 @@ void waterfallObject::setAutomatic(bool state) {
 bool waterfallObject::getAutomatic() {
     return waterfallAutomatic;
 }
-
-void waterfallObject::updateWaterfall(char* buffer, int length, int starty) {
-    int i;
-
-    //qDebug() << "updateWaterfall: " << width() << ":" << height();
-
-    if(samples!=NULL) {
-        free(samples);
-    }
-
-    itemWidth = this->scene()->width();
-    itemHeight = starty;
-
-
-    samples = (float*) malloc(itemWidth * sizeof (float));
-
-    // do not rotate spectrum display.  It is done by dspserver now
-        #pragma omp parallel for schedule(static)
-        for(i=0;i<itemWidth;i++) {
-            samples[i] = -(buffer[i] & 0xFF);
-        }
-}
-
 
 
 uint waterfallObject::calculatePixel(int sample) {

@@ -73,9 +73,6 @@ public:
     void setAutomatic(bool state);
     bool getAutomatic();
 
-public slots:
-    void updateWaterfall(char*, int, int);
-
 private:
     uint calculatePixel(int sample);
 
