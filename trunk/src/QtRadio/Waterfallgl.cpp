@@ -49,7 +49,6 @@ Waterfallgl::Waterfallgl(QScreen* screen)
         exit( 1 );
     }
     m_funcs->initializeOpenGLFunctions();
-    paintGL();
 }
 
 Waterfallgl::~Waterfallgl(){
@@ -152,19 +151,19 @@ void Waterfallgl::initialize(int wid, int ht){
 
 void Waterfallgl::setHigh(int high) {
     float wfHigh = (float) (waterfallHigh) / 256.0f;
-    m_funcs->glUniform1f(waterfallHigh_location, wfHigh);
+    ShaderProgram->setUniformValue(waterfallHigh_location, wfHigh);
     waterfallHigh=high;
 }
 
 void Waterfallgl::setLow(int low) {
     waterfallLow=low;
     float wfLow = (float) (waterfallLow) / 256.0f;
-    m_funcs->glUniform1f(waterfallLow_location, wfLow);
+    ShaderProgram->setUniformValue(waterfallLow_location, wfLow);
 }
 
 void Waterfallgl::setLO_offset(GLfloat offset){
     LO_offset = offset;
-    m_funcs->glUniform1f(offset_location, LO_offset);
+    ShaderProgram->setUniformValue(offset_location, LO_offset);
 }
 
 void Waterfallgl::resizeGL( int width, int height )
@@ -179,27 +178,24 @@ void Waterfallgl::resizeGL( int width, int height )
 void Waterfallgl::paintGL()
 {
     m_context->makeCurrent(this);
+    ShaderProgram->bind();
 
     glClear(GL_COLOR_BUFFER_BIT);
     glViewport(0, 0, (GLint) width(), (GLint) height());
 
-    //qWarning("paintGL: before BindTexture");
     glBindTexture(GL_TEXTURE_2D, spectrumTex);
 
-    qWarning("paintGL: before set spectrumTexture_location");
     //Bind to tex unit 0
     ShaderProgram->setUniformValue(spectrumTexture_location, 0);
-
-    qWarning("paintGL: before ActiveTexture");
-    m_funcs->glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE0);
 
     float current_line = (float) cy /  MAX_CL_HEIGHT;
+
     ShaderProgram->setUniformValue(cy_location, current_line);
     GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
 
     ShaderProgram->setUniformValue(width_location, tex_width);
 
-    qWarning("paintGL: before Ortho2D");
     // Ortho2D projection
     QMatrix4x4 MVPMatrix;
     MVPMatrix.ortho(0, data_width, 0, data_height, -1.0, 100.0);
@@ -228,7 +224,6 @@ void Waterfallgl::paintGL()
         0, 1, 2, 0, 2, 3
     };
 
-    qWarning("paintGL: before DrawElements");
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
 
     m_context->swapBuffers(this);
@@ -238,7 +233,7 @@ void Waterfallgl::paintGL()
 void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
 
     m_context->makeCurrent(this);
-
+    ShaderProgram->bind();
     setLO_offset(0.0);
 
     int sum = 0;
@@ -258,6 +253,7 @@ void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
     // Update Texture
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
+    //paintGL();
     m_context->doneCurrent();
 }
 
