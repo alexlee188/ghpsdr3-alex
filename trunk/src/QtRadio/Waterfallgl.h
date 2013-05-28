@@ -20,6 +20,8 @@
 #define	waterfallgl_H
 
 #include <QtGui>
+#include <QOpenGLFunctions_4_3_Core>
+
 #define MAX_CL_WIDTH 2048
 #define MAX_CL_HEIGHT 1024
 
@@ -42,7 +44,7 @@ protected:
 
 private:
     QOpenGLContext *m_context;
-    QOpenGLFunctions* m_funcs;
+    QOpenGLFunctions_4_3_Core* m_funcs;
     QOpenGLShaderProgram *ShaderProgram;
     GLuint spectrumTexture_location, spectrumTex;
     GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location, width_location; 
