@@ -37,6 +37,7 @@ lineObject::lineObject(PanadapterScene *scene, QPoint start, QPoint stop, QPen p
     width = scene->width();
     height = scene->height();
     itemType = 0;
+    setZValue(0.0);
 }
 
 void lineObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -60,15 +61,15 @@ notchFilterObject::notchFilterObject(PanadapterScene *scene, int index, QPoint l
     height = fheight;
     itemType = 8;
 
-    setZValue(10.0);
+    setZValue(9.0);
 }
 
 void notchFilterObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     painter->setOpacity(1.0);
     painter->setPen(itemColor);
-    painter->drawRect(itemLocation.x(),itemLocation.y(),itemWidth,height);
-    painter->fillRect(itemLocation.x(),itemLocation.y(),itemWidth,height,QBrush(itemColor, Qt::BDiagPattern));
+    painter->drawRect(itemLocation.x(),itemLocation.y()-1,itemWidth,height);
+    painter->fillRect(itemLocation.x(),itemLocation.y()-1,itemWidth,height,QBrush(itemColor, Qt::BDiagPattern));
 }
 
 QRectF notchFilterObject::boundingRect() const
@@ -84,6 +85,8 @@ filterObject::filterObject(PanadapterScene *scene, QPoint location, float fwidth
     width = scene->width();
     height = fheight;
     itemType = 2;
+
+    setZValue(8.0);
 }
 
 void filterObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -106,6 +109,7 @@ textObject::textObject(PanadapterScene *scene, QString text, QPoint location, QC
     width = scene->width();
     height = scene->height();
     itemType = 3;
+    setZValue(0.0);
 }
 
 void textObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -127,6 +131,7 @@ spectrumObject::spectrumObject(int width, int height){
     plotWidth = width;
     plotHeight = height;
     itemType = 4;
+    setZValue(1.0);
 }
 
 void spectrumObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
@@ -160,6 +165,7 @@ Panadapter::Panadapter(QWidget*& widget) {
     spectrumLow=-160;
     filterLow=-3450;
     filterHigh=-150;
+    filterSelected = false; // KD0OSS
     avg = 0;
     mode="LSB";
     splitViewBoundary = 0;
@@ -362,12 +368,8 @@ void Panadapter::mousePressEvent(QMouseEvent* event) {
 
         if (static_cast<filterObject*>(itemAt(event->pos().x(), event->pos().y()))->itemType == 2)
         {
-            filterObject *filt = static_cast<filterObject*>(itemAt(event->pos().x(), event->pos().y()));
-            if (event->pos().x() >= (filt->itemLocation.x()-1) && event->pos().x() <= (filt->itemLocation.x()+1) ||
-                    event->pos().x() >= (filt->itemLocation.x()+filt->itemWidth-1) && event->pos().x() <= (filt->itemLocation.x()+filt->itemWidth+1))
-                this->setCursor(Qt::SizeHorCursor);
-            else
-                this->setCursor(Qt::ArrowCursor);
+            this->setCursor(Qt::SizeAllCursor);
+            filterSelected = true;
         }
     }
 }
@@ -381,20 +383,23 @@ void Panadapter::mouseMoveEvent(QMouseEvent* event){
  //   qDebug() << __FUNCTION__ << ": " << event->pos().y() << " move: " << splitViewBoundary;
 
     moved=1;
+    emit statusMessage("");
 
-    if(button==-1) {
+    if(button == -1) {
         if(squelch &&
            event->pos().y()>=(squelchY-1) &&
            event->pos().y()<=(squelchY+1)) {
             showSquelchControl=true;
             this->setCursor(Qt::SizeVerCursor);
+            emit statusMessage("Left click and drag to adjust squelch.");   // KD0OSS
         } else if (lastY >= (splitViewBoundary-1) && lastY <= (splitViewBoundary+1))   // KD0OSS
         {
             this->setCursor(Qt::SizeVerCursor);
             showSquelchControl=false;
             adjustSplitViewBoundary = true;
+            emit statusMessage("Left click and drag to adjust panadapter ratio.");
         }
-        else if (items(event->pos()).size() > 0)
+        else if (items(event->pos()).size() > 0)   // KD0OSS
         {
             showSquelchControl=false;
             adjustSplitViewBoundary = false;
@@ -404,12 +409,8 @@ void Panadapter::mouseMoveEvent(QMouseEvent* event){
                 emit statusMessage("Right click on notch filter for more actions");
             } else if (static_cast<filterObject*>(itemAt(event->pos().x(), event->pos().y()))->itemType == 2)
             {
-                filterObject *filt = static_cast<filterObject*>(itemAt(event->pos().x(), event->pos().y()));
-                if (event->pos().x() >= (filt->itemLocation.x()-1) && event->pos().x() <= (filt->itemLocation.x()+1) ||
-                    event->pos().x() >= (filt->itemLocation.x()+filt->itemWidth-1) && event->pos().x() <= (filt->itemLocation.x()+filt->itemWidth+1))
-                    this->setCursor(Qt::SizeHorCursor);
-                else
-                    this->setCursor(Qt::ArrowCursor);
+                this->setCursor(Qt::SizeAllCursor);
+                emit statusMessage("Left click and drag to adjust RX filter.");
             }
             else
                 this->setCursor(Qt::ArrowCursor);
@@ -437,14 +438,30 @@ void Panadapter::mouseMoveEvent(QMouseEvent* event){
             else
                 notchFilterBW[notchFilterSelected] -= (movey * move_step);
             drawNotchFilter(1, notchFilterSelected, false);
-    } else {
+    }  else if (button == 1 && filterSelected) {   // KD0OSS
+        float zoom_factor = 1.0f + zoom/25.0f;
+        float move_ratio = (float)sampleRate/48000.0f/zoom_factor;
+        int move_step;
+        if (move_ratio > 10.0f) move_step = 500;
+        else if (move_ratio > 5.0f) move_step = 200;
+        else if (move_ratio > 2.5f) move_step = 100;
+        else if (move_ratio > 1.0f) move_step = 50;
+        else if (move_ratio > 0.5f) move_step = 10;
+        else if (move_ratio > 0.25f) move_step = 5;
+        else move_step = 1;
+        int bw = abs(filterLow-filterHigh);
+        if ((bw - (movey * move_step)) < 100)
+            setFilter(filterLow + (move * move_step), filterLow + (move * move_step) + 100);
+        else
+            setFilter(filterLow + (move * move_step), filterLow + (move * move_step) + bw - (movey * move_step));
+     } else {
         if(settingSquelch) {
             int delta=squelchY-event->pos().y();
             delta=int((float)delta*((float)(spectrumHigh-spectrumLow)/(float)height()));
             //qDebug()<<"squelchValueChanged"<<delta<<"squelchY="<<squelchY<<" y="<<event->pos().y();
             emit squelchValueChanged(delta);
             //squelchY=event->pos().y();
-        } else if (adjustSplitViewBoundary) {
+        } else if (adjustSplitViewBoundary) {   // KD0OSS
             splitViewBoundary = lastY;
             drawdBmLines();
             drawFrequencyLines();
@@ -463,8 +480,6 @@ void Panadapter::mouseMoveEvent(QMouseEvent* event){
             if (!move==0) {
                 if (subRx) emit frequencyMoved(-move,move_step);
                 else emit frequencyMoved(move,move_step);
-       //         drawUpdatedNotchFilter(1);
-       //         updateNotchFilter(-1);
             }
         }
     }
@@ -480,6 +495,14 @@ void Panadapter::mouseReleaseEvent(QMouseEvent* event) {
         this->setCursor(Qt::ArrowCursor);
         button = -1;
         notchFilterSelected = -1;
+    }
+
+    if (filterSelected && button == 1)   // KD0OSS
+    {
+        this->setCursor(Qt::ArrowCursor);
+        button = -1;
+        filterSelected = false;
+        emit variableFilter(filterLow, filterHigh);
     }
 
     if (adjustSplitViewBoundary)  // KD0OSS
@@ -957,7 +980,7 @@ void Panadapter::setZoom(int value){
     if (sampleZoom)
         zoom = value;
     else
-        setMatrix(QMatrix((value * 0.01)+1, 0.0, 0.0, (1.0), 1.0, 1.0));
+        setMatrix(QMatrix((value * 0.01)+1, 0.0, 0.0, 1.0, 1.0, 1.0));
 
     if (!initialized)
         return;
@@ -1129,7 +1152,7 @@ void Panadapter::setSquelch(bool state) {
 
 void Panadapter::setSquelchVal(float val) {
     squelchVal=val;
-    squelchY=(int) floor(((float) spectrumHigh - squelchVal)*(float) height() / (float) (spectrumHigh - spectrumLow));
+    squelchY=(int) floor(((float) spectrumHigh - squelchVal)*(float)splitViewBoundary / (float) (spectrumHigh - spectrumLow));
     if (initialized)   // KD0OSS
         drawSquelch();
     //qDebug()<<"Panadapter::setSquelchVal"<<val<<"squelchY="<<squelchY;
@@ -1357,9 +1380,28 @@ bool waterfallObject::getAutomatic() {
 }
 
 void waterfallObject::updateWaterfall(char* buffer, int length, int starty) {
-    //itemWidth = this->scene()->width();
-    //itemHeight = starty;
+    int i;
+
+    //qDebug() << "updateWaterfall: " << width() << ":" << height();
+
+    if(samples!=NULL) {
+        free(samples);
+    }
+
+    itemWidth = this->scene()->width();
+    itemHeight = starty;
+
+
+    samples = (float*) malloc(itemWidth * sizeof (float));
+
+    // do not rotate spectrum display.  It is done by dspserver now
+        #pragma omp parallel for schedule(static)
+        for(i=0;i<itemWidth;i++) {
+            samples[i] = -(buffer[i] & 0xFF);
+        }
 }
+
+
 
 uint waterfallObject::calculatePixel(int sample) {
         // simple gray scale

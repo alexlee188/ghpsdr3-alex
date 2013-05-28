@@ -110,10 +110,6 @@ UI::UI(const QString server) {
     widget.gridLayout->setVerticalSpacing(0);
     widget.gridLayout->setHorizontalSpacing(0);
 
-    widget.sMeterFrame->setFrameShape(QFrame::Box);
-    widget.sMeterFrame->setFrameShadow(QFrame::Raised);
-    widget.sMeterFrame->setLineWidth(2);
-
     widget.statusbar->showMessage("QtRadio branch: kd0oss 2013");
 
     connect(widget.vfoFrame,SIGNAL(getBandFrequency()),this,SLOT(getBandFrequency()));
@@ -141,7 +137,7 @@ UI::UI(const QString server) {
 
     connect(widget.actionMuteMainRx,SIGNAL(triggered()),this,SLOT(actionMuteMainRx()));
     connect(widget.actionMuteSubRx,SIGNAL(triggered()),this,SLOT(actionMuteSubRx()));
-
+/*
     connect(widget.actionGain_10,SIGNAL(triggered()),this,SLOT(actionGain_10()));
     connect(widget.actionGain_20,SIGNAL(triggered()),this,SLOT(actionGain_20()));
     connect(widget.actionGain_30,SIGNAL(triggered()),this,SLOT(actionGain_30()));
@@ -152,6 +148,9 @@ UI::UI(const QString server) {
     connect(widget.actionGain_80,SIGNAL(triggered()),this,SLOT(actionGain_80()));
     connect(widget.actionGain_90,SIGNAL(triggered()),this,SLOT(actionGain_90()));
     connect(widget.actionGain_100,SIGNAL(triggered()),this,SLOT(actionGain_100()));
+*/
+    connect(widget.ctlFrame,SIGNAL(audioMuted(bool)),this,SLOT(setAudioMuted(bool)));
+    connect(widget.ctlFrame,SIGNAL(audioGainChanged()),this,SLOT(audioGainChanged()));
 
     connect(widget.actionSquelchEnable,SIGNAL(triggered()),this,SLOT(actionSquelch()));
     connect(widget.actionSquelchReset,SIGNAL(triggered()),this,SLOT(actionSquelchReset()));
@@ -196,6 +195,7 @@ UI::UI(const QString server) {
     connect(widget.actionFilter_7,SIGNAL(triggered()),this,SLOT(actionFilter7()));
     connect(widget.actionFilter_8,SIGNAL(triggered()),this,SLOT(actionFilter8()));
     connect(widget.actionFilter_9,SIGNAL(triggered()),this,SLOT(actionFilter9()));
+    connect(widget.actionFilter_10,SIGNAL(triggered()),this,SLOT(actionFilter10()));
 
     connect(widget.actionANF,SIGNAL(triggered()),this,SLOT(actionANF()));
     connect(widget.actionNR,SIGNAL(triggered()),this,SLOT(actionNR()));
@@ -242,6 +242,7 @@ UI::UI(const QString server) {
     // connect up filter changes
     connect(&filters,SIGNAL(filtersChanged(FiltersBase*,FiltersBase*)),this,SLOT(filtersChanged(FiltersBase*,FiltersBase*)));
     connect(&filters,SIGNAL(filterChanged(int,int)),this,SLOT(filterChanged(int,int)));
+    connect(widget.spectrumView,SIGNAL(variableFilter(int,int)),this,SLOT(variableFilter(int,int)));
 
     // connect up spectrum view
     connect(widget.spectrumView, SIGNAL(frequencyMoved(int,int)),
@@ -339,8 +340,8 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
     connect(&configure,SIGNAL(RxIQspinChanged(double)),this,SLOT(RxIQspinChanged(double)));
     connect(&configure,SIGNAL(spinBox_cwPitchChanged(int)),this,SLOT(cwPitchChanged(int)));
-    connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
-    connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
+//    connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
+//    connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
     connect(&connection,SIGNAL(hardware(QString)),this,SLOT(hardware(QString)));
     connect(widget.ctlFrame,SIGNAL(masterBtnClicked()),this,SLOT(masterButtonClicked()));
 
@@ -397,6 +398,7 @@ UI::UI(const QString server) {
     //widget.spectrumView->setReceiver(configure.getReceiver()); //deleted by gvj
 
     //Configure statusBar
+ //   modeInfo.setMinimumWidth(350);
     widget.statusbar->addPermanentWidget(&modeInfo);
 
     widget.actionSubrx->setDisabled(TRUE);
@@ -438,6 +440,7 @@ void UI::loadSettings() {
     bookmarks.buildMenu(widget.menuView_Bookmarks);
     settings.beginGroup("UI");
     if(settings.contains("gain")) gain=subRxGain=settings.value("gain").toInt();
+    emit widget.ctlFrame->audioGainInitalized(gain);  // KD0OSS
     if(settings.contains("agc")) agc=settings.value("agc").toInt();
     if(settings.contains("squelch")) squelchValue=settings.value("squelch").toInt();
     if(settings.contains("pwsmode")) pwsmode=settings.value("pwsmode").toInt();  // KD0OSS
@@ -449,7 +452,7 @@ void UI::loadSettings() {
     }
     settings.endGroup();
 
-    // KD0OSS
+    // KD0OSS ******************************************
     settings.beginGroup("AudioEqualizer");
     if (settings.contains("eqMode"))
     {
@@ -476,7 +479,7 @@ void UI::loadSettings() {
         equalizer->set10BandEqualizer();
     }
     settings.endGroup();
-
+    // **************************************************
     widget.vfoFrame->readSettings(&settings);
     setPwsMode(pwsmode);  // KD0OSS
 }
@@ -508,11 +511,12 @@ void UI::saveSettings() {
     settings.setValue("geometry", saveGeometry());
     settings.endGroup();
 
+    // KD0OSS  ********************************************************
     settings.beginGroup("AudioEqualizer");
     settings.setValue("rxEqEnabled", widget.rxEqEnableCB->isChecked());
     settings.setValue("txEqEnabled", widget.txEqEnableCB->isChecked());
     settings.endGroup();
-
+    //  ***************************************************************
     widget.vfoFrame->writeSettings(&settings);
 }
 
@@ -1379,6 +1383,9 @@ void UI::filtersChanged(FiltersBase* previousFilters,FiltersBase* newFilters) {
             case 9:
                 widget.actionFilter_9->setChecked(FALSE);
                 break;
+            case 10:
+                widget.actionFilter_10->setChecked(FALSE);
+                break;
         }
     }
 
@@ -1400,6 +1407,7 @@ qDebug()<<Q_FUNC_INFO<<":   1092 band.getFilter = "<<band.getFilter()<<", modeFl
     widget.actionFilter_7->setText(newFilters->getText(7));
     widget.actionFilter_8->setText(newFilters->getText(8));
     widget.actionFilter_9->setText(newFilters->getText(9));
+    widget.actionFilter_10->setText(newFilters->getText(10));
 
     // check new filter
     if(newFilters!=NULL) {
@@ -1434,12 +1442,15 @@ qDebug()<<Q_FUNC_INFO<<":   1092 band.getFilter = "<<band.getFilter()<<", modeFl
             case 9:
                 widget.actionFilter_9->setChecked(TRUE);
                 break;
+            case 10:
+                widget.actionFilter_10->setChecked(TRUE);
+                break;
         }
     }
 
     filters.selectFilter(filters.getFilter());
     widget.spectrumView->setFilter(filters.getText());
-    printStatusBar(" .. Initial frequency");    //added by gvj
+    printStatusBar(" .. Initial frequency. ");    //added by gvj
 }
 
 void UI::actionCWL() {
@@ -1572,6 +1583,10 @@ void UI::actionFilter9() {
     filters.selectFilter(9);
 }
 
+void UI::actionFilter10() {
+    filters.selectFilter(10);
+}
+
 void UI::filterChanged(int previousFilter,int newFilter) {
     QString command;
 
@@ -1609,6 +1624,9 @@ void UI::filterChanged(int previousFilter,int newFilter) {
         case 9:
             widget.actionFilter_9->setChecked(FALSE);
             break;
+        case 10:
+            widget.actionFilter_10->setChecked(FALSE);
+            break;
     }
 
     switch(newFilter) {
@@ -1642,7 +1660,13 @@ void UI::filterChanged(int previousFilter,int newFilter) {
         case 9:
             widget.actionFilter_9->setChecked(TRUE);
             break;
+        case 10:
+            widget.actionFilter_10->setChecked(TRUE);
+            break;
     }
+
+    if (previousFilter != 10 && newFilter == 10)
+        return;
 
     if(mode.getMode()==MODE_CWL) {
         low=-cwPitch-filters.getLow();
@@ -1661,6 +1685,54 @@ void UI::filterChanged(int previousFilter,int newFilter) {
     widget.spectrumView->setFilter(filters.getText());
 //    widget.waterfallView->setFilter(low,high);
     band.setFilter(newFilter);
+}
+
+void UI::variableFilter(int low, int high)
+{
+    QString command;
+
+    switch(filters.getFilter()) {
+    case 0:
+        widget.actionFilter_0->setChecked(FALSE);
+        break;
+    case 1:
+        widget.actionFilter_1->setChecked(FALSE);
+        break;
+    case 2:
+        widget.actionFilter_2->setChecked(FALSE);
+        break;
+    case 3:
+        widget.actionFilter_3->setChecked(FALSE);
+        break;
+    case 4:
+        widget.actionFilter_4->setChecked(FALSE);
+        break;
+    case 5:
+        widget.actionFilter_5->setChecked(FALSE);
+        break;
+    case 6:
+        widget.actionFilter_6->setChecked(FALSE);
+        break;
+    case 7:
+        widget.actionFilter_7->setChecked(FALSE);
+        break;
+    case 8:
+        widget.actionFilter_8->setChecked(FALSE);
+        break;
+    case 9:
+        widget.actionFilter_9->setChecked(FALSE);
+        break;
+    }
+
+    widget.actionFilter_10->setChecked(TRUE);
+
+    command.clear(); QTextStream(&command) << "setFilter " << low << " " << high;
+    connection.sendCommand(command);
+    if (filters.getFilter() != 10)
+    {
+        band.setFilter(10);
+        filters.selectFilter(10);
+    }
 }
 
 void UI::frequencyChanged(long long f) {
@@ -1745,6 +1817,26 @@ void UI::actionPolyphase() {
 }
 
 void UI::actionFixed() { // KD0OSS
+    if (!newDspServerCheck())
+    {
+        widget.actionFixed->setChecked(FALSE);
+        switch(agc) {
+        case AGC_LONG:
+            widget.actionLong->setChecked(TRUE);
+            break;
+        case AGC_SLOW:
+            widget.actionSlow->setChecked(TRUE);
+            break;
+        case AGC_MEDIUM:
+            widget.actionMedium->setChecked(TRUE);
+            break;
+        case AGC_FAST:
+            widget.actionFast->setChecked(TRUE);
+            break;
+        }
+        return;
+    }
+
     QString command;
     // reset the current selection
     switch(agc) {
@@ -1896,7 +1988,10 @@ void UI::actionMuteMainRx() {
 
     if(widget.actionMuteMainRx->isChecked()) {
         g=0;
+        emit widget.ctlFrame->setAudioMuted(true);
     }
+    else
+        emit widget.ctlFrame->setAudioMuted(false);
 
     command.clear(); QTextStream(&command) << "SetRXOutputGain " << g;
     connection.sendCommand(command);
@@ -1908,7 +2003,10 @@ void UI::actionMuteSubRx() {
 
     if(widget.actionMuteSubRx->isChecked()) {
         g=0;
+        emit widget.ctlFrame->setAudioMuted(true);
     }
+    else
+        emit widget.ctlFrame->setAudioMuted(false);
 
     command.clear(); QTextStream(&command) << "SetSubRXOutputGain " << g;
     connection.sendCommand(command);
@@ -1940,7 +2038,7 @@ void UI::actionRecord() {
     command.clear(); QTextStream(&command) << "record " << (widget.actionRecord->isChecked()?"on":"off");
     connection.sendCommand(command);
 }
-
+/*
 void UI::actionGain_10() {
     actionGain(10);
 }
@@ -1980,19 +2078,40 @@ void UI::actionGain_90() {
 void UI::actionGain_100() {
     actionGain(100);
 }
-
+*/
 void UI::actionGain(int g) {
     QString command;
-    setGain(false);
+//    setGain(false);
     gain=g;
     subRxGain=g;
-    setGain(true);
+//    setGain(true);
     command.clear(); QTextStream(&command) << "SetRXOutputGain " << g;
     connection.sendCommand(command);
     command.clear(); QTextStream(&command) << "SetSubRXOutputGain " << g;
     connection.sendCommand(command);
 }
 
+void UI::setAudioMuted(bool enabled)
+{
+    if (enabled)
+    {
+        actionGain(0);
+        widget.actionMuteMainRx->setChecked(true);
+        widget.actionMuteSubRx->setChecked(true);
+    }
+    else
+    {
+        actionGain(widget.ctlFrame->audioGain);
+        widget.actionMuteMainRx->setChecked(false);
+        widget.actionMuteSubRx->setChecked(false);
+    }
+}
+
+void UI::audioGainChanged(void)
+{
+    actionGain(widget.ctlFrame->audioGain);
+}
+/*
 void UI::setGain(bool state) {
     switch(gain) {
     case 10:
@@ -2027,14 +2146,12 @@ void UI::setGain(bool state) {
         break;
     }
 }
-
+*/
 void UI::nrValuesChanged(int taps,int delay,double gain,double leakage) {
     QString command;
     command.clear(); QTextStream(&command) << "SetNRVals " << taps << " " << delay << " "
                                            << gain << " " << leakage;
     connection.sendCommand(command);
-
-
 }
 
 void UI::anfValuesChanged(int taps,int delay,double gain,double leakage) {
@@ -2100,7 +2217,6 @@ void UI::selectBookmark(QAction* action) {
 
     filters.selectFilter(bookmarks.getFilter());
     qDebug() << "Bookmark Filter: " << bookmarks.getFilter();
-
 }
 
 void UI::selectABookmark() {
@@ -2231,9 +2347,8 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + " 22 May 2013");
+                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  27 May 2013");
     lastmessage = message;
-
 }
 
 void UI::printStatusBar(QString message)
@@ -2243,8 +2358,7 @@ void UI::printStatusBar(QString message)
 
 void UI::initRigCtl ()
 {
-        rigCtl = new RigCtlServer ( this, this );
-
+    rigCtl = new RigCtlServer ( this, this );
 }
 
 long long UI::rigctlGetFreq()
@@ -2612,6 +2726,7 @@ void UI::setTxIQGain(double value)  // KD0OSS
     qDebug()<<Q_FUNC_INFO<<":   The value of Tx IQ Gain = "<<value;
 }
 
+/*
 void UI::testSliderChange(int value)
 {
     QString command;
@@ -2633,7 +2748,7 @@ void UI::testButtonClick(bool state)
 }
 
 //>>>>>>> Connected test controls to main UI
-
+*/
  void UI::resetbandedges(double offset)
  {
      loffset= offset;
@@ -2803,6 +2918,8 @@ void UI::actionPwsMode3()   // KD0OSS
 
 void UI::AGCTLevelChanged(int level)   // KD0OSS
 {
+    if (!newDspServerCheck()) return;
+
     QString command;
     command.clear(); QTextStream(&command) << "setfixedagc " << level;
 //        qDebug("%s", command);
@@ -2813,6 +2930,8 @@ void UI::AGCTLevelChanged(int level)   // KD0OSS
 
 void UI::enableRxEq(bool enable)   // KD0OSS
 {
+    if (!newDspServerCheck()) return;
+
     QString command;
     command.clear(); QTextStream(&command) << "setrxgreqcmd " << enable;
     connection.sendCommand(command);
@@ -2821,6 +2940,8 @@ void UI::enableRxEq(bool enable)   // KD0OSS
 
 void UI::enableTxEq(bool enable)   // KD0OSS
 {
+    if (!newDspServerCheck()) return;
+
     QString command;
     command.clear(); QTextStream(&command) << "settxgreqcmd " << enable;
     connection.sendCommand(command);
@@ -2829,6 +2950,8 @@ void UI::enableTxEq(bool enable)   // KD0OSS
 
 void UI::addNotchFilter(void)   // KD0OSS
 {
+    if (!newDspServerCheck()) return;
+
     if (notchFilterIndex >= 9)
     {
         QMessageBox::warning(this, "Tracking Notch Filter Error", "Maximum of 9 notch filters reached!");
@@ -2840,6 +2963,8 @@ void UI::addNotchFilter(void)   // KD0OSS
 
 void UI::removeNotchFilter(void)
 {
+    if (!newDspServerCheck()) return;
+
     notchFilterIndex--;
     if (notchFilterIndex < 0)
         notchFilterIndex = 0;
@@ -2870,4 +2995,15 @@ void UI::statusMessage(QString message)
 void UI::masterButtonClicked(void)
 {
     connection.sendCommand("setMaster " + configure.thisuser + " " + configure.thispass);
+}
+
+bool UI::newDspServerCheck(void)
+{
+    if (dspversion >= 20130525)
+        return true;
+    else
+    {
+        QMessageBox::warning(this, "Advanced Features Error", "DSP server version 20130525 or greater required.");
+        return false;
+    }
 }

@@ -23,7 +23,7 @@
    <property name="geometry">
     <rect>
      <x>5</x>
-     <y>10</y>
+     <y>5</y>
      <width>60</width>
      <height>22</height>
     </rect>
@@ -42,7 +42,7 @@
    <property name="geometry">
     <rect>
      <x>5</x>
-     <y>45</y>
+     <y>32</y>
      <width>60</width>
      <height>22</height>
     </rect>
@@ -58,7 +58,7 @@
    <property name="geometry">
     <rect>
      <x>73</x>
-     <y>47</y>
+     <y>25</y>
      <width>160</width>
      <height>19</height>
     </rect>
@@ -95,7 +95,7 @@
    <property name="geometry">
     <rect>
      <x>73</x>
-     <y>30</y>
+     <y>5</y>
      <width>161</width>
      <height>20</height>
     </rect>
@@ -111,7 +111,7 @@
    <property name="geometry">
     <rect>
      <x>73</x>
-     <y>81</y>
+     <y>90</y>
      <width>161</width>
      <height>20</height>
     </rect>
@@ -124,13 +124,70 @@
    <property name="geometry">
     <rect>
      <x>5</x>
-     <y>79</y>
+     <y>88</y>
      <width>60</width>
      <height>24</height>
     </rect>
    </property>
    <property name="text">
     <string>Master</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnMute">
+   <property name="geometry">
+    <rect>
+     <x>5</x>
+     <y>62</y>
+     <width>60</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Mute</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QSlider" name="audioSlider">
+   <property name="geometry">
+    <rect>
+     <x>73</x>
+     <y>64</y>
+     <width>160</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="minimum">
+    <number>1</number>
+   </property>
+   <property name="maximum">
+    <number>100</number>
+   </property>
+   <property name="value">
+    <number>50</number>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="tickPosition">
+    <enum>QSlider::TicksBelow</enum>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>73</x>
+     <y>47</y>
+     <width>161</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>1      Audio Gain     100</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
    </property>
   </widget>
  </widget>
