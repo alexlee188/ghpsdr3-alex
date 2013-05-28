@@ -113,6 +113,7 @@ void Waterfallgl::initialize(int wid, int ht){
     data_height = ht;
     cy = MAX_CL_HEIGHT - 1;
 
+    m_context->makeCurrent(this);
     ShaderProgram = new QOpenGLShaderProgram(this);
     ShaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader);
     ShaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader);
@@ -147,7 +148,7 @@ void Waterfallgl::initialize(int wid, int ht){
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 #endif
-
+    m_context->doneCurrent();
 }
 
 void Waterfallgl::setHigh(int high) {
@@ -226,6 +227,9 @@ void Waterfallgl::paintGL()
     };
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
+
+    m_context->swapBuffers(this);
+    m_context->doneCurrent();
 }
 
 void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
@@ -251,6 +255,7 @@ void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
     // Update Texture
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
+    m_context->doneCurrent();
 }
 
 
