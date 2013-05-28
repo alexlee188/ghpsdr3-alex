@@ -43,7 +43,7 @@ Waterfallgl::Waterfallgl(QScreen* screen)
     m_context->makeCurrent( this );
 
     // Obtain a functions object and resolve all entry points
-    // m_funcs is declared as: QOpenGLFunctions m_funcs
+    // m_funcs is declared as: QOpenGLFunctions_4_3_Core* m_funcs
     m_funcs = (QOpenGLFunctions_4_3_Core*) m_context->versionFunctions();
     if ( !m_funcs ) {
         qWarning( "Could not obtain OpenGL Functions object" );
