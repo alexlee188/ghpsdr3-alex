@@ -26,7 +26,7 @@
 class Waterfallgl : public QWindow,  protected QOpenGLFunctions {
     Q_OBJECT
 public:
-    Waterfallgl();
+    Waterfallgl(QScreen* screen = 0);
     ~Waterfallgl();
     void initialize(int wid, int ht);
     void setLow(int low);
@@ -44,6 +44,7 @@ protected:
 
 private:
     QOpenGLContext *m_context;
+    QOpenGLFunctions* m_funcs;
     GLuint loadShader(GLenum type, const char *source);
     QOpenGLShaderProgram *ShaderProgram;
     GLuint spectrumTexture_location, spectrumTex;

@@ -224,10 +224,7 @@ Panadapter::Panadapter(QWidget*& widget) {
     panadapterScene->spectrumPlot = new spectrumObject(panadapterScene->width(), panadapterScene->height()/2);
     panadapterScene->waterfallItem = new waterfallObject(panadapterScene->width(), panadapterScene->height()/2);
 
-    QSurfaceFormat format;
-    format.setSamples(4);
     waterfallgl = new Waterfallgl;
-    waterfallgl->setFormat(format);
     waterfallgl->resize(1024,256);
     waterfallgl->initialize(1024, 256);
     waterfallgl->show();
