@@ -253,7 +253,7 @@ void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
     // Update Texture
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
-    //paintGL();
+    paintGL();
     m_context->doneCurrent();
 }
 
