@@ -148,7 +148,7 @@ void Waterfallgl::initialize(int wid, int ht){
 
     m_funcs->glGenTextures(1, &spectrumTex);
     m_funcs->glBindTexture(GL_TEXTURE_2D, spectrumTex);
-    m_funcs->glTexImage2D( GL_TEXTURE_2D, 0, GL_LUMINANCE, MAX_CL_WIDTH, MAX_CL_HEIGHT, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*) data);
+    m_funcs->glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, MAX_CL_WIDTH, MAX_CL_HEIGHT, 0, GL_RED, GL_UNSIGNED_BYTE, (GLvoid*) data);
     m_funcs->glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     m_funcs->glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     m_funcs->glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -221,17 +221,20 @@ void Waterfallgl::paintGL()
         0.0f, 1.0f // TexCoord 3
     };
 
-    /*
     ShaderProgram->enableAttributeArray(aPosition_location);
     ShaderProgram->setAttributeArray(aPosition_location, mVertices, 2, sizeof(GLfloat)*4);
     ShaderProgram->enableAttributeArray(textureCoord_location);
     ShaderProgram->setAttributeArray(textureCoord_location, &mVertices[2], 2, sizeof(GLfloat)*4);
+
+    /*
+    m_funcs->glVertexAttribPointer(aPosition_location, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat)*4, mVertices);
+    m_funcs->glEnableVertexAttribArray(aPosition_location);
+    m_funcs->glVertexAttribPointer(textureCoord_location, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat)*4, &mVertices[2]);
+    m_funcs->glEnableVertexAttribArray(textureCoord_location);
     */
 
-    m_funcs->glVertexAttribPointer(aPosition_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, mVertices);
-    m_funcs->glEnableVertexAttribArray(aPosition_location);
-    m_funcs->glVertexAttribPointer(textureCoord_location, 2, GL_FLOAT, false, sizeof(GLfloat)*4, &mVertices[2]);
-    m_funcs->glEnableVertexAttribArray(textureCoord_location);
+    qWarning("After vertexattrib pointer");
+    exit(1);
 
     const GLshort mIndices[] =
     {
@@ -267,7 +270,7 @@ void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
 
     // Update Texture
     m_funcs->glTexSubImage2D(GL_TEXTURE_2D, 0, 0, cy, MAX_CL_WIDTH, 1,
-                    GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)data);
+                    GL_RED, GL_UNSIGNED_BYTE, (GLvoid*)data);
     paintGL();
     m_context->doneCurrent();
 }
