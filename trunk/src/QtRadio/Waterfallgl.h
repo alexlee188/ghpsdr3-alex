@@ -37,6 +37,10 @@ public:
 
 public slots:
     void updateWaterfall(char* buffer,int width, int starty);
+    void onMessageLogged( QOpenGLDebugMessage);
+
+signals:
+    void messageLogged(QOpenGLDebugMessage);
 
 protected:
     void  resizeGL(int, int);
@@ -46,6 +50,7 @@ private:
     QOpenGLContext *m_context;
     QOpenGLFunctions_4_3_Core* m_funcs;
     QOpenGLShaderProgram *ShaderProgram;
+    QOpenGLDebugLogger * m_logger;
     GLuint spectrumTexture_location, spectrumTex;
     GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location, width_location; 
     GLuint aPosition_location, textureCoord_location;

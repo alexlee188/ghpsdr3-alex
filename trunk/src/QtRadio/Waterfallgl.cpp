@@ -59,7 +59,7 @@ static char const vertexShader[] =
         "attribute mediump vec4 aPosition;\n"
         "attribute mediump vec2 aTextureCoord;\n"
         "uniform mediump mat4 uMVPMatrix;\n"
-        "varying vec2 vTextureCoord;\n"
+        "varying mediump vec2 vTextureCoord;\n"
         "void main()\n"
         "{\n"
         "vTextureCoord = aTextureCoord;\n"
@@ -67,12 +67,12 @@ static char const vertexShader[] =
         "}\n";
 
 static char const fragmentShader[] =
-        "uniform sampler2D spectrumTexture;\n"
-        "uniform float cy;\n"
-        "uniform float offset;\n"
-        "uniform float width;\n"
-        "uniform float waterfallLow, waterfallHigh;\n"
-        "varying vec2 vTextureCoord;\n"
+        "uniform mediump sampler2D spectrumTexture;\n"
+        "uniform mediump float cy;\n"
+        "uniform mediump float offset;\n"
+        "uniform mediump float width;\n"
+        "uniform mediump float waterfallLow, waterfallHigh;\n"
+        "varying mediump vec2 vTextureCoord;\n"
         "void main()\n"
         "{\n"
             "float y_coord = vTextureCoord.t + cy;\n"
@@ -110,6 +110,17 @@ void Waterfallgl::initialize(int wid, int ht){
     data_width = wid;
     data_height = ht;
     cy = MAX_CL_HEIGHT - 1;
+
+    m_logger = new QOpenGLDebugLogger( this );
+
+    connect( m_logger, SIGNAL( messageLogged( QOpenGLDebugMessage ) ),
+             this, SLOT( onMessageLogged( QOpenGLDebugMessage ) ),
+             Qt::DirectConnection );
+
+    if ( m_logger->initialize() ) {
+        m_logger->startLogging( QOpenGLDebugLogger::SynchronousLogging );
+        m_logger->enableMessages();
+    }
 
     m_context->makeCurrent(this);
     ShaderProgram = new QOpenGLShaderProgram(m_context);
@@ -261,4 +272,7 @@ void Waterfallgl::updateWaterfall(char *buffer, int width, int starty){
     m_context->doneCurrent();
 }
 
+void Waterfallgl::onMessageLogged(QOpenGLDebugMessage message){
+    qDebug() << message;
+}
 
