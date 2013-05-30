@@ -266,7 +266,7 @@ public slots:
     void sdromThresholdChanged(double);
     void windowTypeChanged(int); //KD0OSS
     void statusMessage(QString); //KD0OSS
-    void removeNotchFilter(void);
+    void removeNotchFilter(void); //KD0OSS
 
     void actionBookmark();
     void addBookmark();
@@ -435,6 +435,7 @@ private:
     QString servername;
     bool canTX;
     bool chkTX;
+    bool txNow; // KD0OSS
     double loffset;
     bool protocol3;
 };

@@ -76,6 +76,7 @@ UI::UI(const QString server) {
     configure.thisuser = "None";
     configure.thispass= "None";
     canTX = true;  // set to false if dspserver says so
+    txNow = false; // KD0OSS
     audio = new Audio;
     loffset = 0;
     protocol3 = false;
@@ -928,6 +929,28 @@ void UI::audioBuffer(char* header,char* buffer) {
 
 
 void UI::micSendAudio(QQueue<qint16>* queue){
+    FILE *file;
+    file = fopen("/home/rschnic/temp.raw", "ab");
+    while(!queue->isEmpty())
+    {
+        qint16 sample=queue->dequeue();
+        mic_encoded_buffer[mic_buffer_count++] = (sample & 0xff00) > 8;
+        mic_encoded_buffer[mic_buffer_count++] = sample & 0xff;
+        if(mic_buffer_count >= 320)
+        {
+//            if (bSendAudio)
+            {
+                fwrite(mic_encoded_buffer, 1, mic_buffer_count, file);
+         //       memcpy(data+4, mic_encoded_buffer, mic_buffer_count);
+//                    spd->sendData(data, 324);
+        //        ambeMeter->updateMeter((qint16*)(data+4), 1);
+        //        usleep(12000);
+            }
+            mic_buffer_count=0;
+        }
+    }
+    fclose(file);
+    return;
     if(useRTP) {
         while(!queue->isEmpty()) {
             qint16 sample=queue->dequeue();
@@ -939,7 +962,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
                 //  the connection is valid
                 //  the checkbox in GUI is checked
                 //  the server side has Tx capability
-                if (connection_valid && configure.getTxAllowed() && (canTX == true)){
+                if (connection_valid && configure.getTxAllowed() && (canTX == true) && txNow){
                     rtp_send_buffer = (unsigned char*) malloc(MIC_BUFFER_SIZE);
                     // rtp_send_buffer will be free'd by rtp_send()
                     memcpy(rtp_send_buffer, mic_encoded_buffer, MIC_BUFFER_SIZE);
@@ -966,7 +989,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
                     //  the connection is valid
                     //  the checkbox in GUI is checked
                     //  the server side has Tx capability
-                    if (connection_valid && configure.getTxAllowed() && (canTX == true))
+                    if (connection_valid && configure.getTxAllowed() && (canTX == true) && txNow)
                         connection.sendAudio(samples_per_frame*MIC_NO_OF_FRAMES,mic_encoded_buffer);
                 }
             }
@@ -982,7 +1005,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
                 //  the connection is valid
                 //  the checkbox in GUI is checked
                 //  the server side has Tx capability
-                if (connection_valid && configure.getTxAllowed() && (canTX == true)){
+                if (connection_valid && configure.getTxAllowed() && (canTX == true) && txNow){
                     connection.sendAudio(MIC_ALAW_BUFFER_SIZE, mic_encoded_buffer);
                 }
                 mic_buffer_count=0;
@@ -2508,6 +2531,7 @@ void UI::pttChange(int caller, bool ptt)
             connection.sendCommand(command);
             widget.vfoFrame->pttChange(ptt); //Update the VFO to reflect that we are transmitting
             connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
+            txNow = true; // KD0OSS
         } else {    // Going from Tx to Rx .................
             if(caller==1) {
                 //Restore AM carrier level to 0.5 the standard carrier level for AM mode.
@@ -2531,6 +2555,8 @@ void UI::pttChange(int caller, bool ptt)
                     case MODE_DIGU:actionDIGU();break;
                 }
             }
+            txNow = false; // KD0OSS
+
             //Un-mute the receiver audio
             connection.setMuted(false);
             //Send signal to sdr to go to Rx
