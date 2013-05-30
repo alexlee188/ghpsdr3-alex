@@ -2356,9 +2356,15 @@ void UI::printWindowTitle(QString message)
 
 void UI::printStatusBar(QString message)
 {
-    Frequency freqInfo;
+    Frequency freqInfo; // KD0OSS Added frequency description.
+    QString description;
+    static long long lastFreq;
 
-    modeInfo.setText(freqInfo.getFrequencyInfo(frequency).getDescription() + "  " + band.getStringMem()+", "+mode.getStringMode()+", "+filters.getText()+message);
+    if (lastFreq != frequency)
+        description = freqInfo.getFrequencyInfo(frequency).getDescription();
+
+    modeInfo.setText(description + "  " + band.getStringMem()+", "+mode.getStringMode()+", "+filters.getText()+message);
+    lastFreq = frequency;
 }
 
 void UI::initRigCtl ()

@@ -988,16 +988,20 @@ void Panadapter::drawSpectrum(void)
 
 void Panadapter::setZoom(int value){
     // KD0OSS ***************************
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    static int vzoom;
 
     if (sampleZoom)
         zoom = value;
     else
     {
-        if (value > 0)
-           setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
         setMatrix(QMatrix((value * 0.01)+1, 0.0, 0.0, 1.0, 1.0, 1.0));
+        vzoom = value;
     }
+
+    if (vzoom > 0)
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    else
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     if (!initialized)
         return;
