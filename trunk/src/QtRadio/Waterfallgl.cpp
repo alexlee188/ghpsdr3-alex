@@ -154,7 +154,6 @@ void Waterfallgl::initialize(int wid, int ht){
     m_funcs->glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     m_funcs->glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     m_funcs->glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
     m_context->doneCurrent();
 }
 
@@ -213,34 +212,43 @@ void Waterfallgl::paintGL()
 
     const GLfloat mVertices[] =  {
         0.0f, 0.0f,  // Position 0
-        0.0f, 0.0f,  // TexCoord 0
         (float)data_width, 0.0f,  // Position 1
-        tex_width, 0.0f, // TexCoord 1
         (float)data_width, MAX_CL_HEIGHT, // Position 2
-        tex_width, 1.0f, // TexCoord 2
         0.0f, MAX_CL_HEIGHT, // Position 3
-        0.0f, 1.0f // TexCoord 3
+    };
+
+    const GLfloat mTextures[] = {
+        0.0f, 0.0f,  // TexCoord 0
+        tex_width, 0.0f, // TexCoord 1
+        tex_width, 1.0f, // TexCoord 2
+        0.0f, 0.1f // TexCoord 3
     };
 
     m_vao = new QOpenGLVertexArrayObject( this );
     m_vao->create();
     m_vao->bind();
 
-    m_vbo.create();
-    m_vbo.setUsagePattern(QOpenGLBuffer::StreamDraw);
-    m_vbo.bind();
-    m_vbo.allocate(mVertices, 4 * 4 * sizeof(float));
-
+    m_vbo_position.create();
+    m_vbo_position.setUsagePattern(QOpenGLBuffer::StreamDraw);
+    m_vbo_position.bind();
+    m_vbo_position.allocate(mVertices, 4 * 2 * sizeof(float));
     ShaderProgram->enableAttributeArray(aPosition_location);
-    ShaderProgram->setAttributeBuffer(aPosition_location, GL_FLOAT, 0, 2, sizeof(GLfloat)*4);
+    ShaderProgram->setAttributeBuffer(aPosition_location, GL_FLOAT, 0, 2);
+
+
+    m_vbo_texture.create();
+    m_vbo_texture.setUsagePattern(QOpenGLBuffer::StreamDraw);
+    m_vbo_texture.bind();
+    m_vbo_texture.allocate(mTextures, 4 * 2 * sizeof(float));
     ShaderProgram->enableAttributeArray(textureCoord_location);
-    ShaderProgram->setAttributeBuffer(textureCoord_location, GL_FLOAT, 2, 2, sizeof(GLfloat)*4);
+    ShaderProgram->setAttributeBuffer(textureCoord_location, GL_FLOAT, 0, 2);
 
     const GLshort mIndices[] =
     {
         0, 1, 2, 0, 2, 3
     };
 
+    m_vao->bind();
     m_funcs->glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, mIndices );
 
     m_context->swapBuffers(this);
