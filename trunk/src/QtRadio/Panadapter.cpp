@@ -126,7 +126,6 @@ QRectF textObject::boundingRect() const
 }
 
 spectrumObject::spectrumObject(int width, int height){
-    setZValue(0.0);
     plot.clear();
     plotWidth = width;
     plotHeight = height;
@@ -138,7 +137,7 @@ void spectrumObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     // plot Panadapter
     painter->setOpacity(0.9);
     painter->setPen(QPen(Qt::yellow, 1));
-    if(plot.count()==plotWidth) {
+    if(plot.count() == plotWidth) {
         painter->drawPolyline(plot.constData(),plot.count());
     }
 }
@@ -1343,7 +1342,7 @@ void Panadapter::deleteAllNotchFilters(void)   // KD0OSS
 
 void Panadapter::updateWaterfall(void)
 {
-    panadapterScene->waterfallItem->updateWaterfall(LO_offset, sampleRate, wsamples, size, splitViewBoundary);
+    panadapterScene->waterfallItem->updateWaterfall(wsamples, size, splitViewBoundary);
 }
 
 //*************************************************************************Waterfall**************************************************
@@ -1366,17 +1365,14 @@ waterfallObject::waterfallObject(int width, int height) {
 
     samples=NULL;
 
-//    waterfallAutomatic = true;
-
     itemWidth = width;
     itemHeight = height;
-
- //   fitInView(sceneRect().x()-1, sceneRect().y()+1, sceneRect().width()+1, sceneRect().height()-1, Qt::KeepAspectRatio);
+    ypos = itemHeight / 2;
 
     image = QImage(width, height * 2, QImage::Format_RGB32);
 
     int x, y;
-    #pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static)
     for (x = 0; x < image.width(); x++) {
         for (y = 0; y < image.height(); y++) {
             image.setPixel(x, y, 0xFF000000);
@@ -1387,7 +1383,7 @@ waterfallObject::waterfallObject(int width, int height) {
 
 void waterfallObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
     // plot waterfall
-    painter->drawImage(0,itemHeight,image,0,cy,image.width(),image.height()/2,Qt::AutoColor);
+    painter->drawImage(0,ypos,image,0,cy,image.width(),image.height()/2,Qt::AutoColor);
     if (cy <= 0) cy = image.height()/2 - 1;
     else cy--;          // "scroll"
 }
@@ -1421,40 +1417,64 @@ bool waterfallObject::getAutomatic() {
     return waterfallAutomatic;
 }
 
-void waterfallObject::updateWaterfall(short offset, int sampr, char* buffer, int length, int starty) {
+void waterfallObject::updateWaterfall(char* buffer, int length, int starty) {
     int i;
-
-    //qDebug() << "updateWaterfall: " << width() << ":" << height();
-
-    sampleRate = sampr;
-    LO_offset = offset;
+    int x,y;
+    int average=0;
 
     if(samples!=NULL) {
         free(samples);
     }
 
     itemWidth = this->scene()->width();
-    itemHeight = starty;
-
+    itemHeight = this->scene()->height() - starty;
+    ypos = starty;
 
     samples = (float*) malloc(itemWidth * sizeof (float));
 
     // do not rotate spectrum display.  It is done by dspserver now
-        #pragma omp parallel for schedule(static)
-        for(i=0;i<itemWidth;i++) {
-            samples[i] = -(buffer[i] & 0xFF);
-        }
+#pragma omp parallel for schedule(static)
+    for(i=0;i<itemWidth;i++) {
+        samples[i] = -(buffer[i] & 0xFF);
+    }
 
     size = length;
-    QTimer::singleShot(0,this,SLOT(updateWaterfall_2()));
-}
+ //   QTimer::singleShot(0,this,SLOT(updateWaterfall_2()));
 
+    if(image.width()!=itemWidth || (image.height()/2) != itemHeight) {
+        qDebug() << "Waterfall::updateWaterfall " << size << "(" << itemWidth << ")," << itemHeight;
+        image = QImage(itemWidth, itemHeight*2, QImage::Format_RGB32);
+        cy = image.height()/2 - 1;
+        #pragma omp parallel for schedule(static)
+        for (x = 0; x < itemWidth; x++) {
+            for (y = 0; y < image.height(); y++) {
+                image.setPixel(x, y, 0xFF000000);
+            }
+        }
+    }
+
+    // draw the new line
+    #pragma omp parallel for schedule(static)
+    for(x=0;x<size;x++){
+        uint pixel = calculatePixel(samples[x]);
+        image.setPixel(x,cy,pixel);
+        image.setPixel(x,cy+(image.height()/2),pixel);
+        #pragma omp critical
+        average+=samples[x];
+    }
+
+    if (waterfallAutomatic) {
+        waterfallLow=(average/size)-10;
+        waterfallHigh=waterfallLow+60;
+    }
+}
+/*
 void waterfallObject::updateWaterfall_2(void){
     int x,y;
 
-    if(image.width()!=itemWidth || (image.height()/2) != (this->scene()->height() - itemHeight)) {
-        qDebug() << "Waterfall::updateWaterfall " << size << "(" << itemWidth << ")," << this->scene()->height() - itemHeight;
-        image = QImage(itemWidth, (this->scene()->height() - itemHeight)*2, QImage::Format_RGB32);
+    if(image.width()!=itemWidth || (image.height()/2) != itemHeight) {
+        qDebug() << "Waterfall::updateWaterfall " << size << "(" << itemWidth << ")," << itemHeight;
+        image = QImage(itemWidth, itemHeight*2, QImage::Format_RGB32);
         cy = image.height()/2 - 1;
         #pragma omp parallel for schedule(static)
         for (x = 0; x < itemWidth; x++) {
@@ -1475,7 +1495,7 @@ void waterfallObject::updateWaterfall_4(void){
     for(x=0;x<size;x++){
         uint pixel = calculatePixel(samples[x]);
         image.setPixel(x,cy,pixel);
-        image.setPixel(x,cy+(this->scene()->height() - itemHeight),pixel);
+        image.setPixel(x,cy+(image.height()/2),pixel);
         #pragma omp critical
         average+=samples[x];
     }
@@ -1484,10 +1504,8 @@ void waterfallObject::updateWaterfall_4(void){
         waterfallLow=(average/size)-10;
         waterfallHigh=waterfallLow+60;
     }
-
-    update();
 }
-
+*/
 uint waterfallObject::calculatePixel(int sample) {
         // simple gray scale
 //        int v=((int)sample-waterfallLow)*255/(waterfallHigh-waterfallLow);
