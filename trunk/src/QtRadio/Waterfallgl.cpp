@@ -72,17 +72,17 @@ void Waterfallgl::exposeEvent(QExposeEvent *event){
 
 void Waterfallgl::resizeEvent(QResizeEvent *event){
     Q_UNUSED(event);
-    data_width = width();
-    data_height = height();
 
     m_context->makeCurrent(this);
     ShaderProgram->bind();
 
+    data_width = width();
+    data_height = height();
     data_height = data_height? data_height:1;
     m_funcs->glViewport( 0, 0, (GLint) data_width, (GLint) data_height );
 
-    m_funcs->glBindTexture(GL_TEXTURE_2D, spectrumTex);
     //Bind to tex unit 0
+    m_funcs->glBindTexture(GL_TEXTURE_2D, spectrumTex);
     ShaderProgram->setUniformValue(spectrumTexture_location, 0);
     m_funcs->glActiveTexture(GL_TEXTURE0);
 
@@ -107,7 +107,7 @@ void Waterfallgl::resizeEvent(QResizeEvent *event){
         0.0f, 0.0f,  // TexCoord 0
         tex_width, 0.0f, // TexCoord 1
         tex_width, 1.0f, // TexCoord 2
-        0.0f, 0.1f // TexCoord 3
+        0.0f, 1.0f // TexCoord 3
     };
 
     m_vao = new QOpenGLVertexArrayObject( this );
