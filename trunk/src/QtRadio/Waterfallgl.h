@@ -51,6 +51,8 @@ private:
     QOpenGLFunctions_4_3_Core* m_funcs;
     QOpenGLShaderProgram *ShaderProgram;
     QOpenGLDebugLogger * m_logger;
+    QOpenGLVertexArrayObject *m_vao;
+    QOpenGLBuffer m_vbo;
     GLuint spectrumTexture_location, spectrumTex;
     GLuint cy_location, waterfallLow_location, waterfallHigh_location, offset_location, width_location; 
     GLuint aPosition_location, textureCoord_location;
