@@ -231,8 +231,8 @@ Panadapter::Panadapter(QWidget*& widget) {
     panadapterScene->waterfallItem = new waterfallObject(panadapterScene->width(), panadapterScene->height()/2);
 
     waterfallgl = new Waterfallgl;
-    waterfallgl->resize(1024,256);
-    waterfallgl->initialize(1024, 256);
+    waterfallgl->initialize(1024, 512);
+    waterfallgl->resize(1024, 512);
     waterfallgl->show();
 
     updateNfTimer = new QTimer(this);
