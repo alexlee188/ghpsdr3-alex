@@ -52,6 +52,87 @@ Waterfallgl::Waterfallgl(QScreen* screen)
     m_funcs->initializeOpenGLFunctions();
 }
 
+bool Waterfallgl::event(QEvent *event){
+    switch (event->type()) {
+    case QEvent::UpdateRequest:
+        paintGL();
+        return true;
+    default:
+        return QWindow::event(event);
+    }
+}
+
+void Waterfallgl::exposeEvent(QExposeEvent *event){
+    Q_UNUSED(event);
+
+    if (isExposed()){
+        paintGL();
+    }
+}
+
+void Waterfallgl::resizeEvent(QResizeEvent *event){
+    Q_UNUSED(event);
+    data_width = width();
+    data_height = height();
+
+    m_context->makeCurrent(this);
+    ShaderProgram->bind();
+
+    data_height = data_height? data_height:1;
+    m_funcs->glViewport( 0, 0, (GLint) data_width, (GLint) data_height );
+
+    m_funcs->glBindTexture(GL_TEXTURE_2D, spectrumTex);
+    //Bind to tex unit 0
+    ShaderProgram->setUniformValue(spectrumTexture_location, 0);
+    m_funcs->glActiveTexture(GL_TEXTURE0);
+
+    GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
+    ShaderProgram->setUniformValue(width_location, tex_width);
+
+    // Ortho2D projection
+    QMatrix4x4 MVPMatrix;
+    MVPMatrix.ortho(0.0, data_width, 0.0, data_height, -1.0, 1.0);
+    MVPMatrix.translate(0.0, data_height);
+    MVPMatrix.scale(1.0, -1,0);
+    ShaderProgram->setUniformValue(uMVPMatrix_location, MVPMatrix);
+
+    const GLfloat mVertices[] =  {
+        0.0f, 0.0f,  // Position 0
+        (float)data_width, 0.0f,  // Position 1
+        (float)data_width, MAX_CL_HEIGHT, // Position 2
+        0.0f, MAX_CL_HEIGHT, // Position 3
+    };
+
+    const GLfloat mTextures[] = {
+        0.0f, 0.0f,  // TexCoord 0
+        tex_width, 0.0f, // TexCoord 1
+        tex_width, 1.0f, // TexCoord 2
+        0.0f, 0.1f // TexCoord 3
+    };
+
+    m_vao = new QOpenGLVertexArrayObject( this );
+    m_vao->create();
+    m_vao->bind();
+
+    m_vbo_position.create();
+    m_vbo_position.setUsagePattern(QOpenGLBuffer::StreamDraw);
+    m_vbo_position.bind();
+    m_vbo_position.allocate(mVertices, 4 * 2 * sizeof(float));
+    ShaderProgram->enableAttributeArray(aPosition_location);
+    ShaderProgram->setAttributeBuffer(aPosition_location, GL_FLOAT, 0, 2);
+
+
+    m_vbo_texture.create();
+    m_vbo_texture.setUsagePattern(QOpenGLBuffer::StreamDraw);
+    m_vbo_texture.bind();
+    m_vbo_texture.allocate(mTextures, 4 * 2 * sizeof(float));
+    ShaderProgram->enableAttributeArray(textureCoord_location);
+    ShaderProgram->setAttributeBuffer(textureCoord_location, GL_FLOAT, 0, 2);
+
+
+
+}
+
 Waterfallgl::~Waterfallgl(){
 }
 
@@ -175,14 +256,6 @@ void Waterfallgl::setLO_offset(GLfloat offset){
     ShaderProgram->setUniformValue(offset_location, LO_offset);
 }
 
-void Waterfallgl::resizeGL( int width, int height )
-{
-    data_width = width;
-    data_height = height;
-
-    height = height?height:1;
-    m_funcs->glViewport( 0, 0, (GLint)width, (GLint)height );
-}
 
 void Waterfallgl::paintGL()
 {
@@ -190,60 +263,11 @@ void Waterfallgl::paintGL()
     ShaderProgram->bind();
 
     m_funcs->glClear(GL_COLOR_BUFFER_BIT);
-    m_funcs->glViewport(0, 0, (GLint) data_width, (GLint) data_height);
 
-    m_funcs->glBindTexture(GL_TEXTURE_2D, spectrumTex);
-
-    //Bind to tex unit 0
-    ShaderProgram->setUniformValue(spectrumTexture_location, 0);
-    m_funcs->glActiveTexture(GL_TEXTURE0);
 
     float current_line = (float) cy /  MAX_CL_HEIGHT;
 
     ShaderProgram->setUniformValue(cy_location, current_line);
-    GLfloat tex_width = (float) data_width / MAX_CL_WIDTH;
-
-    ShaderProgram->setUniformValue(width_location, tex_width);
-
-    // Ortho2D projection
-    QMatrix4x4 MVPMatrix;
-    MVPMatrix.ortho(0.0, data_width, 0.0, data_height, -1.0, 1.0);
-    MVPMatrix.translate(0.0, data_height);
-    MVPMatrix.scale(1.0, -1,0);
-    ShaderProgram->setUniformValue(uMVPMatrix_location, MVPMatrix);
-
-    const GLfloat mVertices[] =  {
-        0.0f, 0.0f,  // Position 0
-        (float)data_width, 0.0f,  // Position 1
-        (float)data_width, MAX_CL_HEIGHT, // Position 2
-        0.0f, MAX_CL_HEIGHT, // Position 3
-    };
-
-    const GLfloat mTextures[] = {
-        0.0f, 0.0f,  // TexCoord 0
-        tex_width, 0.0f, // TexCoord 1
-        tex_width, 1.0f, // TexCoord 2
-        0.0f, 0.1f // TexCoord 3
-    };
-
-    m_vao = new QOpenGLVertexArrayObject( this );
-    m_vao->create();
-    m_vao->bind();
-
-    m_vbo_position.create();
-    m_vbo_position.setUsagePattern(QOpenGLBuffer::StreamDraw);
-    m_vbo_position.bind();
-    m_vbo_position.allocate(mVertices, 4 * 2 * sizeof(float));
-    ShaderProgram->enableAttributeArray(aPosition_location);
-    ShaderProgram->setAttributeBuffer(aPosition_location, GL_FLOAT, 0, 2);
-
-
-    m_vbo_texture.create();
-    m_vbo_texture.setUsagePattern(QOpenGLBuffer::StreamDraw);
-    m_vbo_texture.bind();
-    m_vbo_texture.allocate(mTextures, 4 * 2 * sizeof(float));
-    ShaderProgram->enableAttributeArray(textureCoord_location);
-    ShaderProgram->setAttributeBuffer(textureCoord_location, GL_FLOAT, 0, 2);
 
     const GLshort mIndices[] =
     {

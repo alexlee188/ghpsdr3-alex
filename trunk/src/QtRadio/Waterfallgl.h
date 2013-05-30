@@ -34,6 +34,7 @@ public:
     void setLow(int low);
     void setHigh(int high);
     void setLO_offset(GLfloat offset);
+    void paintGL();
 
 public slots:
     void updateWaterfall(char* buffer,int width, int starty);
@@ -43,8 +44,10 @@ signals:
     void messageLogged(QOpenGLDebugMessage);
 
 protected:
-    void  resizeGL(int, int);
-    void  paintGL();
+    bool event(QEvent *event);
+    void exposeEvent(QExposeEvent *event);
+    void resizeEvent(QResizeEvent *event);
+
 
 private:
     QOpenGLContext *m_context;
