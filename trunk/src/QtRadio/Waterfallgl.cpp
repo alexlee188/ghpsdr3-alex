@@ -56,10 +56,10 @@ Waterfallgl::~Waterfallgl(){
 }
 
 static char const vertexShader[] =
-        "attribute mediump vec4 aPosition;\n"
-        "attribute mediump vec2 aTextureCoord;\n"
-        "uniform mediump mat4 uMVPMatrix;\n"
-        "varying mediump vec2 vTextureCoord;\n"
+        "attribute highp vec4 aPosition;\n"
+        "attribute highp vec2 aTextureCoord;\n"
+        "uniform highp mat4 uMVPMatrix;\n"
+        "varying highp vec2 vTextureCoord;\n"
         "void main()\n"
         "{\n"
         "vTextureCoord = aTextureCoord;\n"
@@ -67,12 +67,12 @@ static char const vertexShader[] =
         "}\n";
 
 static char const fragmentShader[] =
-        "uniform mediump sampler2D spectrumTexture;\n"
-        "uniform mediump float cy;\n"
-        "uniform mediump float offset;\n"
-        "uniform mediump float width;\n"
-        "uniform mediump float waterfallLow, waterfallHigh;\n"
-        "varying mediump vec2 vTextureCoord;\n"
+        "uniform highp sampler2D spectrumTexture;\n"
+        "uniform highp float cy;\n"
+        "uniform highp float offset;\n"
+        "uniform highp float width;\n"
+        "uniform highp float waterfallLow, waterfallHigh;\n"
+        "varying highp vec2 vTextureCoord;\n"
         "void main()\n"
         "{\n"
             "float y_coord = vTextureCoord.t + cy;\n"
@@ -208,6 +208,8 @@ void Waterfallgl::paintGL()
     // Ortho2D projection
     QMatrix4x4 MVPMatrix;
     MVPMatrix.ortho(0.0, data_width, 0.0, data_height, -1.0, 1.0);
+    MVPMatrix.translate(0.0, data_height);
+    MVPMatrix.scale(1.0, -1,0);
     ShaderProgram->setUniformValue(uMVPMatrix_location, MVPMatrix);
 
     const GLfloat mVertices[] =  {
