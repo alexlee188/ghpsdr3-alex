@@ -231,9 +231,15 @@ Panadapter::Panadapter(QWidget*& widget) {
     panadapterScene->waterfallItem = new waterfallObject(panadapterScene->width(), panadapterScene->height()/2);
 
     waterfallgl = new Waterfallgl;
-    waterfallgl->initialize(1024, 512);
-    waterfallgl->resize(1024, 512);
+    waterfallgl->initialize(512, 512);
+    waterfallgl->setGeometry(0, 0, 512, 512);
     waterfallgl->show();
+
+    /*
+    panadapterScene->container = QWidget::createWindowContainer(waterfallgl);
+    panadapterScene->container->setGeometry(128, 128, 512, 512);
+    panadapterScene->container->show();
+    */
 
     updateNfTimer = new QTimer(this);
     connect(updateNfTimer, SIGNAL(timeout()), this, SLOT(updateNotchFilter()));
@@ -991,6 +997,7 @@ void Panadapter::setZoom(int value){
     drawCursor(2, !subRx);
     drawFilter(2, !subRx);
     drawUpdatedNotchFilter(1);
+
     panadapterScene->removeItem(panadapterScene->waterfallItem);
     panadapterScene->addItem(panadapterScene->waterfallItem);
  //   drawUpdatedNotchFilter(2);
@@ -1130,6 +1137,7 @@ void Panadapter::updateSpectrumFrame(char* header,char* buffer,int width) {
         panadapterScene->clear();
         panadapterScene->addItem(panadapterScene->spectrumPlot);
         panadapterScene->addItem(panadapterScene->waterfallItem);
+        //panadapterScene->addWidget(panadapterScene->container);
         drawFrequencyLines();
         drawdBmLines();
         drawCursor(1, false);
@@ -1316,6 +1324,7 @@ void Panadapter::deleteAllNotchFilters(void)   // KD0OSS
 
 void Panadapter::updateWaterfall(void)
 {
+    waterfallgl->setWidth(panadapterScene->width());
     waterfallgl->updateWaterfall(wsamples, size, splitViewBoundary);
 }
 

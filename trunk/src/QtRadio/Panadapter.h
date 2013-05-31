@@ -204,6 +204,7 @@ public:
 
     spectrumObject *spectrumPlot;
     waterfallObject *waterfallItem;
+    QWidget *container;
     int  itemType;
 };
 /********************************KD0OSS*****************************************/
