@@ -61,6 +61,7 @@
 #include "servers.h"
 #include "ctl.h"
 #include "powermate.h"
+#include "Frequency.h"
 #include "EqualizerDialog.h"
 
 UI::UI(const QString server) {
@@ -129,7 +130,6 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(audioBuffer(char*,char*)),this,SLOT(audioBuffer(char*,char*)));
     connect(&connection,SIGNAL(spectrumBuffer(char*,char*)),this,SLOT(spectrumBuffer(char*,char*)));
 
-    connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
 
     connect(widget.actionConfig,SIGNAL(triggered()),this,SLOT(actionConfigure()));
@@ -364,6 +364,8 @@ UI::UI(const QString server) {
     audio_byte_order=configure.getByteOrder();
 
     widget.spectrumView->connection = &connection; // KD0OSS
+    widget.spectrumView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    widget.spectrumView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     equalizer = new EqualizerDialog(&connection); // KD0OSS
 
@@ -2347,13 +2349,21 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  27 May 2013");
+                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  27 May 2013"); // KD0OSS  Fixed Qt version format
     lastmessage = message;
 }
 
 void UI::printStatusBar(QString message)
 {
-    modeInfo.setText(band.getStringMem()+", "+mode.getStringMode()+", "+filters.getText()+message);
+    Frequency freqInfo; // KD0OSS Added frequency description.
+    QString description;
+    static long long lastFreq;
+
+    if (lastFreq != frequency)
+        description = freqInfo.getFrequencyInfo(frequency).getDescription();
+
+    modeInfo.setText(description + "  " + band.getStringMem()+", "+mode.getStringMode()+", "+filters.getText()+message);
+    lastFreq = frequency;
 }
 
 void UI::initRigCtl ()
@@ -2497,6 +2507,7 @@ void UI::pttChange(int caller, bool ptt)
             }
             connection.sendCommand(command);
             widget.vfoFrame->pttChange(ptt); //Update the VFO to reflect that we are transmitting
+            connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
         } else {    // Going from Tx to Rx .................
             if(caller==1) {
                 //Restore AM carrier level to 0.5 the standard carrier level for AM mode.
@@ -2530,6 +2541,7 @@ void UI::pttChange(int caller, bool ptt)
             }
             connection.sendCommand(command);
             widget.vfoFrame->pttChange(ptt); //Set band select buttons etc. to Rx state on VFO
+            disconnect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
         }
     } else widget.ctlFrame->clearMoxBtn();
 }

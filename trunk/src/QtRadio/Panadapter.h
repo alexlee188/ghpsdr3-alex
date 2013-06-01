@@ -73,11 +73,11 @@ public:
     bool getAutomatic();
 
 public slots:
-    void updateWaterfall(short, int, char*, int, int);
+    void updateWaterfall(char*, int, int);
 
 private slots:
-    void updateWaterfall_2(void);
-    void updateWaterfall_4(void);
+ //   void updateWaterfall_2(void);
+ //   void updateWaterfall_4(void);
 
 private:
     uint calculatePixel(int sample);
@@ -100,8 +100,7 @@ private:
     int colorHighG;
     int colorHighB;
     int size;
-    int sampleRate;
-    short LO_offset;
+    int ypos;
     QImage image;
 };
 
@@ -307,6 +306,7 @@ private slots:
     void updateNotchFilter(int);  // KD0OSS
     void deleteNotchFilter(void);  // KD0OSS
     void deleteAllNotchFilters(void);  // KD0OSS
+    void redrawItems(void);
 
 private:
     float* samples;
