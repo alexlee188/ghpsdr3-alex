@@ -126,7 +126,6 @@ QRectF textObject::boundingRect() const
 }
 
 spectrumObject::spectrumObject(int width, int height){
-    setZValue(0.0);
     plot.clear();
     plotWidth = width;
     plotHeight = height;
@@ -138,7 +137,7 @@ void spectrumObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     // plot Panadapter
     painter->setOpacity(0.9);
     painter->setPen(QPen(Qt::yellow, 1));
-    if(plot.count()==plotWidth) {
+    if(plot.count() == plotWidth) {
         painter->drawPolyline(plot.constData(),plot.count());
     }
 }
@@ -168,7 +167,6 @@ Panadapter::Panadapter(QWidget*& widget) {
     filterSelected = false; // KD0OSS
     avg = 0;
     mode="LSB";
-    splitViewBoundary = 0;
 
     zoom = 0;
     sampleZoom = false;
@@ -227,8 +225,9 @@ Panadapter::Panadapter(QWidget*& widget) {
 
     panadapterScene->update();
 
-    panadapterScene->spectrumPlot = new spectrumObject(panadapterScene->width(), panadapterScene->height()/2);
-    panadapterScene->waterfallItem = new waterfallObject(panadapterScene->width(), panadapterScene->height()/2);
+    panadapterScene->spectrumPlot = new spectrumObject(width(), height()/2);
+    panadapterScene->waterfallItem = new waterfallObject(width(), height()/2);
+    splitViewBoundary = panadapterScene->height()/2;
 
     waterfallgl = new Waterfallgl;
     waterfallgl->initialize(512, 512);
@@ -243,7 +242,6 @@ Panadapter::Panadapter(QWidget*& widget) {
 
     updateNfTimer = new QTimer(this);
     connect(updateNfTimer, SIGNAL(timeout()), this, SLOT(updateNotchFilter()));
-
     //*************************************************************************************************
 }
 
@@ -270,6 +268,23 @@ void Panadapter::resizeEvent(QResizeEvent *event)
     drawUpdatedNotchFilter(1);
 //    drawUpdatedNotchFilter(2);
     //******************************
+}
+
+void Panadapter::redrawItems(void)
+{
+    if (!initialized || splitViewBoundary > height())
+    {
+        splitViewBoundary = (height() / 2) - 3;
+        if (!initialized) return;
+    }
+    drawFrequencyLines();
+    drawdBmLines();
+    drawBandLimits();
+    drawCursor(1, false);
+    drawFilter(1, false);
+    drawCursor(2, !subRx);
+    drawFilter(2, !subRx);
+    drawUpdatedNotchFilter(1);
 }
 
 void Panadapter::setHigh(int high) {
@@ -983,10 +998,20 @@ void Panadapter::drawSpectrum(void)
 
 void Panadapter::setZoom(int value){
     // KD0OSS ***************************
+    static int vzoom;
+
     if (sampleZoom)
         zoom = value;
     else
+    {
         setMatrix(QMatrix((value * 0.01)+1, 0.0, 0.0, 1.0, 1.0, 1.0));
+        vzoom = value;
+    }
+
+    if (vzoom > 0)
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    else
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     if (!initialized)
         return;
@@ -1108,6 +1133,7 @@ void Panadapter::updateSpectrumFrame(char* header,char* buffer,int width) {
     } else {
         LO_offset=0;
     }
+//    qDebug("Meter: %d", meter);
 
     sampleRate = header_sampleRate;
     size = width;
@@ -1121,7 +1147,7 @@ void Panadapter::updateSpectrumFrame(char* header,char* buffer,int width) {
     //qDebug() << "updateSpectrum: create plot points";
     if (width != lastWidth || height() != lastHeight)
     {
-        panadapterScene->setSceneRect(0, 0, width, height()-18);
+        panadapterScene->setSceneRect(0, 0, width, height());
         lastWidth = width;
         lastHeight = height();
         qDebug("Scene width: %d  ht: %d", width, height());
@@ -1145,6 +1171,9 @@ void Panadapter::updateSpectrumFrame(char* header,char* buffer,int width) {
         drawUpdatedNotchFilter(1);
 //        drawUpdatedNotchFilter(2);
         QGraphicsView::setMouseTracking(true);
+        splitViewBoundary = panadapterScene->height()/2;
+
+//        QTimer::singleShot(1000,this,SLOT(redrawItems()));
     }
 
     QTimer::singleShot(0,this,SLOT(drawSpectrum()));
@@ -1247,6 +1276,8 @@ void Panadapter::updateNotchFilter(int index)   // KD0OSS
             return;
         }
         else
+            QTimer::singleShot(1000,this,SLOT(redrawItems()));
+
             enableNotchFilter(index, true);
         audio_freq = abs((notchFilterFO[index] - frequency)); // Convert to audio frequency in Hz
         command.clear();
@@ -1347,7 +1378,6 @@ waterfallObject::waterfallObject(int width, int height) {
     colorHighB=0;
     samples=NULL;
 
-
     itemWidth = width;
     itemHeight = height;
 
@@ -1357,6 +1387,7 @@ waterfallObject::waterfallObject(int width, int height) {
 
 void waterfallObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
 }
+
 
 QRectF waterfallObject::boundingRect() const
 {
@@ -1386,7 +1417,6 @@ void waterfallObject::setAutomatic(bool state) {
 bool waterfallObject::getAutomatic() {
     return waterfallAutomatic;
 }
-
 
 uint waterfallObject::calculatePixel(int sample) {
         // simple gray scale

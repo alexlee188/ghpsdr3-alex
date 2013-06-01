@@ -62,6 +62,7 @@ void Ctl::on_btnMox_clicked(bool checked)
     else {
         ui->btnMox->setChecked(false);
         ptt = false;
+        ui->MicProgressBar->setValue(0);
     }
     emit pttChange(0, ptt);
 }
