@@ -27,8 +27,8 @@ Waterfallgl::Waterfallgl(QScreen* screen)
     // Specify the format and create platform-specific surface
     QSurfaceFormat format;
     format.setDepthBufferSize( 24 );
-    format.setMajorVersion( 4 );
-    format.setMinorVersion( 3 );
+    format.setMajorVersion( 2 );
+    format.setMinorVersion( 1 );
     format.setSamples( 4 );
     format.setProfile( QSurfaceFormat::CoreProfile );
     setFormat(format);
@@ -43,8 +43,7 @@ Waterfallgl::Waterfallgl(QScreen* screen)
     m_context->makeCurrent( this );
 
     // Obtain a functions object and resolve all entry points
-    // m_funcs is declared as: QOpenGLFunctions_4_3_Core* m_funcs
-    m_funcs = (QOpenGLFunctions_4_3_Core*) m_context->versionFunctions();
+    m_funcs = m_context->versionFunctions<QOpenGLFunctions_2_1>();
     if ( !m_funcs ) {
         qWarning( "Could not obtain OpenGL Functions object" );
         exit( 1 );
