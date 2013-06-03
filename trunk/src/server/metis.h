@@ -28,6 +28,8 @@
 typedef struct _METIS_CARD {
     char ip_address[16];
     char mac_address[18];
+    char *board_id;
+    int  code_version;
 } METIS_CARD;
 
 void metis_discover(char* interface,char* metisip);

@@ -127,7 +127,7 @@ const char* attach_receiver(int rx, CLIENT* client)
 					(uint16_t) prodid.hwrel,
 					(uint16_t) prodid.hwver);
 
-	// Configure the receiver for 2 MS/s operations
+	// Configure the receiver for the sample rate requested
 	printf("Configuring FPGA...\n");
 
 	switch (CORE_BANDWIDTH) {
@@ -214,12 +214,12 @@ const char* attach_receiver(int rx, CLIENT* client)
 //   perseus_set_attenuator(receiver[rx].pPd, PERSEUS_ATT_0DB);
 //   sleep(1);
 
-	// Enable ADC Dither, Disable ADC Preamp
-	perseus_set_adc(receiver[rx].pPd, TRUE, FALSE);
+     // Enable ADC Dither, Disable ADC Preamp
+     perseus_set_adc(receiver[rx].pPd, TRUE, FALSE);
 
-	// Do the same cycling test with the WB front panel led.
-	// Enable preselection filters (WB_MODE Off)
-	perseus_set_ddc_center_freq(receiver[rx].pPd, 7050000.000, 1);
+     // Do the same cycling test with the WB front panel led.
+     // Enable preselection filters (WB_MODE Off)
+     perseus_set_ddc_center_freq(receiver[rx].pPd, 7050000.000, 1);
 //   sleep(1);
 //   // Disable preselection filters (WB_MODE On)
 //   perseus_set_ddc_center_freq(receiver[rx].pPd, 7000000.000, 0);
@@ -237,11 +237,13 @@ const char* attach_receiver(int rx, CLIENT* client)
     
     client->state=RECEIVER_ATTACHED;
     receiver[rx].client=client;
-    client->receiver=rx;;
+    client->receiver=rx;
 
     // attempt to open an audio stream on a local audio card
-    //perseus_audio_open (CORE_BANDWIDTH);
-    receiver[rx].ppa = new PerseusAudio(CORE_BANDWIDTH);
+    if (receiver[rx].ppc->localaudio == true)    
+       receiver[rx].ppa = new PerseusAudio(CORE_BANDWIDTH);
+    else
+       receiver[rx].ppa = 0;
 
 
     //sprintf(response,"%s %d",OK,ozy_get_sample_rate());

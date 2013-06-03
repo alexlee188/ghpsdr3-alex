@@ -16,9 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Modified for QtRadio by Glenn VE9GJ Sept 29 2011
-// Taken from sdr-shell project
-
+/*
+ *
+ * Modified for QtRadio by Glenn VE9GJ Sept 29 2011
+ * Taken from sdr-shell project
+ *
+ * Applied remote set filter function over hamlib port
+ * by Oliver Goldenstein, DL6KBG, Nov 16 2012
+ *
+ */
 #include <cstdio>
 
 #include "UI.h"
@@ -44,7 +50,10 @@ void RigCtlSocket::readyRead() {
         }
 
         QByteArray command(conn->readLine());
-        command.chop(1);
+        // removed command.chop(1); because it is unable to cope with
+        // with more than one character line terminations
+        // i.e. telnet client uses a CR/LF sequence
+        command = command.simplified();
         if (command.size() == 0) {
                 command.append("?");
         }
@@ -74,13 +83,26 @@ void RigCtlSocket::readyRead() {
             output = true;
         } else if(cmdlist[0].compare("F") == 0 && cmdlistcnt == 2) { // set_freq
             QString newf = cmdlist[1];
+#if QT_VERSION >= 0x050000
+            main->rigctlSetFreq(atol(newf.toUtf8()));
+#else
             main->rigctlSetFreq(atol(newf.toAscii()));
+#endif
         } else if (command[0] == 'm') { // get_mode
+#if QT_VERSION >= 0x050000
+            out << main->rigctlGetMode().toUtf8() << "\n";
+            out << main->rigctlGetFilter().toUtf8() << "\n";
+#else
             out << main->rigctlGetMode().toAscii() << "\n";
             out << main->rigctlGetFilter().toAscii() << "\n";
+#endif
             output = true;
         } else if (command[0] == 'v') { // get_vfo
+#if QT_VERSION >= 0x050000
+            out << main->rigctlGetVFO().toUtf8() << "\n";
+#else
             out << main->rigctlGetVFO().toAscii() << "\n";
+#endif
             output = true;
         } else if (command[0] == 'V') { // set_VFO
             QString cmd = command.constData();
@@ -100,25 +122,249 @@ void RigCtlSocket::readyRead() {
         } else if (command[0] == 'T') { // set_ptt  no tx yet but this keeps grig and fldigi happy
             int enabled = command.mid(space + 1).toInt();
             qDebug("Rigctl: PTT T : ->%d", enabled);
-            //main->rigSetPTT(enabled);
+            main->rigSetPTT(enabled);
         } else if (command[0] == 'q') { // quit
             conn->close();
             return;
-        } else if (cmdlist[0].compare("M") == 0 && cmdlistcnt == 3) { // set_mode
+        } else if (cmdlist[0].compare("M") == 0 && cmdlistcnt == 3) {
             if (cmdlist[1].compare("USB") == 0 ) {
                main->rigctlSetMode(MODE_USB);
+               // compare usb filters
+               if (cmdlist[2].compare("5000") == 0 ) {
+               main->rigctlSetFilter(0);
+               }
+               else if (cmdlist[2].compare("4400") == 0 ) {
+               main->rigctlSetFilter(1);
+               }
+               else if (cmdlist[2].compare("3800") == 0 ) {
+               main->rigctlSetFilter(2);
+               }
+               else if (cmdlist[2].compare("3300") == 0 ) {
+               main->rigctlSetFilter(3);
+               }
+               else if (cmdlist[2].compare("2900") == 0 ) {
+               main->rigctlSetFilter(4);
+               }
+               else if (cmdlist[2].compare("2700") == 0 ) {
+               main->rigctlSetFilter(5);
+               }
+               else if (cmdlist[2].compare("2400") == 0 ) {
+               main->rigctlSetFilter(6);
+               }
+               else if (cmdlist[2].compare("2100") == 0 ) {
+               main->rigctlSetFilter(7);
+               }
+               else if (cmdlist[2].compare("1800") == 0 ) {
+               main->rigctlSetFilter(8);
+               }
+               else if (cmdlist[2].compare("1000") == 0 ) {
+               main->rigctlSetFilter(9);
+               }
+
             }else if (cmdlist[1].compare("LSB") == 0) {
                main->rigctlSetMode(MODE_LSB);
+               // compare lsb filters
+               if (cmdlist[2].compare("5000") == 0 ) {
+               main->rigctlSetFilter(0);
+               }
+               else if (cmdlist[2].compare("4400") == 0 ) {
+               main->rigctlSetFilter(1);
+               }
+               else if (cmdlist[2].compare("3800") == 0 ) {
+               main->rigctlSetFilter(2);
+               }
+               else if (cmdlist[2].compare("3300") == 0 ) {
+               main->rigctlSetFilter(3);
+               }
+               else if (cmdlist[2].compare("2900") == 0 ) {
+               main->rigctlSetFilter(4);
+               }
+               else if (cmdlist[2].compare("2700") == 0 ) {
+               main->rigctlSetFilter(5);
+               }
+               else if (cmdlist[2].compare("2400") == 0 ) {
+               main->rigctlSetFilter(6);
+               }
+               else if (cmdlist[2].compare("2100") == 0 ) {
+               main->rigctlSetFilter(7);
+               }
+               else if (cmdlist[2].compare("1800") == 0 ) {
+               main->rigctlSetFilter(8);
+               }
+               else if (cmdlist[2].compare("1000") == 0 ) {
+               main->rigctlSetFilter(9);
+               }
+
             } else if (cmdlist[1].compare("AM") == 0) {
                main->rigctlSetMode(MODE_AM);
+               // compare am filters
+               if (cmdlist[2].compare("16000") == 0 ) {
+               main->rigctlSetFilter(0);
+               }
+               else if (cmdlist[2].compare("12000") == 0 ) {
+               main->rigctlSetFilter(1);
+               }
+               else if (cmdlist[2].compare("10000") == 0 ) {
+               main->rigctlSetFilter(2);
+               }
+               else if (cmdlist[2].compare("8000") == 0 ) {
+               main->rigctlSetFilter(3);
+               }
+               else if (cmdlist[2].compare("6600") == 0 ) {
+               main->rigctlSetFilter(4);
+               }
+               else if (cmdlist[2].compare("5200") == 0 ) {
+               main->rigctlSetFilter(5);
+               }
+               else if (cmdlist[2].compare("4000") == 0 ) {
+               main->rigctlSetFilter(6);
+               }
+               else if (cmdlist[2].compare("3100") == 0 ) {
+               main->rigctlSetFilter(7);
+               }
+               else if (cmdlist[2].compare("2900") == 0 ) {
+               main->rigctlSetFilter(8);
+               }
+               else if (cmdlist[2].compare("2400") == 0 ) {
+               main->rigctlSetFilter(9);
+               }
+
             } else if (cmdlist[1].compare("FM") == 0) {
-               main->rigctlSetMode(MODE_FMN);
+               main->rigctlSetMode(MODE_FM);
+               // compare fm filters
+               if (cmdlist[2].compare("80000") == 0 ) {
+               main->rigctlSetFilter(0);
+               }
+               else if (cmdlist[2].compare("12000") == 0 ) {
+               main->rigctlSetFilter(1);
+               }
+               else if (cmdlist[2].compare("10000") == 0 ) {
+               main->rigctlSetFilter(2);
+               }
+               else if (cmdlist[2].compare("8000") == 0 ) {
+               main->rigctlSetFilter(3);
+               }
+               else if (cmdlist[2].compare("6600") == 0 ) {
+               main->rigctlSetFilter(4);
+               }
+               else if (cmdlist[2].compare("5200") == 0 ) {
+               main->rigctlSetFilter(5);
+               }
+               else if (cmdlist[2].compare("4000") == 0 ) {
+               main->rigctlSetFilter(6);
+               }
+               else if (cmdlist[2].compare("3100") == 0 ) {
+               main->rigctlSetFilter(7);
+               }
+               else if (cmdlist[2].compare("2900") == 0 ) {
+               main->rigctlSetFilter(8);
+               }
+               else if (cmdlist[2].compare("2400") == 0 ) {
+               main->rigctlSetFilter(9);
+               }
+
             } else if (cmdlist[1].compare("SAM") == 0) {
                main->rigctlSetMode(MODE_SAM);
+               // compare sam filters
+               if (cmdlist[2].compare("16000") == 0 ) {
+               main->rigctlSetFilter(0);
+               }
+               else if (cmdlist[2].compare("12000") == 0 ) {
+               main->rigctlSetFilter(1);
+               }
+               else if (cmdlist[2].compare("10000") == 0 ) {
+               main->rigctlSetFilter(2);
+               }
+               else if (cmdlist[2].compare("8000") == 0 ) {
+               main->rigctlSetFilter(3);
+               }
+               else if (cmdlist[2].compare("6600") == 0 ) {
+               main->rigctlSetFilter(4);
+               }
+               else if (cmdlist[2].compare("5200") == 0 ) {
+               main->rigctlSetFilter(5);
+               }
+               else if (cmdlist[2].compare("4000") == 0 ) {
+               main->rigctlSetFilter(6);
+               }
+               else if (cmdlist[2].compare("3100") == 0 ) {
+               main->rigctlSetFilter(7);
+               }
+               else if (cmdlist[2].compare("2900") == 0 ) {
+               main->rigctlSetFilter(8);
+               }
+               else if (cmdlist[2].compare("2400") == 0 ) {
+               main->rigctlSetFilter(9);
+               }
+
             } else if (cmdlist[1].compare("CW") == 0) {
                main->rigctlSetMode(MODE_CWU);
+               // compare cwu filters
+               if (cmdlist[2].compare("1000") == 0 ) {
+               main->rigctlSetFilter(0);
+               }
+               else if (cmdlist[2].compare("800") == 0 ) {
+               main->rigctlSetFilter(1);
+               }
+               else if (cmdlist[2].compare("750") == 0 ) {
+               main->rigctlSetFilter(2);
+               }
+               else if (cmdlist[2].compare("600") == 0 ) {
+               main->rigctlSetFilter(3);
+               }
+               else if (cmdlist[2].compare("500") == 0 ) {
+               main->rigctlSetFilter(4);
+               }
+               else if (cmdlist[2].compare("400") == 0 ) {
+               main->rigctlSetFilter(5);
+               }
+               else if (cmdlist[2].compare("250") == 0 ) {
+               main->rigctlSetFilter(6);
+               }
+               else if (cmdlist[2].compare("100") == 0 ) {
+               main->rigctlSetFilter(7);
+               }
+               else if (cmdlist[2].compare("50") == 0 ) {
+               main->rigctlSetFilter(8);
+               }
+               else if (cmdlist[2].compare("25") == 0 ) {
+               main->rigctlSetFilter(9);
+               }
+
             } else if (cmdlist[1].compare("CWR") == 0) {
                main->rigctlSetMode(MODE_CWL);
+               // compare cwl filters
+               if (cmdlist[2].compare("1000") == 0 ) {
+               main->rigctlSetFilter(0);
+               }
+               else if (cmdlist[2].compare("800") == 0 ) {
+               main->rigctlSetFilter(1);
+               }
+               else if (cmdlist[2].compare("750") == 0 ) {
+               main->rigctlSetFilter(2);
+               }
+               else if (cmdlist[2].compare("600") == 0 ) {
+               main->rigctlSetFilter(3);
+               }
+               else if (cmdlist[2].compare("500") == 0 ) {
+               main->rigctlSetFilter(4);
+               }
+               else if (cmdlist[2].compare("400") == 0 ) {
+               main->rigctlSetFilter(5);
+               }
+               else if (cmdlist[2].compare("250") == 0 ) {
+               main->rigctlSetFilter(6);
+               }
+               else if (cmdlist[2].compare("100") == 0 ) {
+               main->rigctlSetFilter(7);
+               }
+               else if (cmdlist[2].compare("50") == 0 ) {
+               main->rigctlSetFilter(8);
+               }
+               else if (cmdlist[2].compare("25") == 0 ) {
+               main->rigctlSetFilter(9);
+               }    
+          
             }
         } else if (command == "\\dump_state" || command[0] == '1') {
             // See dump_state in rigctl_parse.c for what this means.
@@ -174,3 +420,4 @@ void RigCtlServer::newConnection() {
         connect(conn, SIGNAL(disconnected()), sock, SLOT(disconnected()));
         connect(conn, SIGNAL(readyRead()), sock, SLOT(readyRead()));
 }
+

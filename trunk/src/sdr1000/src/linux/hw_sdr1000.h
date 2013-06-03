@@ -154,6 +154,7 @@ public:
 	/// Destructor
 	~SDR1000();
 
+        bool ATTNon;
 	/// Basic hardware writing for PIO
 	/** \param addr PIO board address to write
 	 *  \param data Data to be written
@@ -310,6 +311,10 @@ public:
 	 *  \param new_data Data to write to the register
 	 */
 	void WriteDDSReg(unsigned char reg_index, unsigned char new_data);
+
+        void SetPTT(bool ptt);
+
+        void SetSpurReduction(bool enabled);
 };
 
 #include <ad9854.h>

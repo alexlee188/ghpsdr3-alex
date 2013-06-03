@@ -27,6 +27,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -36,6 +37,7 @@
 #include <errno.h>
 #include <string.h>
 #include <pthread.h>
+#include <vector>
 #include "hiqsdr.h"
 
 
@@ -45,12 +47,18 @@ struct AsynchCtxData {
     int run;
 };
 
+struct PreselItem { // Holds item data from the hiqsdr.config file
+	long long freq;
+	unsigned int filtNum;
+    char *desc;
+};
+
 struct Hiqsdr {
     // network parameters
     char ip_addr[256];
-    unsigned short ctrl_port;   
-    unsigned short rx_data_port;   
-    unsigned short tx_data_port;   
+    unsigned short ctrl_port;
+    unsigned short rx_data_port;
+    unsigned short tx_data_port;
     int            ctrl_socket;
     int            data_socket;
 
@@ -58,6 +66,12 @@ struct Hiqsdr {
     int  fwv;
     long long freq;
     long long bw;
+    int  attDb;
+    int  antSel;
+    bool Xfilters; // Use the 80/40 extended filters
+    unsigned int  preSel; // Holds filter number
+	std::vector<PreselItem> preInfo; //Holds presel filters table
+    int  preamp;
 
     // asynch thread for receiving data from hardware
     pthread_t      thread_id;
@@ -77,6 +91,7 @@ static int   send_deactivation (struct Hiqsdr *hiq);
 static int   ping_hardware (struct Hiqsdr *hiq, int tmo_s = 1);
 static void  dump_buffer(unsigned char* buffer, int len /* bytes to dump */) ;
 static int   get_data (struct Hiqsdr *hiq, unsigned char *buffer, int buf_len);
+static int   open_configuration_file (struct Hiqsdr *hiq);
 
 
 int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
@@ -90,9 +105,16 @@ int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
    strcpy (hq.ip_addr, hiqsdr_ip);
    hq.freq = hiqsdr_f;
    hq.bw = hiqsdr_bw;
+   hq.attDb  = 0;
+   hq.antSel = 0;
+   hq.preSel = 0;
+   hq.preamp = 0;
+   hq.Xfilters = false;
    hq.rx_data_port = 48247;
    hq.ctrl_port    = hq.rx_data_port+1;   
    hq.tx_data_port = hq.rx_data_port+2;
+
+   open_configuration_file (&hq);
 
    // setup control socket
    hq.ctrl_socket = socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
@@ -183,10 +205,30 @@ int hiqsdr_disconnect ()
     return rc;
 }
 
+char *hiqsdr_get_ip_address ()
+{
+    return hq.ip_addr;
+}
+
 int hiqsdr_set_frequency (long long f)
 {
+   unsigned int cnt = 0;
+	
    fprintf (stderr, "%s: %Ld\n", __FUNCTION__, f);
    hq.freq = f;
+	
+	// Check to see if freq change caused a band filter change.
+	for (unsigned int x=0; x<(hq.preInfo.size()-1); ++x) {
+		if ((f >= hq.preInfo[x].freq) & (f < hq.preInfo[x+1].freq)){
+			cnt = x; // cnt indexes the filter associated with this frequency.
+			if (!hq.Xfilters) break; 
+		}
+	}
+	// If freq change caused a filter change then store new filter details.
+   if (hq.preSel != hq.preInfo[cnt].filtNum) {
+		 hiqsdr_set_preselector(hq.preInfo[cnt].filtNum);
+	}	// TODO check and see if send_command sends all commands, maybe
+		// we dont need to specifically set the preselector??
    send_command (&hq);
    return 0;
 }
@@ -197,6 +239,129 @@ int hiqsdr_set_bandwidth (long long b)
    hq.bw = b;
    send_command (&hq);
    return 0;
+}
+
+/**
+ *
+ *  3.9 Attenuator setting [15]
+ *   
+ *  The byte 15 controls the attenuator pins 84, 83, 82, 81, 80. Other bits are
+ *  left 0. The attenuator RF2420 (RF Micro Devices) is available at the HiQSDR
+ *  PCB and can be used to reduce the input power level to the onboard LNA. The
+ *  stepsize is 2dB in the range of 0..44dB plus 4dB insertion loss. The stages are
+ *  Bypass, 2dB, 4dB, 8dB, 10dB, 20dB. 
+ *
+ *  Mapping of control byte 15:
+ *
+ *     Bit  attenuation stage Location/Name
+ *      
+ *     0x01      2dB          P84/ATT2dB
+ *     0x02      4dB          P83/ATT4dB
+ *     0x04      8dB          P82/ATT8dB
+ *     0x08     10dB          P81/ATT10dB
+ *     0x10     20dB          P80/ATT20dB
+ *     0xE0        -          not used
+ *      
+ *  Please notice that a controlable preamplier is not included on the frontend
+ *  PCB. A external preamp can be controlled via X1.
+ *
+ */
+
+int convert_attenuator (int attDb)
+{
+    int out = 0;
+
+    if ((attDb - 20) >= 0) {
+        out |= 0x10;
+        attDb -= 20;
+    }
+    if ((attDb - 10) >= 0) {
+        out |= 0x08;
+        attDb -= 10;
+    }
+    if ((attDb - 8) >= 0) {
+        out |= 0x04;
+        attDb -= 8;
+    }
+    if ((attDb - 4) >= 0) {
+        out |= 0x02;
+        attDb -= 4;
+    }
+    if ((attDb - 2) >= 0) {
+        out |= 0x01;
+        attDb -= 2;
+    }
+    return out;
+}
+
+int hiqsdr_set_attenuator (int attDb)
+{
+   hq.attDb = convert_attenuator (attDb);
+   fprintf (stderr, "%s: requested value: %d computed value: %02X\n", __FUNCTION__, attDb, hq.attDb);
+   send_command (&hq);
+   return 0;
+}
+
+int hiqsdr_set_antenna_input (int n)
+{
+    hq.antSel = n == 0 ? 0x00 : 0x01;
+    fprintf (stderr, "%s: antenna: %02X\n", __FUNCTION__, hq.antSel);
+    send_command (&hq);
+    return 0;
+}
+
+
+/*
+  def ChangeBand(self, band):
+    # band is a string: "60", "40", "WWV", etc.
+    self.band = band
+    self.HiQSDR_Connector_X1 &= ~0x0F   # Mask in the last four bits
+    self.HiQSDR_Connector_X1 |= self.conf.HiQSDR_BandDict.get(band, 0) & 0x0F
+    self.SetTxLevel()
+    self.NewUdpStatus()
+
+The BandDict is set up in ~/.quisk_conf.py with
+bandLabels = ['Audio', '160', '80', '40', '30', '20', '17', '15',
+        '12', '10', '6', ('Time',) * len(bandTime)] 
+*/
+
+int hiqsdr_set_preselector (int p)
+{
+    hq.preSel = (p & 0x0F);
+    fprintf (stderr, "%s: preselector: %02X\n", __FUNCTION__, hq.preSel);
+    send_command (&hq);
+    return 0;
+}
+
+
+int hiqsdr_get_preselector_desc (unsigned int p, char *pDesc)
+{
+	unsigned int cnt;
+	unsigned int tableSize = hq.preInfo.size();
+
+	// Retrieve the index to the filter number
+	for (cnt = 0; cnt < tableSize; ++cnt) {
+		if (p == hq.preInfo[cnt].filtNum) break;
+	}
+	if (cnt < tableSize) {
+		strcpy (pDesc, hq.preInfo[cnt].desc);
+		return 0;
+	} else
+		return -1;
+}
+
+int hiqsdr_set_preamp (int newstatus)
+{
+    if (newstatus != 0) hq.preamp = 1;
+                   else hq.preamp = 0;
+    fprintf (stderr, "%s: preamplifier: %02X\n", __FUNCTION__, hq.preamp);
+    send_command (&hq);
+    return 0;
+}
+
+int hiqsdr_get_preamp (void)
+{ 
+    return hq.preamp;
 }
 
 int hiqsdr_deinit (void)
@@ -311,7 +476,7 @@ const struct BwTbl bw [] = {
 
 static unsigned char get_decimation (int bw_hz)
 {
-    for (unsigned i=0; i < (sizeof(bw)/sizeof(bw[0])); ++i) 
+    for (unsigned i=0; i < ARRAY_SIZE(bw); ++i) 
         if (bw[i].bw == bw_hz)
            return bw[i].code;
     
@@ -404,6 +569,96 @@ static int get_data (struct Hiqsdr *hiq, unsigned char *buffer, int buf_len)
     }
 }
 
+// create/open/read a preselector configuration file
+static int   open_configuration_file (struct Hiqsdr *hiq)
+{
+    static char  fn [BUFSIZ];
+    FILE *fc;
+    int nr = 0;
+
+    sprintf (fn, "%s/%s", getenv("HOME"), "hiqsdr.cfg");
+
+    if (( fc = fopen (fn, "r")) == NULL) {
+		fprintf (stderr, "No configuration file found in %s\n", fn);
+		createConfigFile(fc, fn);
+	}
+	if (( fc = fopen (fn, "r")) != NULL) {
+        while (!feof(fc)) {
+            char line [BUFSIZ];
+			long long f;
+            int n;
+            char pd [BUFSIZ];
+
+            if (fgets (line, sizeof(line), fc)) {
+                if (line[0] == '#') continue;
+                if (sscanf(line, "%d!%lld!%[^\t\n]\n", &n, &f, pd) == 3) {
+                    PreselItem temp;
+					temp.filtNum = n;
+    				temp.freq = f;
+					temp.desc = new char [strlen(pd)];
+					strcpy (temp.desc, pd);
+					n = n;
+					hiq->preInfo.push_back(temp);
+					nr++;
+                }
+            }         
+        }
+    } else { // Can't open file for read. Do error thing.
+		perror ("The following error occurred");
+		return 0;
+    }
+    if (nr) { // Print the contents of the preInfo vector (struct Hiqsdr)
+		printf("Idx  Filt     Freq     Description\n");
+		printf("-----------------------------------\n");
+        for (unsigned j=0; j<hiq->preInfo.size(); ++j) {
+            printf("%*d %*d %*lld   %s\n",2,j, 5,hiq->preInfo[j].filtNum,
+                   10,hiq->preInfo[j].freq, hiq->preInfo[j].desc);
+        }
+    }
+    return nr;
+}
+
+static int createConfigFile(FILE *fc, const char *fn)
+{
+	int nr;
+	
+    if ((fc = fopen (fn, "w+"))) {
+        fprintf (fc, "#\n");
+        fprintf (fc, "# HiQSDR preselector configuration file template\n");
+        fprintf (fc, "#\n");
+        fprintf(fc, "%d!%d!%s\n", 0, 0, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 1, 1800000, "160 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 2000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 2, 3500000, "80 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 4000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 3, 7000000, "40 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 7300000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 4, 10100000, "30M");
+		fprintf(fc, "%d!%d!%s\n", 0, 10150000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 5, 14000000, "20 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 14350000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 6, 18068000, "17 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 18168000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 7, 21000000, "15 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 21450000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 8, 24890000, "12 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 24990000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 9, 28000000, "10 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 29700000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 10, 51000000, "6 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 54000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 11, 3500000, "80 Xm");
+		fprintf(fc, "%d!%d!%s\n", 0, 4000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 12, 7000000, "40 Xm");
+		fprintf(fc, "%d!%d!%s\n", 0, 7200000, "FILTER BYPASS");		
+		fclose (fc);
+        fprintf (stderr, "Configuration file created at: %s\n", fn);
+		nr = 25;
+    } else {
+		perror ("The following error occurred");
+	}
+	return nr;
+}
 
 /*
  * Send command message to hardware
@@ -495,13 +750,20 @@ static int send_command (struct Hiqsdr *hiq) {
 
     m.txl = 0;    //Tx output level 0 to 255
 
-    m.txc = 0x02; // = all other operation (e.g. SSB)
+    m.txc = 0x02  //   all other operation (e.g. SSB)
+          | 0x04  //   use the HiQSDR extended IO pins (from FPGA version 1.1 on)
+    ;
     m.rxc = get_decimation(hiq->bw) - 1;
 
-    m.fwv = 1;  // FPGA firmware version
+    m.fwv = 3;  // FPGA firmware version
 
-    m.x1  = 0;  // preselector et al.
-    m.att = 0;  // input attenuator
+    m.x1  = (hiq->preSel & 0x0F)    // preselector et al.
+            |
+            (hiq->preamp ? 0x10 : 0x00);   // preamplifier
+ 
+    m.att = hiq->attDb;           // input attenuator
+
+    m.msc = hiq->antSel;  // select antenna 
 
     m.rfu1 = 0; // not currently used
     m.rfu2 = 0; // not currently used
@@ -583,16 +845,16 @@ static int ping_hardware (struct Hiqsdr *hiq, int tmo_s)
             } else {
                 if (bytes_read >= 14 && bytes_read <= 22) {
                    if (ma.fwv == 0) {
-                       fprintf (stderr, "Frame lenght is %d and firmware version is %02x\n", bytes_read, ma.fwv);
+                       fprintf (stderr, "Frame length is %d and firmware version is %02x\n", bytes_read, ma.fwv);
                        hiq->fwv = ma.fwv;
                        rc = 0; //OK, old firmware
                    } else { // new
-                       fprintf (stderr, "Frame lenght is %d and firmware version is %02x\n", bytes_read, ma.fwv);
+                       fprintf (stderr, "Frame length is %d and firmware version is %02x\n", bytes_read, ma.fwv);
                        hiq->fwv = ma.fwv;
                        rc = 0;
                    }
                 } else {
-                    fprintf (stderr, "Unxpected frame lenght: %d proceed at your risk !\n", bytes_read);
+                    fprintf (stderr, "Unxpected frame length: %d proceed at your risk !\n", bytes_read);
                     rc = 0;
                 }
             } 

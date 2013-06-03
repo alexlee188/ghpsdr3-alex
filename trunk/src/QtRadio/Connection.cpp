@@ -23,6 +23,24 @@
 *
 */
 
+
+/* Copyright (C) 2012 - Alex Lee, 9V1Al
+* modifications of the original program by John Melton
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Pl
+*/
+
 #include "Connection.h"
 #include <QDebug>
 #include <QRegExp>
@@ -115,6 +133,8 @@ void Connection::disconnect() {
         // tcpSocket=NULL;
 
     }
+    // close the hardware panel, if any
+    emit hardware (QString(""));
 }
 
 void Connection::socketError(QAbstractSocket::SocketError socketError) {
@@ -362,7 +382,11 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     //"20120107;-rxtx-rtp"; YYYYMMDD; text desc
                     rx.setPattern(":(\\d+);-(\\S+)");
                     rx.indexIn(answer);
+#if QT_VERSION >= 0x050000
+                    emit setdspversion(rx.cap(1).toLong(),rx.cap(2).toUtf8());
+#else
                     emit setdspversion(rx.cap(1).toLong(),rx.cap(2).toAscii());
+#endif
                     serverver = rx.cap(1).toLong();
                     if (serverver < 20120201){  // tx login start
                        emit setCanTX(true);  //server to old to tell
@@ -395,11 +419,11 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     //qDebug() << "q-master:" << answer;
                     if (answer.contains("slave")){
                         amSlave = true;
-                        sendCommand("q-info");  // we are a slave so lets see where master is tuned
+                        emit printStatusBar("  ...Slave Mode. ");
                     }else{
                         amSlave = false;
+                        emit printStatusBar("  ...Master Mode. ");
                     }
-                    if (serverver >= 20120201)  sendCommand("q-server");
                 }else if(answer.contains("q-rtpport")){
                     rx.setPattern("rtpport:(\\d+);");
                     rx.indexIn(answer);
@@ -420,36 +444,30 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     rx.indexIn(answer);
                     double loffset= rx.cap(1).toDouble();
                     emit resetbandedges(loffset);
-                }else if(answer.contains("q-info")){
 
-                    rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+)");// q-info:0;f;14008750;m;4;
+                }else if(answer.contains("q-info")){
+                    rx.setPattern("info:s;(\\d+);f;(\\d+);m;(\\d+);z;(\\d+);l;(\\d+|-\\d+);r;(\\d+|-\\d+)");
                     rx.indexIn(answer);
-                    QString slave = rx.cap(1);
                     QString f = rx.cap(2);
-                    QString m =rx.cap(3);
+                    QString m = rx.cap(3);
+                    QString z = rx.cap(4);
+                    QString l = rx.cap(5);
+                    QString r = rx.cap(6);
                     long long newf = f.toLongLong();
                     int newmode = m.toInt();
-                    int newslave = slave.toInt();
-                    //qDebug() << "emit Freq  f is =" << newf <<";";
-                    emit slaveSetSlave(newslave);
-                    if(newf != lastFreq ){
-                      emit slaveSetFreq(newf);
-                    }
+                    int zoom = z.toInt();
+                    int left = l.toInt();
+                    int right = r.toInt();
+                    emit slaveSetFreq(newf);
+                    emit slaveSetFilter(left, right);
+                    emit slaveSetZoom(zoom);
                     if(newmode != lastMode){
                       emit slaveSetMode(newmode);
                     }
-                    if(newslave != lastSlave){
-                       if(newslave == 0){
-                         emit printStatusBar("  ...Slave Mode... ");
-                       }else{
-                         emit printStatusBar("  ...Master Mode... ");
-                         amSlave = false;
-                         sendCommand("q-server");
-                       }
-                    }
+
+
                     lastFreq = newf;
                     lastMode = newmode;
-                    lastSlave = newslave;
 
                 } else if (answer.contains("q-protocol3")){
                     rx.setPattern("([YN])$");
@@ -459,11 +477,15 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                         emit setProtocol3(true);
                         emit setFPS();
                     }
+                } else if (answer[0] == '*') {
+                    qDebug() << "--------------->" << answer;
+                    
+                    emit hardware (QString(answer));
                 }
 
                 //answer.prepend("  Question/Answer ");
                 //emit printStatusBar(answer);
-                //qDebug() << "ANSWER bytes "<< bytes <<" answer "<< ans;
+                qDebug() << "ANSWER bytes "<< bytes <<" answer "<< ans;
                 free(ans);
                 bytes=0;
                 state=READ_HEADER_TYPE;
@@ -516,6 +538,9 @@ void Connection::freeBuffers(char* header,char* buffer) {
     if (buffer != NULL) free(buffer);
 }
 
+bool Connection::getSlave(){
+    return amSlave;
+}
 
 // added by gvj
 void Connection::setMuted(bool muteState)

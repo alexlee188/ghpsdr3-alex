@@ -1247,6 +1247,10 @@ void set_bandwidth (int nb)
     }
 }
 
+const char *get_serial ()
+{
+    return sdr_serial;
+}
 
 #endif
 
@@ -1468,7 +1472,7 @@ int main ()
     } else
         fprintf (stderr, "**** OPEN SUCCESS: %s\n", buf );
 
-    fprintf (stderr, "Name: [%s] Serial: [%s] Interface: %d Firmware: %d Bootcode: %d Product Id: %04X\n",
+    fprintf (stderr, "Name: [%s] Serial: [%s] Interface: %d Firmware: %d Bootcode: %d Product Id: %08lX\n",
              sdr_name, sdr_serial, sdr_interface, sdr_firmware, sdr_bootcode, *((unsigned long *)sdr_product_id) );
 
     fflush (stderr);

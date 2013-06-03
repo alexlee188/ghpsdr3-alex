@@ -213,6 +213,22 @@ char* metis_mac_address(int entry) {
     return NULL;
 }
 
+/*
+    Start Command
+
+    Metis will start sending UDP/IP data to the ‘from port’, IP address and MAC address of a
+    PC that sends a Start Command. The Start Command is a UDP/IP frame sent to the
+    Ethernet address assigned to the Metis card and port 1024. The command has the
+    following format:
+
+        <0xEFFE><0x04><Command>< 60 bytes of 0x00>
+
+     where
+
+     Command = 1 byte (bit [0] set starts I&Q + Mic data and bit [1] set starts the wide bandscope data)
+
+*/
+
 void metis_start_receive_thread() {
     int i;
     int rc;
@@ -239,8 +255,8 @@ void metis_start_receive_thread() {
     // send a packet to start the stream
     buffer[0]=0xEF;
     buffer[1]=0xFE;
-    buffer[2]=0x04;    // data send state
-    buffer[3]=0x03;    // send (0x00=stop)
+    buffer[2]=0x04;    // data send state send (0x00=stop)
+    buffer[3]=0x01;    // I/Q only
 
     for(i=0;i<60;i++) {
         buffer[i+4]=0x00;
@@ -259,6 +275,26 @@ fprintf(stderr,"starting metis_watchdog_thread\n");
 }
 
 static unsigned char input_buffer[2048];
+
+/* 
+   Metis Discovery reply format
+
+   Upon receipt of this broadcast a Metis board will reply with a UDP/IP frame sent to the
+   ‘from port’ on the IP Address and MAC Address of the PC originating the Discovery
+   broadcast.
+
+   The payload of the UDP/IP reply frame is as follows:
+
+      <0xEFFE><Status>< Metis MAC Address><Code Version><Board_ID><49 bytes of 0x00>
+
+   where
+
+   Status            = 1 byte, 0x02 if Metis is not sending data and 0x03 if it is
+   Metis MAC Address = 6 bytes (MAC Address of the Metis responding to the Discovery Broadcast)
+   Code Version      = 1 byte, version number of code currently loaded into Metis
+   Board_ID          = 1 byte, 0x00 = Metis, 0x01 = Hermes, 0x02 = Griffin
+
+*/
 
 void* metis_receive_thread(void* arg) {
     struct sockaddr_in addr;
@@ -301,8 +337,8 @@ void* metis_receive_thread(void* arg) {
                         fprintf(stderr,"unexpected data packet when in discovery mode\n");
                     }
                     break;
-                case 2:  // response to a discovery packet - not sending
-                case 3:  // response to a discovery packet - sending
+                case 2:  // response to a discovery packet - hardware is not yet sending
+                case 3:  // response to a discovery packet - hardware is already sending
                     if(discovering) {
                         if(found<MAX_METIS_CARDS) {
                             // get MAC address from reply
@@ -317,6 +353,24 @@ void* metis_receive_thread(void* arg) {
                                        (addr.sin_addr.s_addr>>16)&0xFF,
                                        (addr.sin_addr.s_addr>>24)&0xFF);
                             fprintf(stderr,"Metis IP address %s\n",metis_cards[found].ip_address);
+                            metis_cards[found].code_version = input_buffer[9];
+                            switch (input_buffer[10]) {
+                               case 0x00:
+                                  metis_cards[found].board_id = "Metis";
+                                  break;
+                               case 0x01:
+                                  metis_cards[found].board_id = "Hermes";
+                                  break;
+                               case 0x02:
+                                  metis_cards[found].board_id = "Griffin";
+                                  break;
+                               default: 
+                                  metis_cards[found].board_id = "unknown";
+                                  break;
+                            }       
+                            fprintf(stderr,"Board id: %s",metis_cards[found].board_id);
+                            fprintf(stderr," version:  %1.2F\n",metis_cards[found].code_version /10.0);
+
                             found++;
                             if(input_buffer[2]==3) {
                                 fprintf(stderr,"Metis is sending\n");

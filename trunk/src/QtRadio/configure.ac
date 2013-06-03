@@ -1,5 +1,4 @@
-AC_INIT([QtRadio Build], [rxtx-rtp-symm], [andrew att montefusco dott com], [QtRadio])
-
+AC_INIT([QtRadio Build], [hermes], [andrew att montefusco dott com], [QtRadio])
 
 #AC_CONFIG_AUX_DIR([build-aux])
 #AC_CONFIG_MACRO_DIR([m4])
@@ -19,9 +18,6 @@ AC_PROG_CXX
 # If you need to create a library, USE libtool:
 AC_PROG_LIBTOOL
 
-# If you happen to have some C code:
-#AC_LANG([C])
-#AC_PROG_CC
 
 #
 # git repository parameters copied in GITSTR in order to display in "About" panel
@@ -35,7 +31,7 @@ AC_SUBST(GITSTR)
 
 
 # QtRadio with Qt.
-AT_WITH_QT([core gui network])
+AT_WITH_QT([core gui network opengl])
 AT_REQUIRE_QT_VERSION(4.0.0, AC_MSG_ERROR([Bad Qt: at least 4.x is required !]))
 
 AC_MSG_RESULT([QT version: $QT_VERSION])
@@ -46,7 +42,7 @@ QTVM=`echo $QT_VERSION | sed 's/\.[[0-9]]*\.[[0-9]]*//g'`
 AC_MSG_RESULT([QT version major: $QTVM])
 if test "x${QTVM}" = x5; then
    AC_MSG_RESULT([QT 5 detected: adding QtWidgets lib])
-   QT_LIBS="$QT_LIBS -lQtWidgets"
+   AT_WITH_QT([+widgets])
 fi
 
 AC_MSG_RESULT([QT_LIBS: $QT_LIBS])

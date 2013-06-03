@@ -38,6 +38,26 @@
 
 int fOutputDisabled = 0;
 
+#if QT_VERSION >= 0x050000
+void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &message)
+{
+   if (fOutputDisabled) return;
+    switch (type) {
+    case QtDebugMsg:
+         fprintf(stderr, "Debug: %s\n", message.toLocal8Bit().constData());
+         break;
+    case QtWarningMsg:
+         fprintf(stderr, "Warning: %s\n", message.toLocal8Bit().constData());
+         break;
+    case QtCriticalMsg:
+         fprintf(stderr, "Critical: %s\n", message.toLocal8Bit().constData());
+         break;
+    case QtFatalMsg:
+         fprintf(stderr, "Fatal: %s\n", message.toLocal8Bit().constData());
+         abort();
+    }
+}
+#else
 void myMessageOutput(QtMsgType type, const char *msg)
 {
     if (fOutputDisabled) return;
@@ -56,11 +76,16 @@ void myMessageOutput(QtMsgType type, const char *msg)
          abort();
     }
 }
+#endif
 
 int main(int argc, char *argv[]) {
 
      if (getenv("QT_RADIO_NO_DEBUG")) fOutputDisabled = 1;
+#if QT_VERSION >= 0x050000
+     qInstallMessageHandler(myMessageOutput);
+#else
      qInstallMsgHandler(myMessageOutput);
+#endif
 
     // initialize resources, if needed
     // Q_INIT_RESOURCE(resfile);

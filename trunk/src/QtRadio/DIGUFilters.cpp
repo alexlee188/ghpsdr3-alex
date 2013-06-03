@@ -38,6 +38,7 @@ DIGUFilters::DIGUFilters() {
     filters[7].init("2.1k",150,2250);
     filters[8].init("1.8k",150,1950);
     filters[9].init("1.0k",150,1150);
+    filters[10].init("Vari",150,2550);
 
     selectFilter(3);
 }

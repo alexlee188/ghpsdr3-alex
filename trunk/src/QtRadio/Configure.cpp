@@ -23,6 +23,24 @@
 *
 */
 
+
+/* Copyright (C) 2012 - Alex Lee, 9V1Al
+* modifications of the original program by John Melton
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Pl
+*/
+
 #include <QSettings>
 #if QT_VERSION >= 0x050000
 #include <QtWidgets/QComboBox>
@@ -52,8 +70,8 @@ Configure::Configure() {
 
     widget.hostComboBox->addItem("127.0.0.1");
     widget.hostComboBox->addItem("g0orx.homelinux.net");
-//    widget.spectrumHighSpinBox->setValue(-40);
-//    widget.spectrumLowSpinBox->setValue(-160);
+    //    widget.spectrumHighSpinBox->setValue(-40);
+    //    widget.spectrumLowSpinBox->setValue(-160);
     widget.waterfallHighSpinBox->setValue(-60);
     widget.waterfallLowSpinBox->setValue(-120);
     widget.fpsSpinBox->setValue(15);
@@ -85,6 +103,9 @@ Configure::Configure() {
     widget.userpass->setEditTriggers(QAbstractItemView::AllEditTriggers);
     //QTableWidgetItem *newitem = new QTableWidgetItem("Fill Item");
     //widget.userpass->setItem(0, 0, newitem);
+    widget.rxDCBlockCheckBox->setChecked(false);  //KD0OSS
+    widget.txDCBlockCheckBox->setChecked(false);  //KD0OSS
+    widget.windowComboBox->setCurrentIndex(11);  //KD0OSS
 
     connect(widget.spectrumHighSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotSpectrumHighChanged(int)));
     connect(widget.spectrumLowSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotSpectrumLowChanged(int)));
@@ -107,6 +128,12 @@ Configure::Configure() {
 
     connect(widget.hostComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotHostChanged(int)));
     connect(widget.rxSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotReceiverChanged(int)));
+    connect(widget.rxDCBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotRxDCBlock(bool)));   //KD0OSS
+    connect(widget.txDCBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotTxDCBlock(bool)));   //KD0OSS
+    connect(widget.rxIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onRxIQPhaseChanged(double)));   //KD0OSS
+    connect(widget.rxIQGainSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onRxIQGainChanged(double)));   //KD0OSS
+    connect(widget.txIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onTxIQPhaseChanged(double)));   //KD0OSS
+    connect(widget.txIQGainSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onTxIQGainChanged(double)));   //KD0OSS
 
     connect(widget.nrTapsSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrTapsChanged(int)));
     connect(widget.nrDelaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrDelayChanged(int)));
@@ -117,6 +144,8 @@ Configure::Configure() {
     connect(widget.anfDelaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotAnfDelayChanged(int)));
     connect(widget.anfGainSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotAnfGainChanged(int)));
     connect(widget.anfLeakSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotAnfLeakChanged(int)));
+
+    connect(widget.windowComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotWindowType(int)));
 
     connect(widget.nbThresholdSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNbThresholdChanged(int)));
     connect(widget.sdromThresholdSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotSdromThresholdChanged(int)));
@@ -142,7 +171,7 @@ void Configure::updateXvtrList(Xvtr* xvtr) {
     // update the list of XVTR entries
     XvtrEntry* entry;
     QStringList headings;
-    QString title;
+    //    QString title;
     QString minFrequency;
     QString maxFrequency;
     QString ifFrequency;
@@ -172,7 +201,6 @@ void Configure::updateXvtrList(Xvtr* xvtr) {
         widget.XVTRTableWidget->setItem(i, 3, ifFrequencyItem);
     }
     widget.XVTRTableWidget->resizeColumnsToContents();
-
 }
 
 void Configure::connected(bool state) {
@@ -197,8 +225,6 @@ void Configure::connected(bool state) {
 
     widget.hostComboBox->setDisabled(state);
     widget.rxSpinBox->setDisabled(state);
-
-
 }
 
 void Configure::loadSettings(QSettings* settings) {
@@ -222,13 +248,15 @@ void Configure::loadSettings(QSettings* settings) {
     }
     widget.spectrumHighSpinBox->setValue(settings->value("spectrumHigh",-40).toInt());
     widget.spectrumHighSpinBox->setValue(settings->value("spectrumHigh",-40).toInt());
-//    if(settings->contains("spectrumHigh"))widget.spectrumHighSpinBox->setValue(settings->value("spectrumHigh",-40).toInt());
-//    if(settings->contains("spectrumLow"))widget.spectrumLowSpinBox->setValue(settings->value("spectrumLow",-160).toInt());
+    //    if(settings->contains("spectrumHigh"))widget.spectrumHighSpinBox->setValue(settings->value("spectrumHigh",-40).toInt());
+    //    if(settings->contains("spectrumLow"))widget.spectrumLowSpinBox->setValue(settings->value("spectrumLow",-160).toInt());
     if(settings->contains("fps"))widget.fpsSpinBox->setValue(settings->value("fps").toInt());
+    if(settings->contains("avg"))widget.avgSpinBox->setValue(settings->value("avg").toInt());
     if(settings->contains("waterfallHigh"))widget.waterfallHighSpinBox->setValue(settings->value("waterfallHigh").toInt());
     if(settings->contains("waterfallLow"))widget.waterfallLowSpinBox->setValue(settings->value("waterfallLow").toInt());
     if(settings->contains("waterfallAutomatic"))widget.waterfallAutomatic->setChecked(settings->value("waterfallAutomatic").toBool());
     if(settings->contains("WindowGeometryFlag"))widget.checkBoxWindowPosn->setChecked(settings->value("WindowGeometryFlag").toBool());
+    if(settings->contains("windowMode")) widget.windowComboBox->setCurrentIndex(settings->value("windowMode").toInt());  //KD0OSS
     settings->endGroup();
 
     settings->beginGroup("Audio");
@@ -237,7 +265,7 @@ void Configure::loadSettings(QSettings* settings) {
     if(settings->contains("samplerate")) widget.sampleRateComboBox->setCurrentIndex(settings->value("samplerate").toInt());
     if(settings->contains("encoding")) widget.encodingComboBox->setCurrentIndex(settings->value("encoding").toInt());
     if(settings->contains("byteorder")) widget.byteOrderComboBox->setCurrentIndex(settings->value("byteorder").toInt());
-//    if(settings->contains("mic")) widget.MicComboBox->setCurrentIndex(settings->value("mic").toInt());
+    //    if(settings->contains("mic")) widget.MicComboBox->setCurrentIndex(settings->value("mic").toInt());
     if(settings->contains("micEncoding")) widget.MicEncodingComboBox->setCurrentIndex(settings->value("micEncoding").toInt());
     if(settings->contains("rtp")) widget.rtpCheckBox->setChecked(settings->value("rtp").toBool());
     widget.spinBox_cwPitch->setValue(settings->value("cwPitch",600).toInt());
@@ -268,32 +296,41 @@ void Configure::loadSettings(QSettings* settings) {
 
     settings->beginGroup("TxSettings");
     widget.allowTx->setChecked(settings->value("allowTx",FALSE).toBool());
+    widget.rxDCBlockCheckBox->setChecked(settings->value("rxDCBlock",FALSE).toBool());  //KD0OSS
+    widget.txDCBlockCheckBox->setChecked(settings->value("txDCBlock",FALSE).toBool());  //KD0OSS
+    widget.txIQPhaseSpinBox->setValue(settings->value("TxIQPhaseCorrect",0).toInt());  //KD0OSS
+    widget.txIQGainSpinBox->setValue(settings->value("TxIQGainCorrect",0).toInt());  //KD0OSS
+    settings->endGroup();
+
+    settings->beginGroup("TxIQimage");
     settings->endGroup();
 
     settings->beginGroup("RxIQimage");
     widget.RxIQcheckBox->setChecked(settings->value("RxIQon/off",TRUE).toBool());
     widget.RxIQspinBox->setValue(settings->value("RxIQmu",25).toInt());
+    widget.rxIQPhaseSpinBox->setValue(settings->value("RxIQPhaseCorrect",0).toInt());  //KD0OSS
+    widget.rxIQGainSpinBox->setValue(settings->value("RxIQGainCorrect",0).toInt());  //KD0OSS
     settings->endGroup();
-    settings->beginGroup("UserPass");
-     //QTableWidgetItem *server, *user, *pass;
-     for (int i=0;i<widget.userpass->rowCount();i++){
-         QString s,u,p;
-         s.setNum(i);
-         u.setNum(i);
-         p.setNum(i);
-         s.append("_Server");
-         u.append("_User");
-         p.append("_Pass");
-       if(settings->contains(s) && settings->contains(u) && settings->contains(p)) {
-           QTableWidgetItem* Server= new QTableWidgetItem(settings->value(s).toString());
-           QTableWidgetItem* User= new QTableWidgetItem(settings->value(u).toString());
-           QTableWidgetItem* Pass= new QTableWidgetItem(settings->value(p).toString());
-           widget.userpass->setItem(i,0,Server);
-           widget.userpass->setItem(i,1,User);
-           widget.userpass->setItem(i,2,Pass);
 
-       }
-      }
+    settings->beginGroup("UserPass");
+    //QTableWidgetItem *server, *user, *pass;
+    for (int i=0;i<widget.userpass->rowCount();i++){
+        QString s,u,p;
+        s.setNum(i);
+        u.setNum(i);
+        p.setNum(i);
+        s.append("_Server");
+        u.append("_User");
+        p.append("_Pass");
+        if(settings->contains(s) && settings->contains(u) && settings->contains(p)) {
+            QTableWidgetItem* Server= new QTableWidgetItem(settings->value(s).toString());
+            QTableWidgetItem* User= new QTableWidgetItem(settings->value(u).toString());
+            QTableWidgetItem* Pass= new QTableWidgetItem(settings->value(p).toString());
+            widget.userpass->setItem(i,0,Server);
+            widget.userpass->setItem(i,1,User);
+            widget.userpass->setItem(i,2,Pass);
+        }
+    }
     settings->endGroup();
 }
 
@@ -314,10 +351,12 @@ void Configure::saveSettings(QSettings* settings) {
     settings->setValue("spectrumHigh",widget.spectrumHighSpinBox->value());
     settings->setValue("spectrumLow",widget.spectrumLowSpinBox->value());
     settings->setValue("fps",widget.fpsSpinBox->value());
+    settings->setValue("avg",widget.avgSpinBox->value());
     settings->setValue("waterfallHigh",widget.waterfallHighSpinBox->value());
     settings->setValue("waterfallLow",widget.waterfallLowSpinBox->value());
     settings->setValue("waterfallAutomatic",widget.waterfallAutomatic->checkState());
     settings->setValue("WindowGeometryFlag", widget.checkBoxWindowPosn->checkState());
+    settings->setValue("windowMode", widget.windowComboBox->currentIndex());
     settings->endGroup();
     settings->beginGroup("Audio");
     settings->setValue("device",widget.audioDeviceComboBox->currentIndex());
@@ -349,15 +388,21 @@ void Configure::saveSettings(QSettings* settings) {
     settings->setValue("threshold",widget.nbThresholdSpinBox->value());
     settings->endGroup();
     settings->beginGroup("TxSettings");
-        settings->setValue("allowTx",widget.allowTx->checkState());
+    settings->setValue("allowTx",widget.allowTx->checkState());
+    settings->setValue("rxDCBlock",widget.rxDCBlockCheckBox->checkState());  //KD0OSS
+    settings->setValue("txDCBlock",widget.txDCBlockCheckBox->checkState());  //KD0OSS
+    settings->setValue("TxIQPhaseCorrect",widget.txIQPhaseSpinBox->value());  //KD0OSS
+    settings->setValue("TxIQGainCorrect",widget.txIQGainSpinBox->value());  //KD0OSS
     settings->endGroup();
     settings->beginGroup("RxIQimage");
-        settings->setValue("RxIQon/off",widget.RxIQcheckBox->checkState());
-        settings->setValue("RxIQmu",widget.RxIQspinBox->value());
+    settings->setValue("RxIQon/off",widget.RxIQcheckBox->checkState());
+    settings->setValue("RxIQmu",widget.RxIQspinBox->value());
+    settings->setValue("RxIQPhaseCorrect",widget.rxIQPhaseSpinBox->value());  //KD0OSS
+    settings->setValue("RxIQGainCorrect",widget.rxIQGainSpinBox->value());  //KD0OSS
     settings->endGroup();
     settings->beginGroup("UserPass");
-     QTableWidgetItem *server, *user, *pass;
-     for (int i=0;i<widget.userpass->rowCount();i++){
+    QTableWidgetItem *server, *user, *pass;
+    for (int i=0;i<widget.userpass->rowCount();i++){
         server = widget.userpass->item(i,0);
         user = widget.userpass->item(i,1);
         pass = widget.userpass->item(i,2);
@@ -375,7 +420,7 @@ void Configure::saveSettings(QSettings* settings) {
             settings->setValue(u,user->text());
             settings->setValue(p,pass->text());
         }
-     }
+    }
     settings->endGroup();
 
 }
@@ -417,7 +462,7 @@ void Configure::slotAudioDeviceChanged(int selection) {
                             widget.sampleRateComboBox->currentText().toInt(),
                             widget.audioChannelsSpinBox->value(),
                             widget.byteOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
-                            );
+                                                                                    );
 }
 
 void Configure::slotSampleRateChanged(int selection) {
@@ -425,7 +470,7 @@ void Configure::slotSampleRateChanged(int selection) {
                             widget.sampleRateComboBox->currentText().toInt(),
                             widget.audioChannelsSpinBox->value(),
                             widget.byteOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
-                            );
+                                                                                    );
 }
 
 void Configure::slotChannelsChanged(int channels) {
@@ -433,7 +478,7 @@ void Configure::slotChannelsChanged(int channels) {
                             widget.sampleRateComboBox->currentText().toInt(),
                             widget.audioChannelsSpinBox->value(),
                             widget.byteOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
-                            );
+                                                                                    );
 }
 
 void Configure::slotByteOrderChanged(int selection) {
@@ -441,7 +486,7 @@ void Configure::slotByteOrderChanged(int selection) {
                             widget.sampleRateComboBox->currentText().toInt(),
                             widget.audioChannelsSpinBox->value(),
                             widget.byteOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
-                            );
+                                                                                    );
 }
 
 void Configure::slotMicDeviceChanged(int selection) {
@@ -450,7 +495,7 @@ void Configure::slotMicDeviceChanged(int selection) {
                           widget.MicSampleRateComboBox->currentText().toInt(),
                           widget.MicChannelsSpinBox->value(),
                           widget.MicOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
-                          );
+                                                                                 );
 }
 
 void Configure::slotMicSampleRateChanged(int selection) {
@@ -458,7 +503,7 @@ void Configure::slotMicSampleRateChanged(int selection) {
                           widget.MicSampleRateComboBox->currentText().toInt(),
                           widget.MicChannelsSpinBox->value(),
                           widget.MicOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
-                          );
+                                                                                 );
 }
 
 void Configure::slotMicChannelsChanged(int channels) {
@@ -466,7 +511,7 @@ void Configure::slotMicChannelsChanged(int channels) {
                           widget.MicSampleRateComboBox->currentText().toInt(),
                           widget.MicChannelsSpinBox->value(),
                           widget.MicOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
-                          );
+                                                                                 );
 }
 
 void Configure::slotMicOrderChanged(int selection) {
@@ -474,7 +519,7 @@ void Configure::slotMicOrderChanged(int selection) {
                           widget.MicSampleRateComboBox->currentText().toInt(),
                           widget.MicChannelsSpinBox->value(),
                           widget.MicOrderComboBox->currentText()=="LittleEndian"?QAudioFormat::LittleEndian:QAudioFormat::BigEndian
-                          );
+                                                                                 );
 }
 
 void Configure::slotUseRTP(bool state) {
@@ -521,8 +566,28 @@ void Configure::slotSdromThresholdChanged(int threshold) {
     emit sdromThresholdChanged((double)widget.sdromThresholdSpinBox->value()*0.165);
 }
 
+void Configure::slotWindowType(int type) {
+    emit windowTypeChanged(type);
+}
+
 QString Configure::getHost() {
     return widget.hostComboBox->currentText();
+}
+
+void Configure::slotRxDCBlock(bool state) {   //KD0OSS
+    emit rxDCBlockChanged(state);
+}
+
+void Configure::slotTxDCBlock(bool state) {   //KD0OSS
+    emit txDCBlockChanged(state);
+}
+
+bool Configure::getRxDCBlockValue() {  //KD0OSS
+    return widget.rxDCBlockCheckBox->isChecked();
+}
+
+bool Configure::getTxDCBlockValue() {  //KD0OSS
+    return widget.txDCBlockCheckBox->isChecked();
 }
 
 int Configure::getReceiver() {
@@ -539,6 +604,10 @@ int Configure::getSpectrumLow() {
 
 int Configure::getFps() {
     return widget.fpsSpinBox->value();
+}
+
+int Configure::getAvg(){
+    return widget.avgSpinBox->value();
 }
 
 int Configure::getWaterfallHigh() {
@@ -718,13 +787,13 @@ void Configure::addHost(QString host){
 }
 
 void Configure::removeHost(QString host){
-   int current_index;
-   if ((current_index = widget.hostComboBox->findText(host)) == -1){    // not currently on ComboBox
-   }else{
+    int current_index;
+    if ((current_index = widget.hostComboBox->findText(host)) == -1){    // not currently on ComboBox
+    }else{
         current_index = widget.hostComboBox->findText(host);
         widget.hostComboBox->setCurrentIndex(current_index);
         on_pBtnRemHost_clicked();
-   }
+    }
 }
 
 void Configure::on_pBtnRemHost_clicked()
@@ -758,7 +827,7 @@ bool Configure::getTxAllowed()
 
 void Configure::setTxAllowed(bool newstate)
 {
-     widget.allowTx->setChecked(newstate);
+    widget.allowTx->setChecked(newstate);
 }
 
 void Configure::on_RxIQcheckBox_toggled(bool checked)
@@ -773,24 +842,24 @@ void Configure::on_RxIQspinBox_valueChanged(int spinValue)
 
 void Configure::on_userpasssave_clicked()
 {
-  QSettings settings("G0ORX","QtRadio");
-  saveSettings(&settings);
+    QSettings settings("G0ORX","QtRadio");
+    saveSettings(&settings);
 
 }
 
 bool  Configure::setPasswd(QString ServerName){
     QTableWidgetItem *server, *user, *pass;
     for (int i=0;i<widget.userpass->rowCount();i++){
-       server = widget.userpass->item(i,0);
-       user = widget.userpass->item(i,1);
-       pass = widget.userpass->item(i,2);
-       if (server && user && pass ){
-          if(ServerName.compare(server->text()) == 0){
-              thisuser = user->text();
-              thispass = pass->text();
-              return true;
-          }
-       }
+        server = widget.userpass->item(i,0);
+        user = widget.userpass->item(i,1);
+        pass = widget.userpass->item(i,2);
+        if (server && user && pass ){
+            if(ServerName.compare(server->text()) == 0){
+                thisuser = user->text();
+                thispass = pass->text();
+                return true;
+            }
+        }
     }
     return false;
 }
@@ -824,4 +893,29 @@ void Configure::on_spinBox_cwPitch_valueChanged(int arg1)
 void Configure::on_MicEncodingComboBox_currentIndexChanged(int index)
 {
     emit micEncodingChanged(index);
+}
+
+void Configure::on_avgSpinBox_valueChanged(int arg1)
+{
+    emit avgSpinChanged(arg1);
+}
+
+void Configure::onRxIQPhaseChanged(double arg1)   //KD0OSS
+{
+    emit rxIQPhaseChanged(arg1);
+}
+
+void Configure::onRxIQGainChanged(double arg1)   //KD0OSS
+{
+    emit rxIQGainChanged(arg1);
+}
+
+void Configure::onTxIQPhaseChanged(double arg1)   //KD0OSS
+{
+    emit txIQPhaseChanged(arg1);
+}
+
+void Configure::onTxIQGainChanged(double arg1)   //KD0OSS
+{
+    emit txIQGainChanged(arg1);
 }

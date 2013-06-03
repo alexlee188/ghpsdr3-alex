@@ -59,6 +59,10 @@ void init_receivers (SDR_IQ_CONFIG *pCfg)
     for(i=0;i<MAX_RECEIVERS;i++) {
         receiver[i].client  = (CLIENT*)NULL;
         receiver[i].samples = 0; 
+        receiver[i].m_NcoSpurCalActive = true;
+        receiver[i].m_NcoSpurCalCount  = 0; 
+        receiver[i].m_NCOSpurOffsetI   = 0.0;
+        receiver[i].m_NCOSpurOffsetQ   = 0.0;
     }
 
     iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
@@ -85,8 +89,6 @@ void init_receivers (SDR_IQ_CONFIG *pCfg)
 
 const char* attach_receiver(int rx, CLIENT* client) 
 {
-    int rc;
-
     if(client->state==RECEIVER_ATTACHED) {
         return CLIENT_ATTACHED;
     }
@@ -95,8 +97,8 @@ const char* attach_receiver(int rx, CLIENT* client)
     //    return RECEIVER_INVALID;
     //}
 
-    gain_sdriq (0, 0);
-    gain_sdriq (1, 1);
+    gain_sdriq (0, -20);
+    //gain_sdriq (1, 1);
 
     freq_sdriq (7050000);
     set_bandwidth (CORE_BANDWIDTH);
@@ -117,19 +119,7 @@ const char* attach_receiver(int rx, CLIENT* client)
 
     receiver[rx].frame_counter = -1 ;
 
-
-    #if 0
-    // start IQ reader thread
-    /* Initialize the tail queue. */
-    TAILQ_INIT(&(receiver[rx].iq_tailq_head));
-
-    rc = pthread_create(&(receiver[rx].iq_thread_id), NULL, send_IQ_buffer_from_queue,(void *)(&receiver[rx]));
-    if(rc < 0) {
-        perror("pthread_create asynch_input_thread failed");
-    } else {
-        fprintf (stderr, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n");
-    }
-    #endif
+    ManageNCOSpurOffsets( &(receiver[rx]), NCOSPUR_CMD_STARTCAL, 0,0);
 
     //sprintf(response,"%s %d",OK,ozy_get_sample_rate());
     sprintf(response,"%s %d",OK,CORE_BANDWIDTH);
@@ -208,7 +198,18 @@ const char* set_random (CLIENT* client, bool fRand)
 
 const char* set_attenuator (CLIENT* client, int new_level_in_db)
 {
-    return NOT_IMPLEMENTED_COMMAND;
+    switch (new_level_in_db) {
+    case 0:
+    case 10:
+    case 20:
+    case 30:
+    case 40:
+        fprintf (stderr, "%s: new attenuator level: %d\n", __FUNCTION__, -(new_level_in_db));
+        gain_sdriq (0, -(new_level_in_db));
+        break;
+    default:
+        return INVALID_COMMAND;
+    }
     return OK;
 }
 
@@ -266,72 +267,67 @@ void send_IQ_buffer (RECEIVER *pRec) {
     }
 }
 
-void *send_IQ_buffer_from_queue (void *pArg) 
+
+
+/*
+ * Called to read/set/start calibration of the NCO Spur Offset value.
+ * Excerpted from CuteSDR Copyright (c) 2010 Moe Wheatley
+ */
+void ManageNCOSpurOffsets( RECEIVER *pRec, eNCOSPURCMD cmd, double* pNCONullValueI,  double* pNCONullValueQ)
 {
-    RECEIVER *pRec = (RECEIVER *)pArg;
-    struct sockaddr_in client;
-    int client_length;
-    unsigned short offset;
-    BUFFER buffer;
-    int rc;
-    /* Define a pointer to an item in the tail queue. */
-    struct tailq_entry *item;
-
-    fprintf (stderr, "%s: %s\n", __FUNCTION__, pRec->cfg.start);
-    if(pRec->client != (CLIENT*)NULL) {
-        
-        fprintf (stderr, "%s: IIIIIIIIIIIIIIIIIIIIIII\n", __FUNCTION__);
-        while (  1 ) {
-
-             item = TAILQ_FIRST(&(pRec->iq_tailq_head));
-
-             if (item == 0) {
-                 continue;
-             }
-
-             TAILQ_REMOVE(&(pRec->iq_tailq_head), item, entries);
-
-             fprintf (stderr, "%s: QQQQQQQQQQQQQQQQQQQ\n", __FUNCTION__);
-
-             if(pRec->client->iq_port != -1) {
-                 // send the IQ buffer
-
-                 client_length = sizeof(client);
-                 memset((char*)&client,0,client_length);
-                 client.sin_family = AF_INET;
-                 client.sin_addr.s_addr = pRec->client->address.sin_addr.s_addr;
-                 client.sin_port = htons(pRec->client->iq_port);
-
-                 // keep UDP packets to 512 bytes or less
-                 //     8 bytes sequency number
-                 //     2 byte offset
-                 //     2 byte length
-                 offset=0;
-                 while(offset<sizeof(pRec->input_buffer)) {
-                     buffer.sequence=sequence;
-                     buffer.offset=offset;
-                     buffer.length=sizeof(pRec->input_buffer)-offset;
-                     if(buffer.length>500) buffer.length=500;
-                     memcpy ((char*)&buffer.data[0], (char*)&(pRec->input_buffer[offset/4]), buffer.length);
-                     rc = sendto (iq_socket, (char*)&buffer, sizeof(buffer), 0, (struct sockaddr*)&client,client_length);
-                     if(rc<=0) {
-                         perror("sendto failed for iq data");
-                         exit(1);
-                     } 
-                     //else {
-                     //    fprintf (stderr, "%s: sending packet to %s.\n", __FUNCTION__, inet_ntoa(client.sin_addr));
-                     //}
-                     offset+=buffer.length;
-                 }
-                 sequence++;
-
-             }
-
-             free(item);
-        }
-    }
-    fprintf (stderr, "%s: %s\n", __FUNCTION__, pRec->cfg.stop);
-    return 0;
+	pRec->m_NcoSpurCalActive = false;
+	switch(cmd)
+	{
+		case NCOSPUR_CMD_SET:
+			if( (NULL!=pNCONullValueI) && (NULL!=pNCONullValueQ) )
+			{
+				pRec->m_NCOSpurOffsetI = *pNCONullValueI;
+				pRec->m_NCOSpurOffsetQ = *pNCONullValueQ;
+//qDebug()<<"Cal Set"<< m_NCOSpurOffsetI << m_NCOSpurOffsetQ;
+			}
+			break;
+		case NCOSPUR_CMD_STARTCAL:
+			if((pRec->m_NCOSpurOffsetI>10.0) || (pRec->m_NCOSpurOffsetI<-10.0))
+				pRec->m_NCOSpurOffsetI = 0.0;
+			if((pRec->m_NCOSpurOffsetQ>10.0) || (pRec->m_NCOSpurOffsetQ<-10.0))
+				pRec->m_NCOSpurOffsetQ = 0.0;
+			pRec->m_NcoSpurCalCount = 0;
+			pRec->m_NcoSpurCalActive = true;
+//qDebug()<<"Start NCO Cal";
+			break;
+		case NCOSPUR_CMD_READ:
+			if( (NULL!=pNCONullValueI) && (NULL!=pNCONullValueQ) )
+			{
+				*pNCONullValueI = pRec->m_NCOSpurOffsetI;
+				*pNCONullValueQ = pRec->m_NCOSpurOffsetQ;
+//qDebug()<<"Cal Read"<< m_NCOSpurOffsetI << m_NCOSpurOffsetQ;
+			}
+			break;
+		default:
+			break;
+	}
 }
 
+/*
+ * Called to calculate the NCO Spur Offset value from the incoming m_DataBuf.
+ * Excerpted from CuteSDR (C) Copyright (c) 2010 Moe Wheatley
+ */
+void NcoSpurCalibrate (RECEIVER *pRec /* double* pData, qint32 length */ )
+{
+        if( pRec->m_NcoSpurCalCount < SPUR_CAL_MAXSAMPLES) {
+            int j;
 
+            for( j=0 ; j < pRec->samples; j++) {	//calculate average of I and Q data to get individual DC offsets
+               float q = pRec->input_buffer[j]             ;
+               float i = pRec->input_buffer[j+BUFFER_SIZE] ;
+
+               pRec->m_NCOSpurOffsetQ = (1.0-1.0/100000.0)*pRec->m_NCOSpurOffsetQ + (1.0/100000.0)*q;
+               pRec->m_NCOSpurOffsetI = (1.0-1.0/100000.0)*pRec->m_NCOSpurOffsetI + (1.0/100000.0)*i;
+            }
+            pRec->m_NcoSpurCalCount += (pRec->samples/4);
+
+	} else {
+            pRec->m_NcoSpurCalActive = false;
+            fprintf (stderr, "NCO Cal Done");
+	}
+}

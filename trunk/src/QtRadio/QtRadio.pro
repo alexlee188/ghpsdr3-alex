@@ -4,26 +4,49 @@
 #
 #-------------------------------------------------
 
-# Uncomment line below when using QtSDK, comment for  Ubuntu repository ver.
-QT       += core gui network multimedia mobility
 
-# Uncomment 2 lines below when using QtSDK, comment for  Ubuntu repository ver.
-CONFIG	+= mobility
-MOBILITY += multimedia
 
-# Comment 2 lines below when using QtSDK, uncomment for  Ubuntu repository ver.
-#INCLUDEPATH += /usr/include/QtMobility
-#INCLUDEPATH += /usr/include/QtMultimediaKit
+#-------------------------------------------------
+# If using the Nokia Qt SDK set _UsingSDK to true
+# or if using Ubuntu repo set _UsingSDK to false
+#-------------------------------------------------
 
-TARGET = QtRadio
-TEMPLATE = app
+_UsingSDK = false
+
+greaterThan(QT_MAJOR_VERSION, 4) {
+    message("Using Qt5")
+    QT       += core gui widgets multimedia
+
+
+#    INCLUDEPATH += /opt/qt5/include
+#    INCLUDEPATH += /opt/qt5/include/QtMultimedia
+#    INCLUDEPATH += /opt/qt5/include/QtNetwork
+
+    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtCore
+    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtGui
+    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtWidgets
+    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtMultimedia
+} else {
+    $$_UsingSDK {
+        message("Using the Nokia Qt SDK installation")
+        QT       += core gui network multimedia mobility
+        CONFIG   += mobility
+        MOBILITY += multimedia
+    } else {
+        message("Using the Ubuntu Qt Creator installation")
+        CONFIG   += mobility
+        MOBILITY += multimedia
+        INCLUDEPATH += /usr/include/QtMobility
+        INCLUDEPATH += /usr/include/QtMultimediaKit
+    }
+}
+
+
 
 
 SOURCES += main.cpp\
-    Waterfall.cpp \
     USBFilters.cpp \
     UI.cpp \
-    Spectrum.cpp \
     SAMFilters.cpp \
     Mode.cpp \
     LSBFilters.cpp \
@@ -64,14 +87,23 @@ SOURCES += main.cpp\
     Audioinput.cpp\
     servers.cpp \
     G711A.cpp \
-    RTP.cpp
+    RTP.cpp \
+    hardware.cpp\
+    powermate.cpp \
+    hardware_sdr1000.cpp \
+    calc.cpp \
+    EqualizerDialog.cpp \
+    hardware_sdriq.cpp \
+    hardware_rtlsdr.cpp \
+    hardware_perseus.cpp \
+    hardware_hiqsdr.cpp \
+    hardware_hermes.cpp \
+    Panadapter.cpp
 
 
 HEADERS  += \ 
-    Waterfall.h \
     USBFilters.h \
     UI.h \
-    Spectrum.h \
     SAMFilters.h \
     Mode.h \
     LSBFilters.h \
@@ -114,7 +146,19 @@ HEADERS  += \
     servers.h \
     G711A.h \
     RTP.h \
-    cusdr_queue.h
+    cusdr_queue.h \
+    hardware.h\
+    powermate.h \
+    hardware_sdr1000.h \
+    hardware_sdr1000.h \
+    calc.h \
+    EqualizerDialog.h \
+    hardware_sdriq.h \
+    hardware_perseus.h \
+    hardware_hiqsdr.h \
+    hardware_hermes.h \
+    hardware_rtlsdr.h \
+    Panadapter.h
 
 FORMS    += \   
     UI.ui \
@@ -127,7 +171,8 @@ FORMS    += \
     KeypadDialog.ui \
     vfo.ui \
     ctl.ui \
-    servers.ui
+    servers.ui \
+    EqualizerDialog.ui
 
 OTHER_FILES +=
 

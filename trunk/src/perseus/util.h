@@ -27,18 +27,14 @@
 #ifndef _UTIL_H
 #define	_UTIL_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
 
 
 extern void dump_ozy_buffer(char* prefix,int frame,unsigned char* buffer);
 extern void dump_ozy_header(char* prefix,int frame,unsigned char* buffer);
 extern void dump_iq_buffer(unsigned char* buffer);
 extern void dump_udp_buffer(unsigned char* buffer);
-#ifdef	__cplusplus
-}
-#endif
+extern void hex_dump(char *data, int size, char *caption);
+
 
 #endif	/* _UTIL_H */
 

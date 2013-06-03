@@ -14,13 +14,16 @@
 #include "register.h"
 #include "defs.h"
 #include "client.h"
+#include "util.h"
+
+#define DSP_CMD_BUFSIZE 1024
 
 char *dspstatus;
-char *call = "Unknown";
-char *location = "Unknown";
-char *band = "Unknown";
-char *rig = "Unknown";
-char *ant = "Unknown";
+const char *call = "Unknown";
+const char *location = "Unknown";
+const char *band = "Unknown";
+const char *rig = "Unknown";
+const char *ant = "Unknown";
 
 sem_t cfgsem;
 sem_t status_sem;
@@ -42,8 +45,9 @@ char to_hex(char code) {
 /* Returns a url-encoded version of str */
 /* IMPORTANT: be sure to free() the returned string after use */
 /* From geekhideout.com/urlcode.shtml */
-char *url_encode(char *str) {
-  char *pstr = str, *buf = malloc(strlen(str) * 3 + 1), *pbuf = buf;
+char *url_encode(const char *str) {
+  const char *pstr = str;
+  char *buf = malloc(strlen(str) * 3 + 1), *pbuf = buf;
   while (*pstr) {
     if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' || *pstr == '~') 
       *pbuf++ = *pstr;
@@ -59,13 +63,19 @@ char *url_encode(char *str) {
 
 
 void *doReg(){
-    int result;
-    char sCmd[255];
+    int len, result;
+    char sCmd[DSP_CMD_BUFSIZE];
     while(1){
         sem_wait(&status_sem);
-        sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant, dspstatus);
+        len = snprintf(sCmd, sizeof(sCmd),
+                       "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl",
+                       call, location, band, rig, ant, dspstatus);
         sem_post(&status_sem);
-        result = system(sCmd);
+        if (len > sizeof(sCmd)) {
+            sdr_log(SDR_LOG_ERROR, "Registration string was too long\n");
+        } else {
+            result = system(sCmd);
+        }
         sleep(300);  //seconds between web updates
     }
 }
@@ -191,6 +201,7 @@ void init_register(const char *scfile){
         fprintf(stderr,"%s\n", "  Contains Unknown for a Call");
         fprintf(stderr,"%s\n", "  Please edit this file and fill in your station details!");
         fprintf(stderr,"%s\n", "***********************************************************");
+	exit(-1);
     }
     call = url_encode(call);
     location = url_encode(location);
@@ -209,15 +220,21 @@ void init_register(const char *scfile){
 void *doUpdate(void *arg){
     if(toShareOrNotToShare){
         int result;
-        char sCmd[255];
-        sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant,(char *)arg);
+        char sCmd[DSP_CMD_BUFSIZE];
+
+        if (snprintf(sCmd, sizeof(sCmd),
+                    "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl",
+                    call, location, band, rig, ant,(char *)arg) > sizeof(sCmd)) {
+            sdr_log(SDR_LOG_ERROR, "Registration string was too long\n");
+            return NULL;
+        }
         result = system(sCmd);
         sem_wait(&status_sem);
         free(dspstatus);
         dspstatus = arg;
         sem_post(&status_sem);
     }
-    return 0;
+    return NULL;
 }
 
 
@@ -235,10 +252,15 @@ void updateStatus(char *status){
 
 void doRemove(){
 	int result;
-    char sCmd[255];
-    sprintf(sCmd,"wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=Down'  http://qtradio.napan.ca/qtradio/qtradioreg.pl ", call, location, band, rig, ant);
-	result = system(sCmd);
-    
+    char sCmd[DSP_CMD_BUFSIZE];
+    if (snprintf(sCmd, sizeof(sCmd),
+                "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=Down'  http://qtradio.napan.ca/qtradio/qtradioreg.pl",
+                call, location, band, rig, ant) > sizeof(sCmd)) {
+        sdr_log(SDR_LOG_ERROR, "Registration string was too long\n");
+        return;
+    }
+
+    result = system(sCmd);
 }
 
 void close_register(){
@@ -345,7 +367,7 @@ int chkFreq(char *user,  long long freq2chk, int mode){
 							   modeOK = 0;
 						   }else if(mode == CWU && strcmp("CW",rulemode) == 0 ){
 							   modeOK = 0;
-						   }else if(mode == FMN && strcmp("FM",rulemode) == 0 ){
+						   }else if(mode == FM && strcmp("FM",rulemode) == 0 ){
 							   modeOK = 0;
 						   }else if(mode == AM && strcmp("AM",rulemode) == 0 ){
 							   modeOK = 0;

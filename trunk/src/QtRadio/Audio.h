@@ -47,12 +47,13 @@
 
 #define AUDIO_BUFFER_SIZE 800
 #define AUDIO_OUTPUT_BUFFER_SIZE (1024*2)
-#define RESAMPLING_BUFFER_SIZE (10600*2)    // 2 channels of 9600 + 10%
+#define RESAMPLING_BUFFER_SIZE (32000*2)    // 2 channels
 
 #define BIGENDIAN
 // There are problems running at 8000 samples per second on Mac OS X
 // The resolution is to run at 8011 samples persecond.
 #define SAMPLE_RATE_FUDGE 11
+//#define SAMPLE_RATE_FUDGE 0
 
 class Audio;
 
@@ -110,7 +111,7 @@ private:
     SRC_DATA sr_data;
     QHQueue<qint16> queue;
     QHQueue<qint16> *pdecoded_buffer;
-    void* codec2;
+    struct CODEC2 * codec2;
     int audio_channels;
     int audio_encoding;
 };

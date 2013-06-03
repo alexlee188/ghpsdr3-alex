@@ -2,6 +2,9 @@
  * Author: Graeme Jury, ZL2APV
  *
  * Created on 21 August 2011, 20:00
+ *
+ * Griffin Powermate Vfo Knob support
+ * added by Oliver Goldenstein, DL6KBG
  */
 
 /* Copyright (C)
@@ -25,6 +28,11 @@
 #include "ui_vfo.h"
 #include <QDebug>
 #include <QKeyEvent>
+
+#if !defined(WIN32)
+#include "powermate.h"
+#endif
+
 //#include "Band.h"
 //#include "UI.h"
 
@@ -57,6 +65,16 @@ vfo::vfo(QWidget *parent) :
                 this, SLOT(btnGrpClicked(int)));
     connect(ui->hSlider, SIGNAL(valueChanged(int)),
                 this, SLOT(processRIT(int)));
+
+#if !defined(WIN32)
+    //  Powermate related stuff
+    PmInput *input = new PmInput();
+    connect(input, SIGNAL(pressed()), this, SLOT(press()));
+    connect(input, SIGNAL(released()), this, SLOT(release()));
+    connect(input, SIGNAL(rotated(int)), this, SLOT(increase(int)));
+    input->start();
+#endif
+
 }
 
 vfo::~vfo()
@@ -287,7 +305,7 @@ void vfo::writeB(long long freq)
 void vfo::checkBandBtn(int band)
 {
 //qDebug()<<Q_FUNC_INFO<<": Value of band button is ... "<<band;
-    ui->btnGrpBand->button(band)->setChecked(TRUE);
+    ui->btnGrpBand->button(band)->setChecked(true);
 }
 
 long long vfo::readA()
@@ -454,12 +472,12 @@ void vfo::checkSubRx(long long f, int samplerate)
     ui->pBtnvfoB->setStyleSheet("background-color: rgb(85, 255, 0)");
     ui->pBtnvfoA->setStyleSheet("background-color: normal");
     ui->pBtnSplit->setStyleSheet("background-color: normal");
-    ui->pBtnvfoA->setEnabled(FALSE);
+    ui->pBtnvfoA->setEnabled(false);
     vfoEnabled(false, true);
 
-//    ui->pBtnvfoA->setEnabled(FALSE);
+//    ui->pBtnvfoA->setEnabled(false);
 //qDebug()<<Q_FUNC_INFO<<": About to check pBtnSubRx";
-    ui->pBtnSubRx->setChecked(TRUE);
+    ui->pBtnSubRx->setChecked(true);
 }
 
 //Called when subRx is unchecked in main menu via actionSubRx()
@@ -467,8 +485,8 @@ void vfo::uncheckSubRx()
 {
     ui->pBtnvfoB->setText("VFO B");
     ui->pBtnvfoA->setText("VFO A");
-    ui->pBtnvfoA->setEnabled(TRUE);
-    ui->pBtnSubRx->setChecked(FALSE);
+    ui->pBtnvfoA->setEnabled(true);
+    ui->pBtnSubRx->setChecked(false);
     vfoEnabled(true, false);
     on_pBtnvfoA_clicked(); //Return to vfoA = default vfo
 }
@@ -512,19 +530,40 @@ void vfo::keyPressEvent( QKeyEvent * event){
     }
 
 }
+// Powermate stuff begin
 
-void vfo::vfohotkey(QString cmd)
-{
+void vfo::decrease(int n) {
+	emit frequencyMoved(vfohotstep, n);
+	qDebug()<<Q_FUNC_INFO<<": Powermate rotated";
+}
+
+void vfo::increase(int n) {
+        decrease(-n);
+}
+// Powermate press emulates arrow up key 
+void vfo::press() {
+	vfohotkey("StepUp");
+        qDebug()<<Q_FUNC_INFO<<": Powermate pressed";
+
+}
+
+void vfo::release() {
+
+	qDebug()<<Q_FUNC_INFO<<": Powermate released";
+}
+// Powermate stuff end
+
+void vfo::vfohotkey(QString cmd){
     if (cmd.compare("FreqDown") == 0){
         emit frequencyMoved(vfohotstep, -1);
         //qDebug() <<"cmd=" <<cmd;
         return;
-    }
+}
     if (cmd.compare("FreqUp") == 0){
         emit frequencyMoved(vfohotstep, 1);
         //qDebug() <<"cmd=" <<cmd <<"vfohotstep" <<vfohotstep;
         return;
-    }
+}
     static const int mult[7] = {1,10,100,1000,10000,100000,1000000};
     if (cmd.compare("StepUp") == 0  && curstep <6){
         //qDebug() <<"Step Up old =" <<vfohotstep << " curstep" << curstep;
@@ -533,7 +572,7 @@ void vfo::vfohotkey(QString cmd)
         //qDebug() <<"new =" <<vfohotstep;
         setStepMark();
         return;
-    }
+}
     if (cmd.compare("StepUp") == 0  && curstep == 6){
         //qDebug() <<"Step Up Wrap old =" <<vfohotstep << " curstep" << curstep;
         curstep = 0;
@@ -541,7 +580,7 @@ void vfo::vfohotkey(QString cmd)
         //qDebug() <<"new =" <<vfohotstep;
         setStepMark();
         return;
-    }
+}
 
 
     if (cmd.compare("StepDown") == 0  && curstep >0){

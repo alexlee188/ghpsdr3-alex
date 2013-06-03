@@ -116,18 +116,25 @@ static struct audiostream_config as_conf_cache = { AUDIO_BUFFER_SIZE,
 
 static unsigned char* audio_buffer=NULL;
 
-void * codec2 = NULL;
-unsigned char bits[BITS_SIZE];
-short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
+static int samples_per_frame, bits_per_frame;
 
-static int sample_count=0;
+// bits_per_frame is now a variable
+#undef BITS_SIZE
+#define BITS_SIZE   ((bits_per_frame + 7) / 8)
+
+void * codec2 = NULL;
+//unsigned char bits[BITS_SIZE];
+unsigned char *bits;
+// short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
+short *codec2_buffer;
+
 static int codec2_count=0;
 
 static int audio_stream_buffer_insert=0;
 
 static unsigned char encodetable[65536];
 
-static struct sdr_thread_id audiostream_tid = SDR_THREAD_ID;
+//static struct sdr_thread_id audiostream_tid = SDR_THREAD_ID;
 
 unsigned char alaw(short sample);
 
@@ -198,14 +205,17 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
     sdr_thread_assert_id(&audiostream_tid);
 
     /* FIXME: This really only applies once, at startup */
-    if (!audio_buffer)
+    if (!audio_buffer) {
         allocate_audio_buffer();
+	samples_per_frame = codec2_samples_per_frame( codec2 );
+	bits_per_frame = codec2_bits_per_frame( codec2 );
+	codec2_buffer = (short *) malloc( sizeof( short ) * samples_per_frame );
+	bits = (unsigned char *) malloc( sizeof( unsigned char ) * BITS_SIZE );
+    }
 
-    // samples are delivered at 48K
-    // output to stream at 8K (1 in 6) or 48K (1 in 1)
+    // samples are delivered at 48K or 8K depending on audiostream_conf.samplerate
     // codec2 encoding works only for 8K
 
-    if(sample_count==0) {
         int offset;
         // use this sample and convert to a-law or PCM or codec2
         if(as_conf_cache.channels==1) {
@@ -247,7 +257,7 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
 
 
 	if ((as_conf_cache.encoding == ENCODING_CODEC2)
-            && (audio_stream_buffer_insert == CODEC2_SAMPLES_PER_FRAME))  {
+            && (audio_stream_buffer_insert == samples_per_frame))  {
             codec2_encode(codec2, bits, codec2_buffer);
             memcpy(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE+BITS_SIZE*codec2_count], bits, BITS_SIZE);
             codec2_count++;
@@ -285,15 +295,6 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
             audio_stream_buffer_insert=0;
             //allocate_audio_buffer();
         }
-    }
-    sample_count++;
-    if(as_conf_cache.samplerate==48000) {
-        sample_count=0;
-    } else {
-        if(sample_count==6) {
-            sample_count=0;
-        }
-    }
 }
 
 unsigned char alaw(short sample) {

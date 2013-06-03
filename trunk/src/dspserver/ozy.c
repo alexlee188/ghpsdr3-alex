@@ -75,8 +75,6 @@ static pthread_t iq_thread_id;
 
 static int ozy_debug=0;
 
-static int output_sample_increment=1; // 1=48000 2=96000 4=192000
-
 /** Response buffers passed to ozy_send must be this size */
 #define OZY_RESPONSE_SIZE 64
 
@@ -114,7 +112,6 @@ unsigned char iq_samples[SPECTRUM_BUFFER_SIZE];
 
 int lt2208ADCOverflow=0;
 
-int speed=0;           // default 48K
 int class=0;           // default other
 int lt2208Dither=1;    // default dither on
 int lt2208Random=1;    // default random 0n
@@ -179,7 +176,6 @@ void* iq_thread(void* arg) {
     int iq_socket;
     struct sockaddr_in iq_addr;
     int iq_length = sizeof(iq_addr);
-    int c,j;
     BUFFER buffer;
     int on=1;
 
@@ -207,7 +203,7 @@ fprintf(stderr,"iq_thread\n");
     }
 
     fprintf(stderr,"iq_thread: iq bound to port %d socket=%d\n",htons(iq_addr.sin_port),iq_socket);
-    fprintf(stderr,"output_sample_increment=%d\n",output_sample_increment);
+    fprintf(stderr,"audiostream_conf.samplerate=%d\n", audiostream_conf.samplerate);
     
     while(1) {
         int bytes_read;
@@ -221,12 +217,12 @@ fprintf(stderr,"iq_thread\n");
                 exit(1);
             }
 
-	   if(ozy_debug) {
+	    if(ozy_debug) {
 		fprintf(stderr,"rcvd UDP packet: sequence=%lld offset=%d length=%d\n",
 			buffer.sequence, buffer.offset, buffer.length);
-		}
+	    }
 
-           if(buffer.offset==0) {
+            if(buffer.offset==0) {
                 offset=0;
                 rx_sequence=buffer.sequence;
                 // start of a frame
@@ -243,8 +239,8 @@ fprintf(stderr,"iq_thread\n");
                 } else {
 			fprintf(stderr,"missing IQ frames\n");
                 }
-            }
-        }
+            } // if(buffer.offset==0)
+	} // end while(1)
 #else
 	if (hpsdr)
         	bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*3*4,0,(struct sockaddr*)&iq_addr,&iq_length);
@@ -258,9 +254,7 @@ fprintf(stderr,"iq_thread\n");
         Audio_Callback (input_buffer,&input_buffer[BUFFER_SIZE],
                                 output_buffer,&output_buffer[BUFFER_SIZE], buffer_size, 0);
 
-
-        // process the output with resampler if odd samplerate
-        if (output_sample_increment == -1) {
+        // process the output with resampler
            int rc;
            int j, i;
            float data_in [BUFFER_SIZE*2];
@@ -291,16 +285,8 @@ fprintf(stderr,"iq_thread\n");
                   right_rx_sample=(short)(data.data_out[i*2+1]*32767.0);
                   audio_stream_put_samples(left_rx_sample,right_rx_sample);
                    }
-	     }
-        } else {
+	   } // if (rc)
 
-
-        // process the output
-        for(j=0,c=0;j<buffer_size;j+=output_sample_increment) {
-            left_rx_sample=(short)(output_buffer[j]*32767.0);
-            right_rx_sample=(short)(output_buffer[j+BUFFER_SIZE]*32767.0);
-            audio_stream_put_samples(left_rx_sample,right_rx_sample);
-        }
 
         // send the audio back to the server.  This is for HPSDR hardware.
         if(hpsdr) {
@@ -313,9 +299,7 @@ fprintf(stderr,"iq_thread\n");
                     }
                 }
                 ozy_send((unsigned char *)&output_buffer[0],sizeof(output_buffer),"ozy");
-            }
-
-   	} // end sample_increment == -1
+        } // if (hpsdr)
     } // end while
 }
 
@@ -426,43 +410,11 @@ int make_connection() {
         if(strcmp(token,"OK")==0) {
             token=strtok_r(NULL," ",&saveptr);
             if(token!=NULL) {
+		int sampleRate;
                 result=0;
                 sampleRate=atoi(token);
 		fprintf(stderr,"connect: sampleRate=%d\n",sampleRate);
-                switch(sampleRate) {
-                    case 48000:
-                        setSpeed(SPEED_48KHZ);
-                        break;
-                    case 96000:
-                        setSpeed(SPEED_96KHZ);
-                        break;
-                    case 192000:
-                        setSpeed(SPEED_192KHZ);
-                        break;
-                    case 95000:
-                        setSpeed(SPEED_95KHZ);
-                        break;
-                    case 125000:
-                        setSpeed(SPEED_125KHZ);
-                        break;
-                    case 250000:
-                        setSpeed(SPEED_250KHZ);
-                        break;
-                    case 53333:
-                        setSpeed(SPEED_53KHZ);
-                        break;
-                    case 111111:
-                        setSpeed(SPEED_111KHZ);
-                        break;
-                    case 133333:
-                        setSpeed(SPEED_133KHZ);
-                        break;
-                    case 185185:
-                        setSpeed(SPEED_185KHZ);
-                        break;
-                    default:
-                        fprintf (stderr, "make_connection: unexpected sample rate %d\n", sampleRate);
-                }
+		setSpeed (sampleRate);
             } else {
                 fprintf(stderr,"invalid response to connect: %s\n",response);
                 result=1;
@@ -608,6 +560,21 @@ int ozySetOpenCollectorOutputs(char* state) {
     return result;
 }
 
+int ozySendStarCommand(char *command) {
+    int result;
+    char buf[256]; 
+    char response[OZY_RESPONSE_SIZE];
+
+    result=0;
+    send_command(command+1, response);  // SKIP the leading '*'
+    fprintf(stderr,"response to STAR message: [%s]\n",response);
+    snprintf (buf, sizeof(buf), "%s %s", command, response ); // insert a leading '*' in answer 
+    strcpy (command, buf);                                    // attach the answer              
+    result=0;
+
+    return result;
+}
+
 
 /* --------------------------------------------------------------------------*/
 /** 
@@ -635,50 +602,19 @@ void getSpectrumSamples(char *samples) {
 * @param speed
 */
 void setSpeed(int s) {
-fprintf(stderr,"setSpeed %d\n",s);
-fprintf(stderr,"LO_offset %f\n",LO_offset);
-    speed=s;
-    if(s==SPEED_48KHZ) {
-        sampleRate=48000;
-        output_sample_increment=1;
-        SetSampleRate((double)sampleRate);
-    } else if(s==SPEED_96KHZ) {
-        sampleRate=96000;
-        output_sample_increment=2;
-        SetSampleRate((double)sampleRate);
-    } else if(s==SPEED_192KHZ) {
-        sampleRate=192000;
-        output_sample_increment=4;
-        SetSampleRate((double)sampleRate);
-    }
-    else {
-        if(s==SPEED_95KHZ) {
-            sampleRate=95000;
-        }
-        if(s==SPEED_125KHZ) {
-            sampleRate=125000;
-        }
-        if(s==SPEED_250KHZ) {
-            sampleRate=250000;
-        }
-        if(s==SPEED_53KHZ) {
-            sampleRate=53333;
-        }
-        if(s==SPEED_111KHZ) {
-            sampleRate=111111;
-        }
-        if(s==SPEED_185KHZ) {
-            sampleRate=185185;
-        }
-        output_sample_increment=-1;
-        SetSampleRate((double)sampleRate);
-    }
+	fprintf(stderr,"setSpeed %d\n",s);
+	fprintf(stderr,"LO_offset %f\n",LO_offset);
+
+    	sampleRate=s;
+
+	SetSampleRate((double)sampleRate);
+
 	SetRXOsc(0,0, -LO_offset);
 	SetRXOsc(0,1, -LO_offset);
 	SetTXOsc(1, -LO_offset);
 
-    fprintf(stderr,"%s: %f\n", __FUNCTION__, (double) sampleRate);
-    src_ratio = 48000.0 / ((double) sampleRate);
+	fprintf(stderr,"%s: %f\n", __FUNCTION__, (double) sampleRate);
+	ozy_set_src_ratio();
 	mic_src_ratio = (double) sampleRate/ 8000.0;
 }
 
@@ -785,7 +721,7 @@ int ozy_init(const char *server_address) {
     }
 
         // create sample rate subobject
-        src_ratio = 48000.0 / ((double) sampleRate) ;
+        ozy_set_src_ratio();
         int sr_error;
         sr_state = src_new (
                              //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
@@ -812,6 +748,9 @@ int ozy_init(const char *server_address) {
     return rc;
 }
 
+void ozy_set_src_ratio(void){
+	src_ratio = (double)audiostream_conf.samplerate / ((double) sampleRate);
+}
 
 /* --------------------------------------------------------------------------*/
 /** 

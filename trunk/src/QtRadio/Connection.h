@@ -73,6 +73,7 @@ public:
     QSemaphore SemSpectrum;
     void setMuted(bool);
     QString getHost();
+    bool getSlave();
 
 public slots:
     void connected();
@@ -93,7 +94,8 @@ signals:
     void printStatusBar(QString message);
     void slaveSetFreq(long long f);
     void slaveSetMode(int m);
-    void slaveSetSlave(int slave);
+    void slaveSetFilter(int l, int r);
+    void slaveSetZoom(int z);
     void setdspversion(long, QString);
     void setservername( QString);
     void setRemoteRTPPort(QString,int);
@@ -102,6 +104,7 @@ signals:
     void resetbandedges(double loffset);
     void setFPS();
     void setProtocol3(bool);
+    void hardware (QString);
 
 private:
     // really not used (and not even implemented)

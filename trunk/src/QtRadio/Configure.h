@@ -59,7 +59,7 @@ public:
     int getSpectrumHigh();
     int getSpectrumLow();
     int getFps();
-
+    int getAvg();
     void setSpectrumHigh(int high);
     void setSpectrumLow(int low);
 
@@ -101,6 +101,8 @@ public:
     double getRxIQspinBoxValue();
     int getCwPitch();
     bool getRxIQdivCheckBoxState();
+    bool getRxDCBlockValue(); //KD0OSS
+    bool getTxDCBlockValue(); //KD0OSS
 
 signals:
     void hostChanged(QString host);
@@ -129,9 +131,18 @@ signals:
     void addXVTR(QString title,long long minFrequency,long long maxFrequency,long long ifFrequency,long long freq,int m,int filt);
     void deleteXVTR(int index);
 
+    void txIQPhaseChanged(double arg1);
+    void txIQGainChanged(double arg1);
+    void rxIQPhaseChanged(double arg1);
+    void rxIQGainChanged(double arg1);
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
     void spinBox_cwPitchChanged(int pitch);
+    void avgSpinChanged(int value);
+
+    void rxDCBlockChanged(bool state);  //KD0OSS
+    void txDCBlockChanged(bool state);  //KD0OSS
+    void windowTypeChanged(int type); //KD0OSS
 
 public slots:
     void slotHostChanged(int selection);
@@ -150,6 +161,9 @@ public slots:
     void slotMicSampleRateChanged(int rate);
     void slotMicChannelsChanged(int channels);
     void slotMicOrderChanged(int selection);
+    void slotRxDCBlock(bool state);  //KD0OSS
+    void slotTxDCBlock(bool state);  //KD0OSS
+    void slotWindowType(int type); //KD0OSS
 
     void slotUseRTP(bool state);
 
@@ -175,12 +189,18 @@ private slots:
     void on_encodingComboBox_currentIndexChanged(int index);
     void on_RxIQcheckBox_toggled(bool checked);
     void on_RxIQspinBox_valueChanged(int spinValue);
+    void onRxIQPhaseChanged(double arg1);
+    void onRxIQGainChanged(double arg1);
+    void onTxIQPhaseChanged(double arg1);
+    void onTxIQGainChanged(double arg1);
 
     void on_userpasssave_clicked();
 
     void on_spinBox_cwPitch_valueChanged(int arg1);
 
     void on_MicEncodingComboBox_currentIndexChanged(int index);
+
+    void on_avgSpinBox_valueChanged(int arg1);
 
 private:
     Ui::Configure widget;

@@ -40,6 +40,7 @@
 #include "receiver.h"
 #include "messages.h"
 #include "perseus_audio.h"
+#include "util.h"
 
 
 typedef union {
@@ -63,7 +64,13 @@ static int counter = 0;
 
 // 2^24 / 2 -1 = 8388607.0
 
-#define SCALE_FACTOR 8388607.0
+//#define SCALE_FACTOR 8388607.0
+
+// 2^32 / 2 -1
+
+#define SCALE_FACTOR  2147483647.0
+
+
 
 #define ADC_CLIP 0x00000001
 
@@ -236,9 +243,13 @@ const char* parse_command(CLIENT* client,char* command) {
                         client->iq_port=atoi(token);
                     }
 
-                    if(pthread_create(&receiver[client->receiver].audio_thread_id,NULL,audio_thread,&receiver[client->receiver])!=0) {
-                        fprintf(stderr,"failed to create audio thread for rx %d\n",client->receiver);
-                        exit(1);
+                    if (receiver->ppc->localaudio) {
+                       if(pthread_create(&receiver[client->receiver].audio_thread_id,NULL,audio_thread,&receiver[client->receiver])!=0) {
+                           fprintf(stderr,"failed to create audio thread for rx %d\n",client->receiver);
+                           exit(1);
+                       }
+                    } else {
+                       fprintf(stderr,"Local audio audio thread for rx %d DISABLED as per command line options\n",client->receiver);
                     }
                     printf("***************************Starting async data acquisition... CLIENT REQUESTED %d port\n", client->iq_port);
 
@@ -340,8 +351,21 @@ const char* parse_command(CLIENT* client,char* command) {
                 // invalid command string
                 return INVALID_COMMAND;
             }
+
         } else if(strcmp(token,"quit")==0) {
             return QUIT_ASAP;
+
+        } else if(strcmp(token,"hardware?")==0) {
+            fprintf (stderr, "*****************************\n");
+            return "OK Perseus";
+
+        } else if(strcmp(token,"getserial?")==0) {
+            eeprom_prodid eep;
+            static char buf[50];
+            perseus_get_product_id((receiver[client->receiver]).pPd, &eep);
+            snprintf (buf, sizeof(buf), "OK %d", eep.sn);
+            return buf;
+
         } else {
             // invalid command string
             return INVALID_COMMAND;
@@ -402,9 +426,11 @@ void* audio_thread(void* arg) {
         } else {
             if (bytes_read != sizeof(rx->output_buffer)) {
                 fprintf (stderr, "Arrrgh: %d bytes read instead of %d\n", bytes_read, sizeof(rx->output_buffer));
+                hex_dump((char *)rx->output_buffer, bytes_read, "Packet received");
+                //exit(255);
             }
         }
-
+        fprintf (stderr, "%d bytes read from audio socket !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", bytes_read);
         //process_ozy_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
         //rx->ppa->write_3 (rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
         rx->ppa->write_sr (rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);

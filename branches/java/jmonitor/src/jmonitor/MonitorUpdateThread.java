@@ -1,14 +1,22 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * MonitorUpdateThread.java
+ * Created by John Melton G0ORX
+ */
+
+/*
+ * This code has been and reviewed modified.
+ * John Tucker, N8MDP
+ */
+
+/*
+ * Revsion History
+ * 1/20/13: No Changes
+ * 
+ * 
  */
 
 package jmonitor;
 
-/**
- *
- * @author john
- */
 public class MonitorUpdateThread extends Thread {
 
     MonitorUpdateThread(Client client,MonitorUpdateListener listener) {
@@ -26,6 +34,7 @@ public class MonitorUpdateThread extends Thread {
                 System.err.println("MonitorUpdateThread: InterruptedException: "+e.getMessage());
             }
         }
+        
     }
 
     public void setFps(int fps) {

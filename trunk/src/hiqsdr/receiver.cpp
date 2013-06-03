@@ -163,15 +163,6 @@ const char* set_frequency (CLIENT* client, long frequency) {
     return OK;
 }
 
-
-const char* set_preamp (CLIENT* client, bool preamp)
-{
-//  receiver[client->receiver].ppc->preamp = preamp;
-//
-    return NOT_IMPLEMENTED_COMMAND;
-    return OK;
-}
-
 const char* set_dither (CLIENT* client, bool dither)
 {
 //  receiver[client->receiver].ppc->dither = dither;
@@ -188,8 +179,50 @@ const char* set_random (CLIENT* client, bool)
 
 const char* set_attenuator (CLIENT* client, int new_level_in_db)
 {
-    return NOT_IMPLEMENTED_COMMAND;
+    switch (new_level_in_db) {
+    case 0:
+    case 10:
+    case 20:
+    case 30:
+    case 40:
+        fprintf (stderr, "%s: new attenuator level: %d\n", __FUNCTION__, -(new_level_in_db));
+        hiqsdr_set_attenuator (new_level_in_db);
+        break;
+    default:
+        return INVALID_COMMAND;
+    }
     return OK;
+}
+
+const char* select_antenna (CLIENT* client, int antenna)
+{
+    if (antenna == 0 || antenna == 1) {
+        fprintf (stderr, "%s: new antenna: %d\n", __FUNCTION__, antenna);
+        hiqsdr_set_antenna_input (antenna);
+        return OK;
+    } else
+        return INVALID_COMMAND;
+}
+
+
+const char* select_preselector (CLIENT* client, int preselector)
+{
+    if (preselector >= 0 && preselector <= 15) {
+        fprintf (stderr, "%s: new preselector: %d\n", __FUNCTION__, preselector);
+        hiqsdr_set_preselector (preselector);
+        return OK;
+    } else
+        return INVALID_COMMAND;
+}
+
+const char* set_preamplifier(CLIENT* client, int preamp)
+{
+    if (preamp >= 0 && preamp <= 1) {
+        fprintf (stderr, "%s: new prepreamp: %d\n", __FUNCTION__, preamp);
+        hiqsdr_set_preamp (preamp);
+        return OK;
+    } else
+        return INVALID_COMMAND;
 }
 
 void send_IQ_buffer (RECEIVER *pRec) {

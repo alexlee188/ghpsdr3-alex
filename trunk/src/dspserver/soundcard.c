@@ -77,6 +77,10 @@ fprintf(stderr,"setSoundcard: %d\n",card);
             multimeterCalibrationOffset=-41.0f;
             displayCalibrationOffset=-48.0f;
             break;
+        case SDR_IQ:
+            multimeterCalibrationOffset=-240.0f - 25.0f;
+            displayCalibrationOffset=-18.0f;
+            break;
     }
 
     fprintf(stderr,"setSoundcard %f %f\n",multimeterCalibrationOffset,displayCalibrationOffset);
@@ -109,6 +113,8 @@ int getSoundcardId(char* name) {
         id=EDIROL_FA_66;
     } else if(strcmp(name,"HPSDR")==0) {
         id=HPSDR;
+    } else if(strcmp(name,"SDR-IQ")==0) {
+        id=SDR_IQ;
     }
 fprintf(stderr,"getSoundcardId: %s id=%d\n",name,id);
     return id;

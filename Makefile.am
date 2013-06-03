@@ -1,19 +1,11 @@
-#
-# we need to add "manually" to the distribution set the perseus configure.ac
-# (and in the future the usrp/configure.ac as well) because the make dist
-# command doesn't take in account the optional (user selected) subdirectories
-#
-EXTRA_DIST = $(srcdir)/trunk/src/perseus/configure.ac
+ACLOCAL_AMFLAGS=-I build-aux
 
-if MAKE_PERSEUS
-   PERSEUS_DIR = trunk/src/perseus
-endif
+SUBDIRS = trunk/src/softrock trunk/src/DttSP trunk/src/dspserver  \
+          trunk/src/widget-server trunk/src/server trunk/bin      \
+          trunk/src/pylauncher trunk/src/hiqsdr trunk/src/sdriq   \
+          trunk/src/sdr1000                                       \
+          @MAKE_QTRADIO@                                          \
+          @MAKE_PERSEUS@ @MAKE_USRP@ @MAKE_RTLSDR@
 
-if MAKE_USRP
-   ###### uncomment the following line when usrp come in
-   USRP_DIR =  trunk/src/usrp
-endif
-
-SUBDIRS = trunk/src/softrock trunk/src/DttSP trunk/src/dspserver trunk/src/widget-server trunk/src/server trunk/bin trunk/src/QtRadio trunk/src/pylauncher trunk/src/hiqsdr  trunk/src/sdriq $(PERSEUS_DIR) $(USRP_DIR) 
 
 

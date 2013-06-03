@@ -29,27 +29,7 @@ http://napan.ca/ghpsdr3/index.php/Main_Page
 Active development branch
 =========================
 
-The default master branch has the latest stable code base.  There are experimental branches that various developers are working on.  For example, there is an active development branch rxtx-opencl that aims to implement codes that will make use of any available GPU (in video cards) for both heavy duty computations and for OpenGL graphical display.
-
-Ubuntu Linux Users
-==================
-
-There is a ppa for the binaries produced from the master branch, maintained by Andrea.
-
-Now the code base is taken from the master branch and in the "about" 
-panel there is some additional information in order to show where the 
-source is coming from.
-
-In order to add this repository to your apt system (U11.10, U11.04, U10.04) 
-please submit the following commands: 
-
-sudo add-apt-repository ppa:andrew-montefusco/ghpsdr3 
-sudo apt-get update 
-sudo apt-get install ghpsdr3
-
-You will then find the QtRadio app in the Applications > Internet menu
-
-Subsequently you can use the Ubuntu software update process to update to the latest ppa version.
+The default master branch has the latest stable code base.  There are experimental branches that various developers are working on.  For example, there is an active development branch, opengl-qt5, that implements codes that make use of the GPU for OpenGL graphical display.
 
 Windows Users
 =============
@@ -68,35 +48,29 @@ The source for building with QtCreator is available via the win32 branch at:
 
 Building the software in Linux
 ==============================
-You will need Qt4.  Qt4 is available as a package from Ubuntu.  However, it is recommended that you download
-the latest Qt4.8 from Nokia, as there are bugs and issues with Qt4.7.4.
+See:
+
+http://napan.ca/ghpsdr3/index.php/QtRadio_Installation
+
+You will need Qt5.  Currently Qt5 is available as a BETA from a ppa.  See:
+
+http://napan.ca/ghpsdr3/index.php/Developers_Documentation
 
 Note that in addition to Qt, you will need some dev packages to be installed.  For details see:
 
 http://napan.ca/ghpsdr3/index.php/QtRadio_Installation#Installing_compiler_and_autotool
 
-libevent
-========
-You will also need a version of libevent that is newer than what is available from the Ubuntu distribution.  
-Go to synaptic and *completely* remove the stock libevent (v1.4) from Ubuntu.
-
-Building the libevent software
-==============================
-
-http://libevent.org/
-
-libevent-2.0.16-stable.tar.gz
-
-Uncompress and follow the instructions to build and install:
-
-$ ./configure
-$ make
-$ sudo make install
-$ sudo ldconfig
 
 Building the ghpsdr3-alex software
 ==================================
 To build:
+
+Make sure you have set the path to the version of Qt you are using.  E.g. for qt5 from the ppa:
+
+$ export PATH=/opt/qt5/bin:$PATH
+
+
+Then:
 
 $ cd ghpsdr3-alex
 $ autoreconf -i
@@ -107,13 +81,11 @@ $ sudo make install
 Then the executables will be installed in /usr/local/bin.
 
 This will build the default configuration, which is useful for debugging and testing.  However it is not optimized and
-will not run well in slow cpu's etc.
+will not run well with slow cpu's etc.
 
 See the sample confuration shell scripts (which replace the ./configure step above):
 
-alex-avx-conf.sh		for building with i3,i5 and i7 cpu's supporting Advanced Vector Extensions (AVX)
 alex-openmp-conf.sh		for building with i3,i5 and i7 cpu's and OpenMP support
-alex-sse3-conf.sh		for building with SSE3 capable cpu's
 alex-openmp-sse3-conf.sh	for building with SSE3 capable cpu's and OpenMP support
 
 OpenMP code will run on multi-core machines by making use of all the cores.  It will also run on single core machines with a little overhead only.
@@ -307,6 +279,38 @@ Controlling more than one DG8SAQ devices (eg 2 softrocks)
 The DG8SAQ devices can be set to different USB serial ID's.  Each usb-i2c interface, eg Tony's original, the UBW, the Mobo or the sdr-widget, have different USB serial ID's defined in the firmware.  If you are using 2 identical devices, then you will need to flash a new firmware with a different USB serial number to one of them so that they can be distinguished.
 
 When you start the softrock server, you can use the --serialid argument to match the USB serial ID of the particular device.
+
+Using QtRadio with the Griffin Powermate Vfo Knob
+=================================================
+
+$ sudo nano -w /etc/udev/rules.d/45-powermate.rules
+
+and add the following:
+
+SUBSYSTEMS=="usb",ATTRS{idVendor}=="077d",ATTRS{idProduct}=="0410",SYMLINK+="powermate",MODE="666"
+
+reboot and do: (Or for Ubuntu /Debian sudo service udev restart and uplug and plug the powermate)
+
+
+$ ls -l /dev/powermate
+
+this should give you:
+
+lrwxrwxrwx 1 root root 13 2011-11-20 10:13 /dev/powermate -> input/event14
+
+next do:
+
+sudo groupadd input
+sudo gpasswd -a your_user_name input
+cd /etc/udev/rules.d/
+
+Create a file called 99-input.rules and put in it:
+
+
+KERNEL=="event*", NAME="input/%k", MODE="660", GROUP="input"
+KERNEL=="js*", NAME="input/%k", MODE="664", GROUP="input"
+
+and reboot. (Or for Ubuntu /Debian sudo service udev restart and uplug and plug the powermate)
 
 
 

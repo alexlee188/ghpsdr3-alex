@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.65])
 
-AC_INIT([ghpsdr3], [master], [andrew att montefusco dott com])
+AC_INIT([ghpsdr3], [iw0hdv], [andrew att montefusco dott com])
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -13,14 +13,25 @@ AM_INIT_AUTOMAKE
 
 AC_CONFIG_SRCDIR([README])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIR([build-aux])
 
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_MAKE_SET
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+# compiling `client.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.ac'
+AM_PROG_CC_C_O
 
 # Python checks for pylauncher
 AM_PATH_PYTHON([2.5],, [:])
+
+#
+# attempt to build the GUI
+#
+have_GUI=yes
+
 
 #
 # Checking for build cpu
@@ -28,33 +39,54 @@ AM_PATH_PYTHON([2.5],, [:])
 #
 case $build_cpu in
 
-    x86_64)
-      AC_MSG_NOTICE([Platform: 64 bit])
-      LDFLAGS="$LDFLAGS -L/lib64 -L/usr/lib64"
-      export LDFLAGS
-      AC_MSG_NOTICE([${LDFLAGS}])
+    i686)
+      AC_MSG_NOTICE([Platform: ix86 32 bit])
+      # checks for platform dependent flags and compiler optimizations
+      AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
+      AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+      SIMD_FLAGS="$SIMD_FLAGS  -march=native "
+      AC_SUBST(SIMD_FLAGS)    
     ;;
 
+    x86_64)
+      AC_MSG_NOTICE([Platform: ix86 64 bit])
+      LDFLAGS="$LDFLAGS -L/lib64 -L/usr/lib64"
+      export LDFLAGS
+      AC_MSG_NOTICE([${LDFLAGS}])      
+      # checks for platform dependent flags and compiler optimizations
+      AX_CHECK_COMPILE_FLAG(-ffast-math, SIMD_FLAGS="$SIMD_FLAGS -ffast-math", [])
+      AX_CHECK_COMPILE_FLAG(-fopenmp, SIMD_FLAGS="$SIMD_FLAGS -fopenmp", [])
+      SIMD_FLAGS="$SIMD_FLAGS  -march=native "
+      AC_SUBST(SIMD_FLAGS)    
+    ;;
+
+    armv6l)
+      AC_MSG_NOTICE([Platform: ARM 6])
+      CFLAGS="-O3 -pipe -march=armv6 -mfpu=vfp -mfloat-abi=hard"
+      CXXFLAGS="-O3 -pipe -march=armv6 -mfpu=vfp -mfloat-abi=hard"
+      export CFLAGS
+      export CXXFLAGS
+      AC_MSG_NOTICE([${CFLAGS}])
+      AC_MSG_NOTICE([${CXXFLAGS}])
+      # no GUI available on Raspberry PI
+      have_GUI=no
+    ;;
+
+    armv7l)
+      AC_MSG_NOTICE([Platform: ARM 7])
+      CFLAGS="-O3 -pipe -march=armv7 -mfpu=neon -fno-tree-vectorize -fopenmp"
+      CXXFLAGS="-O3 -pipe -march=armv7 -mfpu=neon -fno-tree-vectorize -fopenmp"
+      export CFLAGS
+      export CXXFLAGS
+      AC_MSG_NOTICE([${CFLAGS}])
+      AC_MSG_NOTICE([${CXXFLAGS}])
+     ;;
 
 esac
 
-# compiling `client.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.ac'
-AM_PROG_CC_C_O
+dnl # library (in DttSP) used but `RANLIB' is undefined:  the usual way to define `RANLIB' is to add `AC_PROG_RANLIB'
+dnl #AC_PROG_RANLIB
 
-# library (in DttSP) used but `RANLIB' is undefined:  the usual way to define `RANLIB' is to add `AC_PROG_RANLIB'
-AC_PROG_RANLIB
-
-#
-# Check for user options in order to selectively compile servers
-#
-AC_ARG_ENABLE([perseus],
-              [  --enable-perseus  enable Perseus SDR server generation],
-              [perseus=${enableval}], [perseus=no]
-)
-AC_ARG_ENABLE([usrp],
-              [  --enable-usrp  enable USRP server generation],
-              [usrp=${enableval}], [usrp=no]
-)
 
 #
 # Check for compilation options which affect debugging
@@ -114,11 +146,17 @@ have_event20_pthreads=no
 AC_SEARCH_LIBS([evthread_use_pthreads], [event_pthreads],
                [have_event20_pthreads=yes])
 
+have_event20_openssl=no
+AC_SEARCH_LIBS([bufferevent_openssl_socket_new], [event_openssl],[have_event20_openssl=yes])
+
 have_samplerate=no
 AC_SEARCH_LIBS([src_new], [samplerate],[have_samplerate=yes])
 
 have_ortp=no
 AC_SEARCH_LIBS([ortp_init], [ortp],[have_ortp=yes])
+
+have_gomp=no
+AC_SEARCH_LIBS([omp_get_active_level], [gomp],[have_gomp=yes])
 
 # Checks for header files.
 AC_FUNC_ALLOCA
@@ -275,6 +313,22 @@ if test "x${have_event20_pthreads}" = xno; then
 ])
 fi
 
+if test "x${have_event20_openssl}" = xyes; then
+    AC_CHECK_HEADERS([event2/bufferevent_ssl.h], [], [have_event20_openssl=no])
+fi
+
+if test "x${have_event20_openssl}" = xyes; then
+    AC_CHECK_HEADERS([openssl/ssl.h], [], [have_event20_openssl=no])
+fi
+
+if test "x${have_event20_openssl}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The libevent-2.0 library and header file with Openssl support required.
+  Required lib is libevent-openssl.  You also need to install libssl-dev.
+-----------------------------------])
+fi
+
 if test "x${have_samplerate}" = xyes; then
     AC_CHECK_HEADERS([samplerate.h], [], [have_samplerate=no])
 fi
@@ -300,6 +354,14 @@ if test "x${have_ortp}" = xno; then
 fi
 
 
+if test "x${have_gomp}" = xno; then
+    AC_MSG_ERROR([
+-----------------------------------
+  The gomp library required to build ghpsdr3.
+-----------------------------------])
+
+fi
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_TYPE_MODE_T
@@ -316,35 +378,94 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([floor ftime getcwd gethostbyname gettimeofday inet_ntoa memset pow select socket sqrt strrchr strstr strtol])
 
+#
+# Optionally built sub packages
+#
 
+#
+# PERSEUS
+#
 
-if test "x${perseus}" = xyes; then
+AC_CHECK_LIB([perseus-sdr], [main],  [do_perseus=yes], [do_perseus=no])
+
+if test "x${do_perseus}" = xyes ; then
     AC_MSG_NOTICE([
 -----------------------------------
   Perseus SDR enabled.
 -----------------------------------])  
 
     AC_CONFIG_SUBDIRS([trunk/src/perseus])
+
+    MAKE_PERSEUS="trunk/src/perseus"
+    AC_SUBST([MAKE_PERSEUS])
 fi
-AM_CONDITIONAL([MAKE_PERSEUS], [test "x${perseus}" = xyes])
-AC_CONFIG_FILES([trunk/src/perseus/Makefile])
 
 
-if test "x${usrp}" = xyes; then
+#
+# RTLSDR (OSMOCOSMO)
+#
+# if rtlsdr lib is present, enable the build even if the user didn't request to do so
+#
+
+AC_CHECK_LIB([rtlsdr], [rtlsdr_open], [do_rtlsdr=yes], [do_rtlsdr=no])
+
+if test "x${do_rtlsdr}" = xyes ; then
+    AC_MSG_NOTICE([
+-----------------------------------
+   RTL SDR enabled.
+-----------------------------------])  
+
+    AC_CONFIG_SUBDIRS([trunk/src/rtlsdr])
+
+    MAKE_RTLSDR="trunk/src/rtlsdr"
+    AC_SUBST([MAKE_RTLSDR])
+
+fi
+
+#
+# USRP
+#
+
+have_uhd=no
+AC_LANG_PUSH(C++)
+AC_COMPILE_IFELSE(
+  [AC_LANG_PROGRAM([[#include <uhd/usrp/multi_usrp.hpp>]],[[uhd::device_addr_t hint;]])],
+  [AC_MSG_NOTICE([uhd found])
+   have_uhd=yes
+  ],
+  [AC_MSG_WARN([uhd lib not found])]
+)
+AC_LANG_POP([C++])
+
+if test "x${have_uhd}" = xyes; then
     AC_MSG_NOTICE([
 -----------------------------------
   USRP enabled.
 -----------------------------------])  
 
     AC_CONFIG_SUBDIRS([trunk/src/usrp])
-fi
-AM_CONDITIONAL([MAKE_USRP], [test "x${usrp}" = xyes])
-#
-# Uncomment the following line when the usrp directory gets populated
-#
-AC_CONFIG_FILES([trunk/src/usrp/Makefile])
 
-AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
+    MAKE_USRP="trunk/src/usrp"
+    AC_SUBST([MAKE_USRP])
+
+fi
+
+
+#
+# Subpackage QtRadio is unconditionally compiled
+#
+
+if test "x${have_GUI}" = xyes; then
+    AC_MSG_NOTICE([
+-----------------------------------
+  QtRadio build enabled.
+-----------------------------------])  
+    AC_CONFIG_SUBDIRS([trunk/src/QtRadio])
+    MAKE_QTRADIO="trunk/src/QtRadio"
+    AC_SUBST([MAKE_QTRADIO])
+fi
+
+
 AC_CONFIG_FILES([Makefile
                  trunk/src/softrock/Makefile
                  trunk/src/DttSP/Makefile
@@ -355,11 +476,17 @@ AC_CONFIG_FILES([Makefile
                  trunk/src/pylauncher/Makefile
                  trunk/src/hiqsdr/Makefile
                  trunk/src/sdriq/Makefile
+                 trunk/src/sdr1000/Makefile
 		 ])
 
 
 
 AC_OUTPUT
+
+#
+# check the compiler option really working
+#
+corw=`gcc -Q --help=target -march=native`
 
 echo \
 "-----------------------------------------------------
@@ -391,5 +518,9 @@ target:        ${target}
 target cpu:    ${target_cpu}
 target vendor: ${target_vendor}
 target os:     ${target_os} 
+
+Compiler options in use:
+
+${corw}
 
 -----------------------------------------------------"

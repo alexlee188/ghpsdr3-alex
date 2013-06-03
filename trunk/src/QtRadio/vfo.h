@@ -14,6 +14,7 @@
 #include <QBasicTimer>
 #include <QSettings>
 #include "Band.h"
+#include "powermate.h"
 
 namespace Ui {
     class vfo;
@@ -74,6 +75,10 @@ private slots:
     void on_pBtnSubRx_clicked();
     void on_toolBtnUp_clicked();
     void on_toolBtnDn_clicked();
+    void press(); // Powermate pressed
+    void release(); // Powermate released
+    void increase(int n); // Powermate increased
+    void decrease(int n); // Powermate decreased
 
 private:
     Ui::vfo *ui;
