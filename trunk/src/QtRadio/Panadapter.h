@@ -204,7 +204,6 @@ public:
 
     spectrumObject *spectrumPlot;
     waterfallObject *waterfallItem;
-    QWidget *container;
     int  itemType;
 };
 /********************************KD0OSS*****************************************/
@@ -369,6 +368,7 @@ private:
     short LO_offset;
     int zoom;
     Waterfallgl *waterfallgl;
+    QWidget *container;
 };
 
 

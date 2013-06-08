@@ -231,13 +231,13 @@ Panadapter::Panadapter(QWidget*& widget) {
 
     waterfallgl = new Waterfallgl;
     waterfallgl->initialize(512, 512);
-    waterfallgl->setGeometry(0, 0, 512, 512);
+    waterfallgl->setGeometry(0,0, 512, 512);
     waterfallgl->show();
 
     /*
-    panadapterScene->container = QWidget::createWindowContainer(waterfallgl);
-    panadapterScene->container->setGeometry(128, 128, 512, 512);
-    panadapterScene->container->show();
+    container = QWidget::createWindowContainer(waterfallgl);
+    container->setGeometry(0, 0, 512, 512);
+    container->show();
     */
 
     updateNfTimer = new QTimer(this);
