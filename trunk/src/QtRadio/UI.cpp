@@ -593,6 +593,8 @@ void UI::setFPS(void){
 }
 
 void UI::resizeEvent(QResizeEvent *){
+    container->resize(widget.spectrumView->width(), widget.waterfallFrame->height());
+
     if (protocol3){
         QString command;
         command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumView->width() << " " << fps;

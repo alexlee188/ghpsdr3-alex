@@ -247,6 +247,8 @@ void Panadapter::resizeEvent(QResizeEvent *event)
         splitViewBoundary = height() - 3;
         if (!initialized) return;
     }
+    splitViewBoundary = height() - 3;
+
     drawFrequencyLines();
     drawdBmLines();
     drawBandLimits();
