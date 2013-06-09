@@ -189,10 +189,10 @@ private slots:
     void on_encodingComboBox_currentIndexChanged(int index);
     void on_RxIQcheckBox_toggled(bool checked);
     void on_RxIQspinBox_valueChanged(int spinValue);
-    void on_RxIQPhaseChanged(double arg1);
-    void on_RxIQGainChanged(double arg1);
-    void on_TxIQPhaseChanged(double arg1);
-    void on_TxIQGainChanged(double arg1);
+    void onRxIQPhaseChanged(double arg1);
+    void onRxIQGainChanged(double arg1);
+    void onTxIQPhaseChanged(double arg1);
+    void onTxIQGainChanged(double arg1);
 
     void on_userpasssave_clicked();
 

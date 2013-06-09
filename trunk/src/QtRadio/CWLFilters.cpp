@@ -38,6 +38,7 @@ CWLFilters::CWLFilters() {
     filters[7].init("100",50,50);
     filters[8].init("50",25,25);
     filters[9].init("25",13,13);
+    filters[10].init("Vari",200,200);
 
     selectFilter(5);
 }

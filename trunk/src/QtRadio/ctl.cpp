@@ -33,10 +33,13 @@ Ctl::Ctl(QWidget *parent) :
 
     moxPwr = 100;
     TunePwr = 50;
+    audioGain = 100;
+    ui->audioSlider->setValue(audioGain);
     ui->pwrSlider->setValue(moxPwr);
 
     HideTX(false); // Hide buttons because we have not connected to anything yet
-
+    connect(this, SIGNAL(audioGainInitalized(int)), this, SLOT(setAudioSlider(int)));
+    connect(this, SIGNAL(setAudioMuted(bool)), this, SLOT(setAudioMute(bool)));
     //ui->pwrSlider_2->setValue(0);
     //ui->spinBox->setMaximum(100);
 }
@@ -59,6 +62,7 @@ void Ctl::on_btnMox_clicked(bool checked)
     else {
         ui->btnMox->setChecked(false);
         ptt = false;
+        ui->MicProgressBar->setValue(0);
     }
     emit pttChange(0, ptt);
 }
@@ -82,7 +86,7 @@ void Ctl::on_btnTune_clicked(bool checked)
 
 void Ctl::on_pwrSlider_valueChanged(int value)
 {
-    if(ui->btnMox->isChecked()) {
+    if(!ui->btnTune->isChecked()) {
         moxPwr = ui->pwrSlider->value(); //Do nothing until Tx power level adj written for DttSP
     } else if(ui->btnTune->isChecked()) {
         TunePwr = ui->pwrSlider->value();
@@ -176,4 +180,27 @@ void Ctl::RigCtlTX(bool rigctlptt){
 void Ctl::on_btnMaster_clicked()
 {
     emit masterBtnClicked();
+}
+
+void Ctl::on_btnMute_clicked(bool checked)
+{
+    ui->audioSlider->setEnabled(!checked);
+    emit audioMuted(checked);
+}
+
+void Ctl::on_audioSlider_valueChanged(int value)
+{
+    audioGain = value;
+    emit audioGainChanged();
+}
+
+void Ctl::setAudioSlider(int gain)
+{
+    ui->audioSlider->setValue(gain);
+}
+
+void Ctl::setAudioMute(bool muted)
+{
+    ui->btnMute->setChecked(muted);
+    ui->audioSlider->setEnabled(!muted);
 }

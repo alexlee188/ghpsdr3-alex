@@ -121,6 +121,8 @@ signals:
 public slots:
     void getMeterValue(int m, int s);
 
+    bool newDspServerCheck(void); // KD0OSS
+
     void actionConfigure();
     void actionEqualizer(); // KD0OSS
     void actionAbout();
@@ -135,7 +137,7 @@ public slots:
 
     void actionMuteMainRx();
     void actionMuteSubRx();
-
+/*
     void actionGain_10();
     void actionGain_20();
     void actionGain_30();
@@ -146,7 +148,7 @@ public slots:
     void actionGain_80();
     void actionGain_90();
     void actionGain_100();
-
+*/
     void actionSquelch();
     void actionSquelchReset();
     void squelchValueChanged(int);
@@ -191,6 +193,7 @@ public slots:
     void actionFilter7();
     void actionFilter8();
     void actionFilter9();
+    void actionFilter10();
 
     void actionANF();
     void actionNR();
@@ -220,6 +223,7 @@ public slots:
     void modeChanged(int previousMode,int newMode);
     void filtersChanged(FiltersBase* previousFilters,FiltersBase* newFilters);
     void filterChanged(int previousFilter,int newFilter);
+    void variableFilter(int low, int high); // KD0OSS
     void frequencyChanged(long long frequency);
 
     void updateSpectrum();
@@ -262,7 +266,7 @@ public slots:
     void sdromThresholdChanged(double);
     void windowTypeChanged(int); //KD0OSS
     void statusMessage(QString); //KD0OSS
-    void removeNotchFilter(void);
+    void removeNotchFilter(void); //KD0OSS
 
     void actionBookmark();
     void addBookmark();
@@ -296,8 +300,8 @@ public slots:
     void setRxIQPhase(double value); //KD0OSS
     void setRxIQGain(double value); //KD0OSS
     void cwPitchChanged(int cwPitch);
-    void testSliderChange(int value);
-    void testButtonClick(bool state);
+//    void testSliderChange(int value);
+//    void testButtonClick(bool state);
     void resetbandedges(double offset);
 
     void hardware (QString);
@@ -314,6 +318,8 @@ private slots:
     void on_zoomSpectrumSlider_sliderMoved(int position);
     void setSampleZoom(bool);  // KD0OSS
     void addNotchFilter(void);   // KD0OSS
+    void setAudioMuted(bool); // KD0OSS
+    void audioGainChanged(void); // KD0OSS
 
 private:
     void printWindowTitle(QString message);
@@ -404,7 +410,7 @@ private:
     Bookmarks bookmarks;
 
     KeypadDialog keypad;
-    Meter* sMeter;
+//    Meter* sMeter;
     int meter;
 //    int txPwr;
     long long txFrequency;
@@ -429,6 +435,7 @@ private:
     QString servername;
     bool canTX;
     bool chkTX;
+    bool txNow; // KD0OSS
     double loffset;
     bool protocol3;
 };
