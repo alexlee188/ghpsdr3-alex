@@ -225,20 +225,9 @@ Panadapter::Panadapter(QWidget*& widget) {
 
     panadapterScene->update();
 
-    panadapterScene->spectrumPlot = new spectrumObject(width(), height()/2);
+    panadapterScene->spectrumPlot = new spectrumObject(width(), height()-3);
     panadapterScene->waterfallItem = new waterfallObject(width(), height()/2);
-    splitViewBoundary = panadapterScene->height()/2;
-
-    waterfallgl = new Waterfallgl;
-    waterfallgl->initialize(512, 512);
-    waterfallgl->setGeometry(0,0, 512, 512);
-    waterfallgl->show();
-
-    /*
-    container = QWidget::createWindowContainer(waterfallgl);
-    container->setGeometry(0, 0, 512, 512);
-    container->show();
-    */
+    splitViewBoundary = panadapterScene->height()-3;
 
     updateNfTimer = new QTimer(this);
     connect(updateNfTimer, SIGNAL(timeout()), this, SLOT(updateNotchFilter()));
@@ -255,7 +244,7 @@ void Panadapter::resizeEvent(QResizeEvent *event)
     // KD0OSS **********************
     if (!initialized || splitViewBoundary > height())
     {
-        splitViewBoundary = (height() / 2) - 3;
+        splitViewBoundary = height() - 3;
         if (!initialized) return;
     }
     drawFrequencyLines();
@@ -274,7 +263,7 @@ void Panadapter::redrawItems(void)
 {
     if (!initialized || splitViewBoundary > height())
     {
-        splitViewBoundary = (height() / 2) - 3;
+        splitViewBoundary = height() - 3;
         if (!initialized) return;
     }
     drawFrequencyLines();
@@ -1171,13 +1160,12 @@ void Panadapter::updateSpectrumFrame(char* header,char* buffer,int width) {
         drawUpdatedNotchFilter(1);
 //        drawUpdatedNotchFilter(2);
         QGraphicsView::setMouseTracking(true);
-        splitViewBoundary = panadapterScene->height()/2;
+        splitViewBoundary = panadapterScene->height()-1;
 
 //        QTimer::singleShot(1000,this,SLOT(redrawItems()));
     }
 
     QTimer::singleShot(0,this,SLOT(drawSpectrum()));
-    QTimer::singleShot(0,this,SLOT(updateWaterfall()));
 }
 
 void Panadapter::setSquelch(bool state) {
@@ -1353,11 +1341,6 @@ void Panadapter::deleteAllNotchFilters(void)   // KD0OSS
     }
 }
 
-void Panadapter::updateWaterfall(void)
-{
-    waterfallgl->setWidth(panadapterScene->width());
-    waterfallgl->updateWaterfall(wsamples, size, splitViewBoundary);
-}
 
 //*************************************************************************Waterfall**************************************************
 

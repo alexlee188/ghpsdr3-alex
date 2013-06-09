@@ -113,6 +113,13 @@ UI::UI(const QString server) {
 
     widget.statusbar->showMessage("QtRadio branch: kd0oss 2013");
 
+    waterfallgl = new Waterfallgl;
+    waterfallgl->initialize(512, 512);
+    waterfallgl->setGeometry(0,0, 512, 512);
+
+    container = QWidget::createWindowContainer(waterfallgl);
+    container->setParent(widget.waterfallFrame);
+
     connect(widget.vfoFrame,SIGNAL(getBandFrequency()),this,SLOT(getBandFrequency()));
 
     // connect up all the menus
@@ -900,19 +907,12 @@ void UI::updateSpectrum() {
 }
 
 void UI::spectrumBuffer(char* header,char* buffer) {
-    //qDebug()<<Q_FUNC_INFO << "spectrumBuffer";
-// g0orx binary header
-/*
-    int length=atoi(&header[26]);
-    sampleRate=atoi(&header[32]);
-*/
 
     int length=((header[3]&0xFF)<<8)+(header[4]&0xFF);
     sampleRate=((header[9]&0xFF)<<24)+((header[10]&0xFF)<<16)+((header[11]&0xFF)<<8)+(header[12]&0xFF);
 
     widget.spectrumView->updateSpectrumFrame(header,buffer,length);
-//    widget.spectrumView->panadapterScene->waterfallItem->updateWaterfall(header,buffer,length);
-//    widget.waterfallView->updateWaterfall(header,buffer,length);
+    waterfallgl->updateWaterfall(buffer, length, 0);
     connection.freeBuffers(header,buffer);
 }
 

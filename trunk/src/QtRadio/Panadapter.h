@@ -284,7 +284,6 @@ public slots:
     void addNotchFilter(int index);    // KD0OSS
     void enableNotchFilter(bool enable);   // KD0OSS
     void enableNotchFilter(int index, bool enable);   // KD0OSS
-    void updateWaterfall(void);
 
 private slots:
     void drawCursor(int vfo, bool disable);  // KD0OSS
@@ -367,8 +366,6 @@ private:
 
     short LO_offset;
     int zoom;
-    Waterfallgl *waterfallgl;
-    QWidget *container;
 };
 
 
