@@ -615,7 +615,7 @@ void SDR1000::SetFreq(double freq) // sets DDS frequency
 	dds->SetFreq(Freq2FTW(freq));
 }
 
-void SDR1000::SetFreqCalOffset(double freq)
+void SDR1000::SetFreqCalOffset(double freq) // KD0OSS
 {
 	double current_freq = FTW2Freq(CurrentFTW());
 	freq_cal_offset = freq;
@@ -639,7 +639,7 @@ void SDR1000::SetSpurReduction(bool enabled)
 	dds->SetFreq(Freq2FTW(current_freq));
 }
 
-void SDR1000::SetPTT(bool ptt)
+void SDR1000::SetPTT(bool ptt) // KD0OSS
 {
     uint8  tmpLatch;
     uint8  new_data;

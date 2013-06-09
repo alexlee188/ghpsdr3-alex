@@ -26,7 +26,7 @@ static struct option long_options[] = {
     {"device",required_argument, 0, 5},
     {"input",required_argument, 0, 6},
     {"output",required_argument, 0, 7},
-    {"caloffset",required_argument, 0, 8},
+    {"caloffset",required_argument, 0, 8}, //kd0oss added
     {0,0, 0, 0},
 };
 
@@ -37,16 +37,17 @@ static int rfe=0;
 static int pa=0;
 static unsigned long lpt_addr=0x0378;
 static int usb=0;
-static long caloffset=0;
+static long caloffset=0; //kd0oss added
 
 static SDR1000* sdr1000;
 
 extern "C" void SDR1000_set_frequency(long frequency);
-extern "C" void SDR1000_set_frequency_offset(long frequency);
-extern "C" void SDR1000_set_ptt(int ptt);
-extern "C" void SDR1000_set_attn(long value);
-extern "C" void SDR1000_set_sr(bool enabled);
-extern "C" unsigned char SDR1000_get_pa_adc(unsigned char channel);
+extern "C" void SDR1000_set_frequency_offset(long frequency); //kd0oss added
+extern "C" void SDR1000_set_ptt(int ptt); //kd0oss added
+extern "C" void SDR1000_set_attn(long value); //kd0oss added
+extern "C" void SDR1000_set_sr(bool enabled); //kd0oss added
+extern "C" void SDR1000_set_record(bool enabled); //kd0oss added
+extern "C" unsigned char SDR1000_get_pa_adc(unsigned char channel); //kd0oss added
 
 int process_args(int argc,char* argv[]) {
     int i;
@@ -54,7 +55,7 @@ int process_args(int argc,char* argv[]) {
         switch(i) {
             case 0: //rfe
                 rfe=atoi(optarg);
-                if (rfe == 99) return 99;
+                if (rfe == 99) return 99; //power off radio   kd0oss added
                 break;
             case 1: //pa
                 pa=atoi(optarg);
@@ -77,7 +78,7 @@ int process_args(int argc,char* argv[]) {
             case 7: //output
                 sdr1000_set_output(optarg);
                 break;
-            case 8: //freq cal offset
+            case 8: //freq cal offset kd0oss added
                 sdr1000_set_frequency_offset(optarg);
                 caloffset = atol(optarg);
                 break;
@@ -121,27 +122,27 @@ void SDR1000_set_frequency(long frequency) {
     sdr1000->SetFreq((float)frequency/1000000.0);
 }
 
-void SDR1000_set_frequency_offset(long frequency) 
+void SDR1000_set_frequency_offset(long frequency)  //kd0oss added
 {
     sdr1000->SetFreqCalOffset((float)frequency/1000000.0);
 }
 
-void SDR1000_set_ptt(int ptt)
+void SDR1000_set_ptt(int ptt) //kd0oss added
 {
     sdr1000->SetPTT(ptt);
 }
 
-void SDR1000_set_attn(long value)
+void SDR1000_set_attn(long value) //kd0oss added
 {
     sdr1000->SetATTOn((bool)value);
 }
 
-void SDR1000_set_sr(bool enabled)
+void SDR1000_set_sr(bool enabled) //kd0oss added
 {
     sdr1000->SetSpurReduction(enabled);
 }
 
-unsigned char SDR1000_get_pa_adc(unsigned char channel)
+unsigned char SDR1000_get_pa_adc(unsigned char channel) //kd0oss added
 {
     return sdr1000->PA_ReadADC(channel);
 }

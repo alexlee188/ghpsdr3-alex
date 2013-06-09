@@ -94,7 +94,7 @@ fprintf(stderr,"sdr1000_set_device %s\n",d);
     strcpy(device,d);
 }
 
-void sdr1000_set_frequency_offset(char* d) {
+void sdr1000_set_frequency_offset(char* d) { //kd0oss added
 fprintf(stderr,"sdr1000_set_frequency_offset %s hz\n",d);
     caloffset = atol(d);
 }
@@ -298,8 +298,7 @@ void process_sdr1000_input_buffer(char* buffer) {
 #ifdef PORTAUDIO
 void process_sdr1000_output_buffer(float* left_output_buffer,float* right_output_buffer) {
 
-    sdr1000_write(left_output_buffer,right_output_buffer);
-    
+    sdr1000_write(left_output_buffer,right_output_buffer);    
 }
 #else
 void process_sdr1000_output_buffer(float* left_output_buffer,float* right_output_buffer) {
@@ -325,6 +324,4 @@ void process_sdr1000_output_buffer(float* left_output_buffer,float* right_output
 
     sdr1000_write(output_buffer,sizeof(output_buffer));
 }
-
-
 #endif

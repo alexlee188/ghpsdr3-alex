@@ -56,6 +56,23 @@
 #include <event2/listener.h>
 #include <event2/bufferevent_ssl.h>
 
+// added by KD0OSS ******
+int panadapterMode;
+int numSamples;
+int rxMeterMode;
+int txMeterMode;
+// **********************
+
+// added by KD0OSS
+enum PanadapterMode
+{
+    PANADAPTER,
+    SPECTRUM,
+    CSPECTRUM,
+    SCOPE,
+    PHASE
+};
+
 // added by KD0OSS
 enum Window
 {
@@ -71,7 +88,7 @@ enum Window
     BLACKMAN4,
     EXPONENTIAL,
     RIEMANN,
-    BLKHARRIS,
+    BLKHARRIS
 //    LAST,
 };
 
