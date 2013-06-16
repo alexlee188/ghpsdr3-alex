@@ -291,6 +291,7 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(hostChanged(QString)),this,SLOT(hostChanged(QString)));
     connect(&configure,SIGNAL(receiverChanged(int)),this,SLOT(receiverChanged(int)));
     connect(&configure,SIGNAL(rxDCBlockChanged(bool)),this,SLOT(rxDCBlockChanged(bool)));  // KD0OSS
+    connect(&configure,SIGNAL(rxDCBlockGainChanged(int)),this,SLOT(rxDCBlockGainChanged(int)));  // KD0OSS
     connect(&configure,SIGNAL(txDCBlockChanged(bool)),this,SLOT(txDCBlockChanged(bool)));  // KD0OSS
     connect(&configure,SIGNAL(txIQPhaseChanged(double)),this,SLOT(setTxIQPhase(double)));  // KD0OSS
     connect(&configure,SIGNAL(txIQGainChanged(double)),this,SLOT(setTxIQGain(double)));  // KD0OSS
@@ -302,8 +303,27 @@ UI::UI(const QString server) {
 
     connect(&configure,SIGNAL(rxIQPhaseChanged(double)),this,SLOT(setRxIQPhase(double)));  // KD0OSS
     connect(&configure,SIGNAL(rxIQGainChanged(double)),this,SLOT(setRxIQGain(double)));  // KD0OSS
-    connect(&configure, SIGNAL(windowTypeChanged(int)),this,SLOT(windowTypeChanged(int))); //KD0OSS
-
+    connect(&configure,SIGNAL(windowTypeChanged(int)),this,SLOT(windowTypeChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcAttackChanged(int)),this,SLOT(agcAttackChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcMaxGainChanged(int)),this,SLOT(agcMaxGainChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcSlopeChanged(int)),this,SLOT(agcSlopeChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcDecayChanged(int)),this,SLOT(agcDecayChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcHangChanged(int)),this,SLOT(agcHangChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcFixedGainChanged(int)),this,SLOT(agcFixedGainChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcHangThreshChanged(int)),this,SLOT(agcHangThreshChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(levelerStateChanged(int)),this,SLOT(levelerStateChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(levelerMaxGainChanged(int)),this,SLOT(levelerMaxGainChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(levelerAttackChanged(int)),this,SLOT(levelerAttackChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(levelerDecayChanged(int)),this,SLOT(levelerDecayChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(levelerHangChanged(int)),this,SLOT(levelerHangChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(alcStateChanged(int)),this,SLOT(alcStateChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(alcAttackChanged(int)),this,SLOT(alcAttackChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(alcDecayChanged(int)),this,SLOT(alcDecayChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(alcHangChanged(int)),this,SLOT(alcHangChanged(int))); //KD0OSS
+/*    connect(&configure,SIGNAL(nbTransitionChanged(int)),this,SLOT(nbTransitionChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(nbLeadChanged(int)),this,SLOT(nbLeadChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(nbLagChanged(int)),this,SLOT(nbLagChanged(int))); //KD0OSS
+*/
     connect(&bookmarks,SIGNAL(bookmarkSelected(QAction*)),this,SLOT(selectBookmark(QAction*)));
     connect(&bookmarkDialog,SIGNAL(accepted()),this,SLOT(addBookmark()));
 
@@ -929,28 +949,11 @@ void UI::audioBuffer(char* header,char* buffer) {
 
 
 void UI::micSendAudio(QQueue<qint16>* queue){
-    FILE *file;
-    file = fopen("/home/rschnic/temp.raw", "ab");
-    while(!queue->isEmpty())
+    if (!txNow)
     {
-        qint16 sample=queue->dequeue();
-        mic_encoded_buffer[mic_buffer_count++] = (sample & 0xff00) > 8;
-        mic_encoded_buffer[mic_buffer_count++] = sample & 0xff;
-        if(mic_buffer_count >= 320)
-        {
-//            if (bSendAudio)
-            {
-                fwrite(mic_encoded_buffer, 1, mic_buffer_count, file);
-         //       memcpy(data+4, mic_encoded_buffer, mic_buffer_count);
-//                    spd->sendData(data, 324);
-        //        ambeMeter->updateMeter((qint16*)(data+4), 1);
-        //        usleep(12000);
-            }
-            mic_buffer_count=0;
-        }
+        queue->clear();
+        return;
     }
-    fclose(file);
-    return;
     if(useRTP) {
         while(!queue->isEmpty()) {
             qint16 sample=queue->dequeue();
@@ -962,7 +965,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
                 //  the connection is valid
                 //  the checkbox in GUI is checked
                 //  the server side has Tx capability
-                if (connection_valid && configure.getTxAllowed() && (canTX == true) && txNow){
+                if (connection_valid && configure.getTxAllowed() && (canTX == true)){
                     rtp_send_buffer = (unsigned char*) malloc(MIC_BUFFER_SIZE);
                     // rtp_send_buffer will be free'd by rtp_send()
                     memcpy(rtp_send_buffer, mic_encoded_buffer, MIC_BUFFER_SIZE);
@@ -989,7 +992,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
                     //  the connection is valid
                     //  the checkbox in GUI is checked
                     //  the server side has Tx capability
-                    if (connection_valid && configure.getTxAllowed() && (canTX == true) && txNow)
+                    if (connection_valid && configure.getTxAllowed() && (canTX == true))
                         connection.sendAudio(samples_per_frame*MIC_NO_OF_FRAMES,mic_encoded_buffer);
                 }
             }
@@ -1005,7 +1008,7 @@ void UI::micSendAudio(QQueue<qint16>* queue){
                 //  the connection is valid
                 //  the checkbox in GUI is checked
                 //  the server side has Tx capability
-                if (connection_valid && configure.getTxAllowed() && (canTX == true) && txNow){
+                if (connection_valid && configure.getTxAllowed() && (canTX == true)){
                     connection.sendAudio(MIC_ALAW_BUFFER_SIZE, mic_encoded_buffer);
                 }
                 mic_buffer_count=0;
@@ -2379,7 +2382,7 @@ void UI::printWindowTitle(QString message)
 void UI::printStatusBar(QString message)
 {
     Frequency freqInfo; // KD0OSS Added frequency description.
-    QString description;
+    static QString description;
     static long long lastFreq;
 
     if (lastFreq != frequency)
@@ -2857,6 +2860,14 @@ void UI::rxDCBlockChanged(bool state) {  // KD0OSS
         qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }
 
+void UI::rxDCBlockGainChanged(int value) {  // KD0OSS
+        QString command;
+        command.clear(); QTextStream(&command) << "setrxdcblockgain " << value;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
 void UI::txDCBlockChanged(bool state) {  // KD0OSS
         QString command;
         command.clear(); QTextStream(&command) << "settxdcblock " << state;
@@ -3037,11 +3048,171 @@ void UI::masterButtonClicked(void)
 
 bool UI::newDspServerCheck(void)
 {
-    if (dspversion >= 20130525)
+    if (dspversion >= 20130609)
         return true;
     else
     {
         QMessageBox::warning(this, "Advanced Features Error", "DSP server version 20130525 or greater required.");
         return false;
     }
+}
+
+void UI::agcSlopeChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagcslope " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcMaxGainChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagcmaxgain " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcAttackChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagcattack " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcDecayChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagcdecay " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcHangChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagchang " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcHangThreshChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagchangthreshold " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcFixedGainChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setfixedagc " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::levelerStateChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxlevelerstate " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::levelerMaxGainChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxlevelermaxgain " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::levelerAttackChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxlevelerattack " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::levelerDecayChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxlevelerdecay " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::levelerHangChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxlevelerhang " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::alcStateChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxalcstate " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::alcDecayChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxalcdecay " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::alcAttackChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxalcattack " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::alcHangChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxalchang " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }
