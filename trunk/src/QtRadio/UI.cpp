@@ -669,8 +669,8 @@ void UI::actionConnect() {
 
     // Initialise RxIQMu. Set RxIQMu to disabled, set value and then enable if checked.
     RxIQspinChanged(configure.getRxIQspinBoxValue());
-    rxDCBlockChanged(configure.getRxDCBlockValue());
-    txDCBlockChanged(configure.getTxDCBlockValue());
+//    rxDCBlockChanged(configure.getRxDCBlockValue());
+//    txDCBlockChanged(configure.getTxDCBlockValue());
     widget.zoomSpectrumSlider->setValue(0);
     on_zoomSpectrumSlider_sliderMoved(0);
 }
@@ -772,7 +772,7 @@ void UI::connected() {
     widget.actionSubrx->setDisabled(FALSE);
     widget.actionMuteSubRx->setDisabled(TRUE);
 
-    setPwsMode(pwsmode);
+    setPwsMode(pwsmode); // KD0OSS
 
     // select audio encoding
     command.clear(); QTextStream(&command) << "setEncoding " << audio->get_audio_encoding();
@@ -845,8 +845,53 @@ void UI::connected() {
     command.clear(); QTextStream(&command) << "SetNB " << (widget.actionNB->isChecked()?"true":"false");
     connection.sendCommand(command);
 
-    //command.clear(); QTextStream(&command) << "SetDCBlock 1";
-    //connection.sendCommand(command);
+    printWindowTitle("Remote connected");
+
+    // Added by KD0OSS *****************************************
+//    if (dspversion >= 20130609)
+    {
+        qDebug("Sending advanced setup commands.");
+        command.clear(); QTextStream(&command) << "setrxdcblock " << configure.getRxDCBlockValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxdcblock " << configure.getTxDCBlockValue();
+        connection.sendCommand(command);
+
+        command.clear(); QTextStream(&command) << "setrxagcslope " << configure.getRxAGCSlopeValue();
+ //       connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setrxagcmaxgain " << configure.getRxAGCMaxGainValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setrxagcattack " << configure.getRxAGCAttackValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setrxagcdecay " << configure.getRxAGCDecayValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setrxagchang " << configure.getRxAGCHangValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setfixedagc " << configure.getRxAGCFixedGainValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setrxagchangthreshold " << configure.getRxAGCHangThreshValue();
+        connection.sendCommand(command);
+
+        command.clear(); QTextStream(&command) << "settxlevelerstate " << configure.getLevelerEnabledValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxlevelermaxgain " << configure.getLevelerMaxGainValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxlevelerattack " << configure.getLevelerAttackValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxlevelerdecay " << configure.getLevelerDecayValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxlevelerhang " << configure.getLevelerHangValue();
+        connection.sendCommand(command);
+
+        command.clear(); QTextStream(&command) << "setalcstate " << configure.getALCEnabledValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxalcattack " << configure.getALCAttackValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxalcdecay " << configure.getALCDecayValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxalchang " << configure.getALCHangValue();
+        connection.sendCommand(command);
+    }
+    // ***************************KD0OSS******************************
 
     //
     // hardware special command
@@ -855,16 +900,14 @@ void UI::connected() {
     command.clear(); QTextStream(&command) << "*hardware?";
     connection.sendCommand(command);
 
-
     // start the spectrum
     //qDebug() << "starting spectrum timer";
     connection.SemSpectrum.release();
     spectrumTimer->start(1000/fps);
-    printWindowTitle("Remote connected");
     connection_valid = TRUE;
     if((mode.getStringMode()=="CWU")||(mode.getStringMode()=="CWL")) frequencyChanged(frequency); //gvj dummy call to set Rx offset for cw
 
-    widget.spectrumView->enableNotchFilter(false);
+    widget.spectrumView->enableNotchFilter(false); // KD0OSS
 }
 
 void UI::disconnected(QString message) {
@@ -3048,11 +3091,11 @@ void UI::masterButtonClicked(void)
 
 bool UI::newDspServerCheck(void)
 {
-    if (dspversion >= 20130609)
+    if (dspversion >= 20130609 || dspversion == 0)
         return true;
     else
     {
-        QMessageBox::warning(this, "Advanced Features Error", "DSP server version 20130525 or greater required.");
+        QMessageBox::warning(this, "Advanced Features Error", "DSP server version 20130609 or greater required.");
         return false;
     }
 }

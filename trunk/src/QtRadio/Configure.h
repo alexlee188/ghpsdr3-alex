@@ -104,6 +104,25 @@ public:
     bool getRxDCBlockValue(); //KD0OSS
     bool getTxDCBlockValue(); //KD0OSS
 
+    int  getRxAGCSlopeValue(); //KD0OSS
+    int  getRxAGCMaxGainValue(); //KD0OSS
+    int  getRxAGCAttackValue(); //KD0OSS
+    int  getRxAGCDecayValue(); //KD0OSS
+    int  getRxAGCHangValue(); //KD0OSS
+    int  getRxAGCFixedGainValue(); //KD0OSS
+    int  getRxAGCHangThreshValue(); //KD0OSS
+
+    bool getLevelerEnabledValue(); //KD0OSS
+    int  getLevelerMaxGainValue(); //KD0OSS
+    int  getLevelerAttackValue(); //KD0OSS
+    int  getLevelerDecayValue(); //KD0OSS
+    int  getLevelerHangValue(); //KD0OSS
+
+    bool getALCEnabledValue(); //KD0OSS
+    int  getALCAttackValue(); //KD0OSS
+    int  getALCDecayValue(); //KD0OSS
+    int  getALCHangValue(); //KD0OSS
+
 signals:
     void hostChanged(QString host);
     void receiverChanged(int receiver);
