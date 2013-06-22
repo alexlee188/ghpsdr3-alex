@@ -129,12 +129,36 @@ Configure::Configure() {
     connect(widget.hostComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotHostChanged(int)));
     connect(widget.rxSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotReceiverChanged(int)));
     connect(widget.rxDCBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotRxDCBlock(bool)));   //KD0OSS
+    connect(widget.rxDCBlkGainSpinBox, SIGNAL(valueChanged(int)), this, SLOT(onRxDCBlockGainChanged(int)));  //KD0OSS
     connect(widget.txDCBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotTxDCBlock(bool)));   //KD0OSS
     connect(widget.rxIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onRxIQPhaseChanged(double)));   //KD0OSS
     connect(widget.rxIQGainSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onRxIQGainChanged(double)));   //KD0OSS
     connect(widget.txIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onTxIQPhaseChanged(double)));   //KD0OSS
     connect(widget.txIQGainSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onTxIQGainChanged(double)));   //KD0OSS
 
+    connect(widget.rxAgcSlopeSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcSlopeChanged(int))); //KD0OSS
+    connect(widget.rxAgcMaxGainSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcMaxGainChanged(int))); //KD0OSS
+    connect(widget.rxAgcAttackSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcAttackChanged(int))); //KD0OSS
+    connect(widget.rxAgcDecaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcDecayChanged(int))); //KD0OSS
+    connect(widget.rxAgcHangSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcHangChanged(int))); //KD0OSS
+    connect(widget.rxAgcFixedGainSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcFixedGainChanged(int))); //KD0OSS
+    connect(widget.rxAgcHangThreshSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcHangThreshChanged(int))); //KD0OSS
+
+    connect(widget.levelerEnabledCheckBox,SIGNAL(stateChanged(int)),this,SLOT(onLevelerStateChanged(int))); //KD0OSS
+    connect(widget.levelerMaxGainSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onLevelerMaxGainChanged(int))); //KD0OSS
+    connect(widget.levelerAttackSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onLevelerAttackChanged(int))); //KD0OSS
+    connect(widget.levelerDecaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(onLevelerDecayChanged(int))); //KD0OSS
+    connect(widget.levelerHangSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onLevelerHangChanged(int))); //KD0OSS
+
+    connect(widget.alcEnabledCheckBox,SIGNAL(stateChanged(int)),this,SLOT(onAlcStateChanged(int))); //KD0OSS
+    connect(widget.alcAttackSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onAlcAttackChanged(int))); //KD0OSS
+    connect(widget.alcDecaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(onAlcDecayChanged(int))); //KD0OSS
+    connect(widget.alcHangSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onAlcHangChanged(int))); //KD0OSS
+/*
+    connect(widget.nbTransitionSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onNbTransitionChanged(double))); //KD0OSS
+    connect(widget.nbLeadSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onNbLeadChanged(double))); //KD0OSS
+    connect(widget.nbLagSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onNbLagChanged(double))); //KD0OSS
+*/
     connect(widget.nrTapsSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrTapsChanged(int)));
     connect(widget.nrDelaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrDelayChanged(int)));
     connect(widget.nrGainSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrGainChanged(int)));
@@ -296,7 +320,8 @@ void Configure::loadSettings(QSettings* settings) {
 
     settings->beginGroup("TxSettings");
     widget.allowTx->setChecked(settings->value("allowTx",FALSE).toBool());
-    widget.rxDCBlockCheckBox->setChecked(settings->value("rxDCBlock",FALSE).toBool());  //KD0OSS
+    widget.rxDCBlockCheckBox->setChecked(settings->value("rxDCBlock",FALSE).toBool());  //KD0OSS    *Probably needs to be in another section
+    widget.rxDCBlkGainSpinBox->setValue(settings->value("rxDCBlockGain",0).toInt());  //KD0OSS    *Probably needs to be in another section
     widget.txDCBlockCheckBox->setChecked(settings->value("txDCBlock",FALSE).toBool());  //KD0OSS
     widget.txIQPhaseSpinBox->setValue(settings->value("TxIQPhaseCorrect",0).toInt());  //KD0OSS
     widget.txIQGainSpinBox->setValue(settings->value("TxIQGainCorrect",0).toInt());  //KD0OSS
@@ -389,7 +414,8 @@ void Configure::saveSettings(QSettings* settings) {
     settings->endGroup();
     settings->beginGroup("TxSettings");
     settings->setValue("allowTx",widget.allowTx->checkState());
-    settings->setValue("rxDCBlock",widget.rxDCBlockCheckBox->checkState());  //KD0OSS
+    settings->setValue("rxDCBlock",widget.rxDCBlockCheckBox->checkState());  //KD0OSS    *Probably needs to be in another section
+    settings->setValue("rxDCBlockGain",widget.rxDCBlkGainSpinBox->value());  //KD0OSS    *Probably needs to be in another section
     settings->setValue("txDCBlock",widget.txDCBlockCheckBox->checkState());  //KD0OSS
     settings->setValue("TxIQPhaseCorrect",widget.txIQPhaseSpinBox->value());  //KD0OSS
     settings->setValue("TxIQGainCorrect",widget.txIQGainSpinBox->value());  //KD0OSS
@@ -572,6 +598,10 @@ void Configure::slotWindowType(int type) {
 
 QString Configure::getHost() {
     return widget.hostComboBox->currentText();
+}
+
+void Configure::onRxDCBlockGainChanged(int value){ //KD0OSS
+    emit rxDCBlockGainChanged(value);
 }
 
 void Configure::slotRxDCBlock(bool state) {   //KD0OSS
@@ -919,3 +949,99 @@ void Configure::onTxIQGainChanged(double arg1)   //KD0OSS
 {
     emit txIQGainChanged(arg1);
 }
+/*
+void Configure::onNbTransitionChanged(double arg1) // KD0OSS
+{
+    emit nbTransitionChanged(arg1);
+}
+
+void Configure::onNbLeadChanged(double arg1) // KD0OSS
+{
+    emit nbLeadChanged(arg1);
+}
+
+void Configure::onNbLagChanged(double arg1) // KD0OSS
+{
+    emit nbLagChanged(arg1);
+}
+*/
+void Configure::onRxAgcSlopeChanged(int arg1) // KD0OSS
+{
+    emit agcSlopeChanged(arg1);
+}
+
+void Configure::onRxAgcMaxGainChanged(int arg1) // KD0OSS
+{
+    emit agcMaxGainChanged(arg1);
+}
+
+void Configure::onRxAgcAttackChanged(int arg1) // KD0OSS
+{
+    emit agcAttackChanged(arg1);
+}
+
+void Configure::onRxAgcDecayChanged(int arg1) // KD0OSS
+{
+    emit agcDecayChanged(arg1);
+}
+
+void Configure::onRxAgcHangChanged(int arg1) // KD0OSS
+{
+    emit agcHangChanged(arg1);
+}
+
+void Configure::onRxAgcFixedGainChanged(int arg1) // KD0OSS
+{
+    emit agcFixedGainChanged(arg1);
+}
+
+void Configure::onRxAgcHangThreshChanged(int arg1) // KD0OSS
+{
+    emit agcHangThreshChanged(arg1);
+}
+
+void Configure::onLevelerStateChanged(int arg1)
+{
+    emit levelerStateChanged(arg1);
+}
+
+void Configure::onLevelerMaxGainChanged(int arg1)
+{
+    emit levelerMaxGainChanged(arg1);
+}
+
+void Configure::onLevelerAttackChanged(int arg1)
+{
+    emit levelerAttackChanged(arg1);
+}
+
+void Configure::onLevelerDecayChanged(int arg1)
+{
+    emit levelerDecayChanged(arg1);
+}
+
+void Configure::onLevelerHangChanged(int arg1)
+{
+    emit levelerHangChanged(arg1);
+}
+
+void Configure::onAlcStateChanged(int arg1)
+{
+    emit alcStateChanged(arg1);
+}
+
+void Configure::onAlcAttackChanged(int arg1)
+{
+    emit alcAttackChanged(arg1);
+}
+
+void Configure::onAlcDecayChanged(int arg1)
+{
+    emit alcDecayChanged(arg1);
+}
+
+void Configure::onAlcHangChanged(int arg1)
+{
+    emit alcHangChanged(arg1);
+}
+
