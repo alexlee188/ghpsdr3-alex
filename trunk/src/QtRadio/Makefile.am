@@ -58,6 +58,7 @@ RTP.moc.cpp \
 hardware.moc.cpp \
 hardware_hermes.moc.cpp \
 hardware_perseus.moc.cpp \
+hardware_sdriq.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \
@@ -107,6 +108,7 @@ RTP.moc.cpp \
 hardware.moc.cpp \
 hardware_hermes.moc.cpp \
 hardware_perseus.moc.cpp \
+hardware_sdriq.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \
@@ -124,7 +126,7 @@ Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.
 ctl.cpp rigctl.cpp\
 Audioinput.cpp \
 servers.cpp\
-G711A.cpp RTP.cpp hardware.cpp hardware_hermes.cpp hardware_perseus.cpp hardware_sdr1000.cpp hardware_hiqsdr.cpp hardware_rtlsdr.cpp powermate.cpp \
+G711A.cpp RTP.cpp hardware.cpp hardware_hermes.cpp hardware_perseus.cpp hardware_sdriq.cpp hardware_sdr1000.cpp hardware_hiqsdr.cpp hardware_rtlsdr.cpp powermate.cpp \
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  EqualizerDialog.h \
 Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Panadapter.h    XvtrEntry.h  \
@@ -138,6 +140,7 @@ cusdr_queue.h \
 hardware.h \
 hardware_hermes.h \
 hardware_perseus.h \
+hardware_sdriq.h \
 hardware_sdr1000.h \
 hardware_hiqsdr.h \
 hardware_rtlsdr.h \
@@ -191,6 +194,7 @@ RTP.moc.cpp \
 hardware.moc.cpp \
 hardware_hermes.moc.cpp \
 hardware_perseus.moc.cpp \
+hardware_sdriq.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \

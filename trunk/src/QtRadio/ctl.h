@@ -50,6 +50,9 @@ public:
     int audioGain;
 
 signals:
+#if QT_VERSION < 0x050000 && !defined Q_MOC_RUN
+public:  // needed in Qt 4.x where signals means "protected" - IW0HDV
+#endif
     void pttChange(int caller, bool ptt);//0 = MOX, 1 = Tune, 2 = VOX, 3 = Extern H'ware
     void pwrSlider_valueChanged(double pwr);
 //    void testBtnClick(bool state);
