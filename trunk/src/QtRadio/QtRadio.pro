@@ -22,6 +22,9 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 #    INCLUDEPATH += /opt/qt5/include/QtMultimedia
 #    INCLUDEPATH += /opt/qt5/include/QtNetwork
 
+    #KD0NUZ OSX
+    INCLUDEPATH += /usr/local/include
+
     INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtCore
     INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtGui
     INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtWidgets
@@ -175,6 +178,8 @@ FORMS    += \
     EqualizerDialog.ui
 
 OTHER_FILES +=
+
+LIBS += -L/usr/local/lib
 
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/release/ 
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../usr/lib/debug/ 
