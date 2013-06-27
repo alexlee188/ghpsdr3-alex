@@ -126,6 +126,7 @@ BandLimit.cpp  BookmarksDialog.cpp      CWUFilters.cpp   Filters.cpp      main.c
 Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.cpp          vfo.cpp         smeter.cpp     \
 ctl.cpp rigctl.cpp\
 Audioinput.cpp \
+Waterfallgl.cpp \
 servers.cpp\
 G711A.cpp RTP.cpp hardware.cpp hardware_hermes.cpp hardware_perseus.cpp hardware_sdriq.cpp hardware_sdr1000.cpp hardware_hiqsdr.cpp hardware_rtlsdr.cpp powermate.cpp \
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
@@ -147,6 +148,7 @@ hardware_sdr1000.h \
 hardware_hiqsdr.h \
 hardware_rtlsdr.h \
 powermate.h \
+Waterfallgl.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui servers.ui EqualizerDialog.ui
 
