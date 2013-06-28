@@ -291,7 +291,7 @@ public:
 	/** \param c If 0, selects forward power.  If 1, selects reverse power.
 	 *  \return ADC value from 0 to 255
 	 */
-	unsigned char PA_ReadADC(unsigned char c);
+	unsigned char PA_ReadADC(unsigned char c);// KD0OSS
 
 	/// Runs the ATU tune sequence
 	/** \param mode 0 selects bypass, 1 selects memory, 2 selects full.
@@ -312,9 +312,9 @@ public:
 	 */
 	void WriteDDSReg(unsigned char reg_index, unsigned char new_data);
 
-        void SetPTT(bool ptt);
+        void SetPTT(bool ptt);// KD0OSS
 
-        void SetSpurReduction(bool enabled);
+        void SetSpurReduction(bool enabled);// KD0OSS
 };
 
 #include <ad9854.h>

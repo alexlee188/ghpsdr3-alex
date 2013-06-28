@@ -34,28 +34,27 @@ Santa Cruz, CA  95060
 #include <math.h>
 #include <wcpAGC.h>
 
-WCPAGC newWcpAGC (	AGCMODE mode,
-					int pmode,
-					COMPLEX *buff,
-					int io_buffsize,
-					REAL sample_rate,
-					double tau_attack,
-					double tau_decay,
-					int n_tau,
-					double max_gain,
-					double var_gain,
-					double fixed_gain,
-					double max_input,
-					double out_targ,
-					double tau_fast_backaverage,
-					double tau_fast_decay,
-					double pop_ratio,
-					double tau_hang_backmult,
-					double hangtime,
-					double hang_thresh,
-					double tau_hang_decay,
-					char *tag
-				 )
+WCPAGC newWcpAGC (AGCMODE mode,
+int pmode,
+COMPLEX *buff,
+int io_buffsize,
+REAL sample_rate,
+double tau_attack,
+double tau_decay,
+int n_tau,
+double max_gain,
+double var_gain,
+double fixed_gain,
+double max_input,
+double out_targ,
+double tau_fast_backaverage,
+double tau_fast_decay,
+double pop_ratio,
+double tau_hang_backmult,
+double hangtime,
+double hang_thresh,
+double tau_hang_decay,
+char *tag)
 {
 	WCPAGC a;
 	a = (WCPAGC) safealloc (1,sizeof(wcpagc), tag);

@@ -267,6 +267,11 @@ void Mic_stream_queue_free(){
 void client_init(int receiver) {
     int rc;
 
+    panadapterMode = PANADAPTER;  // KD0OSS
+    numSamples = 1000; // KD0OSS
+    rxMeterMode = AVG_SIGNAL_STRENGTH; // KD0OSS
+    txMeterMode = PWR; // KD0OSS
+
     evthread_use_pthreads();
 
     TAILQ_INIT(&Client_list);
@@ -418,12 +423,36 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
         sem_wait(&spectrum_semaphore);
         if(mox) {
             Process_Panadapter(1,spectrumBuffer);
-            meter=CalculateTXMeter(1,TX_PWR);        // enum added by KD0OSS
+            meter=CalculateTXMeter(1,txMeterMode);        // Tx meter mode added by KD0OSS
             subrx_meter=-121;
         } else {
-            Process_Panadapter(0,spectrumBuffer);
-            meter=CalculateRXMeter(0,0,RX_AVG_SIGNAL_STRENGTH)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset(); // enum added by KD0OSS
-            subrx_meter=CalculateRXMeter(0,1,RX_SIGNAL_STRENGTH)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset(); // enum added by KD0OSS
+            switch (panadapterMode) // KD0OSS
+            {
+                case PANADAPTER:
+                    Process_Panadapter(0,spectrumBuffer);
+                break;
+
+                case SPECTRUM:
+                    Process_Spectrum(0,spectrumBuffer);
+                break;
+
+                case CSPECTRUM:
+                    Process_ComplexSpectrum(0,spectrumBuffer);
+                break;
+
+                case SCOPE:
+                    Process_Scope(0,spectrumBuffer,numSamples);
+                break;
+
+                case PHASE:
+                    Process_Phase(0,spectrumBuffer,numSamples);
+                break;
+
+                default:
+                    Process_Panadapter(0,spectrumBuffer);
+            }
+            meter=CalculateRXMeter(0,0,rxMeterMode)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
+            subrx_meter=CalculateRXMeter(0,1,rxMeterMode)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
         }
         sem_post(&spectrum_semaphore);
         sem_wait(&bufferevent_semaphore);
@@ -1204,8 +1233,16 @@ void readcb(struct bufferevent *bev, void *ctx){
             lastMode=mode;
 			    
             switch (mode){
-            case USB: SetTXFilter(1,150,2850); break;
-            case LSB: SetTXFilter(1,-2850, -150); break;
+            case USB: 
+                SetSBMode(0,0,1); // KD0OSS
+                SetSBMode(0,1,1); // KD0OSS
+                SetTXFilter(1,150,2850); 
+            break;
+            case LSB: 
+                SetSBMode(0,0,2); // KD0OSS
+                SetSBMode(0,1,2); // KD0OSS
+                SetTXFilter(1,-2850, -150); 
+            break;
             case AM:
             case SAM: SetTXFilter(1, -2850, 2850); break;
             case FM: SetTXFilter(1, -4800, 4800); break;
@@ -1561,8 +1598,65 @@ void readcb(struct bufferevent *bev, void *ctx){
             delay = atoi(tokens[1]);
             gain = atof(tokens[2]);
             leakage = atof(tokens[3]);
+
             SetANRvals(0,0,taps,delay,gain,leakage);
             SetANRvals(0,1,taps,delay,gain,leakage);
+        } else if(strncmp(cmd,"setrxagcattack",14)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atoi(tokens[0]);
+            SetRXAGCAttack(0,0,value);
+            SetRXAGCAttack(0,1,value);
+        } else if(strncmp(cmd,"setrxagcdecay",13)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atoi(tokens[0]);
+            SetRXAGCDecay(0,0,value);
+            SetRXAGCDecay(0,1,value);
+        } else if(strncmp(cmd,"setrxagchang",12)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atoi(tokens[0]);
+            SetRXAGCHang(0,0,value);
+            SetRXAGCHang(0,1,value);
+        } else if(strncmp(cmd,"setrxagchanglevel",17)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atof(tokens[0]);
+            SetRXAGCHangLevel(0,0,value);
+            SetRXAGCHangLevel(0,1,value);
+        } else if(strncmp(cmd,"setrxagchangthreshold",21)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atoi(tokens[0]);
+            SetRXAGCHangThreshold(0,0,value);
+            SetRXAGCHangThreshold(0,1,value);
+        } else if(strncmp(cmd,"setrxagcthresh",14)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atof(tokens[0]);
+            SetRXAGCThresh(0,0,value);
+            SetRXAGCThresh(0,1,value);
+        } else if(strncmp(cmd,"setrxagcmaxgain",15)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atof(tokens[0]);
+            SetRXAGCTop(0,0,value);
+            SetRXAGCTop(0,1,value);
+        } else if(strncmp(cmd,"setrxagcslope",13)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atoi(tokens[0]);
+            SetRXAGCSlope(0,0,value);
+            SetRXAGCSlope(0,1,value);
         } else if(strncmp(cmd,"setnbvals",9)==0) {
             double threshold;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1584,6 +1678,67 @@ void readcb(struct bufferevent *bev, void *ctx){
             state = atoi(tokens[0]);
             SetPWSmode(0,0,state);
             SetPWSmode(0,1,state);
+            sdr_log(SDR_LOG_INFO,"SetPWSMode %d\n",state);
+        } else if(strncmp(cmd,"setbin",6)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state = atoi(tokens[0]);
+            SetBIN(0,0,state);
+            SetBIN(0,1,state);
+            sdr_log(SDR_LOG_INFO,"SetBIN %d\n",state);
+        } else if(strncmp(cmd,"settxcompst",11)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state = atoi(tokens[0]);
+            SetTXCompressorSt(1, state);
+            sdr_log(SDR_LOG_INFO,"SetTXCompressorSt %d\n",state);
+        } else if(strncmp(cmd,"settxcompvalue",14)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atof(tokens[0]);
+            SetTXCompressor(1, value);
+            sdr_log(SDR_LOG_INFO,"SetTXCompressor %2.2f\n",value);
+        } else if(strncmp(cmd,"setoscphase",11)==0) { // KD0OSS
+            double phase;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            phase = atof(tokens[0]);
+            SetOscPhase(phase);
+            sdr_log(SDR_LOG_INFO,"SetOscPhase %2.2f\n",phase);
+        } else if(strncmp(cmd,"setPanaMode",11)==0) { // KD0OSS
+            int mode;
+            if (tokenize_cmd(&saveptr, tokens, 2) != 1)
+                goto badcommand;
+            mode=atoi(tokens[0]);
+            numSamples = atoi(tokens[1]);
+            if (numSamples > SAMPLE_BUFFER_SIZE) numSamples = SAMPLE_BUFFER_SIZE;
+            panadapterMode = mode;
+            sdr_log(SDR_LOG_INFO,"SetPanaMode %d\n",mode);
+        } else if(strncmp(cmd,"setRxMeterMode",14)==0) { // KD0OSS
+            int mode;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            mode=atoi(tokens[0]);
+            rxMeterMode = mode;
+            sdr_log(SDR_LOG_INFO,"SetRxMeterMode %d\n",mode);
+        } else if(strncmp(cmd,"setTxMeterMode",14)==0) { // KD0OSS
+            int mode;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            mode=atoi(tokens[0]);
+            txMeterMode = mode;
+            sdr_log(SDR_LOG_INFO,"SetTxMeterMode %d\n",mode);
+        } else if(strncmp(cmd,"setrxdcblockgain",16)==0) { // KD0OSS
+            float gain;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            gain=atof(tokens[0]);
+            SetRXDCBlockGain(0,0,gain);
+            SetRXDCBlockGain(0,1,gain);
+            sdr_log(SDR_LOG_INFO,"SetRXDCBlockGain %2.2f\n",gain);
         } else if(strncmp(cmd,"setrxdcblock",10)==0) {
             int state;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1678,6 +1833,99 @@ void readcb(struct bufferevent *bev, void *ctx){
             } else{
                 fprintf(stderr,"Invalid SetTXAMCarrierLevel command: '%s'\n",message);
             }
+        } else if(strncmp(cmd,"settxalcstate",13)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state=atoi(tokens[0]);
+            SetTXALCSt(1,state);
+        } else if(strncmp(cmd,"settxalcattack",14)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXALCAttack(1,value);
+        } else if(strncmp(cmd,"settxalcdecay",13)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXALCDecay(1,value);
+        } else if(strncmp(cmd,"settxalcbot",11)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atof(tokens[0]);
+            SetTXALCBot(1,value);
+        } else if(strncmp(cmd,"settxalchang",12)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXALCHang(1,value);
+        } else if(strncmp(cmd,"settxlevelerstate",17)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXLevelerSt(1,value);
+        } else if(strncmp(cmd,"settxlevelerattack",18)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXLevelerAttack(1,value);
+        } else if(strncmp(cmd,"settxlevelerdecay",17)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXLevelerDecay(1,value);
+        } else if(strncmp(cmd,"settxlevelerhang",16)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXLevelerHang(1,value);
+        } else if(strncmp(cmd,"settxlevelermaxgain",19)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXLevelerTop(1,value);
+        } else if(strncmp(cmd,"settxagcff",10)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state=atoi(tokens[0]);
+            SetTXAGCFF(1,state);
+        } else if(strncmp(cmd,"settxagcffcompression",21)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atof(tokens[0]);
+            SetTXAGCFFCompression(1,value);
+        } else if(strncmp(cmd,"setcorrecttxiqmu",16)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atof(tokens[0]);
+            SetCorrectTXIQMu(1,value);
+        } else if(strncmp(cmd,"setcorrecttxiqw",15)==0) { // KD0OSS
+            double value1;
+            double value2;
+            if (tokenize_cmd(&saveptr, tokens, 2) != 2)
+                goto badcommand;
+            value1=atof(tokens[0]);
+            value2=atof(tokens[0]);
+            SetCorrectTXIQW(1,value1,value2);
+        } else if(strncmp(cmd,"setfadelevel",12)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetFadeLevel(0,0,value);
+            SetFadeLevel(0,1,value);
         } else if(strncmp(cmd,"setsquelchval",13)==0) {
             float value;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1826,6 +2074,26 @@ void readcb(struct bufferevent *bev, void *ctx){
                 SetCorrectIQGain(0, 1, atof(tokens[0]));
             } else {
                 sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"rxiqcorrectwr",13)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 2) != 2)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Rx IQ wReal sent = '%s' and '%s'\n",tokens[0], tokens[1]);
+                SetCorrectRXIQwReal(0, 0, atof(tokens[0]), atoi(tokens[1]));
+                SetCorrectRXIQwReal(0, 1, atof(tokens[0]), atoi(tokens[1]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ wReal");
+            }
+        } else if(strncmp(cmd,"rxiqcorrectwi",13)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 2) != 2)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Rx IQ wImage sent = '%s' and '%s'\n",tokens[0], tokens[1]);
+                SetCorrectRXIQwImag(0, 0, atof(tokens[0]), atoi(tokens[1]));
+                SetCorrectRXIQwImag(0, 1, atof(tokens[0]), atoi(tokens[1]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ wImage");
             }
         } else if(strncmp(cmd,"setfps",6)==0) {
             if (tokenize_cmd(&saveptr, tokens, 2) != 2)

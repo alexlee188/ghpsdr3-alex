@@ -33,6 +33,7 @@
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsItemGroup>
+#include <QtOpenGL/QGLWidget>
 #else
 #include <QGraphicsView>
 #include <QGraphicsScene>
@@ -44,7 +45,6 @@
 #include <QAction>
 #include <QMenu>
 #include <QMouseEvent>
-//#include <QGLWidget>
 
 #include "Meter.h"
 #include "Connection.h"
@@ -54,7 +54,7 @@
 
 class PanadapterScene;
 
-class waterfallObject : public QObject, public QGraphicsItem
+class waterfallObject : public QWidget, public QGraphicsItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
@@ -83,7 +83,6 @@ private:
     int waterfallHigh;
     int waterfallLow;
     bool waterfallAutomatic;
-    int cy;         // current row
     int colorLowR;
     int colorLowG;
     int colorLowB;
@@ -96,9 +95,11 @@ private:
     int sampleRate;
     short LO_offset; 
     float average;
+
 };
 
-class spectrumObject : public QObject, public QGraphicsItem
+
+class spectrumObject : public QWidget, public QGraphicsItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
@@ -114,7 +115,6 @@ private:
     int plotWidth;
     int plotHeight;
 };
-
 
 class filterObject : public QObject, public QGraphicsItem
 {
