@@ -8,7 +8,7 @@
 #include <QDialog>
 #endif
 
-#define GITREV "Revision: 0.5 2013  By Rick Schnicker KD0OSS!https://github.com/alexlee188/ghpsdr3-alex!Branch: kd0oss"
+#define GITREV "Revision: 0.7 2013  By Rick Schnicker KD0OSS!https://github.com/alexlee188/ghpsdr3-alex!Branch: kd0oss"
 
 namespace Ui {
     class About;

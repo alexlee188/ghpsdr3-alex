@@ -695,6 +695,7 @@ void Panadapter::drawFilter(int vfo, bool disable)
     }
 
     filterObject *filterItem = new filterObject(panadapterScene, QPoint(filterLeft,0), (float)(filterRight-filterLeft), (float)splitViewBoundary, color);
+    filterItem->setCacheMode(QGraphicsItem::DeviceCoordinateCache);
     panadapterScene->addItem(filterItem);
     filterItem->update();
     panadapterScene->sceneItems.insert(QString("flt%1").arg(vfo), filterItem);
@@ -972,7 +973,7 @@ void Panadapter::drawSpectrum(void)
     panadapterScene->addItem(panadapterScene->spectrumPlot);
     panadapterScene->update();
     panadapterScene->spectrumPlot->plot = plot;
-    panadapterScene->spectrumPlot->update();
+ //   panadapterScene->spectrumPlot->update();
     //************************************************************
 
     // show the subrx frequency
@@ -1153,6 +1154,7 @@ void Panadapter::updateSpectrumFrame(char* header,char* buffer,int width) {
         panadapterScene->addItem(panadapterScene->waterfallItem);
         drawFrequencyLines();
         drawdBmLines();
+        drawBandLimits();
         drawCursor(1, false);
         drawFilter(1, false);
         drawUpdatedNotchFilter(1);

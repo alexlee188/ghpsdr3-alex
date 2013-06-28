@@ -106,27 +106,27 @@ extern void loadWcpAGC (WCPAGC a);
 extern void WcpAGC (WCPAGC a);
 
 extern WCPAGC newWcpAGC (	AGCMODE mode,
-							int pmode,
-							COMPLEX *buff,
-							int io_buffsize,
-							REAL sample_rate,
-							double tau_attack,
-							double tau_decay,
-							int n_tau,
-							double max_gain,
-							double var_gain,
-							double fixed_gain,
-							double max_input,
-							double out_targ,
-							double tau_fast_backaverage,
-							double tau_fast_decay,
-							double pop_ratio,
-							double tau_hang_backmult,
-							double hangtime,
-							double hang_thresh,
-							double tau_hang_decay,
-							char *tag
-							);
+	int pmode,
+	COMPLEX *buff,
+	int io_buffsize,
+	REAL sample_rate,
+	double tau_attack,
+	double tau_decay,
+	int n_tau,
+	double max_gain,
+	double var_gain,
+	double fixed_gain,
+	double max_input,
+	double out_targ,
+	double tau_fast_backaverage,
+	double tau_fast_decay,
+	double pop_ratio,
+	double tau_hang_backmult,
+	double hangtime,
+	double hang_thresh,
+	double tau_hang_decay,
+	char *tag
+);
 
 extern void delWcpAGC (WCPAGC a);
 

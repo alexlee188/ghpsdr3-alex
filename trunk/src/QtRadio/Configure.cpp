@@ -129,12 +129,36 @@ Configure::Configure() {
     connect(widget.hostComboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(slotHostChanged(int)));
     connect(widget.rxSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotReceiverChanged(int)));
     connect(widget.rxDCBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotRxDCBlock(bool)));   //KD0OSS
+    connect(widget.rxDCBlkGainSpinBox, SIGNAL(valueChanged(int)), this, SLOT(onRxDCBlockGainChanged(int)));  //KD0OSS
     connect(widget.txDCBlockCheckBox, SIGNAL(clicked(bool)), this, SLOT(slotTxDCBlock(bool)));   //KD0OSS
     connect(widget.rxIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onRxIQPhaseChanged(double)));   //KD0OSS
     connect(widget.rxIQGainSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onRxIQGainChanged(double)));   //KD0OSS
     connect(widget.txIQPhaseSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onTxIQPhaseChanged(double)));   //KD0OSS
     connect(widget.txIQGainSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onTxIQGainChanged(double)));   //KD0OSS
 
+    connect(widget.rxAgcSlopeSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcSlopeChanged(int))); //KD0OSS
+    connect(widget.rxAgcMaxGainSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcMaxGainChanged(int))); //KD0OSS
+    connect(widget.rxAgcAttackSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcAttackChanged(int))); //KD0OSS
+    connect(widget.rxAgcDecaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcDecayChanged(int))); //KD0OSS
+    connect(widget.rxAgcHangSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcHangChanged(int))); //KD0OSS
+    connect(widget.rxAgcFixedGainSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcFixedGainChanged(int))); //KD0OSS
+    connect(widget.rxAgcHangThreshSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onRxAgcHangThreshChanged(int))); //KD0OSS
+
+    connect(widget.levelerEnabledCheckBox,SIGNAL(stateChanged(int)),this,SLOT(onLevelerStateChanged(int))); //KD0OSS
+    connect(widget.levelerMaxGainSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onLevelerMaxGainChanged(int))); //KD0OSS
+    connect(widget.levelerAttackSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onLevelerAttackChanged(int))); //KD0OSS
+    connect(widget.levelerDecaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(onLevelerDecayChanged(int))); //KD0OSS
+    connect(widget.levelerHangSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onLevelerHangChanged(int))); //KD0OSS
+
+    connect(widget.alcEnabledCheckBox,SIGNAL(stateChanged(int)),this,SLOT(onAlcStateChanged(int))); //KD0OSS
+    connect(widget.alcAttackSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onAlcAttackChanged(int))); //KD0OSS
+    connect(widget.alcDecaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(onAlcDecayChanged(int))); //KD0OSS
+    connect(widget.alcHangSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onAlcHangChanged(int))); //KD0OSS
+/*
+    connect(widget.nbTransitionSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onNbTransitionChanged(double))); //KD0OSS
+    connect(widget.nbLeadSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onNbLeadChanged(double))); //KD0OSS
+    connect(widget.nbLagSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onNbLagChanged(double))); //KD0OSS
+*/
     connect(widget.nrTapsSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrTapsChanged(int)));
     connect(widget.nrDelaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrDelayChanged(int)));
     connect(widget.nrGainSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotNrGainChanged(int)));
@@ -271,7 +295,6 @@ void Configure::loadSettings(QSettings* settings) {
     widget.spinBox_cwPitch->setValue(settings->value("cwPitch",600).toInt());
     settings->endGroup();
 
-
     settings->beginGroup("NR");
     if(settings->contains("taps")) widget.nrGainSpinBox->setValue(settings->value("taps").toInt());
     if(settings->contains("delay"))widget.nrDelaySpinBox->setValue(settings->value("delay").toInt());
@@ -286,6 +309,31 @@ void Configure::loadSettings(QSettings* settings) {
     if(settings->contains("leak")) widget.anfLeakSpinBox->setValue(settings->value("leak").toInt());
     settings->endGroup();
 
+    settings->beginGroup("AGC"); // KD0OSS
+    if (settings->contains("slope")) widget.rxAgcSlopeSpinBox->setValue(settings->value("slope").toInt());
+    if (settings->contains("maxgain")) widget.rxAgcMaxGainSpinBox->setValue(settings->value("maxgain").toInt());
+    if (settings->contains("attack")) widget.rxAgcAttackSpinBox->setValue(settings->value("attack").toInt());
+    if (settings->contains("decay")) widget.rxAgcDecaySpinBox->setValue(settings->value("decay").toInt());
+    if (settings->contains("hang")) widget.rxAgcHangSpinBox->setValue(settings->value("hang").toInt());
+    if (settings->contains("fixedgain")) widget.rxAgcFixedGainSpinBox->setValue(settings->value("fixedgain").toInt());
+    if (settings->contains("hangthreshold")) widget.rxAgcHangThreshSpinBox->setValue(settings->value("hangthreshold").toInt());
+    settings->endGroup();
+
+    settings->beginGroup("Leveler"); // KD0OSS
+    if (settings->contains("enabled")) widget.levelerEnabledCheckBox->setChecked(settings->value("enabled",FALSE).toBool());
+    if (settings->contains("maxgain")) widget.levelerMaxGainSpinBox->setValue(settings->value("maxgain").toInt());
+    if (settings->contains("attack")) widget.levelerAttackSpinBox->setValue(settings->value("attack").toInt());
+    if (settings->contains("decay")) widget.levelerDecaySpinBox->setValue(settings->value("decay").toInt());
+    if (settings->contains("hang")) widget.levelerHangSpinBox->setValue(settings->value("hang").toInt());
+    settings->endGroup();
+
+    settings->beginGroup("ALC"); // KD0OSS
+    if (settings->contains("enabled")) widget.alcEnabledCheckBox->setChecked(settings->value("enabled",FALSE).toBool());
+    if (settings->contains("attack")) widget.alcAttackSpinBox->setValue(settings->value("attack").toInt());
+    if (settings->contains("decay")) widget.alcDecaySpinBox->setValue(settings->value("decay").toInt());
+    if (settings->contains("hang")) widget.alcHangSpinBox->setValue(settings->value("hang").toInt());
+    settings->endGroup();
+
     settings->beginGroup("NB");
     if(settings->contains("threshold")) widget.nbThresholdSpinBox->setValue(settings->value("threshold").toInt());
     settings->endGroup();
@@ -294,15 +342,19 @@ void Configure::loadSettings(QSettings* settings) {
     if(settings->contains("threshold")) widget.nbThresholdSpinBox->setValue(settings->value("threshold").toInt());
     settings->endGroup();
 
-    settings->beginGroup("TxSettings");
-    widget.allowTx->setChecked(settings->value("allowTx",FALSE).toBool());
-    widget.rxDCBlockCheckBox->setChecked(settings->value("rxDCBlock",FALSE).toBool());  //KD0OSS
-    widget.txDCBlockCheckBox->setChecked(settings->value("txDCBlock",FALSE).toBool());  //KD0OSS
-    widget.txIQPhaseSpinBox->setValue(settings->value("TxIQPhaseCorrect",0).toInt());  //KD0OSS
-    widget.txIQGainSpinBox->setValue(settings->value("TxIQGainCorrect",0).toInt());  //KD0OSS
+    settings->beginGroup("RXDCBlock"); // KD0OSS
+    if (settings->contains("rxDCBlock")) widget.rxDCBlockCheckBox->setChecked(settings->value("rxDCBlock",FALSE).toBool());
+    if (settings->contains("rxDCBlockGain")) widget.rxDCBlkGainSpinBox->setValue(settings->value("rxDCBlockGain",0).toInt());
     settings->endGroup();
 
-    settings->beginGroup("TxIQimage");
+    settings->beginGroup("TxSettings");
+    widget.allowTx->setChecked(settings->value("allowTx",FALSE).toBool());
+    widget.txDCBlockCheckBox->setChecked(settings->value("txDCBlock",FALSE).toBool());  //KD0OSS
+    settings->endGroup();
+
+    settings->beginGroup("TxIQimage");  //KD0OSS
+    if (settings->contains("TxIQPhaseCorrect")) widget.txIQPhaseSpinBox->setValue(settings->value("TxIQPhaseCorrect",0).toInt());  //KD0OSS
+    if (settings->contains("TxIQGainCorrect")) widget.txIQGainSpinBox->setValue(settings->value("TxIQGainCorrect",0).toInt());  //KD0OSS
     settings->endGroup();
 
     settings->beginGroup("RxIQimage");
@@ -381,18 +433,45 @@ void Configure::saveSettings(QSettings* settings) {
     settings->setValue("gain",widget.anfGainSpinBox->value());
     settings->setValue("leak",widget.anfLeakSpinBox->value());
     settings->endGroup();
+    settings->beginGroup("AGC"); // KD0OSS
+    settings->setValue("slope",widget.rxAgcSlopeSpinBox->value());
+    settings->setValue("maxgain",widget.rxAgcMaxGainSpinBox->value());
+    settings->setValue("attack",widget.rxAgcAttackSpinBox->value());
+    settings->setValue("decay",widget.rxAgcDecaySpinBox->value());
+    settings->setValue("hang",widget.rxAgcHangSpinBox->value());
+    settings->setValue("fixedgain",widget.rxAgcFixedGainSpinBox->value());
+    settings->setValue("hangthreshold",widget.rxAgcHangThreshSpinBox->value());
+    settings->endGroup();
+    settings->beginGroup("Leveler"); // KD0OSS
+    settings->setValue("enabled",widget.levelerEnabledCheckBox->checkState());
+    settings->setValue("maxgain",widget.levelerMaxGainSpinBox->value());
+    settings->setValue("attack",widget.levelerAttackSpinBox->value());
+    settings->setValue("decay",widget.levelerDecaySpinBox->value());
+    settings->setValue("hang",widget.levelerHangSpinBox->value());
+    settings->endGroup();
+    settings->beginGroup("ALC");  // KD0OSS
+    settings->setValue("enabled",widget.alcEnabledCheckBox->checkState());
+    settings->setValue("attack",widget.alcAttackSpinBox->value());
+    settings->setValue("decay",widget.alcDecaySpinBox->value());
+    settings->setValue("hang",widget.alcHangSpinBox->value());
+    settings->endGroup();
     settings->beginGroup("NB");
     settings->setValue("threshold",widget.nbThresholdSpinBox->value());
     settings->endGroup();
     settings->beginGroup("SDROM");
     settings->setValue("threshold",widget.nbThresholdSpinBox->value());
     settings->endGroup();
+    settings->beginGroup("RXDCBlock");  // KD0OSS
+    settings->setValue("rxDCBlock",widget.rxDCBlockCheckBox->checkState());
+    settings->setValue("rxDCBlockGain",widget.rxDCBlkGainSpinBox->value());
+    settings->endGroup();
     settings->beginGroup("TxSettings");
     settings->setValue("allowTx",widget.allowTx->checkState());
-    settings->setValue("rxDCBlock",widget.rxDCBlockCheckBox->checkState());  //KD0OSS
     settings->setValue("txDCBlock",widget.txDCBlockCheckBox->checkState());  //KD0OSS
-    settings->setValue("TxIQPhaseCorrect",widget.txIQPhaseSpinBox->value());  //KD0OSS
-    settings->setValue("TxIQGainCorrect",widget.txIQGainSpinBox->value());  //KD0OSS
+    settings->endGroup();
+    settings->beginGroup("TxIQimage"); // KD0OSS
+    settings->setValue("TxIQPhaseCorrect",widget.txIQPhaseSpinBox->value());
+    settings->setValue("TxIQGainCorrect",widget.txIQGainSpinBox->value());
     settings->endGroup();
     settings->beginGroup("RxIQimage");
     settings->setValue("RxIQon/off",widget.RxIQcheckBox->checkState());
@@ -574,6 +653,10 @@ QString Configure::getHost() {
     return widget.hostComboBox->currentText();
 }
 
+void Configure::onRxDCBlockGainChanged(int value){ //KD0OSS
+    emit rxDCBlockGainChanged(value);
+}
+
 void Configure::slotRxDCBlock(bool state) {   //KD0OSS
     emit rxDCBlockChanged(state);
 }
@@ -588,6 +671,70 @@ bool Configure::getRxDCBlockValue() {  //KD0OSS
 
 bool Configure::getTxDCBlockValue() {  //KD0OSS
     return widget.txDCBlockCheckBox->isChecked();
+}
+
+int Configure::getRxAGCSlopeValue() {  //KD0OSS
+    return widget.rxAgcSlopeSpinBox->value();
+}
+
+int Configure::getRxAGCMaxGainValue() {  //KD0OSS
+    return widget.rxAgcMaxGainSpinBox->value();
+}
+
+int Configure::getRxAGCAttackValue() {  //KD0OSS
+    return widget.rxAgcAttackSpinBox->value();
+}
+
+int Configure::getRxAGCDecayValue() {  //KD0OSS
+    return widget.rxAgcDecaySpinBox->value();
+}
+
+int Configure::getRxAGCHangValue() {  //KD0OSS
+    return widget.rxAgcHangSpinBox->value();
+}
+
+int Configure::getRxAGCFixedGainValue() {  //KD0OSS
+    return widget.rxAgcFixedGainSpinBox->value();
+}
+
+int Configure::getRxAGCHangThreshValue() {  //KD0OSS
+    return widget.rxAgcHangThreshSpinBox->value();
+}
+
+bool Configure::getLevelerEnabledValue() {  //KD0OSS
+    return widget.levelerEnabledCheckBox->isChecked();
+}
+
+int Configure::getLevelerMaxGainValue() {  //KD0OSS
+    return widget.levelerMaxGainSpinBox->value();
+}
+
+int Configure::getLevelerAttackValue() {  //KD0OSS
+    return widget.levelerAttackSpinBox->value();
+}
+
+int Configure::getLevelerDecayValue() {  //KD0OSS
+    return widget.levelerDecaySpinBox->value();
+}
+
+int Configure::getLevelerHangValue() {  //KD0OSS
+    return widget.levelerHangSpinBox->value();
+}
+
+bool Configure::getALCEnabledValue() {  //KD0OSS
+    return widget.alcEnabledCheckBox->isChecked();
+}
+
+int Configure::getALCAttackValue() {  //KD0OSS
+    return widget.alcAttackSpinBox->value();
+}
+
+int Configure::getALCDecayValue() {  //KD0OSS
+    return widget.alcDecaySpinBox->value();
+}
+
+int Configure::getALCHangValue() {  //KD0OSS
+    return widget.alcHangSpinBox->value();
 }
 
 int Configure::getReceiver() {
@@ -919,3 +1066,99 @@ void Configure::onTxIQGainChanged(double arg1)   //KD0OSS
 {
     emit txIQGainChanged(arg1);
 }
+/*
+void Configure::onNbTransitionChanged(double arg1) // KD0OSS
+{
+    emit nbTransitionChanged(arg1);
+}
+
+void Configure::onNbLeadChanged(double arg1) // KD0OSS
+{
+    emit nbLeadChanged(arg1);
+}
+
+void Configure::onNbLagChanged(double arg1) // KD0OSS
+{
+    emit nbLagChanged(arg1);
+}
+*/
+void Configure::onRxAgcSlopeChanged(int arg1) // KD0OSS
+{
+    emit agcSlopeChanged(arg1);
+}
+
+void Configure::onRxAgcMaxGainChanged(int arg1) // KD0OSS
+{
+    emit agcMaxGainChanged(arg1);
+}
+
+void Configure::onRxAgcAttackChanged(int arg1) // KD0OSS
+{
+    emit agcAttackChanged(arg1);
+}
+
+void Configure::onRxAgcDecayChanged(int arg1) // KD0OSS
+{
+    emit agcDecayChanged(arg1);
+}
+
+void Configure::onRxAgcHangChanged(int arg1) // KD0OSS
+{
+    emit agcHangChanged(arg1);
+}
+
+void Configure::onRxAgcFixedGainChanged(int arg1) // KD0OSS
+{
+    emit agcFixedGainChanged(arg1);
+}
+
+void Configure::onRxAgcHangThreshChanged(int arg1) // KD0OSS
+{
+    emit agcHangThreshChanged(arg1);
+}
+
+void Configure::onLevelerStateChanged(int arg1)
+{
+    emit levelerStateChanged(arg1);
+}
+
+void Configure::onLevelerMaxGainChanged(int arg1)
+{
+    emit levelerMaxGainChanged(arg1);
+}
+
+void Configure::onLevelerAttackChanged(int arg1)
+{
+    emit levelerAttackChanged(arg1);
+}
+
+void Configure::onLevelerDecayChanged(int arg1)
+{
+    emit levelerDecayChanged(arg1);
+}
+
+void Configure::onLevelerHangChanged(int arg1)
+{
+    emit levelerHangChanged(arg1);
+}
+
+void Configure::onAlcStateChanged(int arg1)
+{
+    emit alcStateChanged(arg1);
+}
+
+void Configure::onAlcAttackChanged(int arg1)
+{
+    emit alcAttackChanged(arg1);
+}
+
+void Configure::onAlcDecayChanged(int arg1)
+{
+    emit alcDecayChanged(arg1);
+}
+
+void Configure::onAlcHangChanged(int arg1)
+{
+    emit alcHangChanged(arg1);
+}
+

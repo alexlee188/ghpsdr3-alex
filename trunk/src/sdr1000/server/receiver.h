@@ -24,12 +24,14 @@
 *
 */
 
-
+#include <stdio.h>
 
 #define MAX_RECEIVERS 8
 
 #define BUFFER_SIZE 1024
 
+unsigned char setRecord;
+FILE *file;
 
 typedef struct _receiver {
     int id;
