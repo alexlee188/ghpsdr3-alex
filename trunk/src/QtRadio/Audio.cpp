@@ -309,6 +309,7 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
     audio_out= new Audio_playback;
     audio_out->moveToThread(audio_output_thread);
     audio_output_thread->start(QThread::HighestPriority);
+
     audio_out->set_audio_byte_order(audio_format.byteOrder());
     audio_out->set_audio_encoding(audio_encoding);
     audio_out->set_decoded_buffer(&decoded_buffer);

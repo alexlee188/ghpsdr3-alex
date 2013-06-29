@@ -88,17 +88,13 @@ UI::UI(const QString server) {
     rtp_thread->start(QThread::LowPriority);
     qDebug() << "QThread:  rtp_thread = " << rtp_thread;
     useRTP=configure.getRTP();
-    qDebug() << "WMWMWMWMWM GOT HERE #1";
     configure.initAudioDevices(audio);
-qDebug() << "WMWMWMWMWM GOT HERE #2";
     mic_codec2 = codec2_create(CODEC2_MODE_3200);
     audioinput = new AudioInput;
     configure.initMicDevices(audioinput);
-qDebug() << "WMWMWMWMWM GOT HERE #3";
     mic_buffer_count = 0;
     mic_frame_count = 0;
     connection_valid = FALSE;
-qDebug() << "WMWMWMWMWM GOT HERE #4";
     isConnected = false;
     modeFlag = false;
     infotick = 0;
