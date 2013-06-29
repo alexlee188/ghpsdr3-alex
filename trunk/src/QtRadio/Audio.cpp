@@ -316,9 +316,8 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
     audio_out->set_rtp_connected(false);
     audio_out->set_useRTP(false);
     audio_out->start();
-    //audio_output->start(audio_out);  //KD0NUZ WORKING OSX JUNE 26
+    audio_output->start(audio_out);
 
-    qDebug() << "!!!!!!!!!!!!!!!!!!1GOT HERE!!!!!!!!!!!!!!!!";
 #if QT_VERSION >= 0x050000
      audio_processing->set_audio_channels(audio_format.channelCount());
 #else
