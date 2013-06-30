@@ -325,7 +325,7 @@ sem_wait(&ozy_send_semaphore);
                 buffer.offset=offset;
                 buffer.length=length-offset;
                 if(buffer.length>500) buffer.length=500;
-//fprintf(stderr,"ozy_send: %lld:%d:%d\n",buffer.sequence,buffer.offset,buffer.length);
+fprintf(stderr,"ozy_send: %lld:%d:%d\n",buffer.sequence,buffer.offset,buffer.length);
                 memcpy((char*)&buffer.data[0],(char*)&data[offset],buffer.length);
                 rc=sendto(audio_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&server_audio_addr,server_audio_length);
                 if(rc<=0) {
@@ -339,7 +339,7 @@ sem_wait(&ozy_send_semaphore);
             tx_sequence++;
 
 #else
-                bytes_written=sendto(audio_socket,data,length,0,(struct sockaddr *)&server_audio_addr,server_audio_length);
+                int bytes_written=sendto(audio_socket,data,length,0,(struct sockaddr *)&server_audio_addr,server_audio_length);
                 if(bytes_written<0) {
                    fprintf(stderr,"sendto audio failed: %d audio_socket=%d\n",bytes_written,audio_socket);
                    exit(1);

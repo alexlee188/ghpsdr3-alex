@@ -41,6 +41,7 @@
 #include "messages.h"
 
 short audio_port=AUDIO_PORT;
+float output_buffer[BUFFER_SIZE*2];
 
 char* parse_command(CLIENT* client,char* command);
 void* audio_thread(void* arg);
@@ -264,6 +265,7 @@ void* audio_thread(void* arg)
     int old_state, old_type;
     int bytes_read;
     int on=1;
+    static pos;
 
     fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 
@@ -303,7 +305,13 @@ void* audio_thread(void* arg)
             exit(1);
         }
 //fprintf(stderr, "Read: %d\n", bytes_read);
-        process_sdr1000_output_buffer(rx->output_buffer,&rx->output_buffer[BUFFER_SIZE]);
+        memcpy(output_buffer+pos, rx->output_buffer, bytes_read);
+        pos += bytes_read;
+        if (pos >= (BUFFER_SIZE*2))
+        {
+            process_sdr1000_output_buffer(output_buffer,output_buffer[BUFFER_SIZE]);
+            pos = 0;
+        }
     }
 } // end audio_thread
 

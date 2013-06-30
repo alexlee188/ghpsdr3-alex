@@ -857,7 +857,7 @@ void UI::connected() {
         connection.sendCommand(command);
 
         command.clear(); QTextStream(&command) << "setrxagcslope " << configure.getRxAGCSlopeValue();
- //       connection.sendCommand(command);
+  //      connection.sendCommand(command);
         command.clear(); QTextStream(&command) << "setrxagcmaxgain " << configure.getRxAGCMaxGainValue();
         connection.sendCommand(command);
         command.clear(); QTextStream(&command) << "setrxagcattack " << configure.getRxAGCAttackValue();
