@@ -111,7 +111,7 @@ UI::UI(const QString server) {
     widget.gridLayout->setVerticalSpacing(0);
     widget.gridLayout->setHorizontalSpacing(0);
 
-    widget.statusbar->showMessage("QtRadio branch: KD0NUZ osx-testing June 28, 2013");
+    widget.statusbar->showMessage("QtRadio branch: kd0oss 2013");
 
     connect(widget.vfoFrame,SIGNAL(getBandFrequency()),this,SLOT(getBandFrequency()));
 
