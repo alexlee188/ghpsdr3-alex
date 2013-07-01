@@ -1,4 +1,4 @@
-#if !defined(WIN32)
+#if defined(LINUX)
 #ifndef POWERMATE_H
 #define POWERMATE_H
 
