@@ -29,8 +29,8 @@
 #include <QDebug>
 #include <QKeyEvent>
 
-#if !defined(WIN32)
-#include "powermate.h"
+#if defined(LINUX)
+  #include "powermate.h"
 #endif
 
 //#include "Band.h"
@@ -66,8 +66,8 @@ vfo::vfo(QWidget *parent) :
     connect(ui->hSlider, SIGNAL(valueChanged(int)),
                 this, SLOT(processRIT(int)));
 
-#if !defined(WIN32)
-    //  Powermate related stuff
+// Powermate related stuff
+#if defined(LINUX)
     PmInput *input = new PmInput();
     connect(input, SIGNAL(pressed()), this, SLOT(press()));
     connect(input, SIGNAL(released()), this, SLOT(release()));
