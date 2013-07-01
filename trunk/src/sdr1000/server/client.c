@@ -38,6 +38,7 @@
 
 #include "client.h"
 #include "receiver.h"
+#include "sdr1000.h"
 #include "messages.h"
 
 short audio_port=AUDIO_PORT;
@@ -265,7 +266,7 @@ void* audio_thread(void* arg)
     int old_state, old_type;
     int bytes_read;
     int on=1;
-    static pos;
+    static int pos;
 
     fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 
@@ -309,7 +310,7 @@ void* audio_thread(void* arg)
         pos += bytes_read;
         if (pos >= (BUFFER_SIZE*2))
         {
-            process_sdr1000_output_buffer(output_buffer,output_buffer[BUFFER_SIZE]);
+            process_sdr1000_output_buffer(&output_buffer,&output_buffer[BUFFER_SIZE]);
             pos = 0;
         }
     }

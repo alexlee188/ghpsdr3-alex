@@ -67,6 +67,7 @@ extern char* set_attenuator(CLIENT* client, long value);
 extern char* set_spurreduction(CLIENT* client, unsigned char enabled);
 extern char* get_pa_adc(CLIENT* client, unsigned char channel);
 extern void send_IQ_buffer(int rx);
+extern char* set_record(CLIENT* client, unsigned char enabled);
 #ifdef __cplusplus
  }
 #endif
