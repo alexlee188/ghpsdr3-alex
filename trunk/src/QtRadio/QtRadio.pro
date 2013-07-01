@@ -22,6 +22,10 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 #    INCLUDEPATH += /opt/qt5/include/QtMultimedia
 #    INCLUDEPATH += /opt/qt5/include/QtNetwork
 
+    #KD0NUZ OSX Homebrew includes/libs
+    INCLUDEPATH += /usr/local/include
+    LIBS += -L/usr/local/lib
+
     INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtCore
     INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtGui
     INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtWidgets
