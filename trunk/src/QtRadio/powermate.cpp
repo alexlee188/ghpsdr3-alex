@@ -23,7 +23,7 @@
 *
 */
 
-#if !defined(WIN32)
+#if defined(LINUX)
 
 #include <QDebug>
 #include "powermate.h"
