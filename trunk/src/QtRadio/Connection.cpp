@@ -316,9 +316,14 @@ void Connection::socketData() {
             if(bytes==header_size) {
 // g0orx binary header
                 length=((hdr[3]&0xFF)<<8)+(hdr[4]&0xFF);
-                buffer=(char*)malloc(length);
-                bytes=0;
-                state=READ_BUFFER;
+                if ((length < 0) || (length > 4096)){
+                        state = READ_HEADER_TYPE;
+                }
+                else {
+                    buffer=(char*)malloc(length);
+                    bytes=0;
+                    state=READ_BUFFER;
+                }
             }
             break;
 
@@ -414,10 +419,10 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     //qDebug() << "q-master:" << answer;
                     if (answer.contains("slave")){
                         amSlave = true;
-                        emit printStatusBar("  ...Slave Mode... ");
+                        emit printStatusBar("  ...Slave Mode. ");
                     }else{
                         amSlave = false;
-                        emit printStatusBar("  ...Master Mode... ");
+                        emit printStatusBar("  ...Master Mode. ");
                     }
                 }else if(answer.contains("q-rtpport")){
                     rx.setPattern("rtpport:(\\d+);");

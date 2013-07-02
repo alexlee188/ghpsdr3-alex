@@ -71,6 +71,8 @@ gettimeofday (struct timeval *tv, struct timezone *tz)
   LARGE_INTEGER li;
   __int64 t;
   static int tzflag;
+  long timezoneGeneralOffset;
+  int dstHours;
 
   if (tv)
     {

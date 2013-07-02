@@ -1,13 +1,13 @@
 #include "smeter.h"
-#include "Spectrum.h"
+#include "Panadapter.h"
 #include "UI.h"
-sMeter::sMeter(QWidget*& widget) {
-    QFrame::setParent(widget);
 
+
+sMeter::sMeter(QWidget* parent) : QFrame(parent) {
     sMeterMain=new Meter("Main Rx");
     sMeterSub=new Meter("Sub Rx");
     meter_dbm = -121;
-    sub_meter_dbm =-121;
+    sub_meter_dbm = -121;
     subRx = FALSE;
 }
 
@@ -23,7 +23,7 @@ void sMeter::setSubRxState(bool state)
 void sMeter::paintEvent(QPaintEvent*)
 {
 //qDebug() << "smeter.cpp - Meter value is equal to " << meter_dbm;
-
+//return;
     // Draw the Main Rx S-Meter
     QPainter painter(this);
     QImage image=sMeterMain->getImage(meter_dbm);

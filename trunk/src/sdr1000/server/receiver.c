@@ -1,3 +1,4 @@
+
 /**
 * @file receiver.c
 * @brief manage client attachment to receivers
@@ -27,6 +28,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -73,7 +75,8 @@ void init_receivers() {
         perror("bind socket failed for iq socket");
         exit(1);
     }
-
+    setRecord = 0;
+    file = NULL;
 }
 
 char* attach_receiver(int rx,CLIENT* client) {
@@ -92,7 +95,7 @@ char* attach_receiver(int rx,CLIENT* client) {
     
     client->state=RECEIVER_ATTACHED;
     receiver[rx].client=client;
-    client->receiver=rx;;
+    client->receiver=rx;
 
     sprintf(response,"%s %d",OK,sdr1000_get_sample_rate());
 
@@ -118,6 +121,69 @@ char* detach_receiver(int rx,CLIENT* client) {
     return OK;
 }
 
+char* set_ptt(CLIENT* client, int ptt) { //kd0oss added
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+    SDR1000_set_ptt(ptt);
+    return OK;
+}
+
+char* set_attenuator(CLIENT* client, long value) { //kd0oss added
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+    SDR1000_set_attn(value);
+    return OK;
+}
+
+char* set_spurreduction(CLIENT* client, unsigned char enabled) { //kd0oss added
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+    SDR1000_set_sr(enabled);
+    return OK;
+}
+
+char* set_record(CLIENT* client, unsigned char enabled) { //kd0oss added
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+    if (enabled)
+    {
+        file = fopen("/tmp/sdr_record", "wb");
+        printf("Recording....\n");
+        setRecord = enabled;
+    }
+    else
+    {
+        setRecord = enabled;
+        if (file != NULL)
+        { 
+            fclose(file);
+            file = NULL;
+            printf("Stopped recording.\n");
+        }
+    }
+    return OK;
+}
+
 char* set_frequency(CLIENT* client,long frequency) {
     if(client->state==RECEIVER_DETACHED) {
         return CLIENT_DETACHED;
@@ -130,12 +196,45 @@ char* set_frequency(CLIENT* client,long frequency) {
     receiver[client->receiver].frequency=frequency;
     receiver[client->receiver].frequency_changed=1;
 
+    SDR1000_set_frequency_offset(receiver[client->receiver].freq_cal_offset);
     SDR1000_set_frequency(frequency);
 
     return OK;
 }
 
-void send_IQ_buffer(int rx) {
+char* set_frequency_offset(CLIENT* client,long frequency) { //kd0oss added
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+
+    receiver[client->receiver].freq_cal_offset=frequency;
+    SDR1000_set_frequency_offset(frequency);
+
+    return OK;
+}
+
+char* get_pa_adc(CLIENT* client, unsigned char channel) { //kd0oss added
+    char buffer[5];
+
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+
+    sprintf(buffer, "OK %d", SDR1000_get_pa_adc(channel));
+
+    return buffer;
+}
+
+void send_IQ_buffer(int rx) 
+{
     struct sockaddr_in client;
     int client_length;
     unsigned short offset;
@@ -143,13 +242,16 @@ void send_IQ_buffer(int rx) {
     BUFFER buffer;
     int rc;
 
-    if(rx>=sdr1000_get_receivers()) {
+    if(rx>=sdr1000_get_receivers()) 
+    {
         fprintf(stderr,"send_spectrum_buffer: invalid rx: %d\n",rx);
         return;
     }
 
-    if(receiver[rx].client!=(CLIENT*)NULL) {
-        if(receiver[rx].client->iq_port!=-1) {
+    if(receiver[rx].client!=(CLIENT*)NULL) 
+    {
+        if(receiver[rx].client->iq_port!=-1) 
+        {
             // send the IQ buffer
 
             client_length=sizeof(client);
@@ -164,33 +266,77 @@ void send_IQ_buffer(int rx) {
             //     2 byte offset
             //     2 byte length
             offset=0;
-            while(offset<sizeof(receiver[rx].input_buffer)) {
+            while(offset<sizeof(receiver[rx].input_buffer)) 
+            {
                 buffer.sequence=sequence;
                 buffer.offset=offset;
                 buffer.length=sizeof(receiver[rx].input_buffer)-offset;
                 if(buffer.length>500) buffer.length=500;
 
                 memcpy((char*)&buffer.data[0],(char*)&receiver[rx].input_buffer[offset/4],buffer.length);
+                if (setRecord)
+                    fwrite((char*)&buffer, 1, sizeof(buffer), file);
+                else
+                {
+                    file = fopen("/tmp/sdr_record", "rb");
+                    if (file != NULL)
+                    {
+                        printf("Playing recorded file...\n");
+                        while (!feof(file))
+                        {
+                            usleep(580);
+                            fread((char*)&buffer, 1, sizeof(buffer), file);
+                            rc=sendto(iq_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&client,client_length);
+                        }
+                        fclose(file);
+                        printf("Stopped playing recorded file.\n");
+                        file = NULL;
+                        remove("/tmp/sdr_record");
+                        sequence = buffer.sequence;
+                        return;
+                    }
+                }
+
                 rc=sendto(iq_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&client,client_length);
-                if(rc<=0) {
+
+                if(rc<=0) 
+                {
                     perror("sendto failed for iq data");
                     exit(1);
                 }
                 offset+=buffer.length;
             }
             sequence++;
-
-
 #else
+            if (setRecord)
+                fwrite(receiver[rx].input_buffer, 4, sizeof(receiver[rx].input_buffer), file);
+            else
+            {
+                file = fopen("/tmp/sdr_record", "rb");
+                if (file != NULL)
+                {
+                    printf("Playing recorded file...\n");
+                    while (!feof(file))
+                    {
+                        fread(receiver[rx].input_buffer, 4, sizeof(receiver[rx].input_buffer), file);
+                        rc=sendto(iq_socket,receiver[rx].input_buffer,sizeof(receiver[rx].input_buffer),0,(struct sockaddr*)&client,client_length);
+                    }
+                    fclose(file);
+                    printf("Stopped playing recorded file.\n");
+                    file = NULL;
+                    remove("/tmp/sdr_record");
+                    return;
+                }
+            }
 
             rc=sendto(iq_socket,receiver[rx].input_buffer,sizeof(receiver[rx].input_buffer),0,(struct sockaddr*)&client,client_length);
 
-            if(rc<=0) {
+            if(rc<=0) 
+            {
                 perror("sendto failed for iq data");
                 exit(1);
             }
-#endif
- 
+#endif 
         }
     }
 }

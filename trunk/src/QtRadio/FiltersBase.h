@@ -31,7 +31,7 @@
 
 #include "Filter.h"
 
-#define MAX_FILTERS 10
+#define MAX_FILTERS 11
 
 class FiltersBase : public QObject {
     Q_OBJECT

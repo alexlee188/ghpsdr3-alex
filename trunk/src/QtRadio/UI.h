@@ -42,7 +42,7 @@
 #include "Audio.h"
 #include "Audioinput.h"
 #include "Connection.h"
-#include "Spectrum.h"
+#include "Panadapter.h"
 #include "Band.h"
 #include "BandLimit.h"
 #include "Mode.h"
@@ -73,9 +73,11 @@
 #include "RTP.h"
 #include "hardware.h"
 #include "powermate.h"
+#include "EqualizerDialog.h"
 
 #define DSPSERVER_BASE_PORT 8000
 
+#define AGC_FIXED 0
 #define AGC_LONG 1
 #define AGC_SLOW 2
 #define AGC_MEDIUM 3
@@ -107,6 +109,7 @@ public:
     void setHwDlg(DlgHardware *);
     DlgHardware * getHwDlg() { return pHwDlg; }
     void rmHwDlg();
+    Connection connection;
 
 signals:
     void initialize_audio(int length);
@@ -118,7 +121,10 @@ signals:
 public slots:
     void getMeterValue(int m, int s);
 
+    bool newDspServerCheck(void); // KD0OSS
+
     void actionConfigure();
+    void actionEqualizer(); // KD0OSS
     void actionAbout();
     void actionConnect();
     void actionConnectNow(QString IP);
@@ -131,7 +137,7 @@ public slots:
 
     void actionMuteMainRx();
     void actionMuteSubRx();
-
+/*
     void actionGain_10();
     void actionGain_20();
     void actionGain_30();
@@ -142,7 +148,7 @@ public slots:
     void actionGain_80();
     void actionGain_90();
     void actionGain_100();
-
+*/
     void actionSquelch();
     void actionSquelchReset();
     void squelchValueChanged(int);
@@ -187,6 +193,7 @@ public slots:
     void actionFilter7();
     void actionFilter8();
     void actionFilter9();
+    void actionFilter10();
 
     void actionANF();
     void actionNR();
@@ -195,12 +202,17 @@ public slots:
 
     void actionPolyphase();
 
+    void actionFixed(); //KD0OSS
     void actionSlow();
     void actionMedium();
     void actionFast();
     void actionLong();
 
     void actionPreamp();
+    void actionPwsMode0(); //KD0OSS
+    void actionPwsMode1(); //KD0OSS
+    void actionPwsMode2(); //KD0OSS
+    void actionPwsMode3(); //KD0OSS
 
     void connected();
     void disconnected(QString message);
@@ -211,9 +223,11 @@ public slots:
     void modeChanged(int previousMode,int newMode);
     void filtersChanged(FiltersBase* previousFilters,FiltersBase* newFilters);
     void filterChanged(int previousFilter,int newFilter);
+    void variableFilter(int low, int high); // KD0OSS
     void frequencyChanged(long long frequency);
 
     void updateSpectrum();
+    void masterButtonClicked(void);
 
     void audioDeviceChanged(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder);
     void encodingChanged(int choice);
@@ -237,11 +251,40 @@ public slots:
 
     void hostChanged(QString host);
     void receiverChanged(int rx);
+    void rxDCBlockChanged(bool state); //KD0OSS
+    void txDCBlockChanged(bool state); //KD0OSS
+    void rxDCBlockGainChanged(int value); //KD0OSS
+    void setTxIQPhase(double value); //KD0OSS
+    void setTxIQGain(double value); //KD0OSS
+
+    void agcSlopeChanged(int); //KD0OSS
+    void agcMaxGainChanged(int); //KD0OSS
+    void agcAttackChanged(int); //KD0OSS
+    void agcDecayChanged(int); //KD0OSS
+    void agcHangChanged(int); //KD0OSS
+    void agcFixedGainChanged(int); //KD0OSS
+    void agcHangThreshChanged(int); //KD0OSS
+    void levelerStateChanged(int); //KD0OSS
+    void levelerMaxGainChanged(int); //KD0OSS
+    void levelerAttackChanged(int); //KD0OSS
+    void levelerDecayChanged(int); //KD0OSS
+    void levelerHangChanged(int); //KD0OSS
+    void alcStateChanged(int); //KD0OSS
+    void alcAttackChanged(int); //KD0OSS
+    void alcDecayChanged(int); //KD0OSS
+    void alcHangChanged(int); //KD0OSS
+
+    void AGCTLevelChanged(int level); //KD0OSS
+    void enableRxEq(bool); // KD0OSS
+    void enableTxEq(bool); // KD0OSS
 
     void nrValuesChanged(int,int,double,double);
     void anfValuesChanged(int,int,double,double);
     void nbThresholdChanged(double);
     void sdromThresholdChanged(double);
+    void windowTypeChanged(int); //KD0OSS
+    void statusMessage(QString); //KD0OSS
+    void removeNotchFilter(void); //KD0OSS
 
     void actionBookmark();
     void addBookmark();
@@ -272,11 +315,13 @@ public slots:
     void closeServers ();
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
+    void setRxIQPhase(double value); //KD0OSS
+    void setRxIQGain(double value); //KD0OSS
     void cwPitchChanged(int cwPitch);
-    void testSliderChange(int value);
-    void testButtonClick(bool state);
+//    void testSliderChange(int value);
+//    void testButtonClick(bool state);
     void resetbandedges(double offset);
-    void masterButtonClicked(void);
+
     void hardware (QString);
 
 signals:
@@ -289,6 +334,10 @@ protected:
 
 private slots:
     void on_zoomSpectrumSlider_sliderMoved(int position);
+    void setSampleZoom(bool);  // KD0OSS
+    void addNotchFilter(void);   // KD0OSS
+    void setAudioMuted(bool); // KD0OSS
+    void audioGainChanged(void); // KD0OSS
 
 private:
     void printWindowTitle(QString message);
@@ -297,6 +346,7 @@ private:
     void actionGain(int g);
     void setGain(bool state);
     void initRigCtl();
+    void setPwsMode(int mode); //KD0OSS
     RigCtlServer *rigCtl;
     QString getversionstring();
     void appendBookmark(Bookmark* bookmark);
@@ -314,6 +364,7 @@ private:
     char* first_audio_buffer;
     char* first_audio_header;
     int gain;
+    int pwsmode; //KD0OSS
     int subRxGain;
     bool subRx;
     AudioInput* audioinput;
@@ -327,7 +378,6 @@ private:
 
     unsigned char *rtp_send_buffer;
     long long subRxFrequency;
-    Connection connection;
     bool connection_valid;
 
     Band band;
@@ -364,6 +414,13 @@ private:
 
     Bandscope* bandscope;
 
+    EqualizerDialog *equalizer; // KD0OSS
+
+    int sampleZoomLevel; // KD0OSS
+    int viewZoomLevel; // KD0OSS
+
+    int notchFilterIndex; // KD0OSS
+
     BookmarkDialog bookmarkDialog;
     BookmarksDialog* bookmarksDialog;
     BookmarksEditDialog* bookmarksEditDialog;
@@ -371,7 +428,7 @@ private:
     Bookmarks bookmarks;
 
     KeypadDialog keypad;
-    Meter* sMeter;
+//    Meter* sMeter;
     int meter;
 //    int txPwr;
     long long txFrequency;
@@ -396,6 +453,7 @@ private:
     QString servername;
     bool canTX;
     bool chkTX;
+    bool txNow; // KD0OSS
     double loffset;
     bool protocol3;
 };

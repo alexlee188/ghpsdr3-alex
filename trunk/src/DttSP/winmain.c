@@ -32,6 +32,9 @@ Bridgewater, NJ 08807
 */
 
 #include <common.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 /////////////////////////////////////////////////////////////////////////
 
 // elementary defaults
@@ -721,7 +724,7 @@ setup_threading (unsigned int thread)
 	top[thread].susp = FALSE;
 	sem_init (&top[thread].sync.upd.sem, 0, 0);
 	sem_init (&top[thread].sync.buf.sem, 0, 0);	
-	pthread_create(&top[thread].pid, 0, (void *) process_samples_thread, thread);
+	pthread_create((pthread_t*)&top[thread].pid, 0, (void *) process_samples_thread, (void *)thread);
 }
 
 //========================================================================

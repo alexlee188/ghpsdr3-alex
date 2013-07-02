@@ -230,7 +230,7 @@ void RigCtlSocket::readyRead() {
                }
 
             } else if (cmdlist[1].compare("FM") == 0) {
-               main->rigctlSetMode(MODE_FMN);
+               main->rigctlSetMode(MODE_FM);
                // compare fm filters
                if (cmdlist[2].compare("80000") == 0 ) {
                main->rigctlSetFilter(0);

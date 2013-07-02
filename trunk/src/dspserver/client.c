@@ -66,11 +66,6 @@
 /* For fcntl */
 #include <fcntl.h>
 
-#include <event2/event.h>
-#include <event2/thread.h>
-#include <event2/buffer.h>
-#include <event2/bufferevent.h>
-
 #include "client.h"
 #include "ozy.h"
 #include "audiostream.h"
@@ -96,6 +91,8 @@ static int port=BASE_PORT;
 // This must match the size declared in DttSP common.h W3SZBUF //by w3sz
 //#define SAMPLE_BUFFER_SIZE 4096 //by w3sz changed and moved
 
+#define BASE_PORT_SSL 9000
+static int port_ssl=BASE_PORT_SSL;
 static int zoom = 0;
 static int low,high;            // filter low/high
 
@@ -274,6 +271,11 @@ void Mic_stream_queue_free(){
 void client_init(int receiver) {
     int rc;
 
+    panadapterMode = PANADAPTER;  // KD0OSS
+    numSamples = 1000; // KD0OSS
+    rxMeterMode = AVG_SIGNAL_STRENGTH; // KD0OSS
+    txMeterMode = PWR; // KD0OSS
+
     evthread_use_pthreads();
 
     TAILQ_INIT(&Client_list);
@@ -286,6 +288,7 @@ void client_init(int receiver) {
     spectrum_timer_init();
 
     port=BASE_PORT+receiver;
+    port_ssl = BASE_PORT_SSL + receiver;
     rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
 
     if(rc != 0) {
@@ -424,12 +427,36 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
         sem_wait(&spectrum_semaphore);
         if(mox) {
             Process_Panadapter(1,spectrumBuffer);
-            meter=CalculateTXMeter(1,5);        // MIC
+            meter=CalculateTXMeter(1,txMeterMode);        // Tx meter mode added by KD0OSS
             subrx_meter=-121;
         } else {
-            Process_Panadapter(0,spectrumBuffer);
-            meter=CalculateRXMeter(0,0,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
-            subrx_meter=CalculateRXMeter(0,1,0)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset();
+            switch (panadapterMode) // KD0OSS
+            {
+                case PANADAPTER:
+                    Process_Panadapter(0,spectrumBuffer);
+                break;
+
+                case SPECTRUM:
+                    Process_Spectrum(0,spectrumBuffer);
+                break;
+
+                case CSPECTRUM:
+                    Process_ComplexSpectrum(0,spectrumBuffer);
+                break;
+
+                case SCOPE:
+                    Process_Scope(0,spectrumBuffer,numSamples);
+                break;
+
+                case PHASE:
+                    Process_Phase(0,spectrumBuffer,numSamples);
+                break;
+
+                default:
+                    Process_Panadapter(0,spectrumBuffer);
+            }
+            meter=CalculateRXMeter(0,0,rxMeterMode)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
+            subrx_meter=CalculateRXMeter(0,1,rxMeterMode)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
         }
         sem_post(&spectrum_semaphore);
         sem_wait(&bufferevent_semaphore);
@@ -440,8 +467,8 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
                     char *client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
                     sem_wait(&spectrum_semaphore);
                     client_set_samples(client_samples,spectrumBuffer,item->samples);
-                    bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
                     sem_post(&spectrum_semaphore);
+                    bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
                     free(client_samples);
                     item->frame_counter = (item->fps == 0) ? 50 : 50 / item->fps;
                 }
@@ -617,119 +644,68 @@ void do_accept(evutil_socket_t listener, short event, void *arg);
 void readcb(struct bufferevent *bev, void *ctx);
 void writecb(struct bufferevent *bev, void *ctx);
 
-void
-errorcb(struct bufferevent *bev, short error, void *ctx)
+void errorcb(struct bufferevent *bev, short error, void *ctx)
 {
     client_entry *item;
     int client_count = 0;
     int rtp_client_count = 0;
     int is_rtp_client = 0;
 
-    if (error & BEV_EVENT_EOF) {
-        /* connection has been closed, do any clean up here */
+    if ((error & BEV_EVENT_EOF) || (error & BEV_EVENT_ERROR)) {
+        /* connection has been closed, or error has occured, do any clean up here */
         /* ... */
+            sem_wait(&bufferevent_semaphore);
+            for (item = TAILQ_FIRST(&Client_list); item != NULL; item = TAILQ_NEXT(item, entries)){
+	        if (item->bev == bev){
+                    char ipstr[16];
+                    inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
+                    sdr_log(SDR_LOG_INFO, "RX%d: client disconnection from %s:%d\n",
+                            receiver, ipstr, ntohs(item->client.sin_port));
+                    if (item->rtp == connection_rtp) {
+                        rtp_disconnect(item->session);
+                        is_rtp_client = 1;
+                    }
+                    TAILQ_REMOVE(&Client_list, item, entries);
+                    free(item);
+                    break;
+	        }
+            }
+
+            TAILQ_FOREACH(item, &Client_list, entries){
+	        client_count++;
+	        if (item->rtp == connection_rtp) rtp_client_count++;
+            }
+
+            sem_post(&bufferevent_semaphore);
+
+            if ((rtp_client_count <= 0) && is_rtp_client) {
+	        rtp_connected = 0; 	// last rtp client disconnected
+	        rtp_listening = 0;
+            }
+
+            if (toShareOrNotToShare) {
+                char status_buf[32];
+                sprintf(status_buf, "%d client(s)", client_count);
+                updateStatus(status_buf);
+            }
+
+            if (client_count <= 0) {
+                sem_wait(&bufferevent_semaphore);
+                send_audio = 0;
+                sem_post(&bufferevent_semaphore);
+            }
+            bufferevent_free(bev);
     } else if (error & BEV_EVENT_ERROR) {
         /* check errno to see what error occurred */
         /* ... */
+        sdr_log(SDR_LOG_INFO, "special EVUTIL_SOCKET_ERROR() %d: %s\n",  EVUTIL_SOCKET_ERROR(), evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
     } else if (error & BEV_EVENT_TIMEOUT) {
         /* must be a timeout event handle, handle it */
         /* ... */
+    } else if (error & BEV_EVENT_CONNECTED){
+        sdr_log(SDR_LOG_INFO, "BEV_EVENT_CONNECTED: completed SSL handshake connection\n");
     }
 
-    sem_wait(&bufferevent_semaphore);
-    for (item = TAILQ_FIRST(&Client_list); item != NULL; item = TAILQ_NEXT(item, entries)){
-	if (item->bev == bev){
-            char ipstr[16];
-            inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
-            sdr_log(SDR_LOG_INFO, "RX%d: client disconnection from %s:%d\n",
-                    receiver, ipstr, ntohs(item->client.sin_port));
-            if (item->rtp == connection_rtp) {
-                rtp_disconnect(item->session);
-                is_rtp_client = 1;
-            }
-            TAILQ_REMOVE(&Client_list, item, entries);
-            free(item);
-            break;
-	}
-    }
-
-    TAILQ_FOREACH(item, &Client_list, entries){
-	client_count++;
-	if (item->rtp == connection_rtp) rtp_client_count++;
-    }
-
-    sem_post(&bufferevent_semaphore);
-
-    if ((rtp_client_count <= 0) && is_rtp_client) {
-	rtp_connected = 0; 	// last rtp client disconnected
-	rtp_listening = 0;
-    }
-
-    if (toShareOrNotToShare) {
-        char status_buf[32];
-        sprintf(status_buf, "%d client(s)", client_count);
-        updateStatus(status_buf);
-    }
-
-    if (client_count <= 0) {
-        sem_wait(&bufferevent_semaphore);
-        send_audio = 0;
-        sem_post(&bufferevent_semaphore);
-    }
-    bufferevent_free(bev);
-}
-
-
-
-void* client_thread(void* arg) {
- 
-    int on=1;
-    struct event_base *base;
-    struct event *listener_event;
-    struct sockaddr_in server;
-    int serverSocket;
-
-    sdr_thread_register("client_thread");
-
-    fprintf(stderr,"client_thread\n");
-
-    serverSocket=socket(AF_INET,SOCK_STREAM,0);
-    if(serverSocket==-1) {
-        perror("client socket");
-        return NULL;
-    }
-
-    evutil_make_socket_nonblocking(serverSocket);
-    evutil_make_socket_closeonexec(serverSocket);
-
-#ifndef WIN32
-    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-#endif
-
-    memset(&server,0,sizeof(server));
-    server.sin_family=AF_INET;
-    server.sin_addr.s_addr=htonl(INADDR_ANY);
-    server.sin_port=htons(port);
-
-    if(bind(serverSocket,(struct sockaddr *)&server,sizeof(server))<0) {
-        perror("client bind");
-        fprintf(stderr,"port=%d\n",port);
-        return NULL;
-    }
-
-    sdr_log(SDR_LOG_INFO, "client_thread: listening on port %d\n", port);
-
-    if (listen(serverSocket, 5) == -1) {
-	perror("client listen");
-	exit(1);
-    }
-
-    base = event_base_new();
-    listener_event = event_new(base, serverSocket, EV_READ|EV_PERSIST, do_accept, (void*)base);
-
-    event_add(listener_event, NULL);
-    event_base_dispatch(base);
-    return NULL;
 }
 
 void do_accept(evutil_socket_t listener, short event, void *arg){
@@ -787,11 +763,275 @@ void do_accept(evutil_socket_t listener, short event, void *arg){
     }
 
     if (toShareOrNotToShare) {
- 
         char status_buf[32];
         sprintf(status_buf,"%d client(s)", client_count);
         updateStatus(status_buf);
     }
+}
+
+// used for testing ssl socket.  This is just an echo server.
+static void
+ssl_readcb(struct bufferevent * bev, void * arg)
+{
+    struct evbuffer *in = bufferevent_get_input(bev);
+
+    printf("Received %zu bytes\n", evbuffer_get_length(in));
+    printf("----- data ----\n");
+    printf("%.*s\n", (int)evbuffer_get_length(in), evbuffer_pullup(in, -1));
+    bufferevent_write_buffer(bev, in);
+}
+
+/**
+   Create a new SSL bufferevent to send its data over an SSL * on a socket.
+
+   @param base An event_base to use to detect reading and writing
+   @param fd A socket to use for this SSL
+   @param ssl A SSL* object from openssl.
+   @param state The current state of the SSL connection
+   @param options One or more bufferevent_options
+   @return A new bufferevent on success, or NULL on failure.
+*/
+struct bufferevent *
+bufferevent_openssl_socket_new(struct event_base *base,
+    evutil_socket_t fd,
+    struct ssl_st *ssl,
+    enum bufferevent_ssl_state state,
+    int options);
+
+static void
+do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa,
+             int sa_len, void *arg)
+{
+    struct event_base *evbase;
+    struct bufferevent *bev;
+    SSL_CTX *server_ctx;
+    SSL *client_ctx;
+
+    server_ctx = (SSL_CTX *)arg;
+    client_ctx = SSL_new(server_ctx);
+    evbase = evconnlistener_get_base(serv);
+    evutil_make_socket_nonblocking(sock);
+    bev = bufferevent_openssl_socket_new(evbase, sock, client_ctx,
+                                         BUFFEREVENT_SSL_ACCEPTING,
+                                         BEV_OPT_CLOSE_ON_FREE|BEV_OPT_THREADSAFE);
+
+    client_entry *item;
+
+    // add newly connected client to Client_list
+    item = malloc(sizeof(*item));
+    memset(item, 0, sizeof(*item));
+
+    bufferevent_setcb(bev, readcb, writecb, errorcb, NULL);
+    bufferevent_setwatermark(bev, EV_READ, MSG_SIZE, 0);
+    bufferevent_setwatermark(bev, EV_WRITE, 4096, 0);
+    bufferevent_enable(bev, EV_READ|EV_WRITE);
+    item->bev = bev;
+    item->rtp = connection_unknown;
+    item->fps = 0;
+    item->frame_counter = 0;
+    sem_wait(&bufferevent_semaphore);
+    TAILQ_INSERT_TAIL(&Client_list, item, entries);
+    sem_post(&bufferevent_semaphore);
+
+    int client_count = 0;
+    sem_wait(&bufferevent_semaphore);
+    /* NB: Clobbers item */
+    TAILQ_FOREACH(item, &Client_list, entries){
+        client_count++;
+    }
+    sem_post(&bufferevent_semaphore);
+
+    if (client_count == 0) {
+        zoom = 0;
+    }
+
+    if (toShareOrNotToShare) {
+        char status_buf[32];
+        sprintf(status_buf,"%d client(s)", client_count);
+        updateStatus(status_buf);
+    }
+
+/*
+    bufferevent_enable(bev, EV_READ);
+    bufferevent_setcb(bev, ssl_readcb, NULL, NULL, NULL);
+*/
+}
+
+SSL_CTX *evssl_init(void)
+{
+    SSL_CTX  *server_ctx;
+
+    /* Initialize the OpenSSL library */
+    SSL_load_error_strings();
+    SSL_library_init();
+    /* We MUST have entropy, or else there's no point to crypto. */
+    if (!RAND_poll())
+        return NULL;
+
+    server_ctx = SSL_CTX_new(SSLv23_server_method());
+
+    if (! SSL_CTX_use_certificate_chain_file(server_ctx, "cert") ||
+        ! SSL_CTX_use_PrivateKey_file(server_ctx, "pkey", SSL_FILETYPE_PEM)) {
+        puts("Couldn't read 'pkey' or 'cert' file.  To generate a key\n"
+           "and self-signed certificate, run:\n"
+           "  openssl genrsa -out pkey 2048\n"
+           "  openssl req -new -key pkey -out cert.req\n"
+           "  openssl x509 -req -days 365 -in cert.req -signkey pkey -out cert");
+        return NULL;
+    }
+    SSL_CTX_set_options(server_ctx, SSL_OP_NO_SSLv2);
+
+    return server_ctx;
+}
+
+static pthread_mutex_t *lock_cs;
+static long *lock_count;
+
+void pthreads_locking_callback(int mode, int type, char *file,
+	     int line);
+unsigned long pthreads_thread_id(void);
+
+void thread_setup(void)
+	{
+	int i;
+
+	lock_cs=OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
+	lock_count=OPENSSL_malloc(CRYPTO_num_locks() * sizeof(long));
+	for (i=0; i<CRYPTO_num_locks(); i++)
+		{
+		lock_count[i]=0;
+		pthread_mutex_init(&(lock_cs[i]),NULL);
+		}
+
+	CRYPTO_set_id_callback((unsigned long (*)())pthreads_thread_id);
+	CRYPTO_set_locking_callback((void (*)())pthreads_locking_callback);
+	}
+
+void thread_cleanup(void)
+	{
+	int i;
+
+	CRYPTO_set_locking_callback(NULL);
+	fprintf(stderr,"cleanup\n");
+	for (i=0; i<CRYPTO_num_locks(); i++)
+		{
+		pthread_mutex_destroy(&(lock_cs[i]));
+		fprintf(stderr,"%8ld:%s\n",lock_count[i],
+			CRYPTO_get_lock_name(i));
+		}
+	OPENSSL_free(lock_cs);
+	OPENSSL_free(lock_count);
+
+	fprintf(stderr,"done cleanup\n");
+	}
+
+void pthreads_locking_callback(int mode, int type, char *file,
+	     int line){
+	if (mode & CRYPTO_LOCK)
+		{
+		pthread_mutex_lock(&(lock_cs[type]));
+		lock_count[type]++;
+		}
+	else
+		{
+		pthread_mutex_unlock(&(lock_cs[type]));
+		}
+}
+
+unsigned long pthreads_thread_id(void){
+	unsigned long ret;
+
+	ret=(unsigned long)pthread_self();
+	return(ret);
+}
+
+void* client_thread(void* arg) {
+ 
+    int on=1;
+    struct event_base *base;
+    struct event *listener_event;
+    struct sockaddr_in server;
+    int serverSocket;
+
+    SSL_CTX *ctx;
+    struct evconnlistener *listener;
+    struct sockaddr_in server_ssl;
+
+    sdr_thread_register("client_thread");
+
+    fprintf(stderr,"client_thread\n");
+
+    // setting up non-ssl open serverSocket
+    serverSocket=socket(AF_INET,SOCK_STREAM,0);
+    if(serverSocket==-1) {
+        perror("client socket");
+        return NULL;
+    }
+
+    evutil_make_socket_nonblocking(serverSocket);
+    evutil_make_socket_closeonexec(serverSocket);
+
+#ifndef WIN32
+    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+#endif
+
+    memset(&server,0,sizeof(server));
+    server.sin_family=AF_INET;
+    server.sin_addr.s_addr=htonl(INADDR_ANY);
+    server.sin_port=htons(port);
+
+    if(bind(serverSocket,(struct sockaddr *)&server,sizeof(server))<0) {
+        perror("client bind");
+        fprintf(stderr,"port=%d\n",port);
+        return NULL;
+    }
+
+    sdr_log(SDR_LOG_INFO, "client_thread: listening on port %d\n", port);
+
+    if (listen(serverSocket, 5) == -1) {
+	perror("client listen");
+	exit(1);
+    }
+
+    // setting up ssl server
+    memset(&server_ssl,0,sizeof(server_ssl));
+    server_ssl.sin_family=AF_INET;
+    server_ssl.sin_addr.s_addr=htonl(INADDR_ANY);
+    server_ssl.sin_port=htons(port_ssl);
+
+    ctx = evssl_init();
+    if (ctx == NULL){
+        perror("client ctx init failed");
+        exit(1);
+    }
+    // setup openssl thread-safe callbacks
+    thread_setup();
+
+    // this is the Event base for both non-ssl and ssl servers
+    base = event_base_new();
+
+    // add the non-ssl listener to event base
+    listener_event = event_new(base, serverSocket, EV_READ|EV_PERSIST, do_accept, (void*)base);
+    event_add(listener_event, NULL);
+
+    // add the ssl listener to event base
+    listener = evconnlistener_new_bind(
+                         base, do_accept_ssl, (void *)ctx,
+                         LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE | 
+                         LEV_OPT_THREADSAFE, 1024,
+                         (struct sockaddr *)&server_ssl, sizeof(server_ssl));
+
+    sdr_log(SDR_LOG_INFO, "client_thread: listening on port %d for ssl connection\n", port_ssl);
+
+    // this will be an endless loop to service all the network events
+    event_base_loop(base, 0);
+
+    // if for whatever reason the Event loop terminates, cleanup
+    evconnlistener_free(listener);
+    thread_cleanup();
+    SSL_CTX_free(ctx);
+
+    return NULL;
 }
 
 void writecb(struct bufferevent *bev, void *ctx){
@@ -832,7 +1072,7 @@ static char *slave_commands[] = {
 /* The maximum number of arguments a command can have and pass through
  * the tokenize_cmd tokenizer.  If you need more than this, bump it
  * up. */
-#define MAX_CMD_TOKENS 4
+#define MAX_CMD_TOKENS 11
 
 /*
  * Tokenize the remaining words of a command, saving them to list and
@@ -973,9 +1213,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             // spectrumBuffer is updated by spectrum_timer thread every 20ms
             client_set_samples(client_samples,spectrumBuffer,samples);
             sem_post(&spectrum_semaphore);
-            sem_wait(&bufferevent_semaphore);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
-            sem_post(&bufferevent_semaphore);
             free(client_samples);
         } else if(strncmp(cmd,"setfrequency",12)==0) {
             long long frequency;
@@ -999,11 +1237,19 @@ void readcb(struct bufferevent *bev, void *ctx){
             lastMode=mode;
 			    
             switch (mode){
-            case USB: SetTXFilter(1,150,2850); break;
-            case LSB: SetTXFilter(1,-2850, -150); break;
+            case USB: 
+                SetSBMode(0,0,1); // KD0OSS
+                SetSBMode(0,1,1); // KD0OSS
+                SetTXFilter(1,150,2850); 
+            break;
+            case LSB: 
+                SetSBMode(0,0,2); // KD0OSS
+                SetSBMode(0,1,2); // KD0OSS
+                SetTXFilter(1,-2850, -150); 
+            break;
             case AM:
             case SAM: SetTXFilter(1, -2850, 2850); break;
-            case FMN: SetTXFilter(1, -4800, 4800); break;
+            case FM: SetTXFilter(1, -4800, 4800); break;
             default: SetTXFilter(1, -4800, 4800);
             }
         } else if(strncmp(cmd,"setfilter",9)==0) {
@@ -1020,6 +1266,114 @@ void readcb(struct bufferevent *bev, void *ctx){
             agc=atoi(tokens[0]);
             SetRXAGC(0,0,agc);
             SetRXAGC(0,1,agc);
+        } else if(strncmp(cmd,"setfixedagc",11)==0) {
+            int agc;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            agc=atoi(tokens[0]);
+            SetFixedAGC(0,0,agc);
+            SetFixedAGC(0,1,agc);
+        } else if(strncmp(cmd,"enablenotchfilter",17)==0) {
+            int vfo, i;
+            int index;
+            int enabled;
+            if (tokenize_cmd(&saveptr, tokens, 3) != 3)
+                goto badcommand;
+            vfo=atoi(tokens[0]);
+            index=atoi(tokens[1]);
+            enabled=atoi(tokens[2]);
+            if (index == -1)
+            {
+                for (i=0;i<9;i++)
+                    SetRXManualNotchEnable(0, (unsigned int)vfo, (unsigned int)i, enabled);
+            }
+            else
+                SetRXManualNotchEnable(0, (unsigned int)vfo, (unsigned int)index, enabled);
+        } else if(strncmp(cmd,"setnotchfilter",14)==0) {
+            int vfo;
+            int index;
+            double BW;
+            double FO;
+            if (tokenize_cmd(&saveptr, tokens, 4) != 4)
+                goto badcommand;
+            vfo=atoi(tokens[0]);
+            index=atoi(tokens[1]);
+            BW=atof(tokens[2]);
+            FO=atof(tokens[3]);
+            SetRXManualNotchBW(0, (unsigned int)vfo, (unsigned int)index, BW);
+            SetRXManualNotchFreq(0, (unsigned int)vfo, (unsigned int)index, FO);
+        } else if(strncmp(cmd,"setagctlevel",12)==0) { // KD0OSS
+            int level;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            level=atoi(tokens[0]);
+            SetRXAGCThresh(0,0,(double)level);
+            SetRXAGCThresh(0,1,(double)level);
+        } else if(strncmp(cmd,"setrxgreqcmd",12)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state=atoi(tokens[0]);
+            SetGrphRXEQcmd(0,0,state);
+            SetGrphRXEQcmd(0,1,state);
+        } else if(strncmp(cmd,"setrx3bdgreq",10)==0) { // KD0OSS
+            int value[4];
+            if (tokenize_cmd(&saveptr, tokens, 4) != 4)
+                goto badcommand;
+            value[0]=atoi(tokens[0]);
+            value[1]=atoi(tokens[1]);
+            value[2]=atoi(tokens[2]);
+            value[3]=atoi(tokens[3]);
+            SetGrphRXEQ(0,0,&value);
+            SetGrphRXEQ(0,1,&value);
+        } else if(strncmp(cmd,"setrx10bdgreq",11)==0) { // KD0OSS
+            int value[11];
+            if (tokenize_cmd(&saveptr, tokens, 11) != 11)
+                goto badcommand;
+            value[0]=atoi(tokens[0]);
+            value[1]=atoi(tokens[1]);
+            value[2]=atoi(tokens[2]);
+            value[3]=atoi(tokens[3]);
+            value[4]=atoi(tokens[4]);
+            value[5]=atoi(tokens[5]);
+            value[6]=atoi(tokens[6]);
+            value[7]=atoi(tokens[7]);
+            value[8]=atoi(tokens[8]);
+            value[9]=atoi(tokens[9]);
+            value[10]=atoi(tokens[10]);
+            SetGrphRXEQ10(0,0,&value);
+            SetGrphRXEQ10(0,1,&value);
+        } else if(strncmp(cmd,"settxgreqcmd",12)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state=atoi(tokens[0]);
+            SetGrphTXEQcmd(1,state);
+        } else if(strncmp(cmd,"settx3bdgreq",10)==0) { // KD0OSS
+            int value[4];
+            if (tokenize_cmd(&saveptr, tokens, 4) != 4)
+                goto badcommand;
+            value[0]=atoi(tokens[0]);
+            value[1]=atoi(tokens[1]);
+            value[2]=atoi(tokens[2]);
+            value[3]=atoi(tokens[3]);
+            SetGrphTXEQ(1,&value);
+        } else if(strncmp(cmd,"settx10bdgreq",11)==0) { // KD0OSS
+            int value[11];
+            if (tokenize_cmd(&saveptr, tokens, 11) != 11)
+                goto badcommand;
+            value[0]=atoi(tokens[0]);
+            value[1]=atoi(tokens[1]);
+            value[2]=atoi(tokens[2]);
+            value[3]=atoi(tokens[3]);
+            value[4]=atoi(tokens[4]);
+            value[5]=atoi(tokens[5]);
+            value[6]=atoi(tokens[6]);
+            value[7]=atoi(tokens[7]);
+            value[8]=atoi(tokens[8]);
+            value[9]=atoi(tokens[9]);
+            value[10]=atoi(tokens[10]);
+            SetGrphTXEQ10(1,&value);
         } else if(strncmp(cmd,"setnr",5)==0) {
             int nr = 0;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1027,8 +1381,8 @@ void readcb(struct bufferevent *bev, void *ctx){
             if(strcmp(tokens[0],"true")==0) {
                 nr=1;
             }
-            SetNR(0,0,nr);
-            SetNR(0,1,nr);
+            SetANR(0,0,nr);
+            SetANR(0,1,nr);
         } else if(strncmp(cmd,"setnb",5)==0) {
             int nb = 0;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1248,8 +1602,65 @@ void readcb(struct bufferevent *bev, void *ctx){
             delay = atoi(tokens[1]);
             gain = atof(tokens[2]);
             leakage = atof(tokens[3]);
-            SetNRvals(0,0,taps,delay,gain,leakage);
-            SetNRvals(0,1,taps,delay,gain,leakage);
+
+            SetANRvals(0,0,taps,delay,gain,leakage);
+            SetANRvals(0,1,taps,delay,gain,leakage);
+        } else if(strncmp(cmd,"setrxagcattack",14)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atoi(tokens[0]);
+            SetRXAGCAttack(0,0,value);
+            SetRXAGCAttack(0,1,value);
+        } else if(strncmp(cmd,"setrxagcdecay",13)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atoi(tokens[0]);
+            SetRXAGCDecay(0,0,value);
+            SetRXAGCDecay(0,1,value);
+        } else if(strncmp(cmd,"setrxagchang",12)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atoi(tokens[0]);
+            SetRXAGCHang(0,0,value);
+            SetRXAGCHang(0,1,value);
+        } else if(strncmp(cmd,"setrxagchanglevel",17)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atof(tokens[0]);
+            SetRXAGCHangLevel(0,0,value);
+            SetRXAGCHangLevel(0,1,value);
+        } else if(strncmp(cmd,"setrxagchangthreshold",21)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atoi(tokens[0]);
+            SetRXAGCHangThreshold(0,0,value);
+            SetRXAGCHangThreshold(0,1,value);
+        } else if(strncmp(cmd,"setrxagcthresh",14)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atof(tokens[0]);
+            SetRXAGCThresh(0,0,value);
+            SetRXAGCThresh(0,1,value);
+        } else if(strncmp(cmd,"setrxagcmaxgain",15)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atof(tokens[0]);
+            SetRXAGCTop(0,0,value);
+            SetRXAGCTop(0,1,value);
+        } else if(strncmp(cmd,"setrxagcslope",13)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atoi(tokens[0]);
+            SetRXAGCSlope(0,0,value);
+            SetRXAGCSlope(0,1,value);
         } else if(strncmp(cmd,"setnbvals",9)==0) {
             double threshold;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1264,13 +1675,89 @@ void readcb(struct bufferevent *bev, void *ctx){
             threshold=atof(tokens[0]);
             SetSDROMvals(0,0,threshold);
             SetSDROMvals(0,1,threshold);
-        } else if(strncmp(cmd,"setdcblock",10)==0) {
+        } else if(strncmp(cmd,"setpwsmode",10)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state = atoi(tokens[0]);
+            SetPWSmode(0,0,state);
+            SetPWSmode(0,1,state);
+            sdr_log(SDR_LOG_INFO,"SetPWSMode %d\n",state);
+        } else if(strncmp(cmd,"setbin",6)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state = atoi(tokens[0]);
+            SetBIN(0,0,state);
+            SetBIN(0,1,state);
+            sdr_log(SDR_LOG_INFO,"SetBIN %d\n",state);
+        } else if(strncmp(cmd,"settxcompst",11)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state = atoi(tokens[0]);
+            SetTXCompressorSt(1, state);
+            sdr_log(SDR_LOG_INFO,"SetTXCompressorSt %d\n",state);
+        } else if(strncmp(cmd,"settxcompvalue",14)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value = atof(tokens[0]);
+            SetTXCompressor(1, value);
+            sdr_log(SDR_LOG_INFO,"SetTXCompressor %2.2f\n",value);
+        } else if(strncmp(cmd,"setoscphase",11)==0) { // KD0OSS
+            double phase;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            phase = atof(tokens[0]);
+            SetOscPhase(phase);
+            sdr_log(SDR_LOG_INFO,"SetOscPhase %2.2f\n",phase);
+        } else if(strncmp(cmd,"setPanaMode",11)==0) { // KD0OSS
+            int mode;
+            if (tokenize_cmd(&saveptr, tokens, 2) != 1)
+                goto badcommand;
+            mode=atoi(tokens[0]);
+            numSamples = atoi(tokens[1]);
+            if (numSamples > SAMPLE_BUFFER_SIZE) numSamples = SAMPLE_BUFFER_SIZE;
+            panadapterMode = mode;
+            sdr_log(SDR_LOG_INFO,"SetPanaMode %d\n",mode);
+        } else if(strncmp(cmd,"setRxMeterMode",14)==0) { // KD0OSS
+            int mode;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            mode=atoi(tokens[0]);
+            rxMeterMode = mode;
+            sdr_log(SDR_LOG_INFO,"SetRxMeterMode %d\n",mode);
+        } else if(strncmp(cmd,"setTxMeterMode",14)==0) { // KD0OSS
+            int mode;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            mode=atoi(tokens[0]);
+            txMeterMode = mode;
+            sdr_log(SDR_LOG_INFO,"SetTxMeterMode %d\n",mode);
+        } else if(strncmp(cmd,"setrxdcblockgain",16)==0) { // KD0OSS
+            float gain;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            gain=atof(tokens[0]);
+            SetRXDCBlockGain(0,0,gain);
+            SetRXDCBlockGain(0,1,gain);
+            sdr_log(SDR_LOG_INFO,"SetRXDCBlockGain %2.2f\n",gain);
+        } else if(strncmp(cmd,"setrxdcblock",10)==0) {
             int state;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             state=atoi(tokens[0]);
             SetRXDCBlock(0,0,state);
             SetRXDCBlock(0,1,state);
+            sdr_log(SDR_LOG_INFO,"SetRXDCBlock %d\n",state); // KD0OSS
+        } else if(strncmp(cmd,"settxdcblock",10)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state=atoi(tokens[0]);
+            SetTXDCBlock(1,state);
+            sdr_log(SDR_LOG_INFO,"SetTXDCBlock %d\n",state);
         } else if(strncmp(cmd,"mox",3)==0) {
             int ntok;
             if ((ntok = tokenize_cmd(&saveptr, tokens, 3)) < 1)
@@ -1332,13 +1819,15 @@ void readcb(struct bufferevent *bev, void *ctx){
                     if(chkPasswd(thisuser, thispasswd) == 0){ 
                         if(pwr >= 0 && pwr <= 1) {
                             //fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
+                            sdr_log(SDR_LOG_INFO,"SetTXAMCarrierLevel = %f\n", pwr);
                             SetTXAMCarrierLevel(1,pwr);
                         }
                     }else{
                         sdr_log(SDR_LOG_INFO,"SetTXAMCarrierLevel denied because user %s password check failed!\n",thisuser);
                     }
                 }
-            }if (txcfg == TXALL){
+            }
+            else if (txcfg == TXALL){  // KD0OSS --- Added 'else' or will get 'Invalid' if TXPASSWD
                 if(pwr >= 0 &&  pwr <= 1) {
                     sdr_log(SDR_LOG_INFO,"SetTXAMCarrierLevel = %f\n", pwr);
                     SetTXAMCarrierLevel(1,pwr);
@@ -1348,6 +1837,99 @@ void readcb(struct bufferevent *bev, void *ctx){
             } else{
                 fprintf(stderr,"Invalid SetTXAMCarrierLevel command: '%s'\n",message);
             }
+        } else if(strncmp(cmd,"settxalcstate",13)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state=atoi(tokens[0]);
+            SetTXALCSt(1,state);
+        } else if(strncmp(cmd,"settxalcattack",14)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXALCAttack(1,value);
+        } else if(strncmp(cmd,"settxalcdecay",13)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXALCDecay(1,value);
+        } else if(strncmp(cmd,"settxalcbot",11)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atof(tokens[0]);
+            SetTXALCBot(1,value);
+        } else if(strncmp(cmd,"settxalchang",12)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXALCHang(1,value);
+        } else if(strncmp(cmd,"settxlevelerstate",17)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXLevelerSt(1,value);
+        } else if(strncmp(cmd,"settxlevelerattack",18)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXLevelerAttack(1,value);
+        } else if(strncmp(cmd,"settxlevelerdecay",17)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXLevelerDecay(1,value);
+        } else if(strncmp(cmd,"settxlevelerhang",16)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXLevelerHang(1,value);
+        } else if(strncmp(cmd,"settxlevelermaxgain",19)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetTXLevelerTop(1,value);
+        } else if(strncmp(cmd,"settxagcff",10)==0) { // KD0OSS
+            int state;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            state=atoi(tokens[0]);
+            SetTXAGCFF(1,state);
+        } else if(strncmp(cmd,"settxagcffcompression",21)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atof(tokens[0]);
+            SetTXAGCFFCompression(1,value);
+        } else if(strncmp(cmd,"setcorrecttxiqmu",16)==0) { // KD0OSS
+            double value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atof(tokens[0]);
+            SetCorrectTXIQMu(1,value);
+        } else if(strncmp(cmd,"setcorrecttxiqw",15)==0) { // KD0OSS
+            double value1;
+            double value2;
+            if (tokenize_cmd(&saveptr, tokens, 2) != 2)
+                goto badcommand;
+            value1=atof(tokens[0]);
+            value2=atof(tokens[0]);
+            SetCorrectTXIQW(1,value1,value2);
+        } else if(strncmp(cmd,"setfadelevel",12)==0) { // KD0OSS
+            int value;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            value=atoi(tokens[0]);
+            SetFadeLevel(0,0,value);
+            SetFadeLevel(0,1,value);
         } else if(strncmp(cmd,"setsquelchval",13)==0) {
             float value;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1394,6 +1976,11 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             ozySetOpenCollectorOutputs(tokens[0]);
+        } else if(strncmp(cmd,"setwindow",9)==0) { // KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            int mode=atoi(tokens[0]);
+            SetWindow(0,mode);
         } else if(strncmp(cmd,"setclient",9)==0) {
             if (tokenize_cmd(&saveptr, tokens, 1) == 1) {
                 sdr_log(SDR_LOG_INFO, "RX%d: client is %s\n", receiver, tokens[0]);
@@ -1444,6 +2031,73 @@ void readcb(struct bufferevent *bev, void *ctx){
                 SetCorrectRXIQMu(0, 0, atof(tokens[0]));
             } else {
                 sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of mu sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"txiqcorrectval",14)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 2) != 2)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of IQ sent = '%s', '%s'\n",tokens[0], tokens[1]);
+                SetCorrectTXIQ(1, atof(tokens[0]), atof(tokens[1]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s', '%s'\n",tokens[0],tokens[1]);
+            }
+        } else if(strncmp(cmd,"txiqphasecorrectval",19)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Tx IQ phase sent = '%s'\n",tokens[0]);
+                SetCorrectTXIQPhase(1, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"txiqgaincorrectval",18)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Tx IQ gain sent = '%s'\n",tokens[0]);
+                SetCorrectTXIQGain(1, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Tx IQ sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"rxiqphasecorrectval",19)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Rx IQ phase sent = '%s'\n",tokens[0]);
+                SetCorrectIQPhase(0, 0, atof(tokens[0]));
+                SetCorrectIQPhase(0, 1, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"rxiqgaincorrectval",18)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Rx IQ gain sent = '%s'\n",tokens[0]);
+                SetCorrectIQGain(0, 0, atof(tokens[0]));
+                SetCorrectIQGain(0, 1, atof(tokens[0]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ sent = '%s'\n",tokens[0]);
+            }
+        } else if(strncmp(cmd,"rxiqcorrectwr",13)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 2) != 2)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Rx IQ wReal sent = '%s' and '%s'\n",tokens[0], tokens[1]);
+                SetCorrectRXIQwReal(0, 0, atof(tokens[0]), atoi(tokens[1]));
+                SetCorrectRXIQwReal(0, 1, atof(tokens[0]), atoi(tokens[1]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ wReal");
+            }
+        } else if(strncmp(cmd,"rxiqcorrectwi",13)==0) {  //KD0OSS
+            if (tokenize_cmd(&saveptr, tokens, 2) != 2)
+                goto badcommand;
+            if (config.no_correct_iq == 0) {
+                sdr_log(SDR_LOG_INFO,"The value of Rx IQ wImage sent = '%s' and '%s'\n",tokens[0], tokens[1]);
+                SetCorrectRXIQwImag(0, 0, atof(tokens[0]), atoi(tokens[1]));
+                SetCorrectRXIQwImag(0, 1, atof(tokens[0]), atoi(tokens[1]));
+            } else {
+                sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ wImage");
             }
         } else if(strncmp(cmd,"setfps",6)==0) {
             if (tokenize_cmd(&saveptr, tokens, 2) != 2)
@@ -1497,15 +2151,14 @@ void readcb(struct bufferevent *bev, void *ctx){
                     }
             }
         } else {
-            fprintf(stderr,"Invalid command: token: '%s'\n",cmd);
+            fprintf(stderr,"Invalid command: '%s'\n",cmd);
         }
         continue;
 
       badcommand:
-        sdr_log(SDR_LOG_INFO, "Invalid command: '%s'\n", message);
+        sdr_log(SDR_LOG_INFO, "Invalid command token: '%s'\n", message);
     } // end while
 }
-
 
 void client_set_samples(char* client_samples, float* samples,int size) {
     int i,j;

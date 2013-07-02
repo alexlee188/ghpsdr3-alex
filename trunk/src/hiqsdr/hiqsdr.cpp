@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <string.h>
 #include <pthread.h>
+#include <vector>
 #include "hiqsdr.h"
 
 
@@ -46,16 +47,18 @@ struct AsynchCtxData {
     int run;
 };
 
-struct PreselItem {
+struct PreselItem { // Holds item data from the hiqsdr.config file
+	long long freq;
+	unsigned int filtNum;
     char *desc;
 };
 
 struct Hiqsdr {
     // network parameters
     char ip_addr[256];
-    unsigned short ctrl_port;   
-    unsigned short rx_data_port;   
-    unsigned short tx_data_port;   
+    unsigned short ctrl_port;
+    unsigned short rx_data_port;
+    unsigned short tx_data_port;
     int            ctrl_socket;
     int            data_socket;
 
@@ -65,9 +68,10 @@ struct Hiqsdr {
     long long bw;
     int  attDb;
     int  antSel;
-    int  preSel;
-    char *preselDesc[16];
-    int  preamp;   
+    bool Xfilters; // Use the 80/40 extended filters
+    unsigned int  preSel; // Holds filter number
+	std::vector<PreselItem> preInfo; //Holds presel filters table
+    int  preamp;
 
     // asynch thread for receiving data from hardware
     pthread_t      thread_id;
@@ -105,6 +109,7 @@ int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
    hq.antSel = 0;
    hq.preSel = 0;
    hq.preamp = 0;
+   hq.Xfilters = false;
    hq.rx_data_port = 48247;
    hq.ctrl_port    = hq.rx_data_port+1;   
    hq.tx_data_port = hq.rx_data_port+2;
@@ -207,8 +212,23 @@ char *hiqsdr_get_ip_address ()
 
 int hiqsdr_set_frequency (long long f)
 {
+   unsigned int cnt = 0;
+	
    fprintf (stderr, "%s: %Ld\n", __FUNCTION__, f);
    hq.freq = f;
+	
+	// Check to see if freq change caused a band filter change.
+	for (unsigned int x=0; x<(hq.preInfo.size()-1); ++x) {
+		if ((f >= hq.preInfo[x].freq) & (f < hq.preInfo[x+1].freq)){
+			cnt = x; // cnt indexes the filter associated with this frequency.
+			if (!hq.Xfilters) break; 
+		}
+	}
+	// If freq change caused a filter change then store new filter details.
+   if (hq.preSel != hq.preInfo[cnt].filtNum) {
+		 hiqsdr_set_preselector(hq.preInfo[cnt].filtNum);
+	}	// TODO check and see if send_command sends all commands, maybe
+		// we dont need to specifically set the preselector??
    send_command (&hq);
    return 0;
 }
@@ -316,12 +336,18 @@ int hiqsdr_set_preselector (int p)
 
 int hiqsdr_get_preselector_desc (unsigned int p, char *pDesc)
 {
-    if (p < ARRAY_SIZE(hq.preselDesc) ) {
-        strcpy (pDesc, hq.preselDesc[p]);
-        return 0;
-    } else
-        return -1;
+	unsigned int cnt;
+	unsigned int tableSize = hq.preInfo.size();
 
+	// Retrieve the index to the filter number
+	for (cnt = 0; cnt < tableSize; ++cnt) {
+		if (p == hq.preInfo[cnt].filtNum) break;
+	}
+	if (cnt < tableSize) {
+		strcpy (pDesc, hq.preInfo[cnt].desc);
+		return 0;
+	} else
+		return -1;
 }
 
 int hiqsdr_set_preamp (int newstatus)
@@ -550,58 +576,88 @@ static int   open_configuration_file (struct Hiqsdr *hiq)
     FILE *fc;
     int nr = 0;
 
-    sprintf (fn, "%s/%s", getenv("HOME"), "hiqsdr.conf");
+    sprintf (fn, "%s/%s", getenv("HOME"), "hiqsdr.cfg");
 
-    // preload the data (default values)
-    for (unsigned i=0; i < ARRAY_SIZE(hiq->preselDesc); ++i) {
-        hiq->preselDesc[i] = 0;
-    }
-
-    if (( fc = fopen (fn, "r")) != 0) {
-
+    if (( fc = fopen (fn, "r")) == NULL) {
+		fprintf (stderr, "No configuration file found in %s\n", fn);
+		createConfigFile(fc, fn);
+	}
+	if (( fc = fopen (fn, "r")) != NULL) {
         while (!feof(fc)) {
             char line [BUFSIZ];
+			long long f;
             int n;
             char pd [BUFSIZ];
 
             if (fgets (line, sizeof(line), fc)) {
                 if (line[0] == '#') continue;
-                if (sscanf(line, "%d!%[^\t\n]\n", &n, pd) == 2) {
-                    if (n >= 0 && n < 16) {
-                        delete hiq->preselDesc[n];
-                        hiq->preselDesc[n] = new char [strlen(pd)+1];
-                        if (hiq->preselDesc[n]) strcpy (hiq->preselDesc[n], pd), ++nr;
-                    }
-
+                if (sscanf(line, "%d!%lld!%[^\t\n]\n", &n, &f, pd) == 3) {
+                    PreselItem temp;
+					temp.filtNum = n;
+    				temp.freq = f;
+					temp.desc = new char [strlen(pd)];
+					strcpy (temp.desc, pd);
+					n = n;
+					hiq->preInfo.push_back(temp);
+					nr++;
                 }
-            }
-            
+            }         
         }
-
-    } else {
-
-        // no file available, create a default
-        fprintf (stderr, "No configuration file found in %s\n", fn);
-
-        if ((fc = fopen (fn, "w+"))) {
-            fprintf (fc, "#\n");
-            fprintf (fc, "# HiQSDR preselector configuration file template\n");
-            fprintf (fc, "#\n");
-            fprintf(fc, "%d!%s\n", 0, "FILTER BYPASS");
-            for (unsigned j=1; j<ARRAY_SIZE(hiq->preselDesc); ++j) {
-                fprintf(fc, "%d!%s\n", j, "not used");
-            }
-            fclose (fc);
-            fprintf (stderr, "Configuration file created at: %s\n", fn);
-        }
-
+    } else { // Can't open file for read. Do error thing.
+		perror ("The following error occurred");
+		return 0;
     }
-    if (nr) {
-        for (unsigned j=0; j<ARRAY_SIZE(hiq->preselDesc); ++j) {
-            printf("%d:%s\n", j, hiq->preselDesc[j]);
+    if (nr) { // Print the contents of the preInfo vector (struct Hiqsdr)
+		printf("Idx  Filt     Freq     Description\n");
+		printf("-----------------------------------\n");
+        for (unsigned j=0; j<hiq->preInfo.size(); ++j) {
+            printf("%*d %*d %*lld   %s\n",2,j, 5,hiq->preInfo[j].filtNum,
+                   10,hiq->preInfo[j].freq, hiq->preInfo[j].desc);
         }
     }
     return nr;
+}
+
+static int createConfigFile(FILE *fc, const char *fn)
+{
+	int nr;
+	
+    if ((fc = fopen (fn, "w+"))) {
+        fprintf (fc, "#\n");
+        fprintf (fc, "# HiQSDR preselector configuration file template\n");
+        fprintf (fc, "#\n");
+        fprintf(fc, "%d!%d!%s\n", 0, 0, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 1, 1800000, "160 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 2000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 2, 3500000, "80 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 4000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 3, 7000000, "40 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 7300000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 4, 10100000, "30M");
+		fprintf(fc, "%d!%d!%s\n", 0, 10150000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 5, 14000000, "20 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 14350000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 6, 18068000, "17 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 18168000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 7, 21000000, "15 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 21450000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 8, 24890000, "12 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 24990000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 9, 28000000, "10 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 29700000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 10, 51000000, "6 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 54000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 11, 3500000, "80 Xm");
+		fprintf(fc, "%d!%d!%s\n", 0, 4000000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 12, 7000000, "40 Xm");
+		fprintf(fc, "%d!%d!%s\n", 0, 7200000, "FILTER BYPASS");		
+		fclose (fc);
+        fprintf (stderr, "Configuration file created at: %s\n", fn);
+		nr = 25;
+    } else {
+		perror ("The following error occurred");
+	}
+	return nr;
 }
 
 /*
@@ -789,16 +845,16 @@ static int ping_hardware (struct Hiqsdr *hiq, int tmo_s)
             } else {
                 if (bytes_read >= 14 && bytes_read <= 22) {
                    if (ma.fwv == 0) {
-                       fprintf (stderr, "Frame lenght is %d and firmware version is %02x\n", bytes_read, ma.fwv);
+                       fprintf (stderr, "Frame length is %d and firmware version is %02x\n", bytes_read, ma.fwv);
                        hiq->fwv = ma.fwv;
                        rc = 0; //OK, old firmware
                    } else { // new
-                       fprintf (stderr, "Frame lenght is %d and firmware version is %02x\n", bytes_read, ma.fwv);
+                       fprintf (stderr, "Frame length is %d and firmware version is %02x\n", bytes_read, ma.fwv);
                        hiq->fwv = ma.fwv;
                        rc = 0;
                    }
                 } else {
-                    fprintf (stderr, "Unxpected frame lenght: %d proceed at your risk !\n", bytes_read);
+                    fprintf (stderr, "Unxpected frame length: %d proceed at your risk !\n", bytes_read);
                     rc = 0;
                 }
             } 

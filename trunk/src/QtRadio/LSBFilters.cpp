@@ -40,6 +40,7 @@ LSBFilters::LSBFilters() {
     filters[7].init("2.1k",-2250,-150);
     filters[8].init("1.8k",-1950,-150);
     filters[9].init("1.0k",-1150,-150);
+    filters[10].init("Vari",-2550,-150);
 
     selectFilter(3);
 }

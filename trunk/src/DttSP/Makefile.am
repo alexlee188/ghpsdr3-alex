@@ -11,8 +11,12 @@ libDttSP_a_CFLAGS =   -g -O3 -Wall -Wno-unused-function @SIMD_FLAGS@
 
 
 libDttSP_a_SOURCES = \
-	am_demod.c \
-	am_demod.h \
+	amd.c \
+	amd.h \
+        anf.c \
+        anf.h \
+        anr.c \
+        anr.h \
 	banal.c \
 	banal.h \
 	bufvec.c \
@@ -39,6 +43,8 @@ libDttSP_a_SOURCES = \
 	fftw.h \
 	filter.c \
 	filter.h \
+        filt2p2z.c \
+        filt2p2z.h \
 	fm_demod.c \
 	fm_demod.h \
 	fromsys.h \
@@ -84,6 +90,8 @@ libDttSP_a_SOURCES = \
 	spottone.h \
 	update.c \
 	update.h \
+        wcpAGC.c \
+        wcpAGC.h \
 	window.c \
 	window.h \
 	winmain.c \
@@ -91,3 +99,4 @@ libDttSP_a_SOURCES = \
 	wscompand.h \
 	compress.c \
 	compress.h 
+

@@ -56,7 +56,7 @@ typedef enum _sdrmode
   DSB,				//  2
   CWL,				//  3
   CWU,				//  4
-  FMN,				//  5
+  FM,				//  5
   AM,				//  6
   DIGU,				//  7
   SPEC,				//  8

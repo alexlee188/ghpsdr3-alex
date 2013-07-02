@@ -101,6 +101,27 @@ public:
     double getRxIQspinBoxValue();
     int getCwPitch();
     bool getRxIQdivCheckBoxState();
+    bool getRxDCBlockValue(); //KD0OSS
+    bool getTxDCBlockValue(); //KD0OSS
+
+    int  getRxAGCSlopeValue(); //KD0OSS
+    int  getRxAGCMaxGainValue(); //KD0OSS
+    int  getRxAGCAttackValue(); //KD0OSS
+    int  getRxAGCDecayValue(); //KD0OSS
+    int  getRxAGCHangValue(); //KD0OSS
+    int  getRxAGCFixedGainValue(); //KD0OSS
+    int  getRxAGCHangThreshValue(); //KD0OSS
+
+    bool getLevelerEnabledValue(); //KD0OSS
+    int  getLevelerMaxGainValue(); //KD0OSS
+    int  getLevelerAttackValue(); //KD0OSS
+    int  getLevelerDecayValue(); //KD0OSS
+    int  getLevelerHangValue(); //KD0OSS
+
+    bool getALCEnabledValue(); //KD0OSS
+    int  getALCAttackValue(); //KD0OSS
+    int  getALCDecayValue(); //KD0OSS
+    int  getALCHangValue(); //KD0OSS
 
 signals:
     void hostChanged(QString host);
@@ -129,10 +150,39 @@ signals:
     void addXVTR(QString title,long long minFrequency,long long maxFrequency,long long ifFrequency,long long freq,int m,int filt);
     void deleteXVTR(int index);
 
+    void txIQPhaseChanged(double arg1); //KD0OSS
+    void txIQGainChanged(double arg1); //KD0OSS
+    void rxIQPhaseChanged(double arg1); //KD0OSS
+    void rxIQGainChanged(double arg1); //KD0OSS
     void RxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
     void spinBox_cwPitchChanged(int pitch);
     void avgSpinChanged(int value);
+
+    void rxDCBlockChanged(bool state);  //KD0OSS
+    void rxDCBlockGainChanged(int value); //KD0OSS
+    void txDCBlockChanged(bool state);  //KD0OSS
+    void windowTypeChanged(int type); //KD0OSS
+/*    void nbTransitionChanged(double); //KD0OSS
+    void nbLeadChanged(double); //KD0OSS
+    void nbLagChanged(double); //KD0OSS */
+    void agcSlopeChanged(int); //KD0OSS
+    void agcMaxGainChanged(int); //KD0OSS
+    void agcAttackChanged(int); //KD0OSS
+    void agcDecayChanged(int); //KD0OSS
+    void agcHangChanged(int); //KD0OSS
+    void agcFixedGainChanged(int); //KD0OSS
+    void agcHangThreshChanged(int); //KD0OSS
+    void levelerStateChanged(int); //KD0OSS
+    void levelerMaxGainChanged(int); //KD0OSS
+    void levelerAttackChanged(int); //KD0OSS
+    void levelerDecayChanged(int); //KD0OSS
+    void levelerHangChanged(int); //KD0OSS
+    void alcStateChanged(int); //KD0OSS
+    void alcAttackChanged(int); //KD0OSS
+    void alcDecayChanged(int); //KD0OSS
+    void alcHangChanged(int); //KD0OSS
+
 
 public slots:
     void slotHostChanged(int selection);
@@ -151,6 +201,9 @@ public slots:
     void slotMicSampleRateChanged(int rate);
     void slotMicChannelsChanged(int channels);
     void slotMicOrderChanged(int selection);
+    void slotRxDCBlock(bool state);  //KD0OSS
+    void slotTxDCBlock(bool state);  //KD0OSS
+    void slotWindowType(int type); //KD0OSS
 
     void slotUseRTP(bool state);
 
@@ -176,6 +229,30 @@ private slots:
     void on_encodingComboBox_currentIndexChanged(int index);
     void on_RxIQcheckBox_toggled(bool checked);
     void on_RxIQspinBox_valueChanged(int spinValue);
+    void onRxIQPhaseChanged(double arg1); //KD0OSS
+    void onRxIQGainChanged(double arg1); //KD0OSS
+    void onTxIQPhaseChanged(double arg1); //KD0OSS
+    void onTxIQGainChanged(double arg1); //KD0OSS
+    void onRxDCBlockGainChanged(int value); //KD0OSS
+/*    void onNbTransitionChanged(double); //KD0OSS
+    void onNbLeadChanged(double); //KD0OSS
+    void onNbLagChanged(double); //KD0OSS */
+    void onRxAgcSlopeChanged(int); //KD0OSS
+    void onRxAgcMaxGainChanged(int); //KD0OSS
+    void onRxAgcAttackChanged(int); //KD0OSS
+    void onRxAgcDecayChanged(int); //KD0OSS
+    void onRxAgcHangChanged(int); //KD0OSS
+    void onRxAgcFixedGainChanged(int); //KD0OSS
+    void onRxAgcHangThreshChanged(int); //KD0OSS
+    void onLevelerStateChanged(int); //KD0OSS
+    void onLevelerMaxGainChanged(int); //KD0OSS
+    void onLevelerAttackChanged(int); //KD0OSS
+    void onLevelerDecayChanged(int); //KD0OSS
+    void onLevelerHangChanged(int); //KD0OSS
+    void onAlcStateChanged(int); //KD0OSS
+    void onAlcAttackChanged(int); //KD0OSS
+    void onAlcDecayChanged(int); //KD0OSS
+    void onAlcHangChanged(int); //KD0OSS
 
     void on_userpasssave_clicked();
 

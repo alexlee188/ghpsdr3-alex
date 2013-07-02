@@ -27,6 +27,7 @@
 //=================================================================
 
 #include "hw_sdr1000.h"
+#include "../../server/sdr1000.h"
 
 SDR1000::SDR1000(char* name, bool rfe, bool pa, bool usb, unsigned short lpt_addr)
 {
@@ -153,8 +154,8 @@ void SDR1000::PowerOn()
 
 void SDR1000::Latch(unsigned char addr, unsigned char data)
 {
-  outp(lpt_addr, (uint8) data);
-  outp(lpt_addr+2, (uint8) addr);
+        outp(lpt_addr, (uint8) data);
+        outp(lpt_addr+2, (uint8) addr);
 	outp(lpt_addr+2, 0xB); // 0xB selects none of the boards
 }
 
@@ -210,6 +211,8 @@ void SDR1000::ResetDDS() // parallel only
 	Sleep(1);
 	Latch(PIO_IC08, DDSWRB); // leave DDSWRB high
 }
+
+
 
 void SDR1000::SetBPF(double freq) // valid from [-infinity, 65.0]  negative indicates no filter
 {
@@ -357,6 +360,7 @@ void SDR1000::SetATTOn(bool b) // turns on 10dB Attenuator
 {
 	if(rfe)
 	{
+                ATTNon = b;
 		if(b) rfe_ic07->SetBit(4);
 		else rfe_ic07->ClearBit(4);
 	}
@@ -431,7 +435,7 @@ void SDR1000::SetPA_Bias(bool b)
 {
 	if(rfe)
 	{
-		if(b) rfe_ic07->SetBit(6);
+		if(!b) rfe_ic07->SetBit(6);
 		else rfe_ic07->ClearBit(6);
 	}
 }
@@ -611,7 +615,7 @@ void SDR1000::SetFreq(double freq) // sets DDS frequency
 	dds->SetFreq(Freq2FTW(freq));
 }
 
-void SDR1000::SetFreqCalOffset(double freq)
+void SDR1000::SetFreqCalOffset(double freq) // KD0OSS
 {
 	double current_freq = FTW2Freq(CurrentFTW());
 	freq_cal_offset = freq;
@@ -626,4 +630,61 @@ void SDR1000::SetSpurReductionMask(unsigned long long mask)
 	spur_reduction_mask = mask;
 	if(spur_reduction_enabled)
 		dds->SetFreq(Freq2FTW(current_freq));
+}
+
+void SDR1000::SetSpurReduction(bool enabled)
+{
+	double current_freq = FTW2Freq(CurrentFTW());
+        spur_reduction_enabled = enabled;
+	dds->SetFreq(Freq2FTW(current_freq));
+}
+
+void SDR1000::SetPTT(bool ptt) // KD0OSS
+{
+    uint8  tmpLatch;
+    uint8  new_data;
+    static bool tmpATTNon;
+    static bool tmpSpuron;
+
+    double current_freq = FTW2Freq(CurrentFTW());
+    UpdateHW(false);
+    if (ptt)
+    {
+         current_freq -= 0.011025;
+//        current_freq += 0.005500;
+         SetFreq(current_freq);
+         tmpSpuron = spur_reduction_enabled;
+         SetSpurReduction(false);
+         SetXVTR_TR(false);
+         SetXVTR_RF(false);
+         tmpATTNon = ATTNon;
+         SetATTOn(false);
+         SetINAOn(true);
+         SetRFE_TR(true);
+         tmpLatch = (uint8) (0x80 + 0x20);
+         Latch(PIO_IC01, (uint8) tmpLatch); // setup data bits
+         SetPA_TR(true);
+         SetPA_Bias(true);
+         SetTRX_TR(true);
+         tx_mode = true;
+         printf("Transmitting...\n");
+    }
+    else
+    {
+         tx_mode = false;
+         SetINAOn(false);
+         SetRFE_TR(false);
+         tmpLatch = 0x80 + 0x20;
+         Latch(PIO_IC01, (uint8) tmpLatch); // setup data bits
+         SetTRX_TR(false);
+         SetPA_Bias(false);
+         SetPA_TR(false);
+         SetATTOn(tmpATTNon);
+         SetSpurReduction(tmpSpuron);
+         current_freq += 0.011025;
+  //       current_freq -= 0.005500;
+         SetFreq(current_freq);
+         printf("Transmitting...stopped\n");
+    }
+    UpdateHW(true);
 }

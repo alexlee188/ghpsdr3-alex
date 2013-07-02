@@ -32,9 +32,12 @@ Bridgewater, NJ 08807
 */
 
 #include <common.h>
+#include <wcpAGC.h>
+
 //========================================================================
 /* initialization and termination */
 
+int const MAX_NOTCHES_IN_PASSBAND = 9; //18;
 void
 reset_meters (unsigned int thread)
 {
@@ -127,6 +130,8 @@ setup_all (REAL rate, int buflen, SDRMODE mode, char *wisdom,
 PRIVATE void
 setup_rx (int k, unsigned int thread)
 {
+	int i;
+
 	/* conditioning */
 	if (thread == 0) {
 		diversity.gain = 1.0;
@@ -134,15 +139,23 @@ setup_rx (int k, unsigned int thread)
 	}
 	rx[thread][k].iqfix = newCorrectIQ (0.0, 1.0, 0.000f);
 	// Remove the next line
-	rx[thread][k].iqfix->wbir_state = JustSayNo;
+	//rx[thread][k].iqfix->wbir_state = JustSayNo;
 	// Remove the previous line
-	rx[thread][k].filt.coef = newFIR_Bandpass_COMPLEX (150.0,
-		2850.0,	uni[thread].samplerate, uni[thread].buflen + 1);
+	rx[thread][k].filt.low = 150.0;  // (NR0V)
+	rx[thread][k].filt.high = 2850.0;
+//	rx[thread][k].filt.coef = newFIR_Bandpass_COMPLEX (150.0,
+//		2850.0,	uni[thread].samplerate, uni[thread].buflen + 1);
+	rx[thread][k].filt.coef = newFIR_Bandpass_COMPLEX ((float)rx[thread][k].filt.low,
+		(float)rx[thread][k].filt.high, uni[thread].samplerate, uni[thread].buflen + 1);
 	rx[thread][k].filt.ovsv =
+		newFiltOvSv (FIRcoef (rx[thread][k].filt.coef), FIRsize (rx[thread][k].filt.coef),
+		uni[thread].wisdom.bits);
+	rx[thread][k].filt.ovsv_notch =		// (NR0V)
 		newFiltOvSv (FIRcoef (rx[thread][k].filt.coef), FIRsize (rx[thread][k].filt.coef),
 		uni[thread].wisdom.bits);
 	rx[thread][k].resample.flag = FALSE;
 	normalize_vec_COMPLEX (rx[thread][k].filt.ovsv->zfvec, rx[thread][k].filt.ovsv->fftlen, rx[thread][k].filt.ovsv->scale);
+	normalize_vec_COMPLEX (rx[thread][k].filt.ovsv_notch->zfvec, rx[thread][k].filt.ovsv_notch->fftlen, rx[thread][k].filt.ovsv_notch->scale);	// (NR0V)
 
 	rx[thread][k].output_gain=1.0f;
 
@@ -163,6 +176,14 @@ setup_rx (int k, unsigned int thread)
 		FiltOvSv_storepoint (rx[thread][k].filt.ovsv),
 		"init rx[thread][k].buf.o");
 
+	rx[thread][k].buf.i_notch = newCXB (FiltOvSv_fetchsize (rx[thread][k].filt.ovsv_notch),		// (NR0V)
+		FiltOvSv_fetchpoint (rx[thread][k].filt.ovsv_notch),
+		"init rx[thread][k].buf.i_notch");
+
+	rx[thread][k].buf.o_notch = newCXB (FiltOvSv_storesize (rx[thread][k].filt.ovsv_notch),
+		FiltOvSv_storepoint (rx[thread][k].filt.ovsv_notch),
+		"init rx[thread][k].buf.o_notch");
+
 	rx[thread][k].dcb = newDCBlocker(DCB_SINGLE_POLE, rx[thread][k].buf.i);
 	rx[thread][k].dcb->flag = FALSE;
 
@@ -175,7 +196,7 @@ setup_rx (int k, unsigned int thread)
 		rx[thread][k].osc.phase,
 		uni[thread].samplerate, "SDR RX Oscillator");
 
-	rx[thread][k].dttspagc.gen = newDttSPAgc (
+/*	rx[thread][k].dttspagc.gen = newDttSPAgc (
 		agcMED,							// mode kept around for control reasons alone
 		CXBbase (rx[thread][k].buf.o),	// buffer pointer
 		CXBsize (rx[thread][k].buf.o),	// buffer size
@@ -189,13 +210,94 @@ setup_rx (int k, unsigned int thread)
 		0.00001f,						// Minimum gain as a multipler, linear not dB
 		1.0,							// Set the current gain
 		"AGC");							// Set a tag for an error message if the memory allocation fails		
+*/
+//	rx[thread][k].dttspagc.flag = TRUE;
 
-	rx[thread][k].dttspagc.flag = TRUE;
+	rx[thread][k].wcpagc.gen = newWcpAGC ( // (NR0V)
+		agcMED,
+		0,								//pmode
+		CXBbase (rx[thread][k].buf.o),	//buff pointer
+		CXBsize (rx[thread][k].buf.o),	//io_buffsize
+		uni[thread].samplerate,			//sample rate
+		0.002,							//tau_attack
+		0.250,							//tau_decay
+		4,								//n_tau
+		10000.0,						//max_gain
+		1.5,							//var_gain
+		1000.0,							//fixed_gain
+		1.0,							//max_input
+		1.0,							//out_targ
+		0.250,							//tau_fast_backaverage
+		0.005,							//tau_fast_decay
+		5.0,							//pop_ratio
+		0.500,							//tau_hang_backmult
+		0.250,							//hangtime
+		0.250,							//hang_thresh
+		0.100,							//tau_hang_decay
+		"AGC");							//tag
+		
+
+	rx[thread][k].wcpagc.flag = TRUE;
+
+	rx[thread][k].anf.gen = newANF	(	// (NR0V) added	
+		CXBsize (rx[thread][k].buf.o),	//buff_size
+		CXBbase (rx[thread][k].buf.o),	//buff pointer
+		DLINE_SIZE,	
+		256,
+		64,				
+		0.0001,	
+		0.1,
+		1.0,
+		0.0,
+		200.0,
+		6.25e-12,
+		6.25e-10,
+		1.0,
+		3.0,
+		"ANF");
+	rx[thread][k].anf.flag = FALSE;
+	rx[thread][k].anf.position = 0;
+
+	rx[thread][k].anr.gen = newANR	(	// (NR0V) added	
+		CXBsize (rx[thread][k].buf.o),	//buff_size
+		CXBbase (rx[thread][k].buf.o),	//buff pointer
+		DLINE_SIZE,	
+		256,
+		64,				
+		0.0001,	
+		0.1,
+		120.0,
+		120.0,
+		200.0,
+		0.001,
+		6.25e-10,
+		1.0,
+		3.0,
+		"ANR");
+	rx[thread][k].anr.flag = FALSE;
+	rx[thread][k].anr.position = 0;
 
 	rx[thread][k].grapheq.gen = new_EQ (rx[thread][k].buf.o, uni[thread].samplerate, uni[thread].wisdom.bits);
 	rx[thread][k].grapheq.flag = FALSE;
 
 	/* demods */
+	rx[thread][k].amd.gen = newAMD (	// (NR0V)
+		CXBsize (rx[thread][k].buf.o),
+		CXBbase (rx[thread][k].buf.o),
+		CXBbase (rx[thread][k].buf.o),
+		0,
+		0,
+		0,
+		uni[thread].samplerate,
+		-2000.0,
+		2000.0,
+		1.0,
+		0.025,
+		0.02,
+		1.4,
+		"amd"
+		);
+/*
 	rx[thread][k].am.gen = newAMD (
 		uni[thread].samplerate,			// REAL samprate
 		0.0,							// REAL f_initial
@@ -208,7 +310,7 @@ setup_rx (int k, unsigned int thread)
 		AMdet,							// AM Mode AMdet == rectifier,
 		//         SAMdet == synchronous detector
 		"AM detector blew");   // char *tag
-
+*/
 	rx[thread][k].fm.gen = newFMD (
 		uni[thread].samplerate,			// REAL samprate
 		0.0,							// REAL f_initial
@@ -221,7 +323,7 @@ setup_rx (int k, unsigned int thread)
 		"New FM Demod structure");		// char *error message;
 
 	/* noise reduction */
-	rx[thread][k].anf.gen = new_lmsr (
+/*	rx[thread][k].anf.gen = new_lmsr (
 		rx[thread][k].buf.o,	// CXB signal,
 		64,						// int delay,
 		0.01f,					// REAL adaptation_rate,
@@ -229,7 +331,7 @@ setup_rx (int k, unsigned int thread)
 		45,						// int adaptive_filter_size,
 		LMADF_INTERFERENCE);
 	rx[thread][k].anf.flag = FALSE;
-
+*/
 	rx[thread][k].banf.gen = new_blms(
 		rx[thread][k].buf.o,    // CXB signal,
 		0.01f,				// REAL adaptation_rate,
@@ -238,7 +340,7 @@ setup_rx (int k, unsigned int thread)
 		uni->wisdom.bits);      // fftw wisdom
 	rx[thread][k].banf.flag = FALSE;
 
-	rx[thread][k].anr.gen = new_lmsr (
+/*	rx[thread][k].anr.gen = new_lmsr (
 		rx[thread][k].buf.o,	// CXB signal,
 		40,						// int delay,
 		0.00015f,				// REAL adaptation_rate,
@@ -246,7 +348,7 @@ setup_rx (int k, unsigned int thread)
 		30,						// int adaptive_filter_size,
 		LMADF_NOISE);
 	rx[thread][k].anr.flag = FALSE;
-
+*/
 	rx[thread][k].banr.gen = new_blms(
 		rx[thread][k].buf.o,    // CXB signal,
 		0.001f,					// REAL adaptation_rate,
@@ -263,6 +365,19 @@ setup_rx (int k, unsigned int thread)
 	rx[thread][k].nb_sdrom.thresh = 2.5f;
 	rx[thread][k].nb_sdrom.gen = new_noiseblanker (rx[thread][k].buf.i, rx[thread][k].nb_sdrom.thresh);
 	rx[thread][k].nb_sdrom.flag = FALSE;
+
+	for(i=0; i<MAX_NOTCHES_IN_PASSBAND; i++)
+	{
+		rx[thread][k].notch[i].gen = new_IIR_2P2Z(
+			rx[thread][k].buf.o,	// Buffer
+			1.0,					// Gain
+			1.0,					// Parameter value - Q in this case
+			Q,						// type of parameter
+			NOTCH,					// type of filter
+			uni[thread].samplerate, // sample rate
+			400.0);					// frequency for the notch
+		rx[thread][k].notch[i].gen->doComplex = TRUE;
+	}
 
 	rx[thread][k].spot.gen = newSpotToneGen (
 		-12.0,						// gain
@@ -285,9 +400,10 @@ setup_rx (int k, unsigned int thread)
 	rx[thread][k].bin.flag = FALSE;
 
 	{
-		REAL pos = 0.5,             // 0 <= pos <= 1, left->right
-		theta = (REAL) ((1.0 - pos) * M_PI / 2.0);
-		rx[thread][k].azim = Cmplx ((REAL) cos (theta), (IMAG) sin (theta));
+	//	REAL pos = 0.5,             // 0 <= pos <= 1, left->right
+	//	theta = (REAL) ((1.0 - pos) * M_PI / 2.0);
+	//	rx[thread][k].azim = Cmplx ((REAL) cos (theta), (IMAG) sin (theta));
+		rx[thread][k].azim = Cmplx (1.0f, 1.0f);
 	}
 
 	rx[thread][k].tick = 0;
@@ -307,6 +423,7 @@ setup_tx (unsigned int thread)
 	tx[thread].filt.ovsv_pre = newFiltOvSv (FIRcoef (tx[thread].filt.coef),
 		FIRsize (tx[thread].filt.coef), uni[thread].wisdom.bits);
 	normalize_vec_COMPLEX (tx[thread].filt.ovsv->zfvec, tx[thread].filt.ovsv->fftlen,tx[thread].filt.ovsv->scale);
+	normalize_vec_COMPLEX (tx[thread].filt.ovsv_pre->zfvec, tx[thread].filt.ovsv_pre->fftlen,tx[thread].filt.ovsv_pre->scale);  //(NR0V)
 
 	// hack for EQ
 	tx[thread].filt.save = newvec_COMPLEX (tx[thread].filt.ovsv->fftlen, "TX filter cache");
@@ -319,10 +436,15 @@ setup_tx (unsigned int thread)
 		FiltOvSv_fetchpoint (tx[thread].filt.ovsv), "init tx[thread].buf.i");
 	tx[thread].buf.o = newCXB (FiltOvSv_storesize (tx[thread].filt.ovsv),
 		FiltOvSv_storepoint (tx[thread].filt.ovsv), "init tx[thread].buf.o");
-	tx[thread].buf.ic = newCXB (FiltOvSv_fetchsize (tx[thread].filt.ovsv_pre),
+/*	tx[thread].buf.ic = newCXB (FiltOvSv_fetchsize (tx[thread].filt.ovsv_pre),
 		FiltOvSv_fetchpoint (tx[thread].filt.ovsv_pre), "init tx[thread].buf.ic");
 	tx[thread].buf.oc = newCXB (FiltOvSv_storesize (tx[thread].filt.ovsv_pre),
 		FiltOvSv_storepoint (tx[thread].filt.ovsv_pre), "init tx[thread].buf.oc");
+*/
+	tx[thread].buf.i_pre = newCXB (FiltOvSv_fetchsize (tx[thread].filt.ovsv_pre),  // (NR0V)
+		FiltOvSv_fetchpoint (tx[thread].filt.ovsv_pre), "init tx[thread].buf.i_pre");
+	tx[thread].buf.o_pre = newCXB (FiltOvSv_storesize (tx[thread].filt.ovsv_pre),
+		FiltOvSv_storepoint (tx[thread].filt.ovsv_pre), "init tx[thread].buf.o_pre");
 
 	tx[thread].dcb.flag = FALSE;
 	tx[thread].dcb.gen = newDCBlocker (DCB_MED, tx[thread].buf.i);
@@ -336,8 +458,29 @@ setup_tx (unsigned int thread)
 		tx[thread].osc.phase, uni[thread].samplerate, "SDR TX Oscillator");
 
 	tx[thread].am.carrier_level = 0.5f;
-	tx[thread].fm.cvtmod2freq = (REAL) (3000.0 * TWOPI / uni[thread].samplerate); //3 kHz deviation
 
+//	tx[thread].fm.cvtmod2freq = (REAL) (3000.0 * TWOPI / uni[thread].samplerate); //3 kHz deviation
+	tx[thread].fm.cvtmod2freq = (REAL) (5000.0f * TWOPI / uni[thread].samplerate); //5 kHz deviation..used to be 3
+	tx[thread].fm.phase = 0.0;
+	tx[thread].fm.k_preemphasis = (REAL)(1.0f + uni[thread].samplerate/(TWOPI*3000.0f));  //3.546
+	tx[thread].fm.k_deemphasis = (REAL)(1.0f + uni[thread].samplerate/(TWOPI*250.0f));  //3.546
+	tx[thread].fm.preemphasis_filter = 0.0f;
+	tx[thread].fm.deemphasis_out = 0.0f;
+	tx[thread].fm.clip_threshold = 0.75f;
+	tx[thread].fm.output_LPF1 = new_IIR_LPF_2P(tx[thread].buf.i,uni[thread].samplerate, 3500.0f, 0.25f);	//4 pole butterworth Q = 0.76537, 1.84776	
+	tx[thread].fm.output_LPF2 = new_IIR_LPF_2P(tx[thread].buf.i,uni[thread].samplerate, 3500.0f, 1.75f);	//4 pole butterworth Q = 0.76537, 1.84776	
+
+	tx[thread].fm.input_LPF1 = new_IIR_LPF_2P(tx[thread].buf.i,uni[thread].samplerate, 3500.0f, 0.25f);	//4 pole butterworth Q = 0.76537, 1.84776	
+	tx[thread].fm.input_LPF2 = new_IIR_LPF_2P(tx[thread].buf.i,uni[thread].samplerate, 3500.0f, 1.75f);	//4 pole butterworth Q = 0.76537, 1.84776
+	tx[thread].fm.input_HPF1 = new_IIR_HPF_2P(tx[thread].buf.i,uni[thread].samplerate, 150.0f, 0.34f);	//4 pole butterworth Q = 0.76537, 1.84776	
+	tx[thread].fm.input_HPF2 = new_IIR_HPF_2P(tx[thread].buf.i,uni[thread].samplerate, 150.0f, 0.94f);	//4 pole butterworth Q = 0.76537, 1.84776	
+
+	tx[thread].fm.ctcss.flag = FALSE;
+	tx[thread].fm.ctcss.amp = .13f;
+	tx[thread].fm.ctcss.freq_hz = 100.0;
+	tx[thread].fm.ctcss.osc = newOSC (uni[thread].buflen, ComplexTone, 100.0, 0.0, uni[thread].samplerate, "SDR TX CTTS Oscillator");
+
+/*
 	tx[thread].leveler.gen = newDttSPAgc (
 		1,							// mode kept around for control reasons
 		CXBbase (tx[thread].buf.i),	// input buffer
@@ -353,9 +496,42 @@ setup_tx (unsigned int thread)
 		1.0,						// Set the current gain
 		"LVL");						// Set a tag for an error message if the memory allocation fails
 	tx[thread].leveler.flag = TRUE;
+*/
+
+	tx[thread].leveler.gen = newWcpAGC (// (NR0V)
+		5,								//mode
+		0,								//0 for max(I,Q), 1 for envelope
+		CXBbase (tx[thread].buf.i),		//buff pointer
+		CXBsize (tx[thread].buf.i),		//io_buffsize
+		uni[thread].samplerate,			//sample rate
+		0.002,							//tau_attack
+		0.500,							//tau_decay
+		4,								//n_tau
+		1.778,							//max_gain
+		1.0,							//var_gain
+		1.0,							//fixed_gain
+		1.0,							//max_input
+		1.0,							//out_targ
+		0.250,							//tau_fast_backaverage
+		0.005,							//tau_fast_decay
+		5.0,							//pop_ratio
+		0.500,							//tau_hang_backmult
+		0.500,							//hangtime
+		0.250,							//hang_thresh
+		0.100,							//tau_hang_decay
+		"LVL");							//tag
+	tx[thread].leveler.flag = TRUE;
 
 	tx[thread].grapheq.gen = new_EQ (tx[thread].buf.i, uni[thread].samplerate, uni[thread].wisdom.bits);
 	tx[thread].grapheq.flag = FALSE;
+
+	tx[thread].compressor.gen = newCompressor ( // (NR0V)
+		CXBbase (tx[thread].buf.o_pre),
+		CXBbase (tx[thread].buf.i),
+		CXBsize (tx[thread].buf.i),
+		3.0f,
+		"CMP");
+	tx[thread].compressor.flag = FALSE;
 
 	memset ((char *) &tx[thread].squelch, 0, sizeof (tx[thread].squelch));
 	tx[thread].squelch.thresh = -40.0;
@@ -364,7 +540,7 @@ setup_tx (unsigned int thread)
 	tx[thread].squelch.flag = FALSE;
 	tx[thread].squelch.running = tx[thread].squelch.set = FALSE;
 	tx[thread].squelch.num = uni[thread].buflen - 48;
-
+/*
 	tx[thread].alc.gen = newDttSPAgc (
 		1,								// mode kept around for control reasons alone
 		CXBbase (tx[thread].buf.i),		// input buffer
@@ -379,13 +555,37 @@ setup_tx (unsigned int thread)
 		1.0,							// Set the current gain
 		"ALC");							// Set a tag for an error message if the memory allocation fails
 	tx[thread].alc.flag = TRUE;
+*/
+	tx[thread].alc.gen = newWcpAGC (  // (NR0V)
+		5,								//mode
+		1,								//0 for max(I,Q), 1 for envelope
+		CXBbase (tx[thread].buf.o),		//buff pointer
+		CXBsize (tx[thread].buf.o),		//io_buffsize
+		uni[thread].samplerate,			//sample rate
+		0.002,							//tau_attack
+		0.010,							//tau_decay
+		4,								//n_tau
+		1.0,							//max_gain
+		1.0,							//var_gain
+		1.0,							//fixed_gain
+		1.0,							//max_input
+		1.0,							//out_targ
+		0.250,							//tau_fast_backaverage
+		0.005,							//tau_fast_decay
+		5.0,							//pop_ratio
+		0.500,							//tau_hang_backmult
+		0.500,							//hangtime
+		0.250,							//hang_thresh
+		0.100,							//tau_hang_decay
+		"ALC");							//tag
+	tx[thread].alc.flag = TRUE;
 
 	tx[thread].spr.gen =
 		newSpeechProc (0.4f, 3.0, CXBbase (tx[thread].buf.i), CXBsize (tx[thread].buf.o));
 	tx[thread].spr.flag = FALSE;
 
-	tx[thread].cpd.gen = newWSCompander (uni[thread].cpdlen, (REAL)-0.1, tx[thread].buf.i);
-	tx[thread].cpd.flag = FALSE;
+//	tx[thread].cpd.gen = newWSCompander (uni[thread].cpdlen, (REAL)-0.1, tx[thread].buf.i);
+//	tx[thread].cpd.flag = FALSE;
 
 	tx[thread].hlb.gen = newHilbertsim(tx[thread].buf.i, tx[thread].buf.i);
 	tx[thread].hlb.flag = TRUE;
@@ -422,43 +622,65 @@ setup_workspace (REAL rate, int buflen, SDRMODE mode,
 void
 destroy_workspace (unsigned int thread)
 {
-	int k;
+	int i, k;
 
 
 	/* TX */
 	delHilsim(tx[thread].hlb.gen);
-	delWSCompander (tx[thread].cpd.gen);
+	//delWSCompander (tx[thread].cpd.gen);
 	delSpeechProc (tx[thread].spr.gen);
-	delDttSPAgc (tx[thread].leveler.gen);
-	delDttSPAgc (tx[thread].alc.gen);
+	//delDttSPAgc (tx[thread].leveler.gen);
+	//delDttSPAgc (tx[thread].alc.gen);
+	delWcpAGC (tx[thread].leveler.gen); // (NR0V)
+	delWcpAGC (tx[thread].alc.gen);
+	delCompressor (tx[thread].compressor.gen);
 	delOSC (tx[thread].osc.gen);
 	delDCBlocker (tx[thread].dcb.gen);
 	delvec_COMPLEX (tx[thread].filt.save);
 	delFiltOvSv (tx[thread].filt.ovsv);
+	delFiltOvSv (tx[thread].filt.ovsv_pre);  // (NR0V)
 	delFIR_Bandpass_COMPLEX (tx[thread].filt.coef);
 	delCorrectIQ (tx[thread].iqfix);
 	delCXB (tx[thread].buf.o);
 	delCXB (tx[thread].buf.i);
+	delCXB (tx[thread].buf.o_pre); // (NR0V)
+	delCXB (tx[thread].buf.i_pre);
+
+	// Delete preemphasis and pinching filters
+	del_IIR_LPF_2P(tx[thread].fm.output_LPF1);
+	del_IIR_LPF_2P(tx[thread].fm.output_LPF2);
+	del_IIR_LPF_2P(tx[thread].fm.input_LPF1); 	
+	del_IIR_LPF_2P(tx[thread].fm.input_LPF2);
+	del_IIR_HPF_2P(tx[thread].fm.input_HPF1);	
+	del_IIR_HPF_2P(tx[thread].fm.input_HPF2);
 
 	/* RX */
 	for (k = 0; k < uni[thread].multirx.nrx; k++)
 	{
 		delWSCompander (rx[thread][k].cpd.gen);
 		delSpotToneGen (rx[thread][k].spot.gen);
-		delDttSPAgc (rx[thread][k].dttspagc.gen);
+		//delDttSPAgc (rx[thread][k].dttspagc.gen);
 		del_nb (rx[thread][k].nb_sdrom.gen);
 		del_nb (rx[thread][k].nb.gen);
-		del_lmsr (rx[thread][k].anf.gen);
-		del_lmsr (rx[thread][k].anr.gen);
-		delAMD (rx[thread][k].am.gen);
+	//	del_lmsr (rx[thread][k].anf.gen);
+	//	del_lmsr (rx[thread][k].anr.gen);
+		del_anf (rx[thread][k].anf.gen);      // (NR0V)
+		del_anr (rx[thread][k].anr.gen);      // (NR0V)
+		del_amd (rx[thread][k].amd.gen);		// (NR0V)
+		//delAMD (rx[thread][k].am.gen);
 		delFMD (rx[thread][k].fm.gen);
 		delOSC (rx[thread][k].osc.gen);
 		delvec_COMPLEX (rx[thread][k].filt.save);
 		delFiltOvSv (rx[thread][k].filt.ovsv);
+		delFiltOvSv (rx[thread][k].filt.ovsv_notch);	// (NR0V)
 		delFIR_Bandpass_COMPLEX (rx[thread][k].filt.coef);
+		for(i=0; i<MAX_NOTCHES_IN_PASSBAND; i++)
+			del_IIR_2P2Z(rx[thread][k].notch[i].gen);
 		delCorrectIQ (rx[thread][k].iqfix);
 		delCXB (rx[thread][k].buf.o);
 		delCXB (rx[thread][k].buf.i);
+		delCXB (rx[thread][k].buf.o_notch);
+		delCXB (rx[thread][k].buf.i_notch);
 	}
 
 	/* all */
@@ -580,8 +802,10 @@ do_rx_meter (int k, unsigned int thread, CXB buf, int tap)
 				0.05 *uni[thread].meter.rx.val[k][SIGNAL_STRENGTH]);
 			break;
 		case RXMETER_POST_AGC:
-			uni[thread].meter.rx.val[k][AGC_GAIN] =
-				(REAL) (20.0 * log10 (rx[thread][k].dttspagc.gen->gain.now + 1e-10));
+		//	uni[thread].meter.rx.val[k][AGC_GAIN] =
+			//	(REAL) (20.0 * log10 (rx[thread][k].dttspagc.gen->gain.now + 1e-10));
+			uni[thread].meter.rx.val[k][AGC_GAIN] =	
+				(REAL)(20.0*log10(1.0 / (rx[thread][k].wcpagc.gen->volts + 1e-16))); // (NR0V)
 			//fprintf(stdout, "rx gain: %15.12f\n", uni[thread].meter.rx.val[k][AGC_GAIN]);
 			//fflush(stdout);
 			break;
@@ -802,6 +1026,7 @@ do_rx_pre (int k, unsigned int thread)
 	correctIQ (rx[thread][k].buf.i, rx[thread][k].iqfix, FALSE, k);
 
 	/* 2nd IF conversion happens here */
+/*
 	if (OSCon(rx[thread][k].osc.gen))
 	{
 		ComplexOSC (rx[thread][k].osc.gen);
@@ -809,7 +1034,14 @@ do_rx_pre (int k, unsigned int thread)
 			CXBdata (rx[thread][k].buf.i, i) = Cmul (CXBdata (rx[thread][k].buf.i, i),
 			OSCCdata (rx[thread][k].osc.gen, i));
 	}
-
+*/
+	if (rx[thread][k].osc.gen->Frequency != 0.0)
+	{
+		ComplexOSC (rx[thread][k].osc.gen);
+		for (i = 0; i < n; i++)
+			CXBdata (rx[thread][k].buf.i, i) = Cmul (CXBdata (rx[thread][k].buf.i, i),
+			OSCCdata (rx[thread][k].osc.gen, i));
+	}
 	/* filtering, metering, spectrum, squelch, & AGC */
 
 	//do_rx_meter (k, rx[thread][k].buf.i, RXMETER_PRE_FILT);
@@ -849,11 +1081,14 @@ do_rx_post (int k, unsigned int thread)
 {
 	int i, n = CXBhave (rx[thread][k].buf.o);
 
-	if(rx[thread][k].squelch.set)
+	if(rx[thread][k].mode != FM)
 	{
+	    if(rx[thread][k].squelch.set)
+	    {
 		do_squelch (k, thread);
-	}
-	else no_squelch (k, thread);
+	    }
+	    else no_squelch (k, thread);
+        }
 
 	if (rx[thread][k].grapheq.flag)
 	{
@@ -873,7 +1108,9 @@ do_rx_post (int k, unsigned int thread)
 	// not binaural?
 	// position in stereo field
 
-
+	if((rx[thread][k].anf.position == 1) && rx[thread][k].mode != FM) // (NR0V)
+		WcpAGC (rx[thread][k].wcpagc.gen);
+	//BEGIN ANF / ANR / LATE_FILTER BLOCK
 	if (rx[thread][k].anf.flag)
 	{
 		switch(rx[thread][k].mode)
@@ -885,14 +1122,37 @@ do_rx_post (int k, unsigned int thread)
 			case CWU: // do nothing
 				break;
 			default:
-				lmsr_adapt (rx[thread][k].anf.gen);
+			//	lmsr_adapt (rx[thread][k].anf.gen);
+				notch (rx[thread][k].anf.gen);			// (NR0V)
 				//blms_adapt(rx[thread][k].banf.gen);
 				break;
 		}
 	}
 
 	if (rx[thread][k].anr.flag)
-		lmsr_adapt (rx[thread][k].anr.gen);
+		noise_reduce(rx[thread][k].anr.gen);
+	//	lmsr_adapt (rx[thread][k].anr.gen);
+	if (rx[thread][k].tick == 0)
+		reset_OvSv (rx[thread][k].filt.ovsv_notch);
+	if(rx[thread][k].anf.flag || rx[thread][k].anr.flag || (rx[thread][k].mode == AM) || (rx[thread][k].mode == SAM))
+	{
+		for (i = 0; i < CXBhave(rx[thread][k].buf.o); i++)	
+			CXBdata(rx[thread][k].buf.i_notch, i) = Cmplx (2.0f * CXBreal(rx[thread][k].buf.o, i), 0.0f);
+		filter_OvSv (rx[thread][k].filt.ovsv_notch);
+		memcpy (CXBbase(rx[thread][k].buf.o), CXBbase(rx[thread][k].buf.o_notch), sizeof(COMPLEX) * CXBhave(rx[thread][k].buf.o));
+	}
+	//END BLOCK
+	for(i=0; i<MAX_NOTCHES_IN_PASSBAND; i++)
+	{
+
+		if (rx[thread][k].notch[i].flag)
+			do_IIR_2P2Z(rx[thread][k].notch[i].gen);
+	}
+			
+
+	if((rx[thread][k].anf.position == 0) && rx[thread][k].mode != FM) // (NR0V)
+		WcpAGC (rx[thread][k].wcpagc.gen);
+
 		//blms_adapt(rx[thread][k].banr.gen);
 
 	/*if(thread == 0 && k == 0)
@@ -902,7 +1162,7 @@ do_rx_post (int k, unsigned int thread)
 		for (i = 0; i < n; i++) CXBdata(rx[thread][k].buf.o,i) = cxzero;
 	else 
 #endif
-		DttSPAgc (rx[thread][k].dttspagc.gen, rx[thread][k].tick);
+	//	DttSPAgc (rx[thread][k].dttspagc.gen, rx[thread][k].tick);
 	
 	/*if(thread == 0 && k == 0)
 	{
@@ -953,7 +1213,7 @@ do_rx_SBCW (int k, unsigned int thread)
 PRIVATE void
 do_rx_AM (int k, unsigned int thread)
 {
-	AMDemod (rx[thread][k].am.gen);
+	am_demod (rx[thread][k].amd.gen);
 }
 
 PRIVATE void
@@ -1003,7 +1263,7 @@ do_rx (int k, unsigned int thread)
 		case SAM:
 			do_rx_AM (k, thread);
 			break;
-		case FMN:
+		case FM:
 			do_rx_FM (k, thread);
 			break;
 		case DRM:
@@ -1062,7 +1322,7 @@ do_tx_meter (unsigned int thread, CXB buf, TXMETERTYPE mt)
 
 			alc_pk = CXBpeak(tx[thread].buf.i);
 			uni[thread].meter.tx.val[TX_ALC_PK] = (REAL) (-20.0 * log10 (alc_pk+ 1e-16));
-			uni[thread].meter.tx.val[TX_ALC_G] = (REAL)(20.0*log10(tx[thread].alc.gen->gain.now+1e-16));
+			uni[thread].meter.tx.val[TX_ALC_G] = (REAL)(20.0*log10(1.0 / (tx[thread].alc.gen->volts/*gain.now*/+1e-16)));
 			//fprintf(stdout, "pk: %15.12f  comp: %15.12f\n", uni[thread].meter.tx.val[TX_ALC_PK], uni[thread].meter.tx.val[TX_ALC_G]);
 			//fflush(stdout);
 			break;
@@ -1085,7 +1345,8 @@ do_tx_meter (unsigned int thread, CXB buf, TXMETERTYPE mt)
 
 			lev_pk = CXBpeak(tx[thread].buf.i);
 			uni[thread].meter.tx.val[TX_LVL_PK] = (REAL) (-20.0 * log10 (lev_pk + 1e-16));
-			uni[thread].meter.tx.val[TX_LVL_G] = (REAL)(20.0*log10(tx[thread].leveler.gen->gain.now + 1e-16));
+			//uni[thread].meter.tx.val[TX_LVL_G] = (REAL)(20.0*log10(tx[thread].leveler.gen->gain.now + 1e-16));
+			uni[thread].meter.tx.val[TX_LVL_G] = (REAL)(20.0*log10(1.0 / (tx[thread].leveler.gen->volts + 1e-16))); // (NR0V)
 			break;
 
 		case TX_COMP:
@@ -1142,9 +1403,9 @@ do_tx_pre (unsigned int thread)
 			do_tx_meter (thread, tx[thread].buf.i, TX_LVL);
 			do_tx_meter (thread, tx[thread].buf.i, TX_COMP);
 
-			if (tx[thread].alc.flag)
-				DttSPAgc (tx[thread].alc.gen, tx[thread].tick);
-			do_tx_meter (thread, tx[thread].buf.i, TX_ALC);
+		//	if (tx[thread].alc.flag)
+		//		DttSPAgc (tx[thread].alc.gen, tx[thread].tick);
+		//	do_tx_meter (thread, tx[thread].buf.i, TX_ALC);
 
 			do_tx_meter (thread, tx[thread].buf.i, TX_CPDR);
 			break;
@@ -1154,14 +1415,16 @@ do_tx_pre (unsigned int thread)
 			do_tx_meter (thread, tx[thread].buf.i, TX_EQ);
 			//fprintf(stderr,"[%.2f,%.2f]  ", peakl(tx[thread].buf.i), peakr(tx[thread].buf.i));
 
-			if (tx[thread].leveler.flag)
-				DttSPAgc (tx[thread].leveler.gen, tx[thread].tick);						
+		//	if (tx[thread].leveler.flag)
+		//		DttSPAgc (tx[thread].leveler.gen, tx[thread].tick);						
+			if (tx[thread].leveler.flag) // (NR0V)
+				WcpAGC (tx[thread].leveler.gen);	
 			do_tx_meter (thread, tx[thread].buf.i, TX_LVL);
 			//fprintf(stderr,"[%.2f,%.2f]  ", peakl(tx[thread].buf.i), peakr(tx[thread].buf.i));
 
-			if (tx[thread].alc.flag)
-				DttSPAgc (tx[thread].alc.gen, tx[thread].tick);
-			do_tx_meter (thread, tx[thread].buf.i, TX_ALC);
+		//	if (tx[thread].alc.flag)
+		//		DttSPAgc (tx[thread].alc.gen, tx[thread].tick);
+		//	do_tx_meter (thread, tx[thread].buf.i, TX_ALC);
 			//fprintf(stderr,"[%.2f,%.2f]  ", peakl(tx[thread].buf.i), peakr(tx[thread].buf.i));
 
 			if (tx[thread].spr.flag)
@@ -1169,10 +1432,35 @@ do_tx_pre (unsigned int thread)
 			do_tx_meter (thread, tx[thread].buf.i, TX_COMP);
 			//fprintf(stderr,"[%.2f,%.2f]  ", peakl(tx[thread].buf.i), peakr(tx[thread].buf.i));
 
-			if (tx[thread].cpd.flag)
-				WSCompand (tx[thread].cpd.gen);						
-			do_tx_meter (thread, tx[thread].buf.i, TX_CPDR);
+		//	if (tx[thread].cpd.flag)
+		//		WSCompand (tx[thread].cpd.gen);						
+		//	do_tx_meter (thread, tx[thread].buf.i, TX_CPDR);
 			//fprintf(stderr,"[%.2f,%.2f]  ", peakl(tx[thread].buf.i), peakr(tx[thread].buf.i));
+			if(tx[thread].mode != FM)
+			{
+				if (tx[thread].compressor.flag) // (NR0V)
+				{
+					for (i = 0; i < CXBhave(tx[thread].buf.i); i++)	
+						CXBdata(tx[thread].buf.i_pre, i) = Cmplx (2.0f * CXBreal(tx[thread].buf.i, i), 0.0);
+
+					CXBhave(tx[thread].buf.i_pre) = CXBhave(tx[thread].buf.i);
+					CXBhave (tx[thread].buf.o_pre) = CXBhave (tx[thread].buf.i_pre);
+
+					if (tx[thread].tick == 0)
+						reset_OvSv (tx[thread].filt.ovsv_pre);
+					//fprintf (wcpfile, "[%.2f,%.2f]  IN Pre Filter\n", lpeakmag(tx[thread].buf.i_pre), rpeakmag(tx[thread].buf.i_pre));
+					filter_OvSv (tx[thread].filt.ovsv_pre);
+					//fprintf (wcpfile, "[%.2f,%.2f]  OUT Pre Filter\n", lpeakmag(tx[thread].buf.o_pre), rpeakmag(tx[thread].buf.o_pre));
+
+					Compressor (tx[thread].compressor.gen);
+					//fprintf(wcpfile, "[%.2f,%.2f]  OUT Compressor\n", lpeakmag(tx[thread].buf.i), rpeakmag(tx[thread].buf.i));
+				}
+
+				//if (tx[thread].cpd.flag)
+					//WSCompand (tx[thread].cpd.gen);
+
+				do_tx_meter (thread, tx[thread].buf.i, TX_CPDR);
+			}
 
 			break;						
 	}
@@ -1188,12 +1476,12 @@ do_tx_post (unsigned int thread)
 
 	//fprintf(stderr,"[%.2f,%.2f]  ", peakl(tx[thread].buf.i), peakr(tx[thread].buf.i));
 	filter_OvSv (tx[thread].filt.ovsv);
-	if (uni[thread].spec.flag)
-		do_tx_spectrum (thread, tx[thread].buf.o);
+	//if (uni[thread].spec.flag)
+	//	do_tx_spectrum (thread, tx[thread].buf.o);
 	//fprintf(stderr,"[%.2f,%.2f]  ", peakl(tx[thread].buf.o), peakr(tx[thread].buf.o));
 
 	// meter modulated signal
-
+/*
 	if (OSCon(tx[thread].osc.gen))
 	{
 		int i;
@@ -1204,6 +1492,38 @@ do_tx_post (unsigned int thread)
 				Cmul (CXBdata (tx[thread].buf.o, i), OSCCdata (tx[thread].osc.gen, i));
 		}
 	}
+*/
+	if (tx[thread].alc.flag || (tx[thread].mode == AM) || (tx[thread].mode == SAM))  // (NR0V)										//AM HACK
+		WcpAGC (tx[thread].alc.gen);
+
+	if ((tx[thread].mode == AM) || (tx[thread].mode == SAM))																		//AM HACK
+	{
+		int i;
+		for (i = 0; i < CXBhave (tx[thread].buf.o); i++)
+		{
+			CXBreal(tx[thread].buf.o, i) = 
+				tx[thread].am.carrier_level + (1.0f - tx[thread].am.carrier_level) * CXBreal(tx[thread].buf.o, i);
+			CXBimag(tx[thread].buf.o, i) = 0.0f;
+		}
+	}
+
+
+	do_tx_meter (thread, tx[thread].buf.o, TX_ALC);
+
+	if (uni[thread].spec.flag)
+		do_tx_spectrum (thread, tx[thread].buf.o);
+	
+	if (tx[thread].osc.gen->Frequency != 0.0)
+	{
+		int i;
+		ComplexOSC (tx[thread].osc.gen);
+		for (i = 0; i < CXBhave (tx[thread].buf.o); i++)
+		{
+			CXBdata (tx[thread].buf.o, i) =
+				Cmul (CXBdata (tx[thread].buf.o, i), OSCCdata (tx[thread].osc.gen, i));
+		}
+	}
+
 	correctIQ (tx[thread].buf.o, tx[thread].iqfix, TRUE,0);
 	do_tx_meter (thread, tx[thread].buf.o, TX_PWR);
 	//fprintf(stderr,"[%.2f,%.2f]  ", peakl(tx[thread].buf.o), peakr(tx[thread].buf.o));
@@ -1281,7 +1601,7 @@ do_tx (unsigned int thread)
 		case SAM:
 			do_tx_AM (thread);
 			break;
-		case FMN:
+		case FM:
 			do_tx_FM (thread);
 			break;
 		case SPEC:

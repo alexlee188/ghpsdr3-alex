@@ -17,11 +17,33 @@
 #include <ovsv.h>
 #include <filter.h>
 #include <oscillator.h>
+#include <filt2p2z.h>
 
 typedef struct _fm_demod
 {
   int size;
-  CXB ibuf, obuf;
+  CXB ibuf, obuf, squelch_obuf;
+  REAL deviation;
+  REAL k_deemphasis;
+  REAL deemphasis_out;
+  REAL squelch_envelope;
+  REAL squelch_filter;
+  REAL squelch_threshold_weak;
+  REAL squelch_threshold_strong;
+  REAL squelch_threshold_unmute;
+  int squelch_weak_timer;
+  int squelch_strong_timer;
+  REAL squelch_k;
+  BOOLEAN squelch_muted;
+  int squelch_strong_timer_hang;
+  int squelch_weak_timer_hang;
+  IIR_LPF_2P input_LPF1;
+  IIR_LPF_2P input_LPF2;
+  IIR_HPF_2P input_HPF1;
+  IIR_HPF_2P input_HPF2;
+  IIR_HPF_2P squelch_HPF;
+  IIR_1P1Z demod_comp_filter;
+
   struct
   {
     REAL alpha, beta;
