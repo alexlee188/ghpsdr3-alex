@@ -514,7 +514,7 @@ void* rtp_tx_thread(void *arg){
                     iq_buffer_counter++;
                     if(iq_buffer_counter>=TX_BUFFER_SIZE) {
                         // use DttSP to process Mic data into tx IQ
-                    	if(!hpsdr || mox) {
+                    	if (!hpsdr && mox) { // KD0OSS changed OR to AND
                             Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
                             // send Tx IQ to server, buffer is non-interleaved.
                             ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
@@ -611,7 +611,7 @@ void *tx_thread(void *arg){
 			tx_buffer[tx_buffer_counter] = data_out[2*i];
 			tx_buffer[tx_buffer_counter + TX_BUFFER_SIZE] = data_out[2*i+1];
 			tx_buffer_counter++;
-			if (tx_buffer_counter >= TX_BUFFER_SIZE){
+			if (tx_buffer_counter >= TX_BUFFER_SIZE && mox){ // KD0OSS added AND mox
 				// use DttSP to process Mic data into tx IQ
 				Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
 				// send Tx IQ to server, buffer is non-interleaved.
