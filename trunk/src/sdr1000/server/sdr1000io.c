@@ -214,6 +214,7 @@ int sdr1000_close() {
 #else
     close(fd);
 #endif
+	return 0;
 }
 
 #ifdef PORTAUDIO
@@ -223,7 +224,7 @@ int sdr1000_write(float* left_samples,float* right_samples)
     int i;
     float audio_buffer[SAMPLES_PER_BUFFER*2];
 
-    if (!tx_mode) return;
+    if (!tx_mode) return 0;
 
     rc=0;
 
