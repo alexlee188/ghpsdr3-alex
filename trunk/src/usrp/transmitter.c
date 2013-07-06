@@ -8,16 +8,16 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-  #ifdef __linux__
+  #ifdef _WIN32
+#include <winsock.h>
+#include "pthread.h"
+  #else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
 #include <unistd.h>
-  #else
-#include <winsock.h>
-#include "pthread.h"
   #endif
 #include <string.h>
 #include <fftw3.h>

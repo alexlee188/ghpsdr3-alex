@@ -50,8 +50,12 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
-#include <event.h>
+#include "config.h"
+#if HAVE_EVENT2_EVENT_H
 #include <event2/thread.h>
+#else
+#include <event.h>
+#endif
 //#include <event2/buffer.h>
 #include <event2/listener.h>
 #include <event2/bufferevent_ssl.h>

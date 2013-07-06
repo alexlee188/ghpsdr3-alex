@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef __linux__
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -179,7 +179,7 @@ void send_IQ_buffer(RECEIVER *pRec) {
             offset=0;
             while(offset<sizeof(pRec->input_buffer)) {
                 buffer.sequence=sequence;
-#ifndef __linux__
+#ifdef _WIN32
                 buffer.sequenceHi = 0L;
 #endif
                 buffer.offset=offset;

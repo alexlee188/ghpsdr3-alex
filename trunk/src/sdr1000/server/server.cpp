@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <getopt.h>
+#ifndef __FreeBSD__
 #include <sys/io.h>
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -35,7 +37,11 @@ static int option_index;
 
 static int rfe=0;
 static int pa=0;
+#ifdef __FreeBSD__
+static char lpt_addr[32]="/dev/ppi0";
+#else
 static unsigned long lpt_addr=0x0378;
+#endif
 static int usb=0;
 static long caloffset=0; //kd0oss added
 
@@ -61,7 +67,11 @@ int process_args(int argc,char* argv[]) {
                 pa=atoi(optarg);
                 break;
             case 2: //lpt_addr
+#ifdef __FreeBSD__
+		strlcpy(lpt_addr, optarg, sizeof(lpt_addr));
+#else
                 lpt_addr=strtol(optarg,NULL,16);
+#endif
                 break;
             case 3: //usb
                 usb=atoi(optarg);

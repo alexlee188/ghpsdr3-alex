@@ -35,10 +35,12 @@
 #include <rfe_reg.h>
 
 #include <unistd.h>
+#ifndef __FreeBSD__
 #include <sys/io.h>
 #define outp(a, b) outb(b, a)
 #define inp(a) inb(a)
 #define Sleep sleep
+#endif
 
 #include <sdr1kusb.h> 
 
@@ -86,7 +88,11 @@ class SDR1000
 	bool pa;
 
 	/// Parallel port address
+#ifdef __FreeBSD__
+	char		lpt_addr[32];
+#else
 	unsigned short lpt_addr;
+#endif
 
 	/// Register representing IC1 on the PIO board
 	PIOReg* pio_ic01;
@@ -149,7 +155,11 @@ class SDR1000
 
 public:
 	/// Constructor
+#ifdef __FreeBSD__
+	SDR1000(char* name, bool rfe, bool pa, bool usb, const char *lpt_addr);
+#else
 	SDR1000(char* name, bool rfe, bool pa, bool usb, unsigned short lpt_addr);
+#endif
 	
 	/// Destructor
 	~SDR1000();

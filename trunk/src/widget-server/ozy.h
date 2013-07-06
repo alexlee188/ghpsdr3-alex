@@ -24,7 +24,7 @@
 *
 */
 
-#ifndef __linux__
+#ifdef _WIN32
 int ozy_init(void);
 #endif
 int ozy_init(void);

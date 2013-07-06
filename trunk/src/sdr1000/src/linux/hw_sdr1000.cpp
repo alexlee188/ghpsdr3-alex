@@ -26,16 +26,31 @@
 //    USA
 //=================================================================
 
+#ifdef __FreeBSD__
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <string.h>
+#include <dev/ppbus/ppi.h>
+#endif
 #include "hw_sdr1000.h"
 #include "../../server/sdr1000.h"
 
+#ifdef __FreeBSD__
+#define Sleep(x)	usleep(x*1000)
+SDR1000::SDR1000(char* name, bool rfe, bool pa, bool usb, const char *lpt_addr)
+#else
 SDR1000::SDR1000(char* name, bool rfe, bool pa, bool usb, unsigned short lpt_addr)
+#endif
 {
 	this->name = name;
 	this->rfe = rfe;
 	this->pa = pa;
 	this->usb = usb;
+#ifdef __FreeBSD__
+	strlcpy(this->lpt_addr, lpt_addr, sizeof(this->lpt_addr));
+#else
 	this->lpt_addr = (uint16) lpt_addr;
+#endif
 
 	if(usb)
 	{
@@ -46,9 +61,11 @@ SDR1000::SDR1000(char* name, bool rfe, bool pa, bool usb, unsigned short lpt_add
 	}
 	else
 	{
+#ifndef __FreeBSD__
 		if(lpt_addr < 0x3FF)
 			ioperm(lpt_addr, 3, TRUE);
 		else iopl(3);
+#endif
 	}
 	
 	pio_ic01 = new PIOReg("pio_ic01", this, PIO_IC01, 0xA0);
@@ -154,9 +171,21 @@ void SDR1000::PowerOn()
 
 void SDR1000::Latch(unsigned char addr, unsigned char data)
 {
+#ifdef __FreeBSD__
+	int pp=open(lpt_addr, O_RDWR);
+	unsigned char deselect=0x0B;
+
+	if(pp) {
+		ioctl(pp, PPISDATA, &data);
+		ioctl(pp, PPIGCTRL, &addr);
+		ioctl(pp, PPIGCTRL, &deselect);
+		close(pp);
+	}
+#else
         outp(lpt_addr, (uint8) data);
         outp(lpt_addr+2, (uint8) addr);
 	outp(lpt_addr+2, 0xB); // 0xB selects none of the boards
+#endif
 }
 
 void SDR1000::SRLoad(unsigned char addr, unsigned char new_data) // parallel only
@@ -341,7 +370,22 @@ unsigned char SDR1000::StatusPort() // returns status port value
 	if(usb)
 		return this->sdr1kusb->GetStatusPort();
 	else
+#ifdef __FreeBSD__
+		{
+			unsigned char ret=0;
+			int	pp;
+
+			pp=open(lpt_addr, O_RDWR);
+			if(pp) {
+				if(ioctl(pp, PPIGSTATUS, &ret))
+					ret=0;
+				close(pp);
+			}
+			return ret;
+		}
+#else
 		return inp(lpt_addr+1);
+#endif
 }
 
 void SDR1000::SetMute(bool b) // sets Mute relay

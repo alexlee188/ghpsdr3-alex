@@ -28,15 +28,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef __linux__
+#ifdef _WIN32
+#include "pthread.h"
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
-#else
-#include "pthread.h"
 #endif
 
 #include <string.h>

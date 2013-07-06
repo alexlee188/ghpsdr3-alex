@@ -3,7 +3,7 @@
 #include <string.h>
 #include <portaudio.h>
 
-#ifdef __linux__
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef __linux__
+#ifdef _WIN32
 #include "usb.h"
 #include "hpsdr_usb.h"
 

@@ -30,7 +30,7 @@
 #include <sys/types.h>
 #include <complex>
 #include <sys/time.h>
-#if defined __linux__
+#if (!defined _WIN32)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

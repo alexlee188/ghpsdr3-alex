@@ -26,7 +26,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef __linux
+#ifdef _WIN32
+#include "windows/pthread.h"
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -37,8 +39,6 @@
 #include <net/if.h>
 #include <ifaddrs.h>
 #include <pthread.h>
-#else
-#include "windows/pthread.h"
 #endif
 
 #include <string.h>
@@ -86,7 +86,11 @@ void metis_send_buffer(char* buffer,int length);
 #define inaddrr(x) (*(struct in_addr *) &ifr->x[sizeof sa.sin_port])
 
 static int get_addr(int sock, char * ifname) {
-
+#ifdef __FreeBSD__
+  ip_address=0;
+  memset(hw_address, 0, sizeof(hw_address));
+  return 0;
+#else
   struct ifreq *ifr;
   struct ifreq ifrr;
   struct sockaddr_in sa;
@@ -116,6 +120,7 @@ static int get_addr(int sock, char * ifname) {
 
 
   return 0;
+#endif
 }
 
 void metis_discover(char* interface,char* metisip) {

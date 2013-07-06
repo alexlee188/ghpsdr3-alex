@@ -51,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent) :
     rawReceiveThread=NULL;
     discovery=NULL;
 
-#ifdef __WIN32
+#ifdef _WIN32
     ui->privilegesLabel->setText("You must be running with Administrator privileges to be able to read/write raw ethernet frames.");
     QRect rect=ui->interfaceComboBox->geometry();
     rect.setWidth(ui->interfaceLabel->width());

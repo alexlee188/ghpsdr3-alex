@@ -2,7 +2,7 @@
 #define RECEIVETHREAD_H
 
 #include <sys/types.h>
-#ifdef __WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #define socklen_t int
 #else

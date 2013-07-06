@@ -39,10 +39,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <sys/types.h>
 
 /* Needed to compile on older FC3 systems */
 #if defined __linux
-#include <sys/types.h>
 #include <linux/limits.h>
 #endif
 

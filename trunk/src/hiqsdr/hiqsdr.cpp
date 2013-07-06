@@ -33,7 +33,9 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
+#ifdef _WIN32
 #include <error.h>
+#endif
 #include <errno.h>
 #include <string.h>
 #include <pthread.h>

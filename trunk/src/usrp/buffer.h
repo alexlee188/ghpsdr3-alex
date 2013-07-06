@@ -25,11 +25,11 @@
 */
 
 typedef struct _buffer {
-#ifdef __linux__
-    unsigned long long sequence;
-#else
+#ifdef _WIN32
     unsigned long sequence;
     unsigned long sequenceHi;
+#else
+    unsigned long long sequence;
 #endif
     unsigned short offset;
     unsigned short length;

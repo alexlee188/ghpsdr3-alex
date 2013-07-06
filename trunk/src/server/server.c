@@ -28,7 +28,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef __linux__
+#ifdef _WIN32
+#include "pthread.h"
+#include <winsock.h>
+#include "getopt.h"
+#else // Windows
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -36,10 +40,6 @@
 #include <netdb.h>
 #include <pthread.h>
 #include <getopt.h>
-#else // Windows
-#include "pthread.h"
-#include <winsock.h>
-#include "getopt.h"
 #endif
 
 
@@ -82,7 +82,7 @@ void process_args(int argc,char* argv[]);
 
 int main(int argc,char* argv[]) {
 
-#ifndef __linux__
+#ifdef _WIN32
         WORD wVersionRequested;
         WSADATA wsaData;
         int err;
@@ -116,10 +116,10 @@ int main(int argc,char* argv[]) {
     }
 
     while(1) {
-#ifdef __linux__
-        sleep(10);
-#else   // Windows
+#ifdef _WIN32
         Sleep(10);
+#else
+        sleep(10);
 #endif
     }
 }

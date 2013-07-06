@@ -30,16 +30,16 @@
 #include <sys/types.h>
 #include <string.h>
 
-  #ifdef __linux__
+  #ifdef _WIN32
+#include <winsock.h>
+#include "pthread.h"
+  #else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
 #include <unistd.h>
-  #else
-#include <winsock.h>
-#include "pthread.h"
   #endif
 
 #include "client.h"
@@ -123,10 +123,10 @@ void* client_thread(void* arg) {
     client->bs_port=-1;
     detach_bandscope(client);
 
-#ifdef __linux__
-    close(client->socket);
-#else
+#ifdef _WIN32
     closesocket(client->socket);
+#else
+    close(client->socket);
 #endif
 
     fprintf(stderr,"Client Handler: Client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));    

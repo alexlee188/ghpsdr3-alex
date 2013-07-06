@@ -28,7 +28,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef __linux
 #include <libusb-1.0/libusb.h>
+#else
+#include <libusb.h>
+#endif
 #include <ctype.h>
 
 #include "ozyio.h"

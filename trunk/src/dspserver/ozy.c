@@ -319,7 +319,7 @@ sem_wait(&ozy_send_semaphore);
             offset=0;
             while(offset<length) {
                 buffer.sequence=tx_sequence;
-#ifndef __linux__
+#ifdef _WIN32
                 buffer.sequenceHi = 0L;
 #endif
                 buffer.offset=offset;

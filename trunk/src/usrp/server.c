@@ -28,7 +28,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef __linux__
+#ifdef _WIN32
+#include "pthread.h"
+#include <winsock.h>
+#else // Windows
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -37,9 +40,6 @@
 #include <pthread.h>
 #include <getopt.h>
 #include <unistd.h>     // needed for sleep()
-#else // Windows
-#include "pthread.h"
-#include <winsock.h>
 #endif
 
 #include "client.h"
@@ -83,7 +83,7 @@ void set_defaults(void);
 //MAIN
 int main(int argc,char* argv[]) {
 
-#ifndef __linux__
+#ifdef _WIN32
         WORD wVersionRequested;
         WSADATA wsaData;
         int err;
@@ -114,10 +114,10 @@ int main(int argc,char* argv[]) {
     create_listener_thread(); 
 
     while(1) {
-#ifdef __linux__
-        sleep(10);
-#else   // Windows
+#ifdef _WIN32
         Sleep(10);
+#else   // Windows
+        sleep(10);
 #endif
     }
 	fprintf(stderr,"Exiting the MAIN starter loop.\n");

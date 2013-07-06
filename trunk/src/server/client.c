@@ -29,14 +29,14 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-#ifdef __linux__
+#ifdef _WIN32
+#include "pthread.h"
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
-#else
-#include "pthread.h"
 #endif
 
 #include <string.h>
@@ -92,10 +92,10 @@ fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),n
     client->bs_port=-1;
     detach_bandscope(client);
 
-#ifdef __linux__
-    close(client->socket);
-#else
+#ifdef _WIN32
     closesocket(client->socket);
+#else
+    close(client->socket);
 #endif
 
 fprintf(stderr,"client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));

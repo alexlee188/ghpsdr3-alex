@@ -2,7 +2,7 @@
 #define __USB_H__
 
 #include <stdlib.h>
-#ifndef __linux__
+#ifdef _WIN32
 #include <windows.h>
 #endif
 

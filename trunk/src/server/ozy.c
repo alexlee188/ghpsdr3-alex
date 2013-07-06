@@ -29,7 +29,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef __linux__
+#ifdef _WIN32
+#include "pthread.h"
+#else
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/timeb.h>
@@ -38,8 +40,6 @@
 #include <unistd.h>   // for readlink
 #include <limits.h>   // for PATH_MAX
 #include <errno.h>
-#else
-#include "pthread.h"
 #endif
 
 #include "client.h"
@@ -181,7 +181,7 @@ void process_ozy_input_buffer(char* buffer);
 void write_ozy_output_buffer();
 void process_bandscope_buffer(char* buffer);
 
-#ifndef __linux__
+#ifdef _WIN32
 #define bool int
 bool init_hpsdr();
 #endif
@@ -206,7 +206,7 @@ int create_ozy_thread() {
     int i;
     int rc;
 
-#ifndef __linux__
+#ifdef _WIN32
     if (init_hpsdr() == 0) exit(9);
 #endif
 
@@ -344,7 +344,7 @@ static int file_exists (const char * fileName)
    return ( i == 0 ) ? 1 : 0 ;
 }
 
-#ifdef __linux__
+#ifndef _WIN32
 int filePath (char *sOut, const char *sIn) {
     int rc = 0;
 
@@ -396,7 +396,7 @@ int ozy_init() {
     int i;
 
     // On Windows, the following is replaced by init_hpsdr() in OzyInit.c
-#ifdef __linux__
+#ifndef _WIN32
 
     if (strlen(ozy_firmware) == 0) filePath (ozy_firmware,"ozyfw-sdr1k.hex");
     if (strlen(ozy_fpga) == 0)     filePath (ozy_fpga,"Ozy_Janus.rbf");

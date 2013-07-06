@@ -29,14 +29,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef __linux__
+#ifdef _WIN32
+#include "windows/pthread.h"
+#else
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/timeb.h>
 #include <pthread.h>
 #include <unistd.h>
-#else
-#include "windows/pthread.h"
 #endif
 
 #include "client.h"
@@ -175,7 +175,7 @@ void process_ozy_input_buffer(char* buffer);
 void write_ozy_output_buffer();
 void process_bandscope_buffer(char* buffer);
 
-#ifndef __linux__
+#ifdef _WIN32
 #define bool int
 bool init_hpsdr();
 #endif
@@ -192,7 +192,7 @@ int create_ozy_thread() {
     int i;
     int rc;
 
-#ifndef __linux__
+#ifdef _WIN32
     if (init_hpsdr() == 0) exit(9);
 #endif
 
@@ -340,7 +340,7 @@ int ozy_init() {
 */
 
         // On Windows, the following is replaced by init_hpsdr() in OzyInit.c
-#ifdef __linux__
+#ifndef _WIN32
 
     // open ozy
     rc = ozy_open();

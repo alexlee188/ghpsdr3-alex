@@ -24,9 +24,13 @@
 *
 */
 
-#ifndef __linux__
+#ifndef __unix__
 #include <winsock.h>
 #include "pthread.h"
+#else
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #endif
 
 #define AUDIO_PORT 15000
