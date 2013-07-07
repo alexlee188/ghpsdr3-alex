@@ -150,6 +150,7 @@ public slots:
 private:
     QAudioFormat     audio_format;
     QAudioOutput*    audio_output;
+    bool             connected;
     QThread* audio_output_thread;
     QAudioDeviceInfo audio_device;
     Audio_playback*  audio_out;
