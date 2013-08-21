@@ -4,18 +4,14 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.View.OnTouchListener;
-import android.opengl.GLSurfaceView;
-import android.util.AttributeSet;
 import android.util.Log;
 
 public class SpectrumView extends View implements OnTouchListener {
@@ -316,42 +312,66 @@ public class SpectrumView extends View implements OnTouchListener {
 					moved=false;
 					scroll=false;
 					jog=false;
-					if(startX<=50 && startY>=(HEIGHT-66) && startY <= HEIGHT) {
+					// kl7na wanted bigger area around the buttons so you don't find yourself
+					// jumping to an entirely new frequency so he commented the lines below and
+					// replaced them with those just below that.  He also wanted the first push
+					// of the jog buttons to move to the next 100 Hz or 1 KHz increment and then
+					// jump 100 Hz or 1 KHz from there.
+					long frequency = connection.getFrequency();
+					long freqRound100Hz = (long) (Math.round(connection.getFrequency()/100f)*100);
+					long freqRoundKHz = (long) (Math.round(connection.getFrequency()/1000f)*1000);
+					if(startX<=80 && startY>=(HEIGHT-96) && startY <= HEIGHT+30) {
 						// frequency down 100
 						jog=true;
-						jogAmount=-100;
-						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
+						if (frequency < freqRound100Hz) 
+							jogAmount = -100 + (frequency-freqRound100Hz);
+						else if (frequency > freqRound100Hz)
+							jogAmount = -(frequency - freqRound100Hz);
+						else jogAmount= -100;
+						connection.setFrequency(frequency + jogAmount);
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if(startX>=(WIDTH-50) && startY>=(HEIGHT-66) && startY <= HEIGHT) {
+					} else if(startX>=(WIDTH-80) && startY>=(HEIGHT-96) && startY <= HEIGHT+30) {
 						// frequency up 100 Hz
 						jog=true;
-						jogAmount=100;
-						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
+						if (frequency < freqRound100Hz) 
+							jogAmount = freqRound100Hz-frequency;
+						else if (frequency > freqRound100Hz)
+							jogAmount = 100 - (frequency - freqRound100Hz);
+						else jogAmount = 100;
+						connection.setFrequency(frequency + jogAmount);
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=200) && (startX>=125) && (startY>=(HEIGHT-66))
-							&& (startY <= HEIGHT)) {
+					} else if((startX<=230) && (startX>=95) && (startY>=(HEIGHT-96))
+							&& (startY <= HEIGHT+30)) {
 						// frequency down 1000 Hz kb3omm added 1k decrement
 						jog=true;
-						jogAmount=-1000;
-						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
+						if (frequency < freqRoundKHz) 
+							jogAmount = -1000 + (frequency-freqRoundKHz);
+						else if (frequency > freqRoundKHz)
+							jogAmount = -(frequency - freqRoundKHz);
+						else jogAmount= -1000;
+						connection.setFrequency(frequency + jogAmount);
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=(WIDTH-125)) && (startX>=(WIDTH-200)) 
-							&& (startY>=(HEIGHT-66)) && (startY <= HEIGHT)) {
+					} else if((startX<=(WIDTH-95)) && (startX>=(WIDTH-230)) 
+							&& (startY>=(HEIGHT-96)) && (startY <= HEIGHT+30)) {
 						// frequency up 1000 Hz kb3omm added 1k increment
 						jog=true;
-						jogAmount=1000;
-						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
+						if ((double) frequency < freqRoundKHz) 
+							jogAmount = freqRoundKHz-frequency;
+						else if (frequency > freqRoundKHz)
+							jogAmount = 1000 - (frequency - freqRoundKHz);
+						else jogAmount = 1000;
+						connection.setFrequency(frequency + jogAmount);
 						timer=new Timer();
 						timer.schedule(new JogTask(), 1000);
-					} else if ((startX>=(WIDTH-50)) && (startY>=100) && startY <=(HEIGHT-100)
+					} else if ((startX>=(WIDTH-80)) && (startY>=100) && startY <=(HEIGHT-100)
 							&& connection.getAllowTx()){
 						jog = true;
 						if (!connection.getMOX()) connection.setMOX(true);
 						else connection.setMOX(false);
-					}
+					}// end kl7na button size and 100 Hz and 1 KHz even step edits.
 				}
 				break;
 			case MotionEvent.ACTION_MOVE:
