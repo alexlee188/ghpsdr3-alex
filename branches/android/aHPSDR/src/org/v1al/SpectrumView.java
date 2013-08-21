@@ -324,7 +324,7 @@ public class SpectrumView extends View implements OnTouchListener {
 						// frequency down 100
 						jog=true;
 						if (frequency < freqRound100Hz) 
-							jogAmount = -100 + (frequency-freqRound100Hz);
+							jogAmount = -100 - (frequency-freqRound100Hz);
 						else if (frequency > freqRound100Hz)
 							jogAmount = -(frequency - freqRound100Hz);
 						else jogAmount= -100;
@@ -347,7 +347,7 @@ public class SpectrumView extends View implements OnTouchListener {
 						// frequency down 1000 Hz kb3omm added 1k decrement
 						jog=true;
 						if (frequency < freqRoundKHz) 
-							jogAmount = -1000 + (frequency-freqRoundKHz);
+							jogAmount = -1000 - (frequency-freqRoundKHz);
 						else if (frequency > freqRoundKHz)
 							jogAmount = -(frequency - freqRoundKHz);
 						else jogAmount= -1000;
