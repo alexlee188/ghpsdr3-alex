@@ -82,7 +82,8 @@ extern int receiver;
 
 extern double LO_offset;
 
-int hpsdr;
+extern int hpsdr;
+extern int hpsdr_local;
 
 // values saved from last change to send to slaves
 long long lastFreq;
@@ -241,6 +242,8 @@ void setSpeed(int s);
 int ozySetRecord(char* state);
 
 void ozy_set_hpsdr();
+
+void ozy_set_hpsdr_local();
 
 #ifdef	__cplusplus
 }

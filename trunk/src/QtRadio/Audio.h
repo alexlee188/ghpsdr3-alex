@@ -34,7 +34,7 @@
 #if QT_VERSION >= 0x050000
 #include <QtWidgets/QComboBox>
 #else
-#include <QtGui/QComboBox>
+#include <QComboBox>
 #endif
 
 #include <QMutex>

@@ -35,6 +35,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <unistd.h>
 #else
 #include "pthread.h"
 #endif
@@ -47,6 +48,8 @@
 #include "transmitter.h"
 #include "messages.h"
 #include "buffer.h"
+#include "bandscope.h"
+#include "metis.h"
 
 #define SMALL_PACKETS
 
@@ -101,6 +104,7 @@ fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),n
 fprintf(stderr,"client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
 
     free(client);
+    return 0;
 }
 
 char* parse_command(CLIENT* client,char* command) {
@@ -231,6 +235,7 @@ char* parse_command(CLIENT* client,char* command) {
                 token=strtok(NULL," \r\n");
                 if(token!=NULL) {
                     client->mox=atoi(token);
+                    fprintf (stderr, "MOX received: %d\n", client->mox);
                     return OK;
                 } else {
                     // invalid command string
@@ -243,9 +248,135 @@ char* parse_command(CLIENT* client,char* command) {
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
                 ozy_set_open_collector_outputs(atoi(token));
+                return OK;
             } else {
                 return INVALID_COMMAND;
             }
+
+        } else if(strcmp(token,"alexrxantenna")==0) {
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+                ozy_set_alex_rx_antenna (atoi(token));
+                return OK;
+            } else {
+                return INVALID_COMMAND;
+            }
+
+        } else if(strcmp(token,"alextxrelay")==0) {
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+                ozy_set_alex_tx_relay (atoi(token));
+                return OK;
+            } else {
+                return INVALID_COMMAND;
+            }
+
+        } else if(strcmp(token,"settxdrive")==0) {
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+                ozy_set_hermes_power (atoi(token));
+                return OK;
+            } else {
+                return INVALID_COMMAND;
+            }
+
+        } else if(strcmp(token,"settxlineingain")==0) {
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+                ozy_set_hermes_lineingain(atoi(token));
+                return OK;
+            } else {
+                return INVALID_COMMAND;
+            }
+
+        } else if(strcmp(token,"hermesmicboost")==0) {
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+                if (strcmp(token,"on")==0) {
+                    ozy_set_hermes_mic_boost(1);
+                    return OK;
+                }
+                if (strcmp(token,"off")==0) { 
+                    ozy_set_hermes_mic_boost(0);
+                    return OK;
+                }
+                return INVALID_COMMAND;
+            } else {
+                return INVALID_COMMAND;
+            }
+
+        } else if(strcmp(token,"hermeslinein")==0) {
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+                if (strcmp(token,"on")==0) {
+                    ozy_set_hermes_linein(1);
+                    return OK;
+                }
+                if (strcmp(token,"off")==0) { 
+                    ozy_set_hermes_linein(0);
+                    return OK;
+                }
+                return INVALID_COMMAND;
+            } else {
+                return INVALID_COMMAND;
+            }
+
+        } else if(strcmp(token,"hardware?")==0) {
+            return "OK Hermes";
+
+        } else if(strcmp(token,"getserial?")==0) {
+            static char buf[50];
+            snprintf (buf, sizeof(buf), "OK %s\"- firmware %d\"", metis_ip_address(0), ozy_get_hermes_sw_ver());
+            return buf;
+
+        } else if(strcmp(token,"getadcoverload?")==0) {
+            static char buf[50];
+            snprintf (buf, sizeof(buf), "OK %d", ozy_get_adc_overflow ());
+            return buf;
+
+        } else if(strcmp(token,"dither")==0) {
+            // set frequency
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+                if (strcmp(token,"on")==0) {
+                    ozy_set_dither(1);
+                    return OK;
+                }
+                if (strcmp(token,"off")==0) {
+                    ozy_set_dither(0);
+                    return OK;
+                }
+                return INVALID_COMMAND;
+            } else {
+                return INVALID_COMMAND;
+            }
+        } else if(strcmp(token,"setattenuator")==0) {
+            // set attenuator
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+               long av=atol(token);
+               ozy_set_hermes_att(av);
+               return OK;
+            } else {
+                return INVALID_COMMAND;
+            }
+        } else if(strcmp(token,"random")==0) {
+            // set frequency
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+                if (strcmp(token,"on")==0) {
+                    ozy_set_random (0);
+                    return OK;
+                }
+                if (strcmp(token,"off")==0) {
+                    ozy_set_random (0);
+                    return OK;
+                }
+                return INVALID_COMMAND;
+            } else {
+                return INVALID_COMMAND;
+            }
+
         } else {
             // invalid command string
             return INVALID_COMMAND;
@@ -254,6 +385,7 @@ char* parse_command(CLIENT* client,char* command) {
         // empty command string
         return INVALID_COMMAND;
     }
+    return INVALID_COMMAND;
 
 }
 
@@ -323,7 +455,8 @@ fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
                         break;
                     }
                 } else {
-                        fprintf(stderr,"missing TX IQ frames expected %d.%ld got %d.%ld\n",sequence,offset,buffer.sequence,buffer.offset);
+                        fprintf(stderr,"missing TX IQ frames expected %ld . %d got %lld . %d\n",
+                                sequence, offset, buffer.sequence, buffer.offset);
                 }
             }
         }
