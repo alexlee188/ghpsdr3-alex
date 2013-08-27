@@ -3,6 +3,7 @@ package org.v1al;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import android.R.bool;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -36,6 +37,10 @@ public class SpectrumView extends View implements OnTouchListener {
 	
 	public void setAverage(int a){
 		average = a;
+	}
+	
+	public void setJogButtonDirection(boolean withSpectrum){
+		jogWithSpectrum = withSpectrum;
 	}
 	
 	void setSensors(float sensor1,float sensor2,float sensor3) {
@@ -320,53 +325,21 @@ public class SpectrumView extends View implements OnTouchListener {
 					long frequency = connection.getFrequency();
 					long freqRound100Hz = (long) (Math.round(connection.getFrequency()/100f)*100);
 					long freqRoundKHz = (long) (Math.round(connection.getFrequency()/1000f)*1000);
-					if(startX<=80 && startY>=(HEIGHT-96) && startY <= HEIGHT+30) {
-						// frequency down 100
-						jog=true;
-						if (frequency < freqRound100Hz) 
-							jogAmount = -100 - (frequency-freqRound100Hz);
-						else if (frequency > freqRound100Hz)
-							jogAmount = -(frequency - freqRound100Hz);
-						else jogAmount= -100;
-						connection.setFrequency(frequency + jogAmount);
-						timer=new Timer();
-						timer.schedule(new JogTask(), 1000);
-					} else if(startX>=(WIDTH-80) && startY>=(HEIGHT-96) && startY <= HEIGHT+30) {
-						// frequency up 100 Hz
-						jog=true;
-						if (frequency < freqRound100Hz) 
-							jogAmount = freqRound100Hz-frequency;
-						else if (frequency > freqRound100Hz)
-							jogAmount = 100 - (frequency - freqRound100Hz);
-						else jogAmount = 100;
-						connection.setFrequency(frequency + jogAmount);
-						timer=new Timer();
-						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=230) && (startX>=95) && (startY>=(HEIGHT-96))
-							&& (startY <= HEIGHT+30)) {
-						// frequency down 1000 Hz kb3omm added 1k decrement
-						jog=true;
-						if (frequency < freqRoundKHz) 
-							jogAmount = -1000 - (frequency-freqRoundKHz);
-						else if (frequency > freqRoundKHz)
-							jogAmount = -(frequency - freqRoundKHz);
-						else jogAmount= -1000;
-						connection.setFrequency(frequency + jogAmount);
-						timer=new Timer();
-						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=(WIDTH-95)) && (startX>=(WIDTH-230)) 
-							&& (startY>=(HEIGHT-96)) && (startY <= HEIGHT+30)) {
-						// frequency up 1000 Hz kb3omm added 1k increment
-						jog=true;
-						if ((double) frequency < freqRoundKHz) 
-							jogAmount = freqRoundKHz-frequency;
-						else if (frequency > freqRoundKHz)
-							jogAmount = 1000 - (frequency - freqRoundKHz);
-						else jogAmount = 1000;
-						connection.setFrequency(frequency + jogAmount);
-						timer=new Timer();
-						timer.schedule(new JogTask(), 1000);
-					} else if ((startX>=(WIDTH-80)) && (startY>=100) && startY <=(HEIGHT-100)
+					if(startX<=80 && startY>=(HEIGHT-96) && startY <= HEIGHT+30)
+						if(jogWithSpectrum) jogFreqUp100Hz(frequency, freqRound100Hz);
+						else jogFreqDown100Hz(frequency, freqRound100Hz);
+					else if(startX>=(WIDTH-80) && startY>=(HEIGHT-96) && startY <= HEIGHT+30)
+						if(jogWithSpectrum) jogFreqDown100Hz(frequency, freqRound100Hz);
+						else jogFreqUp100Hz(frequency, freqRound100Hz);
+					else if((startX<=230) && (startX>=95) && (startY>=(HEIGHT-96))
+							&& (startY <= HEIGHT+30))
+						if(jogWithSpectrum) jogFreqUp1KHz(frequency, freqRoundKHz);
+						else jogFreqDown1KHz(frequency, freqRoundKHz);
+					else if((startX<=(WIDTH-95)) && (startX>=(WIDTH-230)) 
+							&& (startY>=(HEIGHT-96)) && (startY <= HEIGHT+30))
+						if(jogWithSpectrum) jogFreqDown1KHz(frequency, freqRoundKHz);
+						else jogFreqUp1KHz(frequency, freqRoundKHz);
+					else if ((startX>=(WIDTH-80)) && (startY>=100) && startY <=(HEIGHT-100)
 							&& connection.getAllowTx()){
 						jog = true;
 						if (!connection.getMOX()) connection.setMOX(true);
@@ -439,6 +412,66 @@ public class SpectrumView extends View implements OnTouchListener {
 		
 		return true;
 	}
+
+	private void jogFreqDown1KHz(long frequency, long freqRoundKHz) {
+		{
+			// frequency down 1000 Hz kb3omm added 1k decrement
+			jog=true;
+			if (frequency < freqRoundKHz) 
+				jogAmount = -1000 - (frequency-freqRoundKHz);
+			else if (frequency > freqRoundKHz)
+				jogAmount = -(frequency - freqRoundKHz);
+			else jogAmount= -1000;
+			connection.setFrequency(frequency + jogAmount);
+			timer=new Timer();
+			timer.schedule(new JogTask(), 1000);
+		}
+	}
+
+	private void jogFreqUp1KHz(long frequency, long freqRoundKHz) {
+		{
+			// frequency up 1000 Hz kb3omm added 1k increment
+			jog=true;
+			if ((double) frequency < freqRoundKHz) 
+				jogAmount = freqRoundKHz-frequency;
+			else if (frequency > freqRoundKHz)
+				jogAmount = 1000 - (frequency - freqRoundKHz);
+			else jogAmount = 1000;
+			connection.setFrequency(frequency + jogAmount);
+			timer=new Timer();
+			timer.schedule(new JogTask(), 1000);
+		}
+	}
+
+	private void jogFreqDown100Hz(long frequency, long freqRound100Hz) {
+		{
+			// frequency down 100
+			jog=true;
+			if (frequency < freqRound100Hz) 
+				jogAmount = -100 - (frequency-freqRound100Hz);
+			else if (frequency > freqRound100Hz)
+				jogAmount = -(frequency - freqRound100Hz);
+			else jogAmount= -100;
+			connection.setFrequency(frequency + jogAmount);
+			timer=new Timer();
+			timer.schedule(new JogTask(), 1000);
+		}
+	}
+
+	private void jogFreqUp100Hz(long frequency, long freqRound100Hz) {
+		{
+			// frequency up 100 Hz
+			jog=true;
+			if (frequency < freqRound100Hz) 
+				jogAmount = freqRound100Hz-frequency;
+			else if (frequency > freqRound100Hz)
+				jogAmount = 100 - (frequency - freqRound100Hz);
+			else jogAmount = 100;
+			connection.setFrequency(frequency + jogAmount);
+			timer=new Timer();
+			timer.schedule(new JogTask(), 1000);
+		}
+	}
 	
 	class JogTask extends TimerTask {
 	    public void run() {
@@ -503,6 +536,7 @@ public class SpectrumView extends View implements OnTouchListener {
 	
 	private Timer timer;
 	private long jogAmount;
+	private boolean jogWithSpectrum;
 	
 	private float scaleFactor = 1f;
 	private ScaleGestureDetector detector;

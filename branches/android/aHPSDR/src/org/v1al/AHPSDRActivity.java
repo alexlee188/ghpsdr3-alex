@@ -158,6 +158,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		txUser=prefs.getString("txUser", "");
 		txPass=prefs.getString("txPass", "");
 		tx_state[0]=prefs.getBoolean("txAllow", false);
+		jd_state[0]=prefs.getBoolean("jogSpec", false);
 		dsp_state[3]=prefs.getBoolean("IQ", false);
 
 		connection=null;
@@ -227,6 +228,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		editor.putString("txUser", txUser);
 		editor.putString("txPass", txPass);
 		editor.putBoolean("txAllow", tx_state[0]);
+		editor.putBoolean("jogSpec", jd_state[0]);
 		editor.putBoolean("IQ", dsp_state[3]);
 		editor.commit();
     }
@@ -297,6 +299,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		menu.add(0, MENU_FPS, 0, "FPS");
 		menu.add(0, MENU_SPECTRUM_AVERAGE, 0, "Spectrum Average");
 		menu.add(0, MENU_TX, 0, "ALLOW TX");
+		menu.add(0, MENU_JOG_DIR, 0, "> Buttons Move Spectrum");
 		menu.add(0, MENU_TX_USER, 0, "TX User Password");
 		menu.add(0, MENU_MIC_GAIN, 0, "MIC GAIN");
 		menu.add(0, MENU_MASTER, 0, "MASTER");
@@ -1125,7 +1128,24 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 								connection.setAllowTx(state);
 								break;
 							}
-
+							dialog.dismiss();
+						}
+					});
+			dialog = builder.create();
+			break;
+		case MENU_JOG_DIR:
+			builder = new AlertDialog.Builder(this);
+			builder.setTitle(">> > Moves Spectrum");
+			builder.setMultiChoiceItems(jds, jd_state,
+					new DialogInterface.OnMultiChoiceClickListener() {
+						public void onClick(DialogInterface dialog, int item,
+								boolean state) {
+							//
+							switch (item) {
+							case JOG_DIR_SPEC:
+								spectrumView.setJogButtonDirection(state);
+								break;
+							}
 							dialog.dismiss();
 						}
 					});
@@ -1270,6 +1290,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		connection.setMicGain(micgain);
 		connection.setAGC(agc);
 	    connection.setAllowTx(tx_state[0]);
+	    spectrumView.setJogButtonDirection(jd_state[0]);
 	    connection.setTxUser(txUser);
 	    connection.setTxPass(txPass);
 	    connection.setIQCorrection(dsp_state[3]);					
@@ -1346,10 +1367,11 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int MENU_SERVERS = 11;
 	public static final int MENU_TX = 12;
 	public static final int MENU_TX_USER = 13;
-	public static final int MENU_MASTER = 14;
-	public static final int MENU_MIC_GAIN = 15;
-	public static final int MENU_SPECTRUM_AVERAGE = 16;
-	public static final int MENU_ABOUT = 17;
+	public static final int MENU_JOG_DIR = 14;
+	public static final int MENU_MASTER = 15;
+	public static final int MENU_MIC_GAIN = 16;
+	public static final int MENU_SPECTRUM_AVERAGE = 17;
+	public static final int MENU_ABOUT = 18;
 
 	public static final CharSequence[] bands = { "160", "80", "60", "40", "30",
 			"20", "17", "15", "12", "10", "6", "GEN", "WWV", "Reset" };
@@ -1423,8 +1445,11 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	private boolean[] dsp_state = { false, false, false, false };
 	
 	public static final CharSequence[] txs = { "Allow Tx" };
+	public static final CharSequence[] jds = { "> Buttons Move Spectrum" };
 	public static final int TX_ALLOW = 0;
+	public static final int JOG_DIR_SPEC = 0;
 	public boolean[] tx_state = { false };
+	public boolean[] jd_state = { false };
 
 	public static final CharSequence[] gains = { "0", "10", "20", "30", "40",
 			"50", "60", "70", "80", "90", "100" };
