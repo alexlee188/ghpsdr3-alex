@@ -223,7 +223,7 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
 
        default:
                 fprintf(stderr,"Usage: \n");
-                fprintf(stderr,"  dspserver --receivers N (default 1)\n");
+                fprintf(stderr,"  dspserver --receiver N (default 0)\n");
                 fprintf(stderr,"            --server 0.0.0.0 (default 127.0.0.1)\n");
                 fprintf(stderr,"            --soundcard (machine dependent)\n");
                 fprintf(stderr,"            --offset 0 \n");
