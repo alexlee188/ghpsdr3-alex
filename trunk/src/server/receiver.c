@@ -148,7 +148,6 @@ void send_IQ_buffer(int rx) {
         fprintf(stderr,"send_IQ_buffer: invalid rx: %d\n",rx);
         return;
     }
-
     if(receiver[rx].client!=(CLIENT*)NULL) {
         if(receiver[rx].client->iq_port!=-1) {
             // send the IQ buffer
@@ -185,6 +184,7 @@ void send_IQ_buffer(int rx) {
             sequence++;
 
 #else
+            fprintf(stderr,"no SMALL_PACKETS");
             rc=sendto(iq_socket,receiver[rx].input_buffer,sizeof(receiver[rx].input_buffer),0,(struct sockaddr*)&client,client_length);
             if(rc<=0) {
                 perror("sendto failed for iq data");

@@ -622,10 +622,10 @@ void* ozy_ep6_ep2_io_thread(void* arg) {
         }
 
         //current_receiver++;
-//
-//       if(current_receiver==receivers) {
-//           current_receiver=0;
-//       }
+        //
+        //       if(current_receiver==receivers) {
+        //           current_receiver=0;
+        //       }
     }
 }
 
@@ -675,7 +675,7 @@ void write_ozy_output_buffer_metis() {
         //if(receivers==1) {
         //    ozy_output_buffer[3]=control_out[0]|0x02;
         //} else {
-            ozy_output_buffer[3]=control_out[0]|((current_receiver+2)<<1);
+        ozy_output_buffer[3]=control_out[0]|((current_receiver+2)<<1);
         //}
         ozy_output_buffer[4]=receiver[current_receiver].frequency>>24;
         ozy_output_buffer[5]=receiver[current_receiver].frequency>>16;
@@ -702,13 +702,13 @@ void write_ozy_output_buffer_metis() {
         }
     }
 
-if(tx_frame<10) {
-    if(metis || hermes) {
-        dump_ozy_buffer("sent to Metis:",tx_frame,ozy_output_buffer);
-    } else {
-        dump_ozy_buffer("sent to Ozy:",tx_frame,ozy_output_buffer);
+    if(tx_frame<10) {
+        if(metis || hermes) {
+            dump_ozy_buffer("sent to Metis:",tx_frame,ozy_output_buffer);
+        } else {
+            dump_ozy_buffer("sent to Ozy:",tx_frame,ozy_output_buffer);
+        }
     }
-}
     tx_frame++;
     current_receiver++;
 
@@ -994,7 +994,7 @@ if(rx_frame<10) {
                 right_sample_float=(float)right_sample/8388607.0; // 24 bit sample
                 receiver[r].input_buffer[samples]=left_sample_float;
                 receiver[r].input_buffer[samples+BUFFER_SIZE]=right_sample_float;
-
+            }
                 // send to dspserver
                 mic_sample    = (int)((signed char) buffer[b++]) << 8;
                 mic_sample   += (int)((unsigned char)buffer[b++]);
@@ -1003,7 +1003,7 @@ if(rx_frame<10) {
                 } else 
                     mic_sample_float=(float)mic_sample/32767.0 * mic_gain; // 16 bit sample
                 receiver[r].input_buffer[samples+BUFFER_SIZE+BUFFER_SIZE]=mic_sample_float;
-            }
+
 /*
             mic_sample    = (int)((signed char) buffer[b++]) << 8;
             mic_sample   += (int)((unsigned char)buffer[b++]);
