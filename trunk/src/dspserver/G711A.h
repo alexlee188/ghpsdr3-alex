@@ -27,8 +27,8 @@
 #define	G711A_H
 
 void G711A_init(void);
-inline unsigned char G711A_encode(short sample);
-inline short G711A_decode(unsigned char sample);
+unsigned char G711A_encode(short sample);
+short G711A_decode(unsigned char sample);
 
 
 #endif // G711A_H
