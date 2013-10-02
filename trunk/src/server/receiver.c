@@ -54,7 +54,7 @@ static char response[80];
 
 static unsigned long sequence=0L;
 
-void init_receivers() {
+void init_receivers(void) {
     int i;
     for(i=0;i<MAX_RECEIVERS;i++) {
         receiver[i].client=(CLIENT*)NULL;
@@ -140,7 +140,7 @@ void send_IQ_buffer(int rx) {
     struct sockaddr_in client;
     int client_length;
     unsigned short offset;
-    unsigned short length;
+    //unsigned short length;
     BUFFER buffer;
     int rc;
 
@@ -148,7 +148,6 @@ void send_IQ_buffer(int rx) {
         fprintf(stderr,"send_IQ_buffer: invalid rx: %d\n",rx);
         return;
     }
-
     if(receiver[rx].client!=(CLIENT*)NULL) {
         if(receiver[rx].client->iq_port!=-1) {
             // send the IQ buffer
@@ -185,6 +184,7 @@ void send_IQ_buffer(int rx) {
             sequence++;
 
 #else
+            fprintf(stderr,"no SMALL_PACKETS");
             rc=sendto(iq_socket,receiver[rx].input_buffer,sizeof(receiver[rx].input_buffer),0,(struct sockaddr*)&client,client_length);
             if(rc<=0) {
                 perror("sendto failed for iq data");

@@ -27,7 +27,7 @@
 #if QT_VERSION >= 0x050000
 #include <QtWidgets/QApplication>
 #else
-#include <QtGui/QApplication>
+#include <QApplication>
 #endif
 
 #include "UI.h"

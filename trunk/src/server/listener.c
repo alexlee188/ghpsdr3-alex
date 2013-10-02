@@ -65,7 +65,7 @@ void create_listener_thread() {
 
 void* listener_thread(void* arg) {
     int s;
-    int address_length;
+    //int address_length;
     struct sockaddr_in address;
     CLIENT* client;
     int rc;

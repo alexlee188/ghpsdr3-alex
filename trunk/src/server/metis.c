@@ -37,6 +37,7 @@
 #include <net/if.h>
 #include <ifaddrs.h>
 #include <pthread.h>
+#include <unistd.h>
 #else
 #include "pthread.h"
 #endif
@@ -46,13 +47,14 @@
 
 #include "metis.h"
 #include "ozy.h"
+#include "util.h"
 
 #define MAX_METIS_CARDS 10
 METIS_CARD metis_cards[MAX_METIS_CARDS];
 
 #define DISCOVER_IDLE 0
 #define DISCOVER_SENT 1
-static int discover_state=DISCOVER_IDLE;
+//static int discover_state=DISCOVER_IDLE;
 
 #define PORT 1024
 #define DISCOVERY_SEND_PORT PORT
@@ -68,7 +70,7 @@ static int discovering;
 static unsigned char hw_address[6];
 static long ip_address;
 
-static int data_socket;
+//static int data_socket;
 static struct sockaddr_in data_addr;
 static int data_addr_length;
 
@@ -83,7 +85,7 @@ long sequence=-1;
 
 void* metis_receive_thread(void* arg);
 void* metis_watchdog_thread(void* arg);
-void metis_send_buffer(char* buffer,int length);
+void metis_send_buffer(unsigned char* buffer,int length);
 
 #define inaddrr(x) (*(struct in_addr *) &ifr->x[sizeof sa.sin_port])
 
@@ -124,7 +126,7 @@ void metis_discover(char* interface,char* metisip) {
     int rc;
     int i;
     int on=1;
-    struct ifreq ifr;
+    //struct ifreq ifr;
 
     fprintf(stderr,"Looking for Metis card on interface %s\n",interface);
 
@@ -301,7 +303,7 @@ static unsigned char input_buffer[2048];
 
 void* metis_receive_thread(void* arg) {
     struct sockaddr_in addr;
-    int length;
+    unsigned int length;
     int bytes_read;
 
     length=sizeof(addr);
@@ -406,7 +408,7 @@ static unsigned char output_buffer[1032];
 static long send_sequence=-1;
 static int offset=8;
 
-int metis_write(unsigned char ep,char* buffer,int length) {
+int metis_write(unsigned char ep,unsigned char* buffer,int length) {
     int i;
 
 //fprintf(stderr,"metis_write\n");
@@ -442,7 +444,7 @@ int metis_write(unsigned char ep,char* buffer,int length) {
     return length;
 }
 
-void metis_send_buffer(char* buffer,int length) {
+void metis_send_buffer(unsigned char* buffer,int length) {
 //fprintf(stderr,"metis_send_buffer: length=%d\n",length);
     if(sendto(discovery_socket,buffer,length,0,(struct sockaddr*)&data_addr,data_addr_length)<0) {
         perror("sendto socket failed for metis_send_data\n");

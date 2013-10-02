@@ -28,6 +28,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>    // tolower
+
 #include <libusb-1.0/libusb.h>
 
 #include "ozyio.h"
@@ -55,7 +57,7 @@
 static int init=0;
 
 static libusb_device_handle* ozy_handle;
-static libusb_context* context;
+//static libusb_context* context;
 
 int ozy_open(void) {
     int rc;
@@ -98,9 +100,11 @@ int ozy_close() {
     }
 
     libusb_close(ozy_handle);
+
+    return 0;
 }
 
-int ozy_get_firmware_string(char* buffer,int buffer_size) {
+int ozy_get_firmware_string(unsigned char* buffer,int buffer_size) {
     int rc;
 
     rc=libusb_control_transfer(ozy_handle, VRT_VENDOR_IN, VRQ_SDR1K_CTL, SDR1KCTRL_READ_VERSION, 0, buffer, buffer_size, OZY_IO_TIMEOUT);
@@ -137,7 +141,7 @@ int ozy_read(int ep,unsigned char* buffer,int buffer_size) {
     return rc;
 }
 
-int ozy_write_ram(int fx2_start_addr, char *bufp, int count) {
+int ozy_write_ram(int fx2_start_addr, unsigned char *bufp, int count) {
         int pkt_size = MAX_EPO_PACKET_SIZE;
         int len = count;
         int bytes_written = 0;
@@ -160,7 +164,7 @@ int ozy_write_ram(int fx2_start_addr, char *bufp, int count) {
 }
 
 int ozy_reset_cpu(int reset) {
-        char write_buf;
+        unsigned char write_buf;
 
         if ( reset ) write_buf = 1;
         else write_buf = 0;
@@ -181,7 +185,7 @@ static unsigned int hexitToUInt(char c) {
         return 0;
 }
 
-static int ishexit(c) {
+static int ishexit(unsigned char c) {
         c = tolower(c);
         if ( c >= '0' && c <= '9' ) return 1;
         if ( c >= 'a' && c <= 'f' ) return 1;
@@ -213,7 +217,7 @@ int ozy_load_firmware(char *fnamep) {
         int addr;
         int type;
         char readbuf[1030];
-        char wbuf[256];
+        unsigned char wbuf[256];
         unsigned char my_cksum;
         unsigned char cksum;
         int this_val;
@@ -242,7 +246,7 @@ fprintf(stderr,"loading ozy firmware: %s\n",fnamep);
                 }
                 switch ( type ) {
                         case 0: /* record */
-                                my_cksum = (unsigned char)(length + (addr & 0xff) + (addr >>8 + type));
+                                my_cksum = (unsigned char)(length + (addr & 0xff) + ((addr >> 8) + type));
                                 for ( i = 0; i < length; i++ ) {
                                         this_val = hexitsToUInt(readbuf+9+(i*2),2);
 #if 0
@@ -315,7 +319,7 @@ int ozy_set_led(int which, int on) {
 int ozy_load_fpga(char *rbf_fnamep) {
 
         FILE *rbffile;
-        char buf[MAX_EPO_PACKET_SIZE];
+        unsigned char buf[MAX_EPO_PACKET_SIZE];
         int bytes_read;
         int total_bytes_xferd = 0;
         int rc;

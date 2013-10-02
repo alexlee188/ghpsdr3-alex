@@ -34,7 +34,7 @@
 #if QT_VERSION >= 0x050000
 #include <QtWidgets/QComboBox>
 #else
-#include <QtGui/QComboBox>
+#include <QComboBox>
 #endif
 
 #include <QMutex>
@@ -150,6 +150,7 @@ public slots:
 private:
     QAudioFormat     audio_format;
     QAudioOutput*    audio_output;
+    bool             connected;
     QThread* audio_output_thread;
     QAudioDeviceInfo audio_device;
     Audio_playback*  audio_out;
