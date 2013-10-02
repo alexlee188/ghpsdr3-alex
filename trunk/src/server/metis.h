@@ -25,6 +25,9 @@
 *
 */
 
+#ifndef __METIS__H__
+#define __METIS__H__
+
 typedef struct _METIS_CARD {
     char ip_address[16];
     char mac_address[18];
@@ -38,4 +41,6 @@ char* metis_ip_address(int entry);
 char* metis_mac_address(int entry);
 void metis_start_receive_thread();
 
-int metis_write(unsigned char ep,char* buffer,int length);
+int metis_write(unsigned char ep, unsigned char* buffer,int length);
+
+#endif

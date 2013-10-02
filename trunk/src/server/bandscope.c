@@ -49,7 +49,7 @@ static int bs_length;
 
 static unsigned long sequence=0L;
 
-static char response[80];
+//static char response[80];
 
 void init_bandscope() {
     bandscope.client=(CLIENT*)NULL;
@@ -99,7 +99,7 @@ void send_bandscope_buffer() {
     struct sockaddr_in client;
     int client_length;
     unsigned short offset;
-    unsigned short length;
+    //unsigned short length;
     BUFFER buffer;
     int rc;
 
