@@ -132,7 +132,6 @@ void vfo::mousePressEvent(QMouseEvent *event)
 {
     bool isVFOa = false;
     int digit, cnt;
-   // QString myStr = "";
     long long freq, newFreq;
 
     if (event->button() == Qt::RightButton) {
@@ -161,21 +160,14 @@ void vfo::mousePressEvent(QMouseEvent *event)
                 if (digit < 9) {    // getDigit returns 0 ... 8 if we clicked on vfoA
                     freq = readA();
                     isVFOa = true;
-                 //   myStr = ui->lbl_Amhz->text() + ui->lbl_Akhz->text() + ui->lbl_Ahz->text();
                 }
                 else {                  // getDigit returns 10 ... 18 if we clicked on vfoB
                     digit = digit - 10; // so convert to 1 ... 8.
                     freq = readB();
-                   // myStr = ui->lbl_Bmhz->text() + ui->lbl_Bkhz->text() + ui->lbl_Bhz->text();
                 }
-            /*    for (cnt = myStr.length(); cnt < 9; cnt++) {
-                    myStr = "0" + myStr;
-                }*/
                 for (cnt = digit; cnt < 9; cnt++) {
                     ui->hSlider->setValue(0);
                 }
-                //freq = freq - myStr.toLongLong();
-
                 double freqd = (double)freq;
                 newFreq = (long long)(floor(freqd/pow(10,9-digit)+.5)*pow(10,9-digit));
                 freq = freq-newFreq;
