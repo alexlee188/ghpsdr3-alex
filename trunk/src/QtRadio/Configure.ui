@@ -2105,12 +2105,15 @@
       <rect>
        <x>450</x>
        <y>19</y>
-       <width>62</width>
+       <width>70</width>
        <height>23</height>
       </rect>
      </property>
      <property name="minimum">
-      <double>-99.000000000000000</double>
+      <double>-400.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>400.000000000000000</double>
      </property>
     </widget>
     <widget class="QLabel" name="label_36">
@@ -2150,12 +2153,15 @@
       <rect>
        <x>450</x>
        <y>49</y>
-       <width>62</width>
+       <width>70</width>
        <height>23</height>
       </rect>
      </property>
      <property name="minimum">
-      <double>-99.000000000000000</double>
+      <double>-500.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>500.000000000000000</double>
      </property>
     </widget>
    </widget>

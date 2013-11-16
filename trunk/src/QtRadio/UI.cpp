@@ -882,7 +882,7 @@ void UI::connected() {
         command.clear(); QTextStream(&command) << "settxlevelerhang " << configure.getLevelerHangValue();
         connection.sendCommand(command);
 
-        command.clear(); QTextStream(&command) << "setalcstate " << configure.getALCEnabledValue();
+        command.clear(); QTextStream(&command) << "settxalcstate " << configure.getALCEnabledValue();
         connection.sendCommand(command);
         command.clear(); QTextStream(&command) << "settxalcattack " << configure.getALCAttackValue();
         connection.sendCommand(command);
@@ -2418,7 +2418,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  27 May 2013"); // KD0OSS  Fixed Qt version format
+                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  7 Sep 2013"); // KD0OSS  Fixed Qt version format
     lastmessage = message;
 }
 
@@ -2550,45 +2550,85 @@ void UI::vfoStepBtnClicked(int direction)
 void UI::pttChange(int caller, bool ptt)
 {
     QString command;
-    static int workingMode = 1;
+    static int workingMode;
+    static double currentPwr; // KD0OSS
 
-    tuning=caller;
-    if(configure.getTxAllowed()) {
-       if(ptt) {    // Going from Rx to Tx ................
-            if(caller==1) { //We have clicked the tune button so switch to AM and set carrier level
-               workingMode = mode.getMode(); //Save the current mode for restoration when we finish tuning
-               // Set the AM carrier level to match the tune power slider value in a scale 0 to 1.0
-                if ((dspversion >= 20120201)  && canTX && chkTX){
-                  command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100 <<" "<< configure.thisuser <<" " << configure.thispass;;
-                }else{
-                  command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100;
+    tuning = caller;
+    if (configure.getTxAllowed())
+    {
+        if (ptt)
+        {    // Going from Rx to Tx ................
+            workingMode = mode.getMode(); //Save the current mode for restoration when we finish tuning
+            if (caller == 1)
+            { //We have clicked the tune button so switch to AM and set carrier level
+                currentPwr = (double)widget.ctlFrame->getTxPwr(); // KD0OSS
+                actionAM();
+             //   workingMode = mode.getMode(); //Save the current mode for restoration when we finish tuning
+                // Set the AM carrier level to match the tune power slider value in a scale 0 to 1.0
+                if ((dspversion >= 20120201)  && canTX && chkTX)
+                {
+                    command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100 <<" "<< configure.thisuser <<" " << configure.thispass;;
+                }else
+                {
+                    command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100;
                 }
-               connection.sendCommand(command);
-               actionAM();
+                connection.sendCommand(command);
+                //Mute the receiver audio and freeze the spectrum and waterfall display
+                connection.setMuted(true);
+                //Key the radio
+                if ((dspversion >= 20130901)  && canTX && chkTX)
+                {
+                    command.clear(); QTextStream(&command) << "Mox " << "on " << configure.thisuser << " " << configure.thispass;
+                }else
+                {
+                    command.clear(); QTextStream(&command) << "Mox " << "on";
+                }
             }
-            //Mute the receiver audio and freeze the spectrum and waterfall display
-            connection.setMuted(true);
-            //Key the radio
-            if ((dspversion >= 20120201)  && canTX && chkTX){
-               command.clear(); QTextStream(&command) << "Mox " << "on " << configure.thisuser <<" " << configure.thispass;
-            }else{
-               command.clear(); QTextStream(&command) << "Mox " << "on";
+            else
+            {
+                //Mute the receiver audio and freeze the spectrum and waterfall display
+                connection.setMuted(true);
+                //Key the radio
+                if ((dspversion >= 20130901)  && canTX && chkTX)
+                {
+                    command.clear(); QTextStream(&command) << "Mox " << "on " << configure.thisuser << " " << configure.thispass;
+                }else
+                {
+                    command.clear(); QTextStream(&command) << "Mox " << "on";
+                }
             }
             connection.sendCommand(command);
             widget.vfoFrame->pttChange(ptt); //Update the VFO to reflect that we are transmitting
-            connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
+            connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal))); // KD0OSS
             txNow = true; // KD0OSS
-        } else {    // Going from Tx to Rx .................
-            if(caller==1) {
-                //Restore AM carrier level to 0.5 the standard carrier level for AM mode.
-                if ((dspversion >= 20120201) && canTX && chkTX){
-                    command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << 0.5 <<" " << configure.thisuser <<" " << configure.thispass;
-                }else{
-                    command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << 0.5;
+        } else
+        {    // Going from Tx to Rx .................
+            if (caller == 1)
+            {
+                //Send signal to sdr to go to Rx
+                if ((dspversion >= 20130901)  && canTX && chkTX)
+                {
+                    command.clear(); QTextStream(&command) << "Mox " << "off " << configure.thisuser << " " << configure.thispass;
+                }else
+                {
+                    command.clear(); QTextStream(&command) << "Mox " << "off";
+                }
+                connection.sendCommand(command);
+
+                //Restore AM carrier level to previous level. // KD0OSS
+                if ((dspversion >= 20120201) && canTX && chkTX)
+                {
+                    command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << currentPwr/100 <<" " << configure.thisuser <<" " << configure.thispass;
+                }else
+                {
+                    command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << currentPwr/100;
                 }
                 connection.sendCommand(command);
                 //Restore the mode back to original before tuning
-                switch(workingMode) {
+                if (workingMode != MODE_AM) // KD0OSS
+                {
+                    switch (workingMode)
+                    {
                     case MODE_CWL: actionCWL(); break;
                     case MODE_CWU: actionCWU(); break;
                     case MODE_LSB: actionLSB(); break;
@@ -2599,21 +2639,27 @@ void UI::pttChange(int caller, bool ptt)
                     case MODE_FM:  actionFMN(); break;
                     case MODE_DIGL:actionDIGL();break;
                     case MODE_DIGU:actionDIGU();break;
+                    }
                 }
+            }
+            else
+            {
+                //Send signal to sdr to go to Rx
+                if ((dspversion >= 20130901)  && canTX && chkTX)
+                {
+                    command.clear(); QTextStream(&command) << "Mox " << "off " << configure.thisuser << " " << configure.thispass;
+                }else
+                {
+                    command.clear(); QTextStream(&command) << "Mox " << "off";
+                }
+                connection.sendCommand(command);
             }
             txNow = false; // KD0OSS
 
             //Un-mute the receiver audio
             connection.setMuted(false);
-            //Send signal to sdr to go to Rx
-            if ((dspversion >= 20120201)  && canTX && chkTX){
-                command.clear(); QTextStream(&command) << "Mox " << "off " << configure.thisuser <<" " << configure.thispass;
-            }else{
-                command.clear(); QTextStream(&command) << "Mox " << "off";
-            }
-            connection.sendCommand(command);
             widget.vfoFrame->pttChange(ptt); //Set band select buttons etc. to Rx state on VFO
-            disconnect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
+            disconnect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal))); // KD0OSS
         }
     } else widget.ctlFrame->clearMoxBtn();
 }
@@ -2622,9 +2668,9 @@ void UI::pwrSlider_valueChanged(double pwr)
 {
     QString command;
     if (dspversion >= 20120201 && canTX && chkTX){
-       command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << pwr << " " << configure.thisuser << " " << configure.thispass;;
+        command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << pwr << " " << configure.thisuser << " " << configure.thispass;;
     }else{
-       command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << pwr;
+        command.clear(); QTextStream(&command) << "setTXAMCarrierLevel " << pwr;
     }
     connection.sendCommand(command);
 }
