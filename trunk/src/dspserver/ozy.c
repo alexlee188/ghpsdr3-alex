@@ -217,6 +217,7 @@ fprintf(stderr,"iq_thread\n");
                 exit(1);
             }
 
+//fprintf(stderr, "Fwd: %d  Ref: %d\n", buffer.adc[0], buffer.adc[1]);
 	    if(ozy_debug) {
 		fprintf(stderr,"rcvd UDP packet: sequence=%lld offset=%d length=%d\n",
 			buffer.sequence, buffer.offset, buffer.length);
@@ -513,6 +514,29 @@ int ozySetRecord(char* state) {
     return result;
 }
 
+int ozySetTxMode(int mode) { // KD0OSS
+    char *token, *saveptr;
+    char command[64], response[OZY_RESPONSE_SIZE];
+    int result;
+
+    result=0;
+    sprintf(command,"settxmode %d", mode);
+    send_command(command, response);
+    token=strtok_r(response," ",&saveptr);
+    if(token!=NULL) {
+        if(strcmp(token,"OK")==0) {
+            result=0;
+        } else if (strcmp(token,"ERROR")==0) {
+            result=1;
+        } else {
+            fprintf(stderr,"invalid response to set settxmode: %s\n",response);
+            result=1;
+        }
+    }
+
+    return result;
+}
+
 int ozySetMox(int state) {
     char *token, *saveptr;
     char command[64], response[OZY_RESPONSE_SIZE];
@@ -520,7 +544,7 @@ int ozySetMox(int state) {
 
     result=0;
     mox=state;
-    sprintf(command,"mox %d",state);
+    sprintf(command,"mox %d", state);
     send_command(command, response);
     token=strtok_r(response," ",&saveptr);
     if(token!=NULL) {

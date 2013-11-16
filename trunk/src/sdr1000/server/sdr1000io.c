@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
+#include <string.h>
 
 #include "sdr1000.h"
 #include "sdr1000io.h"
@@ -111,7 +112,7 @@ fprintf(stderr,"sdr1000_open: %s\n",sdr1000_get_device());
 
     outputParameters.device=atoi(sdr1000_get_output());
     outputParameters.channelCount=2;
-    outputParameters.sampleFormat=paFloat32;
+    outputParameters.sampleFormat=paFloat32|paNonInterleaved;
     outputParameters.suggestedLatency=Pa_GetDeviceInfo(outputParameters.device)->defaultHighOutputLatency;
     outputParameters.hostApiSpecificStreamInfo=NULL;
 
@@ -138,7 +139,7 @@ fprintf(stderr,"sdr1000_open: %s\n",sdr1000_get_device());
         fprintf(stderr,"Pa_GetStreamInfo returned NULL\n");
     }
 
-    rc=Pa_OpenStream(&streamOut,NULL,&outputParameters,(double)sdr1000_get_sample_rate(),(unsigned long)SAMPLES_PER_BUFFER,paClipOff,NULL,NULL);
+    rc=Pa_OpenStream(&streamOut,NULL,&outputParameters,48000.0,(unsigned long)SAMPLES_PER_BUFFER,paClipOff,NULL,NULL);
     if(rc!=paNoError) {
         fprintf(stderr,"Pa_OpenStream failed: %s\n",Pa_GetErrorText(rc));
         exit(1);
@@ -218,38 +219,42 @@ int sdr1000_close() {
 }
 
 #ifdef PORTAUDIO
-int sdr1000_write(float* left_samples,float* right_samples) 
+int sdr1000_write(float* left_samples, float* right_samples) 
 {
     int rc;
-    int i;
-    float audio_buffer[SAMPLES_PER_BUFFER*2];
+ //   int i;
+  //  static float audio_buffer[SAMPLES_PER_BUFFER*2];
+    float *buf[2];
 
-    if (!tx_mode) return 0;
+  //  if (!tx_mode) return 0;
 
     rc=0;
+    buf[0] = left_samples;
+    buf[1] = right_samples;
+ //   memcpy((float*)audio_buffer, (float*)left_samples, SAMPLES_PER_BUFFER);
+ //   memcpy((float*)audio_buffer+(SAMPLES_PER_BUFFER*sizeof(float)), (float*)right_samples, SAMPLES_PER_BUFFER);
 
     // interleave samples
-    for(i=0;i<SAMPLES_PER_BUFFER;i++) 
+/*    for(i=0;i<SAMPLES_PER_BUFFER;i++) 
     {
-//if (right_samples[i] != 0.0)
-//fprintf(stderr,"%d left=%f right=%f\n",i, left_samples[i],right_samples[i]);
-        audio_buffer[i*2]=right_samples[i];
-        audio_buffer[(i*2)+1]=left_samples[i];
+        audio_buffer[i*2]=left_samples[i];
+        audio_buffer[(i*2)+1]=right_samples[i];
     }
-
+*/
    // fprintf(stderr,"write available=%ld\n",Pa_GetStreamWriteAvailable(stream));
-    rc=Pa_WriteStream(streamOut,audio_buffer,SAMPLES_PER_BUFFER);
-    if(rc!=0) {
+    rc=Pa_WriteStream(streamOut, buf, SAMPLES_PER_BUFFER);
+    if (rc != 0) {
         fprintf(stderr,"error writing audio_buffer %s (rc=%d)\n",Pa_GetErrorText(rc),rc);
     }
- //   else
-     //   fprintf(stderr,">");
+  //  else
+    //    fprintf(stderr,">");
 
 
     return rc;
 }
 
-int sdr1000_read(float* left_samples,float* right_samples) {
+int sdr1000_read(float* left_samples,float* right_samples) 
+{
     int rc;
     int i;
     float audio_buffer[SAMPLES_PER_BUFFER*2];
@@ -261,7 +266,8 @@ int sdr1000_read(float* left_samples,float* right_samples) {
     }
 
     // de-interleave samples
-    for(i=0;i<SAMPLES_PER_BUFFER;i++) {
+    for(i=0;i<SAMPLES_PER_BUFFER;i++)
+    {
         left_samples[i]=audio_buffer[i*2];
         right_samples[i]=audio_buffer[(i*2)+1];
 //fprintf(stderr,"%d left=%f right=%f\n",i, left_samples[i],right_samples[i]);

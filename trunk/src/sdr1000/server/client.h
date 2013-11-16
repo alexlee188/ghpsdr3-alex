@@ -45,7 +45,7 @@ typedef struct _client {
  extern "C" {
 #endif
 
-extern void* client_thread(void* arg);
+extern void client_thread(void* arg);
 
 #ifdef __cplusplus
  }

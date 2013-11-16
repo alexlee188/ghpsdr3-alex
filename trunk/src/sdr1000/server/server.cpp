@@ -43,6 +43,7 @@ static SDR1000* sdr1000;
 
 extern "C" void SDR1000_set_frequency(long frequency);
 extern "C" void SDR1000_set_frequency_offset(long frequency); //kd0oss added
+extern "C" void SDR1000_set_tx_mode(int mode); //kd0oss added
 extern "C" void SDR1000_set_ptt(int ptt); //kd0oss added
 extern "C" void SDR1000_set_attn(long value); //kd0oss added
 extern "C" void SDR1000_set_sr(bool enabled); //kd0oss added
@@ -125,6 +126,11 @@ void SDR1000_set_frequency(long frequency) {
 void SDR1000_set_frequency_offset(long frequency)  //kd0oss added
 {
     sdr1000->SetFreqCalOffset((float)frequency/1000000.0);
+}
+
+void SDR1000_set_tx_mode(int mode) //kd0oss added
+{
+    sdr1000->SetMode(mode);
 }
 
 void SDR1000_set_ptt(int ptt) //kd0oss added

@@ -29,6 +29,7 @@
 #define MAX_RECEIVERS 8
 
 #define BUFFER_SIZE 1024
+#define TX_BUFFER_SIZE 512
 
 unsigned char setRecord;
 FILE *file;
@@ -41,14 +42,16 @@ typedef struct _receiver {
     int frequency_changed;
     long frequency;
     long freq_cal_offset;
+  //  unsigned char adc[2];  // Byte0 = Forward power, Byte1 = Reverse power. Added by KD0OSS
     float input_buffer[BUFFER_SIZE*2];
-    float output_buffer[BUFFER_SIZE*2];
+    float output_buffer[(BUFFER_SIZE*2)]; // KD0OSS added +4
 } RECEIVER;
 
 typedef struct _buffer {
     unsigned long long sequence;
     unsigned short offset;
     unsigned short length;
+  //  unsigned char adc[2];  // Byte0 = Forward power, Byte1 = Reverse power. Added by KD0OSS
     unsigned char data[500];
 } BUFFER;
 
@@ -62,6 +65,7 @@ extern char* attach_receiver(int rx,CLIENT* client);
 extern char* detach_receiver(int rx,CLIENT* client);
 extern char* set_frequency(CLIENT* client,long f);
 extern char* set_frequency_offset(CLIENT* client,long f);
+extern char* set_tx_mode(CLIENT* client, int mode);
 extern char* set_ptt(CLIENT* client, int ptt);
 extern char* set_attenuator(CLIENT* client, long value);
 extern char* set_spurreduction(CLIENT* client, unsigned char enabled);

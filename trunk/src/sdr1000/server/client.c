@@ -47,7 +47,7 @@ float output_buffer[BUFFER_SIZE*2];
 char* parse_command(CLIENT* client,char* command);
 void* audio_thread(void* arg);
 
-void* client_thread(void* arg) 
+void client_thread(void* arg) 
 {
     CLIENT* client=(CLIENT*)arg;
     char command[80];
@@ -94,13 +94,27 @@ char* parse_command(CLIENT* client,char* command)
     token=strtok(command," \r\n");
     if(token!=NULL) 
     {
-        if(strcmp(token,"mox")==0) 
+        if(strcmp(token,"settxmode") == 0) 
         {
             // PTT on/off
-            token=strtok(NULL," \r\n");
-            if(token!=NULL) 
+            token = strtok(NULL," \r\n");
+            if(token != NULL) 
             {
-                int ptt=atoi(token);
+                int mode = atoi(token);
+                return set_tx_mode(client, mode);
+            } 
+            else 
+            {
+                return INVALID_COMMAND;
+            }
+        } 
+        else if(strcmp(token,"mox") == 0) 
+        {
+            // PTT on/off
+            token = strtok(NULL," \r\n");
+            if(token != NULL) 
+            {
+                int ptt = atoi(token);
                 return set_ptt(client, ptt);
             } 
             else 
@@ -255,6 +269,7 @@ char* parse_command(CLIENT* client,char* command)
         return INVALID_COMMAND;
     }
 
+    return INVALID_COMMAND;
 } // end parse_command
 
 
@@ -267,7 +282,7 @@ void* audio_thread(void* arg)
     int bytes_read;
     int on=1;
     static int pos;
-    FILE *file = fopen("/tmp/sdr_tx.raw", "wb");
+  //  FILE *file = fopen("/tmp/sdr_tx.raw", "wb");
 
     fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 
@@ -301,21 +316,22 @@ void* audio_thread(void* arg)
     {
         // get audio from a client
         bytes_read=recvfrom(rx->audio_socket,rx->output_buffer,sizeof(rx->output_buffer),0,(struct sockaddr*)&audio,(socklen_t*)&audio_length);
-        if(bytes_read<0) 
+        if(bytes_read < 0) 
         {
             perror("recvfrom socket failed for audio buffer");
             exit(1);
         }
-//fprintf(stderr, "Float: %d\n", sizeof(float));
-        memcpy((char*)output_buffer+pos, (char*)rx->output_buffer, bytes_read);
-        pos += bytes_read;
+//fprintf(stderr, "seq: %d\n", ((char)rx->output_buffer[6] << 8) + (char)rx->output_buffer[7]);
+        memcpy((char*)output_buffer+pos, (char*)rx->output_buffer+12, bytes_read-12);
+        pos += bytes_read-12;
+//fprintf(stderr, "pos: %d\n", pos);
         if ((pos / sizeof(float)) >= (BUFFER_SIZE*2))
         {
-            fwrite((float*)output_buffer, sizeof(float), (BUFFER_SIZE*2), file);
-            process_sdr1000_output_buffer((float*)&output_buffer,(float*)&output_buffer[BUFFER_SIZE]);
+          //  fwrite((float*)output_buffer, sizeof(float), (BUFFER_SIZE*2), file);
+            process_sdr1000_output_buffer((float*)&output_buffer, (float*)&output_buffer[BUFFER_SIZE]);
             pos = 0;
         }
     }
-fclose(file);
+//fclose(file);
 } // end audio_thread
 

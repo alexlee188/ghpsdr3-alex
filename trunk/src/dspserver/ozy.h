@@ -69,6 +69,7 @@ typedef struct _buffer {
     unsigned long long sequence;
     unsigned short offset;
     unsigned short length;
+ //   unsigned char adc[2];   // Byte0 = Forward power, Byte1 = Reverse power. Added by KD0OSS
     unsigned char data[500];
 } BUFFER;
 
@@ -252,6 +253,7 @@ int set_frequency();
 void ozy_set_local_audio(int state);
 void ozy_set_port_audio(int state);
 void ozy_set_debug(int state);
+int ozySetTxMode(int mode);
 int ozySetMox(int state);
 int ozySetOpenCollectorOutputs(char* state);
 void ozy_send(unsigned char* data,int length,char* who);

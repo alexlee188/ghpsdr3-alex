@@ -34,6 +34,7 @@
 
 #include <common.h>
 #include "client.h"
+#include "server.h"
 #include "sdr1000.h"
 #include "sdr1000io.h"
 #include "receiver.h"
@@ -214,6 +215,8 @@ void* sdr1000_io_thread(void* arg) {
     int i,j;
 
     while(1) {
+    //   receiver[current_receiver].adc[0] = SDR1000_get_pa_adc(0);
+    //   receiver[current_receiver].adc[1] = SDR1000_get_pa_adc(1);
 
 #ifdef PORTAUDIO
         // read an input buffer (blocks until all bytes read)

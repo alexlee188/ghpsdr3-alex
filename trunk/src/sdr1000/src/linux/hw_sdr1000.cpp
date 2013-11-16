@@ -639,6 +639,12 @@ void SDR1000::SetSpurReduction(bool enabled)
 	dds->SetFreq(Freq2FTW(current_freq));
 }
 
+void SDR1000::SetMode(int mode) // KD0OSS
+{
+    Mode = mode;
+    printf("Mode changed to: %d\n", mode);
+}
+
 void SDR1000::SetPTT(bool ptt) // KD0OSS
 {
     uint8  tmpLatch;
@@ -650,7 +656,8 @@ void SDR1000::SetPTT(bool ptt) // KD0OSS
     UpdateHW(false);
     if (ptt)
     {
-         current_freq -= 0.011025;
+      //   if (Mode == MODE_AM || Mode == MODE_SAM || Mode == MODE_FM)
+             current_freq += 0.017030;
 //        current_freq += 0.005500;
          SetFreq(current_freq);
          tmpSpuron = spur_reduction_enabled;
@@ -667,7 +674,15 @@ void SDR1000::SetPTT(bool ptt) // KD0OSS
          SetPA_Bias(true);
          SetTRX_TR(true);
          tx_mode = true;
-         printf("Transmitting...\n");
+         printf("Transmitting...%2.4f\n", current_freq);
+   /*      if (tune)
+         {
+             printf("Auto tuning, standby..\n");
+             SetX2(0x7f);
+             sleep(3);
+             SetX2(0);
+             printf("Auto tuning complete.\n");
+         } */
     }
     else
     {
@@ -681,10 +696,11 @@ void SDR1000::SetPTT(bool ptt) // KD0OSS
          SetPA_TR(false);
          SetATTOn(tmpATTNon);
          SetSpurReduction(tmpSpuron);
-         current_freq += 0.011025;
+    //     if (Mode == MODE_AM || Mode == MODE_SAM || Mode == MODE_FM)
+             current_freq -= 0.017030;
   //       current_freq -= 0.005500;
          SetFreq(current_freq);
-         printf("Transmitting...stopped\n");
+         printf("Transmitting...stopped  %2.4f\n", current_freq);
     }
     UpdateHW(true);
 }
