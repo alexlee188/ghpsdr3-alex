@@ -122,6 +122,18 @@ char* detach_receiver(int rx,CLIENT* client) {
     return OK;
 }
 
+char* set_tx_mode(CLIENT* client, int mode) { //kd0oss added
+    if(client->state==RECEIVER_DETACHED) {
+        return CLIENT_DETACHED;
+    }
+
+    if(client->receiver<0) {
+        return RECEIVER_INVALID;
+    }
+    SDR1000_set_tx_mode(mode);
+    return OK;
+}
+
 char* set_ptt(CLIENT* client, int ptt) { //kd0oss added
     if(client->state==RECEIVER_DETACHED) {
         return CLIENT_DETACHED;
@@ -262,15 +274,18 @@ void send_IQ_buffer(int rx)
             client.sin_port=htons(receiver[rx].client->iq_port);
 
 #ifdef SMALL_PACKETS
-            // keep UDP packets to 512 bytes or less
-            //     8 bytes sequency number
+            // keep UDP packets to 514 bytes or less
+            //     8 bytes sequence number
             //     2 byte offset
             //     2 byte length
+            //     2 byte ADC from SDR1000 PA
             offset=0;
             while(offset<sizeof(receiver[rx].input_buffer)) 
             {
                 buffer.sequence=sequence;
                 buffer.offset=offset;
+         //       buffer.adc[0] = receiver[rx].adc[0]; // KD0OSS
+         //       buffer.adc[1] = receiver[rx].adc[1]; // KD0OSS
                 buffer.length=sizeof(receiver[rx].input_buffer)-offset;
                 if(buffer.length>500) buffer.length=500;
 

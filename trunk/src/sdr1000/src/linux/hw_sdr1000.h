@@ -71,6 +71,20 @@ static int init_count = 0;
 #define BYPASS_PLL  0x20		// Bypass DDS PLL
 #define BYPASS_SINC 0x40		// Bypass Inverse Sinc Filter
 
+// Band Mode
+#define MODE_LSB 0
+#define MODE_USB 1
+#define MODE_DSB 2
+#define MODE_CWL 3
+#define MODE_CWU 4
+#define MODE_FM 5
+#define MODE_AM 6
+#define MODE_DIGU 7
+#define MODE_SPEC 8
+#define MODE_DIGL 9
+#define MODE_SAM 10
+#define MODE_DRM 11
+
 class AD9854;
 
 /// Represents one SDR-1000 set of hardware
@@ -154,6 +168,7 @@ public:
 	/// Destructor
 	~SDR1000();
 
+        int  Mode; // KD0OSS
         bool ATTNon;
 	/// Basic hardware writing for PIO
 	/** \param addr PIO board address to write
@@ -252,7 +267,7 @@ public:
 	 */
 	void SetXVTR_RF(bool b);
 
-	/// Sets the lower order 6 bits of the X2 port
+	/// Sets the lower order 7 bits of the X2 port
 	/** \param val Hex value to put on the port.
 	 */
 	void SetX2(unsigned char val);
@@ -315,6 +330,8 @@ public:
         void SetPTT(bool ptt);// KD0OSS
 
         void SetSpurReduction(bool enabled);// KD0OSS
+
+        void SetMode(int mode); // KD0OSS
 };
 
 #include <ad9854.h>

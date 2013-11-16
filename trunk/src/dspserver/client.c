@@ -283,14 +283,15 @@ void client_init(int receiver) {
     rtp_init();
     spectrum_timer_init();
 
-    port=BASE_PORT+receiver;
+    port = BASE_PORT+receiver;
     port_ssl = BASE_PORT_SSL + receiver;
-    rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
+    rc = pthread_create(&client_thread_id,NULL,client_thread,NULL);
 
     if(rc != 0) {
         fprintf(stderr,"pthread_create failed on client_thread: rc=%d\n", rc);
     }
-    else rc=pthread_detach(client_thread_id);
+    else 
+        rc = pthread_detach(client_thread_id);
 }
 
 void tx_init(void){
@@ -313,9 +314,11 @@ void tx_init(void){
             sdr_log(SDR_LOG_INFO, "tx_init: sample rate init successful with ratio of : %f\n", mic_src_ratio);
 	}
 
-        rc=pthread_create(&tx_thread_id,NULL,tx_thread,NULL);
-        if(rc != 0) fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
-	else rc=pthread_detach(tx_thread_id);
+        rc=pthread_create(&tx_thread_id, NULL, tx_thread, NULL);
+        if(rc != 0) 
+            fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
+	else 
+            rc = pthread_detach(tx_thread_id);
 }
 
 void rtp_tx_timer_handler(union sigval);
@@ -327,13 +330,15 @@ void rtp_tx_init(void){
 	if (rtp_tx_init_done == 0){
 
 		TAILQ_INIT(&Mic_rtp_stream);
-		rc=pthread_create(&rtp_tx_thread_id,NULL,rtp_tx_thread,NULL);
-		if(rc != 0) fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
-		else rc=pthread_detach(rtp_tx_thread_id);
+		rc = pthread_create(&rtp_tx_thread_id, NULL, rtp_tx_thread, NULL);
+		if (rc != 0) 
+                    fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
+		else 
+                    rc = pthread_detach(rtp_tx_thread_id);
 
 		rtp_tx_init_done = 1;
 
-		struct itimerspec	value;
+		struct itimerspec value;
 		struct sigevent sev;
 
 		value.it_value.tv_sec = 0;
@@ -346,15 +351,15 @@ void rtp_tx_init(void){
 		sev.sigev_notify_function = rtp_tx_timer_handler;
 		sev.sigev_notify_attributes = NULL;
 
-		timer_create (CLOCK_REALTIME, &sev, &rtp_tx_timerid);
-		timer_settime (rtp_tx_timerid, 0, &value, NULL);
+		timer_create(CLOCK_REALTIME, &sev, &rtp_tx_timerid);
+		timer_settime(rtp_tx_timerid, 0, &value, NULL);
 
 	}
 }
 
 void spectrum_timer_init(void){
 
-	struct itimerspec	value;
+	struct itimerspec value;
 	struct sigevent sev;
 
 	value.it_value.tv_sec = 0;
@@ -367,8 +372,8 @@ void spectrum_timer_init(void){
 	sev.sigev_notify_function = spectrum_timer_handler;
 	sev.sigev_notify_attributes = NULL;
 
-	timer_create (CLOCK_REALTIME, &sev, &spectrum_timerid);
-	timer_settime (spectrum_timerid, 0, &value, NULL);
+	timer_create(CLOCK_REALTIME, &sev, &spectrum_timerid);
+	timer_settime(spectrum_timerid, 0, &value, NULL);
 }
 
 void rtp_tx_timer_handler(union sigval usv){
@@ -386,9 +391,9 @@ void rtp_tx_timer_handler(union sigval usv){
     sem_post(&bufferevent_semaphore);
     if (client_item == NULL) return;	                // no master client
     if (client_item->rtp != connection_rtp) return;	// not rtp master
-	length=rtp_receive(client_item->session,rtp_buffer,RTP_BUFFER_SIZE);
-	recv_ts+=RTP_BUFFER_SIZE;		        // proceed with timestamp increment as this is timer based	        
-	if (length > 0){
+    length=rtp_receive(client_item->session,rtp_buffer,RTP_BUFFER_SIZE);
+    recv_ts+=RTP_BUFFER_SIZE;		        // proceed with timestamp increment as this is timer based	        
+    if (length > 0){
 	    for(i=0;i<length;i++) {
 		v=G711A_decode(rtp_buffer[i]);
 		fv=(float)v/32767.0F;                   // get into the range -1..+1
@@ -408,8 +413,8 @@ void rtp_tx_timer_handler(union sigval usv){
 			sem_post(&mic_semaphore);
 			data_in_counter = 0;
 		}
-	    }
-	}
+        }
+    }
 }
 
 void spectrum_timer_handler(union sigval usv){            // this is called every 20 ms
@@ -422,37 +427,37 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
 
         sem_wait(&spectrum_semaphore);
         if(mox) {
-            Process_Panadapter(1,spectrumBuffer);
-            meter=CalculateTXMeter(1,txMeterMode);        // Tx meter mode added by KD0OSS
-            subrx_meter=-121;
+            Process_Panadapter(1, spectrumBuffer);
+            meter = CalculateTXMeter(1, txMeterMode);        // Tx meter mode added by KD0OSS
+            subrx_meter = -121;
         } else {
             switch (panadapterMode) // KD0OSS
             {
                 case PANADAPTER:
-                    Process_Panadapter(0,spectrumBuffer);
+                    Process_Panadapter(0, spectrumBuffer);
                 break;
 
                 case SPECTRUM:
-                    Process_Spectrum(0,spectrumBuffer);
+                    Process_Spectrum(0, spectrumBuffer);
                 break;
 
                 case CSPECTRUM:
-                    Process_ComplexSpectrum(0,spectrumBuffer);
+                    Process_ComplexSpectrum(0, spectrumBuffer);
                 break;
 
                 case SCOPE:
-                    Process_Scope(0,spectrumBuffer,numSamples);
+                    Process_Scope(0, spectrumBuffer, numSamples);
                 break;
 
                 case PHASE:
-                    Process_Phase(0,spectrumBuffer,numSamples);
+                    Process_Phase(0, spectrumBuffer, numSamples);
                 break;
 
                 default:
-                    Process_Panadapter(0,spectrumBuffer);
+                    Process_Panadapter(0, spectrumBuffer);
             }
-            meter=CalculateRXMeter(0,0,rxMeterMode)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
-            subrx_meter=CalculateRXMeter(0,1,rxMeterMode)+multimeterCalibrationOffset+getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
+            meter = CalculateRXMeter(0, 0, rxMeterMode) + multimeterCalibrationOffset + getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
+            subrx_meter = CalculateRXMeter(0, 1, rxMeterMode) + multimeterCalibrationOffset + getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
         }
         sem_post(&spectrum_semaphore);
         sem_wait(&bufferevent_semaphore);
@@ -462,7 +467,7 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
                 if (item->frame_counter-- <= 1) {
                     char *client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
                     sem_wait(&spectrum_semaphore);
-                    client_set_samples(client_samples,spectrumBuffer,item->samples);
+                    client_set_samples(client_samples, spectrumBuffer, item->samples);
                     sem_post(&spectrum_semaphore);
                     bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
                     free(client_samples);
@@ -512,14 +517,14 @@ void* rtp_tx_thread(void *arg){
                     tx_buffer[iq_buffer_counter] = data_out[2*j];
                     tx_buffer[iq_buffer_counter + TX_BUFFER_SIZE] = data_out[(2*j)+1];
                     iq_buffer_counter++;
-                    if(iq_buffer_counter>=TX_BUFFER_SIZE) {
+                    if (iq_buffer_counter >= TX_BUFFER_SIZE) {
                         // use DttSP to process Mic data into tx IQ
                     	if(!hpsdr || mox) {
                             Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
                             // send Tx IQ to server, buffer is non-interleaved.
-                            ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+                            ozy_send((unsigned char *)tx_IQ_buffer, sizeof(tx_IQ_buffer), "client");
                         }
-                        iq_buffer_counter=0;
+                        iq_buffer_counter = 0;
                     } // end iq_bufer_counter
                 } // end for j
             } // end rc else
@@ -553,18 +558,18 @@ void *tx_thread(void *arg){
    SRC_DATA data;
    void *mic_codec2 = (void *) codec2_create(CODEC2_MODE_3200);
 
-   samples_per_frame = codec2_samples_per_frame( (struct CODEC2 *) mic_codec2 );
-   bits_per_frame = codec2_bits_per_frame( (struct CODEC2 *) mic_codec2 );
+   samples_per_frame = codec2_samples_per_frame((struct CODEC2 *) mic_codec2);
+   bits_per_frame = codec2_bits_per_frame((struct CODEC2 *) mic_codec2);
 
-   codec2_buffer = (short *) malloc( sizeof( short ) * samples_per_frame );
+   codec2_buffer = (short *)malloc(sizeof(short) * samples_per_frame);
 
    if (samples_per_frame > MIC_ALAW_BUFFER_SIZE) {
-     data_in = (float *) malloc( sizeof( float ) * samples_per_frame * 2 );
-     data_out = (float *) malloc( sizeof( float ) * samples_per_frame * 24 );
+     data_in = (float *)malloc(sizeof(float) * samples_per_frame * 2);
+     data_out = (float *)malloc(sizeof(float) * samples_per_frame * 24);
    }
    else {
-     data_in = (float *) malloc( sizeof( float ) * MIC_ALAW_BUFFER_SIZE * 2 );
-     data_out = (float *) malloc( sizeof( float ) * MIC_ALAW_BUFFER_SIZE * 24 );
+     data_in = (float *)malloc(sizeof(float) * MIC_ALAW_BUFFER_SIZE * 2);
+     data_out = (float *)malloc(sizeof(float) * MIC_ALAW_BUFFER_SIZE * 24);
    }
 
    sdr_thread_register("tx_thread");
@@ -632,7 +637,7 @@ void *tx_thread(void *arg){
 }
 
 void client_set_timing() {
-    timing=1;
+    timing = 1;
 }
 
 
@@ -795,8 +800,7 @@ bufferevent_openssl_socket_new(struct event_base *base,
     int options);
 
 static void
-do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa,
-             int sa_len, void *arg)
+do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa, int sa_len, void *arg)
 {
     struct event_base *evbase;
     struct bufferevent *bev;
@@ -883,12 +887,11 @@ SSL_CTX *evssl_init(void)
 static pthread_mutex_t *lock_cs;
 static long *lock_count;
 
-void pthreads_locking_callback(int mode, int type, char *file,
-	     int line);
+void pthreads_locking_callback(int mode, int type, char *file, int line);
 unsigned long pthreads_thread_id(void);
 
 void thread_setup(void)
-	{
+{
 	int i;
 
 	lock_cs=OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
@@ -901,10 +904,10 @@ void thread_setup(void)
 
 	CRYPTO_set_id_callback((unsigned long (*)())pthreads_thread_id);
 	CRYPTO_set_locking_callback((void (*)())pthreads_locking_callback);
-	}
+}
 
 void thread_cleanup(void)
-	{
+{
 	int i;
 
 	CRYPTO_set_locking_callback(NULL);
@@ -919,10 +922,10 @@ void thread_cleanup(void)
 	OPENSSL_free(lock_count);
 
 	fprintf(stderr,"done cleanup\n");
-	}
+}
 
-void pthreads_locking_callback(int mode, int type, char *file,
-	     int line){
+void pthreads_locking_callback(int mode, int type, char *file, int line)
+{
 	if (mode & CRYPTO_LOCK)
 		{
 		pthread_mutex_lock(&(lock_cs[type]));
@@ -943,7 +946,7 @@ unsigned long pthreads_thread_id(void){
 
 void* client_thread(void* arg) {
  
-    int on=1;
+    int on = 1;
     struct event_base *base;
     struct event *listener_event;
     struct sockaddr_in server;
@@ -972,9 +975,9 @@ void* client_thread(void* arg) {
 #endif
 
     memset(&server,0,sizeof(server));
-    server.sin_family=AF_INET;
-    server.sin_addr.s_addr=htonl(INADDR_ANY);
-    server.sin_port=htons(port);
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = htonl(INADDR_ANY);
+    server.sin_port = htons(port);
 
     if(bind(serverSocket,(struct sockaddr *)&server,sizeof(server))<0) {
         perror("client bind");
@@ -991,9 +994,9 @@ void* client_thread(void* arg) {
 
     // setting up ssl server
     memset(&server_ssl,0,sizeof(server_ssl));
-    server_ssl.sin_family=AF_INET;
-    server_ssl.sin_addr.s_addr=htonl(INADDR_ANY);
-    server_ssl.sin_port=htons(port_ssl);
+    server_ssl.sin_family = AF_INET;
+    server_ssl.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_ssl.sin_port = htons(port_ssl);
 
     ctx = evssl_init();
     if (ctx == NULL){
@@ -1197,10 +1200,10 @@ void readcb(struct bufferevent *bev, void *ctx){
             }
         }
 
-        if(strncmp(cmd,"q",1)==0){	
+        if(strncmp(cmd,"q",1) == 0){	
             answer_question(message,role, bev);
 
-        }else if(strncmp(cmd,"getspectrum",11)==0) {
+        }else if(strncmp(cmd,"getspectrum",11) == 0) {
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             int samples=atoi(tokens[0]);
@@ -1211,17 +1214,17 @@ void readcb(struct bufferevent *bev, void *ctx){
             sem_post(&spectrum_semaphore);
             bufferevent_write(bev, client_samples, BUFFER_HEADER_SIZE+samples);
             free(client_samples);
-        } else if(strncmp(cmd,"setfrequency",12)==0) {
+        } else if(strncmp(cmd,"setfrequency",12) == 0) {
             long long frequency;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             frequency=atoll(tokens[0]);
             ozySetFrequency(frequency);
-        } else if(strncmp(cmd,"setpreamp",9)==0) {
+        } else if(strncmp(cmd,"setpreamp",9) == 0) {
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             ozySetPreamp(tokens[0]);
-        } else if(strncmp(cmd,"setmode",7)==0) {
+        } else if(strncmp(cmd,"setmode",7) == 0) {
             int mode;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
@@ -1231,7 +1234,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             SetMode(0,1,mode);
             SetMode(1,0,mode);
             lastMode=mode;
-			    
+            ozySetTxMode(mode);	    
             switch (mode){
             case USB: 
                 SetSBMode(0,0,1); // KD0OSS
@@ -1262,14 +1265,14 @@ void readcb(struct bufferevent *bev, void *ctx){
             agc=atoi(tokens[0]);
             SetRXAGC(0,0,agc);
             SetRXAGC(0,1,agc);
-        } else if(strncmp(cmd,"setfixedagc",11)==0) {
+        } else if(strncmp(cmd,"setfixedagc",11)==0) {// KD0OSS
             int agc;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             agc=atoi(tokens[0]);
             SetFixedAGC(0,0,agc);
             SetFixedAGC(0,1,agc);
-        } else if(strncmp(cmd,"enablenotchfilter",17)==0) {
+        } else if(strncmp(cmd,"enablenotchfilter",17)==0) {// KD0OSS
             int vfo, i;
             int index;
             int enabled;
@@ -1285,7 +1288,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             }
             else
                 SetRXManualNotchEnable(0, (unsigned int)vfo, (unsigned int)index, enabled);
-        } else if(strncmp(cmd,"setnotchfilter",14)==0) {
+        } else if(strncmp(cmd,"setnotchfilter",14)==0) {// KD0OSS
             int vfo;
             int index;
             double BW;
@@ -1754,6 +1757,13 @@ void readcb(struct bufferevent *bev, void *ctx){
             state=atoi(tokens[0]);
             SetTXDCBlock(1,state);
             sdr_log(SDR_LOG_INFO,"SetTXDCBlock %d\n",state);
+        } else if(strncmp(cmd,"settxmode",9)==0) { // KD0OSS
+            int mode;
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            mode=atoi(tokens[0]);
+            ozySetTxMode(mode);
+            sdr_log(SDR_LOG_INFO,"SetTXMode %d\n",mode);
         } else if(strncmp(cmd,"mox",3)==0) {
             int ntok;
             if ((ntok = tokenize_cmd(&saveptr, tokens, 3)) < 1)
@@ -1838,7 +1848,9 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             state=atoi(tokens[0]);
+            if (state > 0) state = 1;
             SetTXALCSt(1,state);
+            sdr_log(SDR_LOG_INFO,"SetTXALCState %d\n", state);
         } else if(strncmp(cmd,"settxalcattack",14)==0) { // KD0OSS
             int value;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1864,11 +1876,13 @@ void readcb(struct bufferevent *bev, void *ctx){
             value=atoi(tokens[0]);
             SetTXALCHang(1,value);
         } else if(strncmp(cmd,"settxlevelerstate",17)==0) { // KD0OSS
-            int value;
+            int state;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
-            value=atoi(tokens[0]);
-            SetTXLevelerSt(1,value);
+            state=atoi(tokens[0]);
+            if (state > 0) state = 1;
+            SetTXLevelerSt(1,state);
+            sdr_log(SDR_LOG_INFO,"SetTXLevelerState %d\n", state);
         } else if(strncmp(cmd,"settxlevelerattack",18)==0) { // KD0OSS
             int value;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1926,6 +1940,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             value=atoi(tokens[0]);
             SetFadeLevel(0,0,value);
             SetFadeLevel(0,1,value);
+            sdr_log(SDR_LOG_INFO,"SetRXFadeLevel %d\n", value);
         } else if(strncmp(cmd,"setsquelchval",13)==0) {
             float value;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -2060,8 +2075,8 @@ void readcb(struct bufferevent *bev, void *ctx){
                 goto badcommand;
             if (config.no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of Rx IQ phase sent = '%s'\n",tokens[0]);
-                SetCorrectIQPhase(0, 0, atof(tokens[0]));
-                SetCorrectIQPhase(0, 1, atof(tokens[0]));
+                SetCorrectIQPhase(0, 0, atof(tokens[0])*10);
+                SetCorrectIQPhase(0, 1, atof(tokens[0])*10);
             } else {
                 sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ sent = '%s'\n",tokens[0]);
             }
@@ -2070,8 +2085,8 @@ void readcb(struct bufferevent *bev, void *ctx){
                 goto badcommand;
             if (config.no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of Rx IQ gain sent = '%s'\n",tokens[0]);
-                SetCorrectIQGain(0, 0, atof(tokens[0]));
-                SetCorrectIQGain(0, 1, atof(tokens[0]));
+                SetCorrectIQGain(0, 0, atof(tokens[0])*10);
+                SetCorrectIQGain(0, 1, atof(tokens[0])*10);
             } else {
                 sdr_log(SDR_LOG_INFO,"IGNORING (due to --ignore-iq option) the value of Rx IQ sent = '%s'\n",tokens[0]);
             }
@@ -2228,8 +2243,8 @@ void client_set_samples(char* client_samples, float* samples,int size) {
 
 void setprintcountry()
 {
-	prncountry = 1;
-	fprintf(stderr,"Country Lookup is On\n");
+    prncountry = 1;
+    fprintf(stderr,"Country Lookup is On\n");
 }
 
 void printcountry(struct sockaddr_in *client){
@@ -2240,8 +2255,7 @@ void printcountry(struct sockaddr_in *client){
     client_addr = malloc(sizeof(*client_addr));
     *client_addr = client->sin_addr.s_addr;
 
-    ret = pthread_create(&lookup_thread, NULL, printcountrythread,
-                         (void*) client_addr);
+    ret = pthread_create(&lookup_thread, NULL, printcountrythread, (void*) client_addr);
     if (ret == 0) pthread_detach(lookup_thread);
 }
 

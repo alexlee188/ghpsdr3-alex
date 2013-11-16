@@ -41,7 +41,7 @@
 #include "receiver.h"
 
 void* listener_thread(void* arg);
-void* client_thread(void* arg);
+void  client_thread(void* arg);
 char* parse_command(CLIENT* client,char* command);
 
 void create_listener_thread() {
