@@ -67,6 +67,8 @@ long caloffset;
 
 int tx_mode;
 
+FILE *file;
+
 void* sdr1000_io_thread(void* arg);
 
 #ifndef PORTAUDIO

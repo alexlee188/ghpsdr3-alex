@@ -267,6 +267,7 @@ void* audio_thread(void* arg)
     int bytes_read;
     int on=1;
     static int pos;
+    FILE *file = fopen("/tmp/sdr_tx.raw", "wb");
 
     fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 
@@ -305,14 +306,16 @@ void* audio_thread(void* arg)
             perror("recvfrom socket failed for audio buffer");
             exit(1);
         }
-//fprintf(stderr, "Read: %d\n", bytes_read);
-        memcpy(output_buffer+pos, rx->output_buffer, bytes_read);
+//fprintf(stderr, "Float: %d\n", sizeof(float));
+        memcpy((char*)output_buffer+pos, (char*)rx->output_buffer, bytes_read);
         pos += bytes_read;
-        if (pos >= (BUFFER_SIZE*2))
+        if ((pos / sizeof(float)) >= (BUFFER_SIZE*2))
         {
-            process_sdr1000_output_buffer(&output_buffer,&output_buffer[BUFFER_SIZE]);
+            fwrite((float*)output_buffer, sizeof(float), (BUFFER_SIZE*2), file);
+            process_sdr1000_output_buffer((float*)&output_buffer,(float*)&output_buffer[BUFFER_SIZE]);
             pos = 0;
         }
     }
+fclose(file);
 } // end audio_thread
 
