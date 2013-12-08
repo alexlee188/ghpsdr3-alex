@@ -79,6 +79,10 @@
 #include "G711A.h"
 #include "util.h"
 
+extern unsigned char txfwd;  // added by KD0OSS
+extern unsigned char txref;  // added by KD0OSS
+extern int sdr1000;  // added by KD0OSS
+
 static int timing=0;
 
 static int rtp_tx_init_done = 0;
@@ -203,65 +207,65 @@ void audio_stream_queue_add(unsigned char *buffer, int length) {
 }
 
 struct audio_entry *audio_stream_queue_remove(){
-	struct audio_entry *first_item;
-	sem_wait(&bufferevent_semaphore);
-	first_item = TAILQ_FIRST(&IQ_audio_stream);
-        if (first_item != NULL) TAILQ_REMOVE(&IQ_audio_stream, first_item, entries);
-	sem_post(&bufferevent_semaphore);
-	return first_item;
+    struct audio_entry *first_item;
+    sem_wait(&bufferevent_semaphore);
+    first_item = TAILQ_FIRST(&IQ_audio_stream);
+    if (first_item != NULL) TAILQ_REMOVE(&IQ_audio_stream, first_item, entries);
+    sem_post(&bufferevent_semaphore);
+    return first_item;
 }
 
 void audio_stream_queue_free(){
-	struct audio_entry *item;
+    struct audio_entry *item;
 
-	sem_wait(&bufferevent_semaphore);
-	while ((item = TAILQ_FIRST(&IQ_audio_stream)) != NULL){
-		TAILQ_REMOVE(&IQ_audio_stream, item, entries);
-		free(item->buf);
-		free(item);
-		}
-	sem_post(&bufferevent_semaphore);
+    sem_wait(&bufferevent_semaphore);
+    while ((item = TAILQ_FIRST(&IQ_audio_stream)) != NULL){
+        TAILQ_REMOVE(&IQ_audio_stream, item, entries);
+        free(item->buf);
+        free(item);
+    }
+    sem_post(&bufferevent_semaphore);
 }
 
 // this is run from the client thread
 void Mic_stream_queue_add(){
-   unsigned char *bits;
-   struct audio_entry *item;
-   int i;
+    unsigned char *bits;
+    struct audio_entry *item;
+    int i;
 
-   if (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2){
-	for (i=0; i < MIC_NO_OF_FRAMES; i++){
-		bits = malloc(BITS_SIZE);
-		memcpy(bits, &mic_buffer[i*BITS_SIZE], BITS_SIZE);
-		item = malloc(sizeof(*item));
-		item->buf = bits;
-		item->length = BITS_SIZE;
-		sem_wait(&mic_semaphore);
-		TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
-		sem_post(&mic_semaphore);
-	}
+    if (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2){
+        for (i=0; i < MIC_NO_OF_FRAMES; i++){
+            bits = malloc(BITS_SIZE);
+            memcpy(bits, &mic_buffer[i*BITS_SIZE], BITS_SIZE);
+            item = malloc(sizeof(*item));
+            item->buf = bits;
+            item->length = BITS_SIZE;
+            sem_wait(&mic_semaphore);
+            TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
+            sem_post(&mic_semaphore);
+        }
     } else if (audiostream_conf.micEncoding == MIC_ENCODING_ALAW) {
-                bits = malloc(MIC_ALAW_BUFFER_SIZE);
-                memcpy(bits, mic_buffer, MIC_ALAW_BUFFER_SIZE);
-                item = malloc(sizeof(*item));
-                item->buf = bits;
-                item->length = MIC_ALAW_BUFFER_SIZE;
-	        sem_wait(&mic_semaphore);
-	        TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
-	        sem_post(&mic_semaphore);
+        bits = malloc(MIC_ALAW_BUFFER_SIZE);
+        memcpy(bits, mic_buffer, MIC_ALAW_BUFFER_SIZE);
+        item = malloc(sizeof(*item));
+        item->buf = bits;
+        item->length = MIC_ALAW_BUFFER_SIZE;
+        sem_wait(&mic_semaphore);
+        TAILQ_INSERT_TAIL(&Mic_audio_stream, item, entries);
+        sem_post(&mic_semaphore);
     }
 }
 
 void Mic_stream_queue_free(){
-	struct audio_entry *item;
+    struct audio_entry *item;
 
-	sem_wait(&mic_semaphore);
-	while ((item = TAILQ_FIRST(&Mic_audio_stream)) != NULL) {
-		TAILQ_REMOVE(&Mic_audio_stream, item, entries);
-		free(item->buf);
-		free(item);
-		}
-	sem_post(&mic_semaphore);
+    sem_wait(&mic_semaphore);
+    while ((item = TAILQ_FIRST(&Mic_audio_stream)) != NULL) {
+        TAILQ_REMOVE(&Mic_audio_stream, item, entries);
+        free(item->buf);
+        free(item);
+    }
+    sem_post(&mic_semaphore);
 }
 
 void client_init(int receiver) {
@@ -290,90 +294,90 @@ void client_init(int receiver) {
     if(rc != 0) {
         fprintf(stderr,"pthread_create failed on client_thread: rc=%d\n", rc);
     }
-    else 
+    else
         rc = pthread_detach(client_thread_id);
 }
 
 void tx_init(void){
     int rc;
 
-       // create sample rate subobject
-        int sr_error;
-        mic_sr_state = src_new (
-                             //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
-                             //SRC_SINC_MEDIUM_QUALITY,
-                             SRC_SINC_FASTEST,
-                             //SRC_ZERO_ORDER_HOLD,
-                             //SRC_LINEAR,
-                             2, &sr_error
-                           ) ;
+    // create sample rate subobject
+    int sr_error;
+    mic_sr_state = src_new (
+                //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
+                //SRC_SINC_MEDIUM_QUALITY,
+                SRC_SINC_FASTEST,
+                //SRC_ZERO_ORDER_HOLD,
+                //SRC_LINEAR,
+                2, &sr_error
+                ) ;
 
-        if (mic_sr_state == 0) { 
-            fprintf (stderr, "tx_init: SR INIT ERROR: %s\n", src_strerror (sr_error)); 
-        } else {
-            sdr_log(SDR_LOG_INFO, "tx_init: sample rate init successful with ratio of : %f\n", mic_src_ratio);
-	}
+    if (mic_sr_state == 0) {
+        fprintf (stderr, "tx_init: SR INIT ERROR: %s\n", src_strerror (sr_error));
+    } else {
+        sdr_log(SDR_LOG_INFO, "tx_init: sample rate init successful with ratio of : %f\n", mic_src_ratio);
+    }
 
-        rc=pthread_create(&tx_thread_id, NULL, tx_thread, NULL);
-        if(rc != 0) 
-            fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
-	else 
-            rc = pthread_detach(tx_thread_id);
+    rc=pthread_create(&tx_thread_id, NULL, tx_thread, NULL);
+    if(rc != 0)
+        fprintf(stderr,"pthread_create failed on tx_thread: rc=%d\n", rc);
+    else
+        rc = pthread_detach(tx_thread_id);
 }
 
 void rtp_tx_timer_handler(union sigval);
 void spectrum_timer_handler(union sigval);
 
 void rtp_tx_init(void){
-	int rc;
+    int rc;
 
-	if (rtp_tx_init_done == 0){
+    if (rtp_tx_init_done == 0){
 
-		TAILQ_INIT(&Mic_rtp_stream);
-		rc = pthread_create(&rtp_tx_thread_id, NULL, rtp_tx_thread, NULL);
-		if (rc != 0) 
-                    fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
-		else 
-                    rc = pthread_detach(rtp_tx_thread_id);
+        TAILQ_INIT(&Mic_rtp_stream);
+        rc = pthread_create(&rtp_tx_thread_id, NULL, rtp_tx_thread, NULL);
+        if (rc != 0)
+            fprintf(stderr,"pthread_create failed on rtp_tx_thread: rc=%d\n", rc);
+        else
+            rc = pthread_detach(rtp_tx_thread_id);
 
-		rtp_tx_init_done = 1;
+        rtp_tx_init_done = 1;
 
-		struct itimerspec value;
-		struct sigevent sev;
+        struct itimerspec value;
+        struct sigevent sev;
 
-		value.it_value.tv_sec = 0;
-		value.it_value.tv_nsec = RTP_TIMER_NS;
+        value.it_value.tv_sec = 0;
+        value.it_value.tv_nsec = RTP_TIMER_NS;
 
-		value.it_interval.tv_sec = 0;
-		value.it_interval.tv_nsec = RTP_TIMER_NS;
+        value.it_interval.tv_sec = 0;
+        value.it_interval.tv_nsec = RTP_TIMER_NS;
 
-		sev.sigev_notify = SIGEV_THREAD;
-		sev.sigev_notify_function = rtp_tx_timer_handler;
-		sev.sigev_notify_attributes = NULL;
+        sev.sigev_notify = SIGEV_THREAD;
+        sev.sigev_notify_function = rtp_tx_timer_handler;
+        sev.sigev_notify_attributes = NULL;
 
-		timer_create(CLOCK_REALTIME, &sev, &rtp_tx_timerid);
-		timer_settime(rtp_tx_timerid, 0, &value, NULL);
+        timer_create(CLOCK_REALTIME, &sev, &rtp_tx_timerid);
+        timer_settime(rtp_tx_timerid, 0, &value, NULL);
 
-	}
+    }
 }
 
 void spectrum_timer_init(void){
 
-	struct itimerspec value;
-	struct sigevent sev;
+    struct itimerspec value;
+    struct sigevent sev;
 
-	value.it_value.tv_sec = 0;
-	value.it_value.tv_nsec = SPECTRUM_TIMER_NS;
+    value.it_value.tv_sec = 0;
+    value.it_value.tv_nsec = SPECTRUM_TIMER_NS;
 
-	value.it_interval.tv_sec = 0;
-	value.it_interval.tv_nsec = SPECTRUM_TIMER_NS;
+    value.it_interval.tv_sec = 0;
+    value.it_interval.tv_nsec = SPECTRUM_TIMER_NS;
 
-	sev.sigev_notify = SIGEV_THREAD;
-	sev.sigev_notify_function = spectrum_timer_handler;
-	sev.sigev_notify_attributes = NULL;
+    sev.sigev_notify = SIGEV_THREAD;
+    sev.sigev_notify_function = spectrum_timer_handler;
+    sev.sigev_notify_attributes = NULL;
 
-	timer_create(CLOCK_REALTIME, &sev, &spectrum_timerid);
-	timer_settime(spectrum_timerid, 0, &value, NULL);
+    timer_create(CLOCK_REALTIME, &sev, &spectrum_timerid);
+    timer_settime(spectrum_timerid, 0, &value, NULL);
 }
 
 void rtp_tx_timer_handler(union sigval usv){
@@ -392,99 +396,99 @@ void rtp_tx_timer_handler(union sigval usv){
     if (client_item == NULL) return;	                // no master client
     if (client_item->rtp != connection_rtp) return;	// not rtp master
     length=rtp_receive(client_item->session,rtp_buffer,RTP_BUFFER_SIZE);
-    recv_ts+=RTP_BUFFER_SIZE;		        // proceed with timestamp increment as this is timer based	        
+    recv_ts+=RTP_BUFFER_SIZE;		        // proceed with timestamp increment as this is timer based
     if (length > 0){
-	    for(i=0;i<length;i++) {
-		v=G711A_decode(rtp_buffer[i]);
-		fv=(float)v/32767.0F;                   // get into the range -1..+1
+        for(i=0;i<length;i++) {
+            v=G711A_decode(rtp_buffer[i]);
+            fv=(float)v/32767.0F;                   // get into the range -1..+1
 
-		data_in[data_in_counter*2]=fv;
-		data_in[(data_in_counter*2)+1]=fv;
-		data_in_counter++;
+            data_in[data_in_counter*2]=fv;
+            data_in[(data_in_counter*2)+1]=fv;
+            data_in_counter++;
 
-		if (data_in_counter >= TX_BUFFER_SIZE) {
-			mic_data = (float*) malloc(TX_BUFFER_SIZE * 2 * sizeof(float));
-			memcpy(mic_data, data_in, TX_BUFFER_SIZE*2*sizeof(float));
-			item = malloc(sizeof(*item));
-			item->buf = (unsigned char*) mic_data;
-			item->length = TX_BUFFER_SIZE;
-			sem_wait(&mic_semaphore);
-			TAILQ_INSERT_TAIL(&Mic_rtp_stream, item, entries);
-			sem_post(&mic_semaphore);
-			data_in_counter = 0;
-		}
+            if (data_in_counter >= TX_BUFFER_SIZE) {
+                mic_data = (float*) malloc(TX_BUFFER_SIZE * 2 * sizeof(float));
+                memcpy(mic_data, data_in, TX_BUFFER_SIZE*2*sizeof(float));
+                item = malloc(sizeof(*item));
+                item->buf = (unsigned char*) mic_data;
+                item->length = TX_BUFFER_SIZE;
+                sem_wait(&mic_semaphore);
+                TAILQ_INSERT_TAIL(&Mic_rtp_stream, item, entries);
+                sem_post(&mic_semaphore);
+                data_in_counter = 0;
+            }
         }
     }
 }
 
 void spectrum_timer_handler(union sigval usv){            // this is called every 20 ms
-        client_entry *item;
-        
-        sem_wait(&bufferevent_semaphore);
-        item = TAILQ_FIRST(&Client_list);
-        sem_post(&bufferevent_semaphore);
-        if (item == NULL) return;               // no clients
+    client_entry *item;
 
-        sem_wait(&spectrum_semaphore);
-        if(mox) {
-            Process_Panadapter(1, spectrumBuffer);
-            meter = CalculateTXMeter(1, txMeterMode);        // Tx meter mode added by KD0OSS
-            subrx_meter = -121;
-        } else {
-            switch (panadapterMode) // KD0OSS
-            {
-                case PANADAPTER:
-                    Process_Panadapter(0, spectrumBuffer);
-                break;
+    sem_wait(&bufferevent_semaphore);
+    item = TAILQ_FIRST(&Client_list);
+    sem_post(&bufferevent_semaphore);
+    if (item == NULL) return;               // no clients
 
-                case SPECTRUM:
-                    Process_Spectrum(0, spectrumBuffer);
-                break;
+    sem_wait(&spectrum_semaphore);
+    if(mox) {
+        Process_Panadapter(1, spectrumBuffer);
+        meter = CalculateTXMeter(1, txMeterMode);        // Tx meter mode added by KD0OSS
+        subrx_meter = -121;
+    } else {
+        switch (panadapterMode) // KD0OSS
+        {
+        case PANADAPTER:
+            Process_Panadapter(0, spectrumBuffer);
+            break;
 
-                case CSPECTRUM:
-                    Process_ComplexSpectrum(0, spectrumBuffer);
-                break;
+        case SPECTRUM:
+            Process_Spectrum(0, spectrumBuffer);
+            break;
 
-                case SCOPE:
-                    Process_Scope(0, spectrumBuffer, numSamples);
-                break;
+        case CSPECTRUM:
+            Process_ComplexSpectrum(0, spectrumBuffer);
+            break;
 
-                case PHASE:
-                    Process_Phase(0, spectrumBuffer, numSamples);
-                break;
+        case SCOPE:
+            Process_Scope(0, spectrumBuffer, numSamples);
+            break;
 
-                default:
-                    Process_Panadapter(0, spectrumBuffer);
-            }
-            meter = CalculateRXMeter(0, 0, rxMeterMode) + multimeterCalibrationOffset + getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
-            subrx_meter = CalculateRXMeter(0, 1, rxMeterMode) + multimeterCalibrationOffset + getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
+        case PHASE:
+            Process_Phase(0, spectrumBuffer, numSamples);
+            break;
+
+        default:
+            Process_Panadapter(0, spectrumBuffer);
         }
-        sem_post(&spectrum_semaphore);
-        sem_wait(&bufferevent_semaphore);
-        TAILQ_FOREACH(item, &Client_list, entries){
-            sem_post(&bufferevent_semaphore);
-            if(item->fps > 0) {
-                if (item->frame_counter-- <= 1) {
-                    char *client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
-                    sem_wait(&spectrum_semaphore);
-                    client_set_samples(client_samples, spectrumBuffer, item->samples);
-                    sem_post(&spectrum_semaphore);
-                    bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
-                    free(client_samples);
-                    item->frame_counter = (item->fps == 0) ? 50 : 50 / item->fps;
-                }
-            }
-            sem_wait(&bufferevent_semaphore);
-        }
+        meter = CalculateRXMeter(0, 0, rxMeterMode) + multimeterCalibrationOffset + getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
+        subrx_meter = CalculateRXMeter(0, 1, rxMeterMode) + multimeterCalibrationOffset + getFilterSizeCalibrationOffset(); // Rx meter mode added by KD0OSS
+    }
+    sem_post(&spectrum_semaphore);
+    sem_wait(&bufferevent_semaphore);
+    TAILQ_FOREACH(item, &Client_list, entries){
         sem_post(&bufferevent_semaphore);
+        if(item->fps > 0) {
+            if (item->frame_counter-- <= 1) {
+                char *client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
+                sem_wait(&spectrum_semaphore);
+                client_set_samples(client_samples, spectrumBuffer, item->samples);
+                sem_post(&spectrum_semaphore);
+                bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
+                free(client_samples);
+                item->frame_counter = (item->fps == 0) ? 50 : 50 / item->fps;
+            }
+        }
+        sem_wait(&bufferevent_semaphore);
+    }
+    sem_post(&bufferevent_semaphore);
 
-        spectrum_timestamp++;
+    spectrum_timestamp++;
 }
 
 void* rtp_tx_thread(void *arg){
     int j;
-    float data_out[TX_BUFFER_SIZE*2*24];	// data_in is 8khz (duplicated to stereo) Mic samples.  
-						// May be resampled to 192khz or 24x stereo
+    float data_out[TX_BUFFER_SIZE*2*24];	// data_in is 8khz (duplicated to stereo) Mic samples.
+    // May be resampled to 192khz or 24x stereo
     SRC_DATA data;
     int rc;
     struct audio_entry *item;
@@ -492,22 +496,49 @@ void* rtp_tx_thread(void *arg){
     sdr_thread_register("rtp_tx_thread");
 
     while (1){
-	sem_wait(&mic_semaphore);
-	item = TAILQ_FIRST(&Mic_rtp_stream);
-	sem_post(&mic_semaphore);
-	if (item == NULL){
-		usleep(1000);
-		continue;
-		}
+        sem_wait(&mic_semaphore);
+        item = TAILQ_FIRST(&Mic_rtp_stream);
+        sem_post(&mic_semaphore);
+        if (item == NULL){
+            usleep(1000);
+            continue;
+        }
 
-            // resample to the sample rate
-            data.data_in = (float*) item->buf;
-            data.input_frames = TX_BUFFER_SIZE;
-            data.data_out = data_out;
-            data.output_frames = TX_BUFFER_SIZE*24 ;
-            data.src_ratio = mic_src_ratio;
-            data.end_of_input = 0;
+<<<<<<< HEAD
+        // resample to the sample rate
+        data.data_in = (float*) item->buf;
+        data.input_frames = TX_BUFFER_SIZE;
+        data.data_out = data_out;
+        data.output_frames = TX_BUFFER_SIZE*24 ;
+        data.src_ratio = mic_src_ratio;
+        data.end_of_input = 0;
 
+        rc = src_process (mic_sr_state, &data);
+        if (rc) {
+            fprintf (stderr,"rtp_tx_thread: SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
+        } else {
+            for (j=0;j< data.output_frames_gen;j++) {
+                // tx_buffer is non-interleaved, LEFT followed by RIGHT data
+                tx_buffer[iq_buffer_counter] = data_out[2*j];
+                tx_buffer[iq_buffer_counter + TX_BUFFER_SIZE] = data_out[(2*j)+1];
+                iq_buffer_counter++;
+                if (iq_buffer_counter >= TX_BUFFER_SIZE) {
+                    // use DttSP to process Mic data into tx IQ
+                    if(!hpsdr || mox) {
+                        Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
+                        // send Tx IQ to server, buffer is non-interleaved.
+                        ozy_send((unsigned char *)tx_IQ_buffer, sizeof(tx_IQ_buffer), "client");
+                    }
+                    iq_buffer_counter = 0;
+                } // end iq_bufer_counter
+            } // end for j
+        } // end rc else
+        sem_wait(&mic_semaphore);
+        TAILQ_REMOVE(&Mic_rtp_stream, item, entries);
+        sem_post(&mic_semaphore);
+        free(item->buf);
+        free(item);
+=======
             rc = src_process (mic_sr_state, &data);
             if (rc) {
                 fprintf (stderr,"rtp_tx_thread: SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
@@ -533,70 +564,116 @@ void* rtp_tx_thread(void *arg){
 	    sem_post(&mic_semaphore);
 	    free(item->buf);
 	    free(item);
+>>>>>>> 0a01ca6c22f5d9b369cd504eca48c2dad3827fde
     } // end while (1)
 }
 
 
 void *tx_thread(void *arg){
-   unsigned char *bits;
-   struct audio_entry *item;
-   // short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
-   short *codec2_buffer;  // samples_per_frame is  now a variable
-   int tx_buffer_counter = 0;
-   int rc;
-   int j, i;
+    unsigned char *bits;
+    struct audio_entry *item;
+    // short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
+    short *codec2_buffer;  // samples_per_frame is  now a variable
+    int tx_buffer_counter = 0;
+    int rc;
+    int j, i;
+    //FILE *fp;  //KD0OSS
 
-   // #if CODEC2_SAMPLES_PER_FRAME > MIC_ALAW_BUFFER_SIZE
-   //    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
-   //    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
-   // #else
-   //    float data_in [MIC_ALAW_BUFFER_SIZE*2];		// stereo
-   //    float data_out[MIC_ALAW_BUFFER_SIZE*2*24];	        // 192khz/8khz
-   // #endif
-   float *data_in, *data_out;
+    //fp = fopen("mic_audio.raw", "wb"); //KD0OSS
 
-   SRC_DATA data;
-   void *mic_codec2 = (void *) codec2_create(CODEC2_MODE_3200);
+    // #if CODEC2_SAMPLES_PER_FRAME > MIC_ALAW_BUFFER_SIZE
+    //    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
+    //    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
+    // #else
+    //    float data_in [MIC_ALAW_BUFFER_SIZE*2];		// stereo
+    //    float data_out[MIC_ALAW_BUFFER_SIZE*2*24];	        // 192khz/8khz
+    // #endif
+    float *data_in, *data_out;
 
-   samples_per_frame = codec2_samples_per_frame((struct CODEC2 *) mic_codec2);
-   bits_per_frame = codec2_bits_per_frame((struct CODEC2 *) mic_codec2);
+    SRC_DATA data;
+    void *mic_codec2 = (void *) codec2_create(CODEC2_MODE_3200);
 
-   codec2_buffer = (short *)malloc(sizeof(short) * samples_per_frame);
+    samples_per_frame = codec2_samples_per_frame((struct CODEC2 *) mic_codec2);
+    bits_per_frame = codec2_bits_per_frame((struct CODEC2 *) mic_codec2);
 
-   if (samples_per_frame > MIC_ALAW_BUFFER_SIZE) {
-     data_in = (float *)malloc(sizeof(float) * samples_per_frame * 2);
-     data_out = (float *)malloc(sizeof(float) * samples_per_frame * 24);
-   }
-   else {
-     data_in = (float *)malloc(sizeof(float) * MIC_ALAW_BUFFER_SIZE * 2);
-     data_out = (float *)malloc(sizeof(float) * MIC_ALAW_BUFFER_SIZE * 24);
-   }
+    codec2_buffer = (short *)malloc(sizeof(short) * samples_per_frame);
 
-   sdr_thread_register("tx_thread");
+    if (samples_per_frame > MIC_ALAW_BUFFER_SIZE) {
+        data_in = (float *)malloc(sizeof(float) * samples_per_frame * 2);
+        data_out = (float *)malloc(sizeof(float) * samples_per_frame * 24);
+    }
+    else {
+        data_in = (float *)malloc(sizeof(float) * MIC_ALAW_BUFFER_SIZE * 2);
+        data_out = (float *)malloc(sizeof(float) * MIC_ALAW_BUFFER_SIZE * 24);
+    }
+
+    sdr_thread_register("tx_thread");
 
     while (1){
-	sem_wait(&mic_semaphore);
-	item = TAILQ_FIRST(&Mic_audio_stream);
-	sem_post(&mic_semaphore);
-	if (item == NULL){
-		usleep(1000);
-		continue;
-		}
-	else {
-           if (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2){
-	           bits = item->buf;	// each frame is BITS_SIZE long for Codec 2
-	           // process codec2 encoded mic_buffer
-	           codec2_decode(mic_codec2, codec2_buffer, bits);
-	           // mic data is mono, so copy to both right and left channels
-	           #pragma omp parallel for schedule(static) private(j) 
-                   for (j=0; j < samples_per_frame; j++) {
-                      data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
-                   }
-           }
-           else {
-                for (j=0; j < MIC_ALAW_BUFFER_SIZE; j++){
-                        data_in[j*2] = data_in[j*2+1] = (float)G711A_decode(item->buf[j])/32767.0;
+        sem_wait(&mic_semaphore);
+        item = TAILQ_FIRST(&Mic_audio_stream);
+        sem_post(&mic_semaphore);
+        if (item == NULL){
+            usleep(1000);
+            continue;
+        }
+        else {
+            if (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2){
+                bits = item->buf;	// each frame is BITS_SIZE long for Codec 2
+                // process codec2 encoded mic_buffer
+                codec2_decode(mic_codec2, codec2_buffer, bits);
+                // mic data is mono, so copy to both right and left channels
+#pragma omp parallel for schedule(static) private(j)
+                for (j=0; j < samples_per_frame; j++) {
+                    data_in [j*2] = data_in [j*2+1]   = (float)codec2_buffer[j]/32767.0;
                 }
+            }
+            else {
+                for (j=0; j < MIC_ALAW_BUFFER_SIZE; j++){
+                    data_in[j*2] = data_in[j*2+1] = (float)G711A_decode(item->buf[j])/32767.0;
+                }
+<<<<<<< HEAD
+            }
+            data.data_in = data_in;
+            data.input_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
+                        samples_per_frame : MIC_ALAW_BUFFER_SIZE;
+            data.data_out = data_out;
+            data.output_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
+                        samples_per_frame*24 : MIC_ALAW_BUFFER_SIZE*24 ;
+            data.src_ratio = mic_src_ratio;
+            data.end_of_input = 0;
+
+            rc = src_process (mic_sr_state, &data);
+            if (rc) {
+                fprintf (stderr,"SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
+            } else {
+                for (i=0; i < data.output_frames_gen; i++){
+                    // tx_buffer is non-interleaved, LEFT followed by RIGHT data
+                    tx_buffer[tx_buffer_counter] = data_out[2*i];
+                    tx_buffer[tx_buffer_counter + TX_BUFFER_SIZE] = data_out[2*i+1];
+                    tx_buffer_counter++;
+                    if (tx_buffer_counter >= TX_BUFFER_SIZE){
+                  //      fwrite((float*)&tx_buffer, sizeof(float), tx_buffer_counter, fp);  //KD0OSS
+                        // use DttSP to process Mic data into tx IQ
+                        Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
+ //                       Audio_Callback2(tx_buffer, tx_IQ_buffer, TX_BUFFER_SIZE);
+                        // send Tx IQ to server, buffer is non-interleaved.
+                        ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+                        tx_buffer_counter = 0;
+                    }
+                } // end for i
+            } // end else rc
+            sem_wait(&mic_semaphore);
+            TAILQ_REMOVE(&Mic_audio_stream, item, entries);
+            sem_post(&mic_semaphore);
+            free(item->buf);
+            free(item);
+        } // end else item
+    } // end while
+
+    codec2_destroy(mic_codec2);
+  //  fclose(fp); //KD0OSS
+=======
            }
            data.data_in = data_in;
            data.input_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
@@ -634,6 +711,7 @@ void *tx_thread(void *arg){
 	} // end while
 
 	codec2_destroy(mic_codec2);
+>>>>>>> 0a01ca6c22f5d9b369cd504eca48c2dad3827fde
 }
 
 void client_set_timing() {
@@ -655,47 +733,47 @@ void errorcb(struct bufferevent *bev, short error, void *ctx)
     if ((error & BEV_EVENT_EOF) || (error & BEV_EVENT_ERROR)) {
         /* connection has been closed, or error has occured, do any clean up here */
         /* ... */
+        sem_wait(&bufferevent_semaphore);
+        for (item = TAILQ_FIRST(&Client_list); item != NULL; item = TAILQ_NEXT(item, entries)){
+            if (item->bev == bev){
+                char ipstr[16];
+                inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
+                sdr_log(SDR_LOG_INFO, "RX%d: client disconnection from %s:%d\n",
+                        receiver, ipstr, ntohs(item->client.sin_port));
+                if (item->rtp == connection_rtp) {
+                    rtp_disconnect(item->session);
+                    is_rtp_client = 1;
+                }
+                TAILQ_REMOVE(&Client_list, item, entries);
+                free(item);
+                break;
+            }
+        }
+
+        TAILQ_FOREACH(item, &Client_list, entries){
+            client_count++;
+            if (item->rtp == connection_rtp) rtp_client_count++;
+        }
+
+        sem_post(&bufferevent_semaphore);
+
+        if ((rtp_client_count <= 0) && is_rtp_client) {
+            rtp_connected = 0; 	// last rtp client disconnected
+            rtp_listening = 0;
+        }
+
+        if (toShareOrNotToShare) {
+            char status_buf[32];
+            sprintf(status_buf, "%d client(s)", client_count);
+            updateStatus(status_buf);
+        }
+
+        if (client_count <= 0) {
             sem_wait(&bufferevent_semaphore);
-            for (item = TAILQ_FIRST(&Client_list); item != NULL; item = TAILQ_NEXT(item, entries)){
-	        if (item->bev == bev){
-                    char ipstr[16];
-                    inet_ntop(AF_INET, (void *)&item->client.sin_addr, ipstr, sizeof(ipstr));
-                    sdr_log(SDR_LOG_INFO, "RX%d: client disconnection from %s:%d\n",
-                            receiver, ipstr, ntohs(item->client.sin_port));
-                    if (item->rtp == connection_rtp) {
-                        rtp_disconnect(item->session);
-                        is_rtp_client = 1;
-                    }
-                    TAILQ_REMOVE(&Client_list, item, entries);
-                    free(item);
-                    break;
-	        }
-            }
-
-            TAILQ_FOREACH(item, &Client_list, entries){
-	        client_count++;
-	        if (item->rtp == connection_rtp) rtp_client_count++;
-            }
-
+            send_audio = 0;
             sem_post(&bufferevent_semaphore);
-
-            if ((rtp_client_count <= 0) && is_rtp_client) {
-	        rtp_connected = 0; 	// last rtp client disconnected
-	        rtp_listening = 0;
-            }
-
-            if (toShareOrNotToShare) {
-                char status_buf[32];
-                sprintf(status_buf, "%d client(s)", client_count);
-                updateStatus(status_buf);
-            }
-
-            if (client_count <= 0) {
-                sem_wait(&bufferevent_semaphore);
-                send_audio = 0;
-                sem_post(&bufferevent_semaphore);
-            }
-            bufferevent_free(bev);
+        }
+        bufferevent_free(bev);
     } else if (error & BEV_EVENT_ERROR) {
         /* check errno to see what error occurred */
         /* ... */
@@ -793,11 +871,11 @@ ssl_readcb(struct bufferevent * bev, void * arg)
    @return A new bufferevent on success, or NULL on failure.
 */
 struct bufferevent *
-bufferevent_openssl_socket_new(struct event_base *base,
-    evutil_socket_t fd,
-    struct ssl_st *ssl,
-    enum bufferevent_ssl_state state,
-    int options);
+        bufferevent_openssl_socket_new(struct event_base *base,
+                                       evutil_socket_t fd,
+                                       struct ssl_st *ssl,
+                                       enum bufferevent_ssl_state state,
+                                       int options);
 
 static void
 do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa, int sa_len, void *arg)
@@ -851,7 +929,7 @@ do_accept_ssl(struct evconnlistener *serv, int sock, struct sockaddr *sa, int sa
         updateStatus(status_buf);
     }
 
-/*
+    /*
     bufferevent_enable(bev, EV_READ);
     bufferevent_setcb(bev, ssl_readcb, NULL, NULL, NULL);
 */
@@ -871,12 +949,12 @@ SSL_CTX *evssl_init(void)
     server_ctx = SSL_CTX_new(SSLv23_server_method());
 
     if (! SSL_CTX_use_certificate_chain_file(server_ctx, "cert") ||
-        ! SSL_CTX_use_PrivateKey_file(server_ctx, "pkey", SSL_FILETYPE_PEM)) {
+            ! SSL_CTX_use_PrivateKey_file(server_ctx, "pkey", SSL_FILETYPE_PEM)) {
         puts("Couldn't read 'pkey' or 'cert' file.  To generate a key\n"
-           "and self-signed certificate, run:\n"
-           "  openssl genrsa -out pkey 2048\n"
-           "  openssl req -new -key pkey -out cert.req\n"
-           "  openssl x509 -req -days 365 -in cert.req -signkey pkey -out cert");
+             "and self-signed certificate, run:\n"
+             "  openssl genrsa -out pkey 2048\n"
+             "  openssl req -new -key pkey -out cert.req\n"
+             "  openssl x509 -req -days 365 -in cert.req -signkey pkey -out cert");
         return NULL;
     }
     SSL_CTX_set_options(server_ctx, SSL_OP_NO_SSLv2);
@@ -892,60 +970,60 @@ unsigned long pthreads_thread_id(void);
 
 void thread_setup(void)
 {
-	int i;
+    int i;
 
-	lock_cs=OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
-	lock_count=OPENSSL_malloc(CRYPTO_num_locks() * sizeof(long));
-	for (i=0; i<CRYPTO_num_locks(); i++)
-		{
-		lock_count[i]=0;
-		pthread_mutex_init(&(lock_cs[i]),NULL);
-		}
+    lock_cs=OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
+    lock_count=OPENSSL_malloc(CRYPTO_num_locks() * sizeof(long));
+    for (i=0; i<CRYPTO_num_locks(); i++)
+    {
+        lock_count[i]=0;
+        pthread_mutex_init(&(lock_cs[i]),NULL);
+    }
 
-	CRYPTO_set_id_callback((unsigned long (*)())pthreads_thread_id);
-	CRYPTO_set_locking_callback((void (*)())pthreads_locking_callback);
+    CRYPTO_set_id_callback((unsigned long (*)())pthreads_thread_id);
+    CRYPTO_set_locking_callback((void (*)())pthreads_locking_callback);
 }
 
 void thread_cleanup(void)
 {
-	int i;
+    int i;
 
-	CRYPTO_set_locking_callback(NULL);
-	fprintf(stderr,"cleanup\n");
-	for (i=0; i<CRYPTO_num_locks(); i++)
-		{
-		pthread_mutex_destroy(&(lock_cs[i]));
-		fprintf(stderr,"%8ld:%s\n",lock_count[i],
-			CRYPTO_get_lock_name(i));
-		}
-	OPENSSL_free(lock_cs);
-	OPENSSL_free(lock_count);
+    CRYPTO_set_locking_callback(NULL);
+    fprintf(stderr,"cleanup\n");
+    for (i=0; i<CRYPTO_num_locks(); i++)
+    {
+        pthread_mutex_destroy(&(lock_cs[i]));
+        fprintf(stderr,"%8ld:%s\n",lock_count[i],
+                CRYPTO_get_lock_name(i));
+    }
+    OPENSSL_free(lock_cs);
+    OPENSSL_free(lock_count);
 
-	fprintf(stderr,"done cleanup\n");
+    fprintf(stderr,"done cleanup\n");
 }
 
 void pthreads_locking_callback(int mode, int type, char *file, int line)
 {
-	if (mode & CRYPTO_LOCK)
-		{
-		pthread_mutex_lock(&(lock_cs[type]));
-		lock_count[type]++;
-		}
-	else
-		{
-		pthread_mutex_unlock(&(lock_cs[type]));
-		}
+    if (mode & CRYPTO_LOCK)
+    {
+        pthread_mutex_lock(&(lock_cs[type]));
+        lock_count[type]++;
+    }
+    else
+    {
+        pthread_mutex_unlock(&(lock_cs[type]));
+    }
 }
 
 unsigned long pthreads_thread_id(void){
-	unsigned long ret;
+    unsigned long ret;
 
-	ret=(unsigned long)pthread_self();
-	return(ret);
+    ret=(unsigned long)pthread_self();
+    return(ret);
 }
 
 void* client_thread(void* arg) {
- 
+
     int on = 1;
     struct event_base *base;
     struct event *listener_event;
@@ -988,8 +1066,8 @@ void* client_thread(void* arg) {
     sdr_log(SDR_LOG_INFO, "client_thread: listening on port %d\n", port);
 
     if (listen(serverSocket, 5) == -1) {
-	perror("client listen");
-	exit(1);
+        perror("client listen");
+        exit(1);
     }
 
     // setting up ssl server
@@ -1015,10 +1093,10 @@ void* client_thread(void* arg) {
 
     // add the ssl listener to event base
     listener = evconnlistener_new_bind(
-                         base, do_accept_ssl, (void *)ctx,
-                         LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE | 
-                         LEV_OPT_THREADSAFE, 1024,
-                         (struct sockaddr *)&server_ssl, sizeof(server_ssl));
+                base, do_accept_ssl, (void *)ctx,
+                LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE |
+                LEV_OPT_THREADSAFE, 1024,
+                (struct sockaddr *)&server_ssl, sizeof(server_ssl));
 
     sdr_log(SDR_LOG_INFO, "client_thread: listening on port %d for ssl connection\n", port_ssl);
 
@@ -1077,7 +1155,7 @@ static char *slave_commands[] = {
  * Tokenize the remaining words of a command, saving them to list and
  * returning the number of tokens found.  Do not attempt to find more
  * than 'tokens' tokens.
- */ 
+ */
 static int tokenize_cmd(char **saveptr, char *list[], int tokens)
 {
     int i = 0;
@@ -1119,7 +1197,7 @@ void readcb(struct bufferevent *bev, void *ctx){
          * will first determine whether it is allowed to execute the
          * command it is executing, and abort if it is not. */
 
-	// locate the current_item for this slave client
+        // locate the current_item for this slave client
         sem_wait(&bufferevent_semaphore);
         for (current_item = TAILQ_FIRST(&Client_list); current_item != NULL; current_item = tmp_item){
             tmp_item = TAILQ_NEXT(current_item, entries);
@@ -1153,16 +1231,16 @@ void readcb(struct bufferevent *bev, void *ctx){
         message[bytesRead-1]=0;			// for Linux strings terminating in NULL
 
         if (message[0] == '*') {
-           fprintf(stderr,"HARDWARE DIRECTED: message: '%s'\n",message);
-           if (!slave) {
-              // if master, forward the message to the hardware
-              ozySendStarCommand (message); 
-              answer_question(message,"slave", bev);
-           } else {
-              // in slave mode don't forward the message
-           }
-           continue;
-        } 
+            fprintf(stderr,"HARDWARE DIRECTED: message: '%s'\n",message);
+            if (!slave) {
+                // if master, forward the message to the hardware
+                ozySendStarCommand (message);
+                answer_question(message,"slave", bev);
+            } else {
+                // in slave mode don't forward the message
+            }
+            continue;
+        }
 
         cmd=strtok_r(message," ",&saveptr);
         if (cmd == NULL) continue;
@@ -1170,9 +1248,9 @@ void readcb(struct bufferevent *bev, void *ctx){
         /* Short circuit for mic data, to ensure it's handled as rapidly
          * as possible. */
         if(!slave && strncmp(cmd,"mic", 3)==0){		// This is incoming microphone data, binary data after "mic "
-            memcpy(mic_buffer, &message[4], 
-                ((audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ? 
-                MIC_BUFFER_SIZE : MIC_ALAW_BUFFER_SIZE));
+            memcpy(mic_buffer, &message[4],
+                   ((audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
+                        MIC_BUFFER_SIZE : MIC_ALAW_BUFFER_SIZE));
             Mic_stream_queue_add();
             continue;
         }
@@ -1200,7 +1278,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             }
         }
 
-        if(strncmp(cmd,"q",1) == 0){	
+        if(strncmp(cmd,"q",1) == 0){
             answer_question(message,role, bev);
 
         }else if(strncmp(cmd,"getspectrum",11) == 0) {
@@ -1234,18 +1312,18 @@ void readcb(struct bufferevent *bev, void *ctx){
             SetMode(0,1,mode);
             SetMode(1,0,mode);
             lastMode=mode;
-            ozySetTxMode(mode);	    
+            ozySetTxMode(mode);
             switch (mode){
-            case USB: 
+            case USB:
                 SetSBMode(0,0,1); // KD0OSS
                 SetSBMode(0,1,1); // KD0OSS
-                SetTXFilter(1,150,2850); 
-            break;
-            case LSB: 
+                SetTXFilter(1,150,2850);
+                break;
+            case LSB:
                 SetSBMode(0,0,2); // KD0OSS
                 SetSBMode(0,1,2); // KD0OSS
-                SetTXFilter(1,-2850, -150); 
-            break;
+                SetTXFilter(1,-2850, -150);
+                break;
             case AM:
             case SAM: SetTXFilter(1, -2850, 2850); break;
             case FM: SetTXFilter(1, -4800, 4800); break;
@@ -1323,8 +1401,8 @@ void readcb(struct bufferevent *bev, void *ctx){
             value[1]=atoi(tokens[1]);
             value[2]=atoi(tokens[2]);
             value[3]=atoi(tokens[3]);
-            SetGrphRXEQ(0,0,&value);
-            SetGrphRXEQ(0,1,&value);
+            SetGrphRXEQ(0,0,(int *)&value);
+            SetGrphRXEQ(0,1,(int *)&value);
         } else if(strncmp(cmd,"setrx10bdgreq",11)==0) { // KD0OSS
             int value[11];
             if (tokenize_cmd(&saveptr, tokens, 11) != 11)
@@ -1340,8 +1418,8 @@ void readcb(struct bufferevent *bev, void *ctx){
             value[8]=atoi(tokens[8]);
             value[9]=atoi(tokens[9]);
             value[10]=atoi(tokens[10]);
-            SetGrphRXEQ10(0,0,&value);
-            SetGrphRXEQ10(0,1,&value);
+            SetGrphRXEQ10(0,0,(int *)&value);
+            SetGrphRXEQ10(0,1,(int *)&value);
         } else if(strncmp(cmd,"settxgreqcmd",12)==0) { // KD0OSS
             int state;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1356,7 +1434,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             value[1]=atoi(tokens[1]);
             value[2]=atoi(tokens[2]);
             value[3]=atoi(tokens[3]);
-            SetGrphTXEQ(1,&value);
+            SetGrphTXEQ(1,(int *)&value);
         } else if(strncmp(cmd,"settx10bdgreq",11)==0) { // KD0OSS
             int value[11];
             if (tokenize_cmd(&saveptr, tokens, 11) != 11)
@@ -1372,7 +1450,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             value[8]=atoi(tokens[8]);
             value[9]=atoi(tokens[9]);
             value[10]=atoi(tokens[10]);
-            SetGrphTXEQ10(1,&value);
+            SetGrphTXEQ10(1,(int *)&value);
         } else if(strncmp(cmd,"setnr",5)==0) {
             int nr = 0;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1445,7 +1523,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                 if (bufsize < AUDIO_BUFFER_SIZE)
                     bufsize = AUDIO_BUFFER_SIZE;
                 else if (bufsize > 32000)
-                         bufsize = 32000;
+                    bufsize = 32000;
             }
             if (ntok >= 2) {
                 rate = atoi(tokens[1]);
@@ -1822,7 +1900,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                 if (ntok == 3) {
                     char *thisuser = tokens[1];
                     char *thispasswd = tokens[2];
-                    if(chkPasswd(thisuser, thispasswd) == 0){ 
+                    if(chkPasswd(thisuser, thispasswd) == 0){
                         if(pwr >= 0 && pwr <= 1) {
                             //fprintf(stderr,"SetTXAMCarrierLevel = %f\n", pwr);
                             sdr_log(SDR_LOG_INFO,"SetTXAMCarrierLevel = %f\n", pwr);
@@ -2001,19 +2079,19 @@ void readcb(struct bufferevent *bev, void *ctx){
                 goto badcommand;
             if(strcmp(tokens[0],"true")==0) {
                 if (config.no_correct_iq == 0) {
-                   SetCorrectIQEnable(1);
-                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(1)\n"); 
+                    SetCorrectIQEnable(1);
+                    sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(1)\n");
                 } else {
-                   SetCorrectIQEnable(0);
-                   sdr_log(SDR_LOG_INFO,"IGNORING (due to --no-correctiq option): setiqenable true, SetCorrectIQEnable(0)\n");
+                    SetCorrectIQEnable(0);
+                    sdr_log(SDR_LOG_INFO,"IGNORING (due to --no-correctiq option): setiqenable true, SetCorrectIQEnable(0)\n");
                 }
             } else if(strcmp(tokens[0],"false")==0) {
                 if (config.no_correct_iq == 0) {
-                   SetCorrectIQEnable(0);
-                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
+                    SetCorrectIQEnable(0);
+                    sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
                 } else {
-                   SetCorrectIQEnable(0);
-                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
+                    SetCorrectIQEnable(0);
+                    sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
                 }
             } else {
                 goto badcommand;
@@ -2133,40 +2211,40 @@ void readcb(struct bufferevent *bev, void *ctx){
             int ntok;
 
             if (slave) {
-                    sdr_log(SDR_LOG_INFO,"Setmaster: %s  txcfg: %d\n",message,txcfg);
-                    if ((ntok = tokenize_cmd(&saveptr, tokens, 2)) < 2)
-                        goto badcommand;
-                    if(txcfg == TXPASSWD){
-                        if (ntok == 2) {
-                            char *thisuser = tokens[0];
-                            char *thispasswd = tokens[1];
-                            if(chkPasswd(thisuser, thispasswd) == 0){ 
-                                sdr_log(SDR_LOG_INFO,"SetMaster allowed\n");
-                                sem_wait(&bufferevent_semaphore);
-                                TAILQ_REMOVE(&Client_list, current_item, entries);
-                                TAILQ_INSERT_HEAD(&Client_list, current_item, entries);
-                                sem_post(&bufferevent_semaphore);
-                            }else{
-                                sdr_log(SDR_LOG_INFO,"Setmaster denied because user %s password check failed!\n",thisuser);
-                            }
+                sdr_log(SDR_LOG_INFO,"Setmaster: %s  txcfg: %d\n",message,txcfg);
+                if ((ntok = tokenize_cmd(&saveptr, tokens, 2)) < 2)
+                    goto badcommand;
+                if(txcfg == TXPASSWD){
+                    if (ntok == 2) {
+                        char *thisuser = tokens[0];
+                        char *thispasswd = tokens[1];
+                        if(chkPasswd(thisuser, thispasswd) == 0){
+                            sdr_log(SDR_LOG_INFO,"SetMaster allowed\n");
+                            sem_wait(&bufferevent_semaphore);
+                            TAILQ_REMOVE(&Client_list, current_item, entries);
+                            TAILQ_INSERT_HEAD(&Client_list, current_item, entries);
+                            sem_post(&bufferevent_semaphore);
+                        }else{
+                            sdr_log(SDR_LOG_INFO,"Setmaster denied because user %s password check failed!\n",thisuser);
                         }
-                    }else if (txcfg == TXALL){
-                        sdr_log(SDR_LOG_INFO,"SetMaster allowed\n");
-                        sem_wait(&bufferevent_semaphore);
-                        TAILQ_REMOVE(&Client_list, current_item, entries);
-                        TAILQ_INSERT_HEAD(&Client_list, current_item, entries);
-                        sem_post(&bufferevent_semaphore);
-                    } else{
-                        fprintf(stderr,"Invalid SetMaster command: '%s'\n",message);
-                        fprintf(stderr,"... because txcfg is neither TXPASSWD nor TXALL\n");
                     }
+                }else if (txcfg == TXALL){
+                    sdr_log(SDR_LOG_INFO,"SetMaster allowed\n");
+                    sem_wait(&bufferevent_semaphore);
+                    TAILQ_REMOVE(&Client_list, current_item, entries);
+                    TAILQ_INSERT_HEAD(&Client_list, current_item, entries);
+                    sem_post(&bufferevent_semaphore);
+                } else{
+                    fprintf(stderr,"Invalid SetMaster command: '%s'\n",message);
+                    fprintf(stderr,"... because txcfg is neither TXPASSWD nor TXALL\n");
+                }
             }
         } else {
             fprintf(stderr,"Invalid command: '%s'\n",cmd);
         }
         continue;
 
-      badcommand:
+badcommand:
         sdr_log(SDR_LOG_INFO, "Invalid command token: '%s'\n", message);
     } // end while
 }
@@ -2180,15 +2258,24 @@ void client_set_samples(char* client_samples, float* samples,int size) {
     int offset;
     float rotated_samples[SAMPLE_BUFFER_SIZE];
 
-// g0orx binary header
+    // g0orx binary header
 
     client_samples[0]=SPECTRUM_BUFFER;
     client_samples[1]=HEADER_VERSION;
     client_samples[2]=HEADER_SUBVERSION;
     client_samples[3]=(size>>8)&0xFF;  // samples length
     client_samples[4]=size&0xFF;
-    client_samples[5]=((int)meter>>8)&0xFF; // main rx meter
-    client_samples[6]=(int)meter&0xFF;
+    if (sdr1000 && mox)  // added by KD0OSS
+    {
+//        printf("adc: %d\n", txfwd);
+        client_samples[5]=txfwd; // main sdr1000 forward power
+        client_samples[6]=txref;  // main sdr1000 reflected power
+    }
+    else
+    {
+        client_samples[5]=((int)meter>>8)&0xFF; // main rx meter
+        client_samples[6]=(int)meter&0xFF;
+    }
     client_samples[7]=((int)subrx_meter>>8)&0xFF; // sub rx meter
     client_samples[8]=(int)subrx_meter&0xFF;
     client_samples[9]=(sampleRate>>24)&0xFF; // sample rate
@@ -2202,20 +2289,20 @@ void client_set_samples(char* client_samples, float* samples,int size) {
 
     offset = (float)LO_offset * (float)SAMPLE_BUFFER_SIZE / (float) sampleRate;
     if (LO_offset != 0){
-        #pragma omp parallel for schedule(static) private(i,j)
+#pragma omp parallel for schedule(static) private(i,j)
         for (i = 0; i < SAMPLE_BUFFER_SIZE; i++){
-                j = i - offset;
-                if (j < 0) j += SAMPLE_BUFFER_SIZE;
-                if (j > SAMPLE_BUFFER_SIZE) j -= SAMPLE_BUFFER_SIZE;
-                rotated_samples[i] = samples[j];
+            j = i - offset;
+            if (j < 0) j += SAMPLE_BUFFER_SIZE;
+            if (j > SAMPLE_BUFFER_SIZE) j -= SAMPLE_BUFFER_SIZE;
+            rotated_samples[i] = samples[j];
         }
     } else {
-        #pragma omp parallel for schedule(static) private(i)
+#pragma omp parallel for schedule(static) private(i)
         for (i = 0; i < SAMPLE_BUFFER_SIZE; i++){
-                rotated_samples[i] = samples[i];
+            rotated_samples[i] = samples[i];
         }
     };
- 
+
     float zoom_factor = 1.0f + (float)zoom/25.0f;
     slope=(float)SAMPLE_BUFFER_SIZE/(float)size / zoom_factor;
     if(mox) {
@@ -2224,20 +2311,20 @@ void client_set_samples(char* client_samples, float* samples,int size) {
         extras=displayCalibrationOffset;
     }
 #pragma omp parallel shared(size, slope, samples, client_samples) private(max, i, lindex, rindex, j)
-  {
-    #pragma omp for schedule(static)
-    for(i=0;i<size;i++) {
-        max=-10000.0F;
-        lindex=(int)(((float)SAMPLE_BUFFER_SIZE/2 - (float)SAMPLE_BUFFER_SIZE/2.0f/zoom_factor) 
-                + floor((float)i*slope));
-        rindex=(int)floor(lindex+slope);
-        if(rindex>SAMPLE_BUFFER_SIZE) rindex=SAMPLE_BUFFER_SIZE;
-        for(j=lindex;j<=rindex;j++) {
-            if(rotated_samples[j]>max) max=rotated_samples[j];
+    {
+#pragma omp for schedule(static)
+        for(i=0;i<size;i++) {
+            max=-10000.0F;
+            lindex=(int)(((float)SAMPLE_BUFFER_SIZE/2 - (float)SAMPLE_BUFFER_SIZE/2.0f/zoom_factor)
+                         + floor((float)i*slope));
+            rindex=(int)floor(lindex+slope);
+            if(rindex>SAMPLE_BUFFER_SIZE) rindex=SAMPLE_BUFFER_SIZE;
+            for(j=lindex;j<=rindex;j++) {
+                if(rotated_samples[j]>max) max=rotated_samples[j];
+            }
+            client_samples[i+BUFFER_HEADER_SIZE]=(unsigned char)-(max+extras);
         }
-        client_samples[i+BUFFER_HEADER_SIZE]=(unsigned char)-(max+extras);
     }
-  }
 }
 
 
@@ -2261,136 +2348,136 @@ void printcountry(struct sockaddr_in *client){
 
 void *printcountrythread(void *arg)
 {
-  // looks for the country for the connecting IP
-  FILE *fp;
-  char path[1035];
-  char sCmd[255];
-  struct in_addr addr;
-  char ipstr[16];
+    // looks for the country for the connecting IP
+    FILE *fp;
+    char path[1035];
+    char sCmd[255];
+    struct in_addr addr;
+    char ipstr[16];
 
-  addr.s_addr = *(in_addr_t*)arg;
-  free(arg);
-  inet_ntop(AF_INET, (void *)&addr, ipstr, sizeof(ipstr));
-  /* Open the command for reading. */
-  sprintf(sCmd,"wget -q -O - --post-data 'ip=%s' http://www.selfseo.com/ip_to_country.php 2>/dev/null | sed -e '/ is assigned to /!d' -e 's/.*border=1> \\([^<]*\\).*/\\1/'",
-          ipstr);
-  fp = popen(sCmd, "r");
-  if (fp == NULL) {
-    fprintf(stdout,"Failed to run printcountry command\n" );
+    addr.s_addr = *(in_addr_t*)arg;
+    free(arg);
+    inet_ntop(AF_INET, (void *)&addr, ipstr, sizeof(ipstr));
+    /* Open the command for reading. */
+    sprintf(sCmd,"wget -q -O - --post-data 'ip=%s' http://www.selfseo.com/ip_to_country.php 2>/dev/null | sed -e '/ is assigned to /!d' -e 's/.*border=1> \\([^<]*\\).*/\\1/'",
+            ipstr);
+    fp = popen(sCmd, "r");
+    if (fp == NULL) {
+        fprintf(stdout,"Failed to run printcountry command\n" );
+        return NULL;
+    }
+
+    /* Read the output a line at a time - output it. */
+    fprintf(stdout,"\nIP %s is from ", ipstr);
+    while (fgets(path, sizeof(path)-1, fp) != NULL) {
+        fprintf(stdout,"%s",  path);
+    }
+
+    /* close */
+    pclose(fp);
+
     return NULL;
-  }
-
-  /* Read the output a line at a time - output it. */
-  fprintf(stdout,"\nIP %s is from ", ipstr);
-  while (fgets(path, sizeof(path)-1, fp) != NULL) {
-    fprintf(stdout,"%s",  path);
-  }
-
-  /* close */
-  pclose(fp);
-
-  return NULL;
 }
 
 void answer_question(char *message, char *clienttype, struct bufferevent *bev){
-	// reply = 4LLqqq:aaaa LL= length (limit 99 + header 3) followed by question : answer
-	char *reply; 
-	char answer[101]="xxx";
-	unsigned short length;
-	char len[10];
-	char *safeptr;
+    // reply = 4LLqqq:aaaa LL= length (limit 99 + header 3) followed by question : answer
+    char *reply;
+    char answer[101]="xxx";
+    unsigned short length;
+    char len[10];
+    char *safeptr;
 
-	if (strcmp(message,"q-version") == 0){
-		 strcat(answer,"q-version:");
-		 strcat(answer,version);
-	}else if (strcmp(message,"q-server") == 0){
-		 strcat(answer,"q-server:");
-		 strcat(answer,servername);
-		 if (txcfg == TXNONE){
-			 strcat(answer," N");
-		 }else if (txcfg == TXPASSWD){
-			 strcat(answer," P");
-		 }else{  // must be TXALL
-			 strcat(answer," Y");
-		 }
-	}else if (strcmp(message,"q-master") == 0){
-		 strcat(answer,"q-master:");
-		 strcat(answer,clienttype);
-	}else if (strcmp(message,"q-info") == 0){
-		 strcat(answer,"q-info:");
-		 if(strcmp(clienttype,"slave") == 0){
-		    strcat(answer,"s;0");
-		 }else{
-			strcat(answer,"s;1"); 
-		 }
-		 strcat(answer,";f;");
-		 char f[50];
-		 sprintf(f,"%lld;m;",lastFreq);
-		 strcat(answer,f);
-		 char m[50];
-		 sprintf(m,"%d;z;",lastMode);	
-		 strcat(answer,m);
-                 char z[50];
-                 sprintf(z,"%d;l;", zoom);
-                 strcat(answer,z);
-                 char l[50];
-                 sprintf(l,"%d;r;", low);       // Rx filter low
-                 strcat(answer,l);              // Rx filter high
-                 char h[50];
-                 sprintf(h,"%d;", high);
-                 strcat(answer,h);
-	}else if (strcmp(message,"q-rtpport") == 0){
-		 strcat(answer,"q-rtpport:");
-		 char p[50];
-		 sprintf(p,"%d;",local_rtp_port);
-		 strcat(answer,p);
-	}else if (strncmp(message,"q-cantx",7) == 0){
-		 char delims[] = "#";
-		 char *result = NULL;
-         result = strtok_r( message, delims, &safeptr ); //returns q-cantx
-         if ( result != NULL )  result = strtok_r( NULL, delims, &safeptr ); // this should be call/user
-		 if ( result != NULL ){
-			 if (chkFreq(result,  lastFreq , lastMode) == 0){
-				 strcat(answer,"q-cantx:Y");
-			 }else{
-				 strcat(answer,"q-cantx:N");;
-			 } 
-		 }else{
-		    strcat(answer,"q-cantx:N");
-		 }
-	}else if (strcmp(message,"q-loffset") == 0){
-		 strcat(answer,"q-loffset:");
-		 char p[50];
-		 sprintf(p,"%f;",LO_offset);
-		 strcat(answer,p);
-		 //fprintf(stderr,"q-loffset: %s\n",answer);
-}else if (strcmp(message,"q-protocol3") == 0){
-		 strcat(answer,"q-protocol3:Y");
-        }else if (strstr(message, "OK")) {
-             strcat (answer, message);
-	}else{
-		fprintf(stderr,"Unknown question: %s\n",message);
-		return;
-	}
+    if (strcmp(message,"q-version") == 0){
+        strcat(answer,"q-version:");
+        strcat(answer,version);
+    }else if (strcmp(message,"q-server") == 0){
+        strcat(answer,"q-server:");
+        strcat(answer,servername);
+        if (txcfg == TXNONE){
+            strcat(answer," N");
+        }else if (txcfg == TXPASSWD){
+            strcat(answer," P");
+        }else{  // must be TXALL
+            strcat(answer," Y");
+        }
+    }else if (strcmp(message,"q-master") == 0){
+        strcat(answer,"q-master:");
+        strcat(answer,clienttype);
+    }else if (strcmp(message,"q-info") == 0){
+        strcat(answer,"q-info:");
+        if(strcmp(clienttype,"slave") == 0){
+            strcat(answer,"s;0");
+        }else{
+            strcat(answer,"s;1");
+        }
+        strcat(answer,";f;");
+        char f[50];
+        sprintf(f,"%lld;m;",lastFreq);
+        strcat(answer,f);
+        char m[50];
+        sprintf(m,"%d;z;",lastMode);
+        strcat(answer,m);
+        char z[50];
+        sprintf(z,"%d;l;", zoom);
+        strcat(answer,z);
+        char l[50];
+        sprintf(l,"%d;r;", low);       // Rx filter low
+        strcat(answer,l);              // Rx filter high
+        char h[50];
+        sprintf(h,"%d;", high);
+        strcat(answer,h);
+    }else if (strcmp(message,"q-rtpport") == 0){
+        strcat(answer,"q-rtpport:");
+        char p[50];
+        sprintf(p,"%d;",local_rtp_port);
+        strcat(answer,p);
+    }else if (strncmp(message,"q-cantx",7) == 0){
+        char delims[] = "#";
+        char *result = NULL;
+        result = strtok_r( message, delims, &safeptr ); //returns q-cantx
+        if ( result != NULL )  result = strtok_r( NULL, delims, &safeptr ); // this should be call/user
+        if ( result != NULL ){
+            if (chkFreq(result,  lastFreq , lastMode) == 0){
+                strcat(answer,"q-cantx:Y");
+            }else{
+                strcat(answer,"q-cantx:N");;
+            }
+        }else{
+            strcat(answer,"q-cantx:N");
+        }
+    }else if (strcmp(message,"q-loffset") == 0){
+        strcat(answer,"q-loffset:");
+        char p[50];
+        sprintf(p,"%f;",LO_offset);
+        strcat(answer,p);
+        //fprintf(stderr,"q-loffset: %s\n",answer);
+    }else if (strcmp(message,"q-protocol3") == 0){
+        strcat(answer,"q-protocol3:Y");
+    }else if (strstr(message, "OK")) {
+        strcat (answer, message);
+    }else{
+        fprintf(stderr,"Unknown question: %s\n",message);
+        return;
+    }
 
-	answer[0] = '4';  //ANSWER_BUFFER
-	length = strlen(answer) - 3; // 
-	if (length > 99){
-	   fprintf(stderr,"Oversize reply!!: %s = %u\n",message, length);
-	   return;
-	}
+    answer[0] = '4';  //ANSWER_BUFFER
+    length = strlen(answer) - 3; //
+    if (length > 99){
+        fprintf(stderr,"Oversize reply!!: %s = %u\n",message, length);
+        return;
+    }
 
-	sprintf(len,"%02u", length);
-	answer[1] = len[0];
-	answer[2] = len[1];
+    sprintf(len,"%02u", length);
+    answer[1] = len[0];
+    answer[2] = len[1];
 
-	reply = (char *) malloc(length+4);		// need to include the terminating null
-	memcpy(reply, answer, length+4);
-	bufferevent_write(bev, reply, strlen(answer) );
+    reply = (char *) malloc(length+4);		// need to include the terminating null
+    memcpy(reply, answer, length+4);
+    bufferevent_write(bev, reply, strlen(answer) );
 
-        free(reply);
+    free(reply);
 }
 
 void printversion(){
-	 fprintf(stderr,"dspserver string: %s\n",version);
+    fprintf(stderr,"dspserver string: %s\n",version);
 }

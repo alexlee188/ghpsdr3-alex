@@ -54,40 +54,40 @@ int process_args(int argc,char* argv[]) {
     int i;
     while((i=getopt_long(argc,argv,short_options,long_options,&option_index))!=EOF) {
         switch(i) {
-            case 0: //rfe
-                rfe=atoi(optarg);
-                if (rfe == 99) return 99; //power off radio   kd0oss added
-                break;
-            case 1: //pa
-                pa=atoi(optarg);
-                break;
-            case 2: //lpt_addr
-                lpt_addr=strtol(optarg,NULL,16);
-                break;
-            case 3: //usb
-                usb=atoi(optarg);
-                break;
-            case 4: //samplerate
-                sdr1000_set_sample_rate(atoi(optarg));
-                break;
-            case 5: //device
-                sdr1000_set_device(optarg);
-                break;
-            case 6: //input
-                sdr1000_set_input(optarg);
-                break;
-            case 7: //output
-                sdr1000_set_output(optarg);
-                break;
-            case 8: //freq cal offset kd0oss added
-                sdr1000_set_frequency_offset(optarg);
-                caloffset = atol(optarg);
-                break;
-            default:
-                fprintf(stderr,"Usage:\n");
-                fprintf(stderr,"    sdr1000server [--rfe 0|1] [--pa 0|1] [--lptaddr <hex addess>] [--usb 0|1]\n");
-                return -1;
-                break;
+        case 0: //rfe
+            rfe=atoi(optarg);
+            if (rfe == 99) return 99; //power off radio   kd0oss added
+            break;
+        case 1: //pa
+            pa=atoi(optarg);
+            break;
+        case 2: //lpt_addr
+            lpt_addr=strtol(optarg,NULL,16);
+            break;
+        case 3: //usb
+            usb=atoi(optarg);
+            break;
+        case 4: //samplerate
+            sdr1000_set_sample_rate(atoi(optarg));
+            break;
+        case 5: //device
+            sdr1000_set_device(optarg);
+            break;
+        case 6: //input
+            sdr1000_set_input(optarg);
+            break;
+        case 7: //output
+            sdr1000_set_output(optarg);
+            break;
+        case 8: //freq cal offset kd0oss added
+            sdr1000_set_frequency_offset(optarg);
+            caloffset = atol(optarg);
+            break;
+        default:
+            fprintf(stderr,"Usage:\n");
+            fprintf(stderr,"    sdr1000server [--rfe 0|1] [--pa 0|1] [--lptaddr <hex addess>] [--usb 0|1]\n");
+            return -1;
+            break;
         }
     }
     return 0;
@@ -152,6 +152,6 @@ unsigned char SDR1000_get_pa_adc(unsigned char channel) //kd0oss added
 {
     return sdr1000->PA_ReadADC(channel);
 }
- 
+
 
 

@@ -82,7 +82,7 @@ void* listener_thread(void* arg) {
         exit(1);
     }
 
-fprintf(stderr,"Listening for TCP connections on port %d\n",LISTEN_PORT);
+    fprintf(stderr,"Listening for TCP connections on port %d\n",LISTEN_PORT);
 
     while(1) {
 
@@ -100,8 +100,8 @@ fprintf(stderr,"Listening for TCP connections on port %d\n",LISTEN_PORT);
             exit(1);
         }
         
-fprintf(stderr,"client socket %d\n",client->socket);
-fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
+        fprintf(stderr,"client socket %d\n",client->socket);
+        fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
 
         rc=pthread_create(&client->thread_id,NULL,client_thread,(void *)client);
         if(rc<0) {

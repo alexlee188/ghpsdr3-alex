@@ -41,6 +41,8 @@ typedef struct _client {
     int bs_port;
 } CLIENT;
 
+int mox;
+
 #ifdef __cplusplus
  extern "C" {
 #endif

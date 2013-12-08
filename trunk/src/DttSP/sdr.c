@@ -980,7 +980,7 @@ no_squelch (int k, unsigned int thread)
 PRIVATE void
 no_tx_squelch (unsigned int thread)
 {
-	int i, m = tx[thread].squelch.num, n = CXBhave (tx[thread].buf.i);
+    int i, m = tx[thread].squelch.num; //, n = CXBhave (tx[thread].buf.i);
 	int l = (((int) tx[thread].squelch.atten) * m) / 100;
 
 	if (tx[thread].squelch.running)
@@ -1287,11 +1287,11 @@ PRIVATE REAL mic_avg = 0.0f, mic_pk = 0.0f,
 	cpdr_avg = 0.0f, cpdr_pk = 0.0f;
 
 /* pre-condition for (nearly) all TX modes */
-PRIVATE REAL peaksmooth = 0.0;
+//PRIVATE REAL peaksmooth = 0.0;
 PRIVATE void
 do_tx_meter (unsigned int thread, CXB buf, TXMETERTYPE mt)
 {
-	COMPLEX *vec = CXBbase (buf);
+//	COMPLEX *vec = CXBbase (buf);
 	int i, len = CXBhave (buf);
 	REAL tmp = 0.0f;
 
@@ -1536,7 +1536,7 @@ do_tx_post (unsigned int thread)
 PRIVATE void
 do_tx_SBCW (unsigned int thread)
 {
-	int n = min (CXBhave (tx[thread].buf.i), uni[thread].buflen);
+//	int n = min (CXBhave (tx[thread].buf.i), uni[thread].buflen);
 
 	//fprintf(stderr,"[%.2f,%.2f]  ", peakl(tx[thread].buf.i), peakr(tx[thread].buf.i));
 	if (tx[thread].mode != DSB)

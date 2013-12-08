@@ -81,6 +81,8 @@ extern void SetThreadCom(int thread);
 extern void Audio_Callback (float *input_l, float *input_r, float *output_l,
                             float *output_r, unsigned int nframes, int thread);
 
+extern void Audio_Callback2(float **input, float **output, unsigned int nframes);
+
 /* --------------------------------------------------------------------------*/
 /** 
 * @brief Process the spectrum 

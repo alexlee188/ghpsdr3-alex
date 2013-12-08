@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   ozy.c
  * Author: jm57878
  *
@@ -35,7 +35,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <errno.h>
- 
+
 #include "ozy.h"
 #include "dttsp.h"
 #include "audiostream.h"
@@ -166,10 +166,6 @@ static int port_audio=0;
 SRC_STATE *sr_state;
 double src_ratio;
 
-
-
-
-
 void dump_udp_buffer(unsigned char* buffer);
 
 void* iq_thread(void* arg) {
@@ -180,7 +176,7 @@ void* iq_thread(void* arg) {
     int on=1;
 
     sdr_thread_register("iq_thread");
-fprintf(stderr,"iq_thread\n");
+    fprintf(stderr,"iq_thread\n");
 
     // create a socket to receive iq from the server
     iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
@@ -217,11 +213,15 @@ fprintf(stderr,"iq_thread\n");
                 exit(1);
             }
 
-//fprintf(stderr, "Fwd: %d  Ref: %d\n", buffer.adc[0], buffer.adc[1]);
-	    if(ozy_debug) {
-		fprintf(stderr,"rcvd UDP packet: sequence=%lld offset=%d length=%d\n",
-			buffer.sequence, buffer.offset, buffer.length);
-	    }
+            // SDR-1000 PA ADC values : added by KD0OSS
+            //    fprintf(stderr, "Fwd: %d  Ref: %d\n", buffer.adc[0], buffer.adc[1]);
+            txfwd = buffer.adc[0];
+            txref = buffer.adc[1];
+
+            if(ozy_debug) {
+                fprintf(stderr,"rcvd UDP packet: sequence=%lld offset=%d length=%d\n",
+                        buffer.sequence, buffer.offset, buffer.length);
+            }
 
             if(buffer.offset==0) {
                 offset=0;
@@ -238,14 +238,14 @@ fprintf(stderr,"iq_thread\n");
                         break;
                     }
                 } else {
-			fprintf(stderr,"missing IQ frames\n");
+                    fprintf(stderr,"missing IQ frames\n");
                 }
             } // if(buffer.offset==0)
-	} // end while(1)
+        } // end while(1)
 #else
-	if (hpsdr)
-        	bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*3*4,0,(struct sockaddr*)&iq_addr,&iq_length);
-	else 	bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*2*4,0,(struct sockaddr*)&iq_addr,&iq_length);
+        if (hpsdr)
+            bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*3*4,0,(struct sockaddr*)&iq_addr,&iq_length);
+        else 	bytes_read=recvfrom(iq_socket,(char*)input_buffer,BUFFER_SIZE*2*4,0,(struct sockaddr*)&iq_addr,&iq_length);
         if(bytes_read<0) {
             perror("recvfrom socket failed for iq buffer");
             exit(1);
@@ -253,53 +253,53 @@ fprintf(stderr,"iq_thread\n");
 #endif
 
         Audio_Callback (input_buffer,&input_buffer[BUFFER_SIZE],
-                                output_buffer,&output_buffer[BUFFER_SIZE], buffer_size, 0);
+                        output_buffer,&output_buffer[BUFFER_SIZE], buffer_size, 0);
 
         // process the output with resampler
-           int rc;
-           int j, i;
-           float data_in [BUFFER_SIZE*2];
-           float data_out[BUFFER_SIZE*2];
-           SRC_DATA data;
+        int rc;
+        int j, i;
+        float data_in [BUFFER_SIZE*2];
+        float data_out[BUFFER_SIZE*2];
+        SRC_DATA data;
 
-           assert(buffer_size<=BUFFER_SIZE);
-	   #pragma omp parallel for schedule(static) private(j)
-           for (j=0; j < buffer_size; j++) {
-              data_in [j*2]   = output_buffer[j];              //left_samples[i];
-              data_in [j*2+1] = output_buffer[j+BUFFER_SIZE];  // right_samples[i];
-           }
+        assert(buffer_size<=BUFFER_SIZE);
+#pragma omp parallel for schedule(static) private(j)
+        for (j=0; j < buffer_size; j++) {
+            data_in [j*2]   = output_buffer[j];              //left_samples[i];
+            data_in [j*2+1] = output_buffer[j+BUFFER_SIZE];  // right_samples[i];
+        }
 
-           data.data_in = data_in;
-           data.input_frames = buffer_size ;
+        data.data_in = data_in;
+        data.input_frames = buffer_size ;
 
-           data.data_out = data_out;
-           data.output_frames = buffer_size ;
-           data.src_ratio = src_ratio;
-           data.end_of_input = 0;
+        data.data_out = data_out;
+        data.output_frames = buffer_size ;
+        data.src_ratio = src_ratio;
+        data.end_of_input = 0;
 
-           rc = src_process (sr_state, &data) ;
-           if (rc) {
-               fprintf (stderr,"SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
-           } else {
-               for (i=0;i < data.output_frames_gen;i++) {
-                  left_rx_sample=(short)(data.data_out[i*2]*32767.0);
-                  right_rx_sample=(short)(data.data_out[i*2+1]*32767.0);
-                  audio_stream_put_samples(left_rx_sample,right_rx_sample);
-                   }
-	   } // if (rc)
+        rc = src_process (sr_state, &data) ;
+        if (rc) {
+            fprintf (stderr,"SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
+        } else {
+            for (i=0;i < data.output_frames_gen;i++) {
+                left_rx_sample=(short)(data.data_out[i*2]*32767.0);
+                right_rx_sample=(short)(data.data_out[i*2+1]*32767.0);
+                audio_stream_put_samples(left_rx_sample,right_rx_sample);
+            }
+        } // if (rc)
 
 
         // send the audio back to the server.  This is for HPSDR hardware.
         if(hpsdr) {
-                if(mox) {
-                    Audio_Callback (&input_buffer[BUFFER_SIZE*2],&input_buffer[BUFFER_SIZE*2],
-                                    &output_buffer[BUFFER_SIZE*2],&output_buffer[BUFFER_SIZE*3], buffer_size, 1);
-                } else {
-                    for(j=0;j<buffer_size;j++) {
-                        output_buffer[(BUFFER_SIZE*2)+j]=output_buffer[(BUFFER_SIZE*3)+j]=0.0F;
-                    }
+            if(mox) {
+                Audio_Callback (&input_buffer[BUFFER_SIZE*2],&input_buffer[BUFFER_SIZE*2],
+                                &output_buffer[BUFFER_SIZE*2],&output_buffer[BUFFER_SIZE*3], buffer_size, 1);
+            } else {
+                for(j=0;j<buffer_size;j++) {
+                    output_buffer[(BUFFER_SIZE*2)+j]=output_buffer[(BUFFER_SIZE*3)+j]=0.0F;
                 }
-                ozy_send((unsigned char *)&output_buffer[0],sizeof(output_buffer),"ozy");
+            }
+            ozy_send((unsigned char *)&output_buffer[0],sizeof(output_buffer),"ozy");
         } // if (hpsdr)
     } // end while
 }
@@ -310,44 +310,53 @@ void ozy_send(unsigned char* data,int length,char* who) {
     unsigned short offset=0;
     int rc;
 
-//fprintf(stderr,"ozy_send: %s\n",who);
-sem_wait(&ozy_send_semaphore);
+    //fprintf(stderr,"ozy_send: %s\n",who);
+    sem_wait(&ozy_send_semaphore);
 #ifdef SMALL_PACKETS
-            // keep UDP packets to 512 bytes or less
-            //     8 bytes sequency number
-            //     2 byte offset
-            //     2 byte length
-            offset=0;
-            while(offset<length) {
-                buffer.sequence=tx_sequence;
+    if (sdr1000)  // added by KD0OSS
+    {  // Use large packets here to help prevent audio buffer underruns with sdr-1000 server
+        int bytes_written=sendto(audio_socket,data,length,0,(struct sockaddr *)&server_audio_addr,server_audio_length);
+        if(bytes_written<0) {
+            fprintf(stderr,"sendto audio failed: %d audio_socket=%d\n",bytes_written,audio_socket);
+            exit(1);
+        }
+        sem_post(&ozy_send_semaphore);
+        return;
+    }
+    // keep UDP packets to 512 bytes or less
+    //     8 bytes sequency number
+    //     2 byte offset
+    //     2 byte length
+    offset=0;
+    while(offset<length) {
+        buffer.sequence=tx_sequence;
 #ifndef __linux__
-                buffer.sequenceHi = 0L;
+        buffer.sequenceHi = 0L;
 #endif
-                buffer.offset=offset;
-                buffer.length=length-offset;
-                if(buffer.length>500) buffer.length=500;
-//fprintf(stderr,"ozy_send: %lld:%d:%d\n",buffer.sequence,buffer.offset,buffer.length);
-                memcpy((char*)&buffer.data[0],(char*)&data[offset],buffer.length);
-                rc=sendto(audio_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&server_audio_addr,server_audio_length);
-                if(rc<=0) {
-                    fprintf(stderr,"sendto audio (SMALL_PACKETS) failed: %d audio_socket=%d errno=%d\n",rc,audio_socket,errno);
-                    fprintf(stderr,"audio port is %d\n",ntohs(server_audio_addr.sin_port));
-                    perror("sendto failed for audio data");
-                    exit(1);
-                }
-                offset+=buffer.length;
-            }
-            tx_sequence++;
+        buffer.offset=offset;
+        buffer.length=length-offset;
+        if(buffer.length>500) buffer.length=500;
+     //   fprintf(stderr,"ozy_send: %d:%lld:%d:%d\n",length,buffer.sequence,buffer.offset,buffer.length);
+        memcpy((char*)&buffer.data[0],(char*)&data[offset],buffer.length);
+        rc=sendto(audio_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&server_audio_addr,server_audio_length);
+        if(rc<=0) {
+            fprintf(stderr,"sendto audio (SMALL_PACKETS) failed: %d audio_socket=%d errno=%d\n",rc,audio_socket,errno);
+            fprintf(stderr,"audio port is %d\n",ntohs(server_audio_addr.sin_port));
+            perror("sendto failed for audio data");
+            exit(1);
+        }
+        offset+=buffer.length;
+    }
+    tx_sequence++;
 
 #else
-                int bytes_written=sendto(audio_socket,data,length,0,(struct sockaddr *)&server_audio_addr,server_audio_length);
-                if(bytes_written<0) {
-                   fprintf(stderr,"sendto audio failed: %d audio_socket=%d\n",bytes_written,audio_socket);
-                   exit(1);
-                }
+    int bytes_written=sendto(audio_socket,data,length,0,(struct sockaddr *)&server_audio_addr,server_audio_length);
+    if(bytes_written<0) {
+        fprintf(stderr,"sendto audio failed: %d audio_socket=%d\n",bytes_written,audio_socket);
+        exit(1);
+    }
 #endif
-sem_post(&ozy_send_semaphore);
-
+    sem_post(&ozy_send_semaphore);
 }
 
 
@@ -361,7 +370,7 @@ sem_post(&ozy_send_semaphore);
 void send_command(char* command, char *response) {
     int rc;
 
-//fprintf(stderr,"send_command: command='%s'\n",command);
+    //fprintf(stderr,"send_command: command='%s'\n",command);
 
     sem_wait(&ozy_cmd_semaphore);
     rc=send(command_socket,command,strlen(command),0);
@@ -384,7 +393,7 @@ void send_command(char* command, char *response) {
         rc--;
     response[rc]=0;
 
-//fprintf(stderr,"send_command: response='%s'\n",response);
+    //fprintf(stderr,"send_command: response='%s'\n",response);
 }
 
 void* keepalive_thread(void* arg) {
@@ -411,11 +420,11 @@ int make_connection() {
         if(strcmp(token,"OK")==0) {
             token=strtok_r(NULL," ",&saveptr);
             if(token!=NULL) {
-		int sampleRate;
+                int sampleRate;
                 result=0;
                 sampleRate=atoi(token);
-		fprintf(stderr,"connect: sampleRate=%d\n",sampleRate);
-		setSpeed (sampleRate);
+                fprintf(stderr,"connect: sampleRate=%d\n",sampleRate);
+                setSpeed (sampleRate);
             } else {
                 fprintf(stderr,"invalid response to connect: %s\n",response);
                 result=1;
@@ -586,14 +595,14 @@ int ozySetOpenCollectorOutputs(char* state) {
 
 int ozySendStarCommand(char *command) {
     int result;
-    char buf[256]; 
+    char buf[256];
     char response[OZY_RESPONSE_SIZE];
 
     result=0;
     send_command(command+1, response);  // SKIP the leading '*'
     fprintf(stderr,"response to STAR message: [%s]\n",response);
-    snprintf (buf, sizeof(buf), "%s %s", command, response ); // insert a leading '*' in answer 
-    strcpy (command, buf);                                    // attach the answer              
+    snprintf (buf, sizeof(buf), "%s %s", command, response ); // insert a leading '*' in answer
+    strcpy (command, buf);                                    // attach the answer
     result=0;
 
     return result;
@@ -626,20 +635,20 @@ void getSpectrumSamples(char *samples) {
 * @param speed
 */
 void setSpeed(int s) {
-	fprintf(stderr,"setSpeed %d\n",s);
-	fprintf(stderr,"LO_offset %f\n",LO_offset);
+    fprintf(stderr,"setSpeed %d\n",s);
+    fprintf(stderr,"LO_offset %f\n",LO_offset);
 
-    	sampleRate=s;
+    sampleRate=s;
 
-	SetSampleRate((double)sampleRate);
+    SetSampleRate((double)sampleRate);
 
-	SetRXOsc(0,0, -LO_offset);
-	SetRXOsc(0,1, -LO_offset);
-	SetTXOsc(1, -LO_offset);
+    SetRXOsc(0,0, -LO_offset);
+    SetRXOsc(0,1, -LO_offset);
+    SetTXOsc(1, -LO_offset);
 
-	fprintf(stderr,"%s: %f\n", __FUNCTION__, (double) sampleRate);
-	ozy_set_src_ratio();
-	mic_src_ratio = (double) sampleRate/ 8000.0;
+    fprintf(stderr,"%s: %f\n", __FUNCTION__, (double) sampleRate);
+    ozy_set_src_ratio();
+    mic_src_ratio = (double) sampleRate/ 8000.0;
 }
 
 /* --------------------------------------------------------------------------*/
@@ -652,6 +661,8 @@ int ozy_init(const char *server_address) {
     int rc;
     struct hostent *h;
     int on=1;
+
+ //   sdr1000 = 0; //added by KD0OSS
 
     rc=sem_init(&ozy_send_semaphore,0,1);
     if(rc<0) {
@@ -677,7 +688,7 @@ int ozy_init(const char *server_address) {
         perror("ozy_init: create command socket failed");
         exit(1);
     }
-   
+
     setsockopt(command_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
     memset(&command_addr,0,command_length);
@@ -708,7 +719,7 @@ int ozy_init(const char *server_address) {
     audio_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     audio_addr.sin_port=htons(0);
 
-   if(bind(audio_socket,(struct sockaddr*)&audio_addr,audio_length)<0) {
+    if(bind(audio_socket,(struct sockaddr*)&audio_addr,audio_length)<0) {
         perror("ozy_init: bind socket failed for audio socket");
         exit(1);
     }
@@ -744,23 +755,23 @@ int ozy_init(const char *server_address) {
         exit(1);
     }
 
-        // create sample rate subobject
-        ozy_set_src_ratio();
-        int sr_error;
-        sr_state = src_new (
-                             //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
-                             //SRC_SINC_MEDIUM_QUALITY,
-                             SRC_SINC_FASTEST,
-                             //SRC_ZERO_ORDER_HOLD,
-                             //SRC_LINEAR,
-                             2, &sr_error
-                           ) ;
+    // create sample rate subobject
+    ozy_set_src_ratio();
+    int sr_error;
+    sr_state = src_new (
+                //SRC_SINC_BEST_QUALITY,  // NOT USABLE AT ALL on Atom 300 !!!!!!!
+                //SRC_SINC_MEDIUM_QUALITY,
+                SRC_SINC_FASTEST,
+                //SRC_ZERO_ORDER_HOLD,
+                //SRC_LINEAR,
+                2, &sr_error
+                ) ;
 
-        if (sr_state == 0) { 
-            fprintf (stderr, "ozy_init: SR INIT ERROR: %s\n", src_strerror (sr_error)); 
-        } else {
-            fprintf (stderr, "ozy_init: sample rate init successfully at ratio: %f\n", src_ratio); 
-        }
+    if (sr_state == 0) {
+        fprintf (stderr, "ozy_init: SR INIT ERROR: %s\n", src_strerror (sr_error));
+    } else {
+        fprintf (stderr, "ozy_init: sample rate init successfully at ratio: %f\n", src_ratio);
+    }
 
 
     // create a thread to listen for iq frames
@@ -773,7 +784,7 @@ int ozy_init(const char *server_address) {
 }
 
 void ozy_set_src_ratio(void){
-	src_ratio = (double)audiostream_conf.samplerate / ((double) sampleRate);
+    src_ratio = (double)audiostream_conf.samplerate / ((double) sampleRate);
 }
 
 /* --------------------------------------------------------------------------*/
@@ -783,7 +794,7 @@ void ozy_set_src_ratio(void){
 * @return 
 */
 void ozyClose() {
-/*
+    /*
     if(port_audio) {
         close_port_audio();
     }
@@ -848,5 +859,9 @@ void dump_udp_buffer(unsigned char* buffer) {
 
 void ozy_set_hpsdr() {
     hpsdr=1;
+}
+
+void ozy_set_sdr1000() {  // added by KD0OSS
+    sdr1000=1;
 }
 

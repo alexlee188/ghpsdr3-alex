@@ -42,7 +42,7 @@ typedef struct _receiver {
     int frequency_changed;
     long frequency;
     long freq_cal_offset;
-  //  unsigned char adc[2];  // Byte0 = Forward power, Byte1 = Reverse power. Added by KD0OSS
+    unsigned char adc[2];  // Byte0 = Forward power, Byte1 = Reverse power. Added by KD0OSS
     float input_buffer[BUFFER_SIZE*2];
     float output_buffer[(BUFFER_SIZE*2)]; // KD0OSS added +4
 } RECEIVER;
@@ -51,7 +51,7 @@ typedef struct _buffer {
     unsigned long long sequence;
     unsigned short offset;
     unsigned short length;
-  //  unsigned char adc[2];  // Byte0 = Forward power, Byte1 = Reverse power. Added by KD0OSS
+    unsigned char adc[2];  // Byte0 = Forward power, Byte1 = Reverse power. Added by KD0OSS
     unsigned char data[500];
 } BUFFER;
 

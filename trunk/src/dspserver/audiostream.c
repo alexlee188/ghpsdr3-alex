@@ -207,94 +207,94 @@ void audio_stream_put_samples(short left_sample,short right_sample) {
     /* FIXME: This really only applies once, at startup */
     if (!audio_buffer) {
         allocate_audio_buffer();
-	samples_per_frame = codec2_samples_per_frame( codec2 );
-	bits_per_frame = codec2_bits_per_frame( codec2 );
-	codec2_buffer = (short *) malloc( sizeof( short ) * samples_per_frame );
-	bits = (unsigned char *) malloc( sizeof( unsigned char ) * BITS_SIZE );
+        samples_per_frame = codec2_samples_per_frame( codec2 );
+        bits_per_frame = codec2_bits_per_frame( codec2 );
+        codec2_buffer = (short *) malloc( sizeof( short ) * samples_per_frame );
+        bits = (unsigned char *) malloc( sizeof( unsigned char ) * BITS_SIZE );
     }
 
     // samples are delivered at 48K or 8K depending on audiostream_conf.samplerate
     // codec2 encoding works only for 8K
 
-        int offset;
-        // use this sample and convert to a-law or PCM or codec2
-        if(as_conf_cache.channels==1) {
-            switch (as_conf_cache.encoding) {
-            default: /* ALAW */
-            case ENCODING_ALAW:
-                offset = audio_stream_buffer_insert + AUDIO_BUFFER_HEADER_SIZE;
-                audio_buffer[offset] = alaw((left_sample + right_sample) / 2);
-                break;
-            case ENCODING_PCM:
-                offset = audio_stream_buffer_insert * 2 + AUDIO_BUFFER_HEADER_SIZE;
-                /* PCM on the wire is always LE? */
-                audio_buffer[offset] = (left_sample/2 + right_sample/2) & 0xff;
-                audio_buffer[offset + 1] = (left_sample/2 + right_sample/2) >> 8;
-                break;
-            case ENCODING_CODEC2:
-                codec2_buffer[audio_stream_buffer_insert] = left_sample/2 + right_sample/2;
-                break;
-            }
-        } else {
-            switch (as_conf_cache.encoding) {
-            default: /* ALAW */
-            case ENCODING_ALAW:
-                offset = audio_stream_buffer_insert * 2 + AUDIO_BUFFER_HEADER_SIZE;
-                audio_buffer[offset] = alaw(left_sample);
-                audio_buffer[offset + 1] = alaw(right_sample);
-                break;
-            case ENCODING_PCM:
-                offset = audio_stream_buffer_insert * 4 + AUDIO_BUFFER_HEADER_SIZE;
-                audio_buffer[offset] = left_sample & 0x00ff;
-                audio_buffer[offset + 1] = left_sample >> 8;
-                audio_buffer[offset + 2] = right_sample & 0x00ff;
-                audio_buffer[offset + 3] = right_sample >> 8;
-                break;
-            }
+    int offset;
+    // use this sample and convert to a-law or PCM or codec2
+    if(as_conf_cache.channels==1) {
+        switch (as_conf_cache.encoding) {
+        default: /* ALAW */
+        case ENCODING_ALAW:
+            offset = audio_stream_buffer_insert + AUDIO_BUFFER_HEADER_SIZE;
+            audio_buffer[offset] = alaw((left_sample + right_sample) / 2);
+            break;
+        case ENCODING_PCM:
+            offset = audio_stream_buffer_insert * 2 + AUDIO_BUFFER_HEADER_SIZE;
+            /* PCM on the wire is always LE? */
+            audio_buffer[offset] = (left_sample/2 + right_sample/2) & 0xff;
+            audio_buffer[offset + 1] = (left_sample/2 + right_sample/2) >> 8;
+            break;
+        case ENCODING_CODEC2:
+            codec2_buffer[audio_stream_buffer_insert] = left_sample/2 + right_sample/2;
+            break;
         }
+    } else {
+        switch (as_conf_cache.encoding) {
+        default: /* ALAW */
+        case ENCODING_ALAW:
+            offset = audio_stream_buffer_insert * 2 + AUDIO_BUFFER_HEADER_SIZE;
+            audio_buffer[offset] = alaw(left_sample);
+            audio_buffer[offset + 1] = alaw(right_sample);
+            break;
+        case ENCODING_PCM:
+            offset = audio_stream_buffer_insert * 4 + AUDIO_BUFFER_HEADER_SIZE;
+            audio_buffer[offset] = left_sample & 0x00ff;
+            audio_buffer[offset + 1] = left_sample >> 8;
+            audio_buffer[offset + 2] = right_sample & 0x00ff;
+            audio_buffer[offset + 3] = right_sample >> 8;
+            break;
+        }
+    }
 
-	audio_stream_buffer_insert++;
+    audio_stream_buffer_insert++;
 
 
-	if ((as_conf_cache.encoding == ENCODING_CODEC2)
+    if ((as_conf_cache.encoding == ENCODING_CODEC2)
             && (audio_stream_buffer_insert == samples_per_frame))  {
-            codec2_encode(codec2, bits, codec2_buffer);
-            memcpy(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE+BITS_SIZE*codec2_count], bits, BITS_SIZE);
-            codec2_count++;
-	    audio_stream_buffer_insert = 0;
-            if (codec2_count >= NO_CODEC2_FRAMES){
-                audio_buffer[0]=AUDIO_BUFFER;
-
-// g0orx binary header
-		audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
-                audio_buffer[1]=HEADER_VERSION;
-                audio_buffer[2]=HEADER_SUBVERSION;
-                audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
-                audio_buffer[4]=audio_buffer_length&0xFF;
-		audio_stream_queue_add(audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
-		audio_buffer = NULL;	// now that the audio_buffer pointer has been added to queue
-		codec2_count = 0;
-		audio_stream_buffer_insert = 0;
-                //allocate_audio_buffer();
-            }
-        }
-
-        if ((as_conf_cache.encoding != ENCODING_CODEC2)
-           && (audio_stream_buffer_insert==as_conf_cache.bufsize)) {
+        codec2_encode(codec2, bits, codec2_buffer);
+        memcpy(&audio_buffer[AUDIO_BUFFER_HEADER_SIZE+BITS_SIZE*codec2_count], bits, BITS_SIZE);
+        codec2_count++;
+        audio_stream_buffer_insert = 0;
+        if (codec2_count >= NO_CODEC2_FRAMES){
             audio_buffer[0]=AUDIO_BUFFER;
-            audio_buffer_length = as_conf_cache.bufsize * as_conf_cache.channels;
-            if (as_conf_cache.encoding == ENCODING_PCM)
-                audio_buffer_length *= 2;
+
+            // g0orx binary header
+            audio_buffer_length = BITS_SIZE*NO_CODEC2_FRAMES;
             audio_buffer[1]=HEADER_VERSION;
             audio_buffer[2]=HEADER_SUBVERSION;
-            /* FIXME: htons */
             audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
             audio_buffer[4]=audio_buffer_length&0xFF;
             audio_stream_queue_add(audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
-	    audio_buffer = NULL;	// audio_buffer pointer has already been queued.
-            audio_stream_buffer_insert=0;
+            audio_buffer = NULL;	// now that the audio_buffer pointer has been added to queue
+            codec2_count = 0;
+            audio_stream_buffer_insert = 0;
             //allocate_audio_buffer();
         }
+    }
+
+    if ((as_conf_cache.encoding != ENCODING_CODEC2)
+            && (audio_stream_buffer_insert==as_conf_cache.bufsize)) {
+        audio_buffer[0]=AUDIO_BUFFER;
+        audio_buffer_length = as_conf_cache.bufsize * as_conf_cache.channels;
+        if (as_conf_cache.encoding == ENCODING_PCM)
+            audio_buffer_length *= 2;
+        audio_buffer[1]=HEADER_VERSION;
+        audio_buffer[2]=HEADER_SUBVERSION;
+        /* FIXME: htons */
+        audio_buffer[3]=(audio_buffer_length>>8)&0xFF;
+        audio_buffer[4]=audio_buffer_length&0xFF;
+        audio_stream_queue_add(audio_buffer, audio_buffer_length+AUDIO_BUFFER_HEADER_SIZE);
+        audio_buffer = NULL;	// audio_buffer pointer has already been queued.
+        audio_stream_buffer_insert=0;
+        //allocate_audio_buffer();
+    }
 }
 
 unsigned char alaw(short sample) {
@@ -304,7 +304,7 @@ unsigned char alaw(short sample) {
 void init_alaw_tables() {
     int i;
 
-/*
+    /*
     for (i = 0; i < 256; i++) {
         int input = i ^ 85;
         int mantissa = (input & 15) << 4;
@@ -316,7 +316,7 @@ void init_alaw_tables() {
         decodetable[i]=(short)value;
     }
 */
-    #pragma omp parallel for schedule(static) private(i)
+#pragma omp parallel for schedule(static) private(i)
     for(i=0;i<65536;i++) {
         short sample=(short)i;
 

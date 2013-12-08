@@ -69,7 +69,7 @@ typedef struct _buffer {
     unsigned long long sequence;
     unsigned short offset;
     unsigned short length;
- //   unsigned char adc[2];   // Byte0 = Forward power, Byte1 = Reverse power. Added by KD0OSS
+    unsigned char adc[2];   // Byte0 = Forward power, Byte1 = Reverse power. Added by KD0OSS
     unsigned char data[500];
 } BUFFER;
 
@@ -84,6 +84,11 @@ extern int receiver;
 extern double LO_offset;
 
 int hpsdr;
+/**  added by KD0OSS **/
+int sdr1000;
+unsigned char txfwd;
+unsigned char txref;
+/**********************/
 
 // values saved from last change to send to slaves
 long long lastFreq;
@@ -242,6 +247,7 @@ void setSpeed(int s);
 int ozySetRecord(char* state);
 
 void ozy_set_hpsdr();
+void ozy_set_sdr1000();
 
 #ifdef	__cplusplus
 }
