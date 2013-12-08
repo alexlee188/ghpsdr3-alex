@@ -462,6 +462,8 @@ void UI::loadSettings() {
     QSettings settings("G0ORX", "QtRadio");
     qDebug() << "loadSettings: " << settings.fileName();
 
+    widget.ctlFrame->loadSettings(&settings);
+//    Ctl.loadSettings(&settings);
     band.loadSettings(&settings);
     xvtr.loadSettings(&settings);
     configure.loadSettings(&settings);
@@ -523,7 +525,7 @@ void UI::saveSettings() {
     qDebug() << "saveSettings: " << settings.fileName();
 
   //  settings.clear();
-
+    widget.ctlFrame->saveSettings(&settings);
     configure.saveSettings(&settings);
     band.saveSettings(&settings);
     xvtr.saveSettings(&settings);

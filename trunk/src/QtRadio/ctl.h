@@ -48,6 +48,8 @@ public:
     void clearMoxBtn();
     void RigCtlTX(bool rigctlptt);
     int audioGain;
+    void loadSettings(QSettings* settings);
+    void saveSettings(QSettings* settings);
 
 signals:
 #if QT_VERSION < 0x050000 && !defined Q_MOC_RUN
