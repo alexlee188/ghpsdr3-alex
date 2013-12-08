@@ -1117,47 +1117,47 @@ void Configure::onRxAgcHangThreshChanged(int arg1) // KD0OSS
     emit agcHangThreshChanged(arg1);
 }
 
-void Configure::onLevelerStateChanged(int arg1)
+void Configure::onLevelerStateChanged(int arg1) // KD0OSS
 {
     emit levelerStateChanged(arg1);
 }
 
-void Configure::onLevelerMaxGainChanged(int arg1)
+void Configure::onLevelerMaxGainChanged(int arg1) // KD0OSS
 {
     emit levelerMaxGainChanged(arg1);
 }
 
-void Configure::onLevelerAttackChanged(int arg1)
+void Configure::onLevelerAttackChanged(int arg1) // KD0OSS
 {
     emit levelerAttackChanged(arg1);
 }
 
-void Configure::onLevelerDecayChanged(int arg1)
+void Configure::onLevelerDecayChanged(int arg1) // KD0OSS
 {
     emit levelerDecayChanged(arg1);
 }
 
-void Configure::onLevelerHangChanged(int arg1)
+void Configure::onLevelerHangChanged(int arg1) // KD0OSS
 {
     emit levelerHangChanged(arg1);
 }
 
-void Configure::onAlcStateChanged(int arg1)
+void Configure::onAlcStateChanged(int arg1) // KD0OSS
 {
     emit alcStateChanged(arg1);
 }
 
-void Configure::onAlcAttackChanged(int arg1)
+void Configure::onAlcAttackChanged(int arg1) // KD0OSS
 {
     emit alcAttackChanged(arg1);
 }
 
-void Configure::onAlcDecayChanged(int arg1)
+void Configure::onAlcDecayChanged(int arg1) // KD0OSS
 {
     emit alcDecayChanged(arg1);
 }
 
-void Configure::onAlcHangChanged(int arg1)
+void Configure::onAlcHangChanged(int arg1) // KD0OSS
 {
     emit alcHangChanged(arg1);
 }

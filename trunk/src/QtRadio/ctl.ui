@@ -19,41 +19,6 @@
   <property name="frameShadow">
    <enum>QFrame::Raised</enum>
   </property>
-  <widget class="QPushButton" name="btnMox">
-   <property name="geometry">
-    <rect>
-     <x>5</x>
-     <y>5</y>
-     <width>60</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="focusPolicy">
-    <enum>Qt::ClickFocus</enum>
-   </property>
-   <property name="text">
-    <string>MOX</string>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="btnTune">
-   <property name="geometry">
-    <rect>
-     <x>5</x>
-     <y>32</y>
-     <width>60</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Tune</string>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-  </widget>
   <widget class="QSlider" name="pwrSlider">
    <property name="geometry">
     <rect>
@@ -65,6 +30,9 @@
    </property>
    <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="toolTip">
+    <string>AM transmit power</string>
    </property>
    <property name="maximum">
     <number>100</number>
@@ -116,37 +84,11 @@
      <height>20</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>Mic audio display</string>
+   </property>
    <property name="value">
     <number>0</number>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="btnMaster">
-   <property name="geometry">
-    <rect>
-     <x>5</x>
-     <y>88</y>
-     <width>60</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Master</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="btnMute">
-   <property name="geometry">
-    <rect>
-     <x>5</x>
-     <y>62</y>
-     <width>60</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Mute</string>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
    </property>
   </widget>
   <widget class="QSlider" name="audioSlider">
@@ -157,6 +99,9 @@
      <width>160</width>
      <height>19</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string>Volume control</string>
    </property>
    <property name="minimum">
     <number>1</number>
@@ -189,6 +134,73 @@
    <property name="alignment">
     <set>Qt::AlignCenter</set>
    </property>
+  </widget>
+  <widget class="QWidget" name="widget" native="true">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>77</width>
+     <height>116</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>-1</number>
+    </property>
+    <item>
+     <widget class="QPushButton" name="btnMox">
+      <property name="focusPolicy">
+       <enum>Qt::ClickFocus</enum>
+      </property>
+      <property name="toolTip">
+       <string>Toggle transmit mode</string>
+      </property>
+      <property name="text">
+       <string>MOX</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="btnTune">
+      <property name="toolTip">
+       <string>Toggle tuning mode</string>
+      </property>
+      <property name="text">
+       <string>Tune</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="btnMute">
+      <property name="toolTip">
+       <string>Mute/Unmute audio</string>
+      </property>
+      <property name="text">
+       <string>Mute</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="btnMaster">
+      <property name="toolTip">
+       <string>Regain Master control</string>
+      </property>
+      <property name="text">
+       <string>Master</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <resources/>

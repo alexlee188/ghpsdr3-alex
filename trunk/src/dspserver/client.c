@@ -504,6 +504,7 @@ void* rtp_tx_thread(void *arg){
             continue;
         }
 
+<<<<<<< HEAD
         // resample to the sample rate
         data.data_in = (float*) item->buf;
         data.input_frames = TX_BUFFER_SIZE;
@@ -537,6 +538,33 @@ void* rtp_tx_thread(void *arg){
         sem_post(&mic_semaphore);
         free(item->buf);
         free(item);
+=======
+            rc = src_process (mic_sr_state, &data);
+            if (rc) {
+                fprintf (stderr,"rtp_tx_thread: SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
+            } else {
+                for (j=0;j< data.output_frames_gen;j++) {
+                    // tx_buffer is non-interleaved, LEFT followed by RIGHT data
+                    tx_buffer[iq_buffer_counter] = data_out[2*j];
+                    tx_buffer[iq_buffer_counter + TX_BUFFER_SIZE] = data_out[(2*j)+1];
+                    iq_buffer_counter++;
+                    if (iq_buffer_counter >= TX_BUFFER_SIZE) {
+                        // use DttSP to process Mic data into tx IQ
+                    	if (!hpsdr && mox) { // KD0OSS changed OR to AND
+                            Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
+                            // send Tx IQ to server, buffer is non-interleaved.
+                            ozy_send((unsigned char *)tx_IQ_buffer, sizeof(tx_IQ_buffer), "client");
+                        }
+                        iq_buffer_counter = 0;
+                    } // end iq_bufer_counter
+                } // end for j
+            } // end rc else
+ 	    sem_wait(&mic_semaphore);
+	    TAILQ_REMOVE(&Mic_rtp_stream, item, entries);
+	    sem_post(&mic_semaphore);
+	    free(item->buf);
+	    free(item);
+>>>>>>> 0a01ca6c22f5d9b369cd504eca48c2dad3827fde
     } // end while (1)
 }
 
@@ -604,6 +632,7 @@ void *tx_thread(void *arg){
                 for (j=0; j < MIC_ALAW_BUFFER_SIZE; j++){
                     data_in[j*2] = data_in[j*2+1] = (float)G711A_decode(item->buf[j])/32767.0;
                 }
+<<<<<<< HEAD
             }
             data.data_in = data_in;
             data.input_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
@@ -644,6 +673,45 @@ void *tx_thread(void *arg){
 
     codec2_destroy(mic_codec2);
   //  fclose(fp); //KD0OSS
+=======
+           }
+           data.data_in = data_in;
+           data.input_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
+                samples_per_frame : MIC_ALAW_BUFFER_SIZE;
+           data.data_out = data_out;
+           data.output_frames = (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2) ?
+	     samples_per_frame*24 : MIC_ALAW_BUFFER_SIZE*24 ;
+           data.src_ratio = mic_src_ratio;
+           data.end_of_input = 0;
+
+           rc = src_process (mic_sr_state, &data);
+           if (rc) {
+               fprintf (stderr,"SRATE: error: %s (rc=%d)\n", src_strerror (rc), rc);
+           } else {
+		for (i=0; i < data.output_frames_gen; i++){
+			// tx_buffer is non-interleaved, LEFT followed by RIGHT data
+			tx_buffer[tx_buffer_counter] = data_out[2*i];
+			tx_buffer[tx_buffer_counter + TX_BUFFER_SIZE] = data_out[2*i+1];
+			tx_buffer_counter++;
+			if (tx_buffer_counter >= TX_BUFFER_SIZE && mox){ // KD0OSS added AND mox
+				// use DttSP to process Mic data into tx IQ
+				Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
+				// send Tx IQ to server, buffer is non-interleaved.
+                                ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+				tx_buffer_counter = 0;
+			}
+		} // end for i
+	    } // end else rc
+	    sem_wait(&mic_semaphore);
+	    TAILQ_REMOVE(&Mic_audio_stream, item, entries);
+	    sem_post(&mic_semaphore);
+	    free(item->buf);
+	    free(item);
+	  } // end else item
+	} // end while
+
+	codec2_destroy(mic_codec2);
+>>>>>>> 0a01ca6c22f5d9b369cd504eca48c2dad3827fde
 }
 
 void client_set_timing() {
