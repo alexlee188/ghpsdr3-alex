@@ -226,7 +226,11 @@ int sdr1000_write(float* left_samples, float* right_samples)
     //  static float audio_buffer[SAMPLES_PER_BUFFER*2];
     float *buf[2];
 
+<<<<<<< HEAD
     //  if (!tx_mode) return 0;
+=======
+    if (!tx_mode) return 0;
+>>>>>>> 71add21e8ae7b7c060885b5929d314e2ad0865a2
 
     rc=0;
     buf[0] = left_samples;

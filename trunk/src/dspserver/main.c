@@ -79,7 +79,11 @@
 * 
 */
 
+<<<<<<< HEAD
 const char *version = "20130901;-master"; //YYYYMMDD; text desc
+=======
+const char *version = "20130929;-master"; //YYYYMMDD; text desc
+>>>>>>> 71add21e8ae7b7c060885b5929d314e2ad0865a2
 
 // main.c
 
@@ -127,10 +131,12 @@ enum {
     OPT_SDR1000,
     OPT_NOCORRECTIQ,
     OPT_DEBUG,
-    OPT_THREAD_DEBUG
+    OPT_THREAD_DEBUG,
+    OPT_HPSDRLOC
 };
 
 struct option longOptions[] = {
+<<<<<<< HEAD
 {"soundcard",required_argument, NULL, OPT_SOUNDCARD},
 {"receiver",required_argument, NULL, OPT_RECEIVER},
 {"server",required_argument, NULL, OPT_SERVER},
@@ -144,6 +150,21 @@ struct option longOptions[] = {
 {"sdr1000",no_argument, NULL, OPT_SDR1000},
 {"nocorrectiq",no_argument, NULL, OPT_NOCORRECTIQ},
 {"debug",no_argument, NULL, OPT_DEBUG},
+=======
+    {"soundcard",required_argument, NULL, OPT_SOUNDCARD},
+    {"receiver",required_argument, NULL, OPT_RECEIVER},
+    {"server",required_argument, NULL, OPT_SERVER},
+    {"offset",required_argument, NULL, OPT_OFFSET},
+    {"timing",no_argument, NULL, OPT_TIMING},
+    {"lookupcountry",no_argument, NULL, OPT_LOOKUPCOUNTRY},
+    {"share",no_argument, NULL, OPT_SHARE},
+    {"shareconfig",required_argument, NULL, OPT_SHARECONFIG},
+    {"lo",required_argument, NULL, OPT_LO},
+    {"hpsdr",no_argument, NULL, OPT_HPSDR},
+    {"nocorrectiq",no_argument, NULL, OPT_NOCORRECTIQ},
+    {"debug",no_argument, NULL, OPT_DEBUG},
+    {"hpsdrloc",no_argument, NULL, OPT_HPSDRLOC},
+>>>>>>> 71add21e8ae7b7c060885b5929d314e2ad0865a2
 #ifdef THREAD_DEBUG
 {"debug-threads",no_argument, NULL, OPT_THREAD_DEBUG},
 #endif /* THREAD_DEBUG */
@@ -166,6 +187,7 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
     int c;
     while((c=getopt_long(argc,argv,shortOptions,longOptions,NULL))!=-1) {
         switch(c) {
+<<<<<<< HEAD
         case OPT_SOUNDCARD:
             if (strlen(optarg) > sizeof(config->soundCardName) - 1) {
                 fprintf(stderr, "Warning: Sound card name will be truncated\n");
@@ -233,6 +255,75 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
             fprintf(stderr,"            --hpsdr (if using hpsdr hardware)\n");
             fprintf(stderr,"            --sdr1000 (if using Flex SDR-1000 hardware)\n");
             fprintf(stderr,"            --nocorrectiq (select if using non QSD receivers, like Perseus, HiQSDR, Mercury)\n");
+=======
+            case OPT_SOUNDCARD:
+                if (strlen(optarg) > sizeof(config->soundCardName) - 1) {
+                    fprintf(stderr, "Warning: Sound card name will be truncated\n");
+                }
+                strncpy(config->soundCardName,optarg,sizeof(config->soundCardName));
+                break;
+            case OPT_RECEIVER:
+                /* FIXME: global */
+                receiver=atoi(optarg);
+                break;
+            case OPT_SERVER:
+                /* FIXME: global */
+                if (strlen(optarg) > sizeof(config->server_address) - 1) {
+                    fprintf(stderr, "Warning: server address will be truncated\n");
+                }
+                strncpy(config->server_address, optarg, sizeof(config->server_address));
+                break;
+            case OPT_OFFSET:
+                config->offset=atoi(optarg);
+                break;
+            case OPT_TIMING:
+                client_set_timing();
+                break;
+            case OPT_LOOKUPCOUNTRY:
+                setprintcountry();
+                break;
+            case OPT_SHARE:
+                toShareOrNotToShare = 1;
+                break;
+            case OPT_SHARECONFIG:
+                if (strlen(optarg) > sizeof(config->share_config_file) - 1) {
+                    fprintf(stderr, "Warning: share config file path is too long for this system\n");
+                }
+                strncpy(config->share_config_file,optarg, sizeof(config->share_config_file));
+                break;
+            case OPT_LO:
+                /* global */
+                LO_offset=atoi(optarg);
+                break;
+            case OPT_HPSDR:
+                ozy_set_hpsdr();
+                break;
+            case OPT_HPSDRLOC:
+                ozy_set_hpsdr_local();
+                break;
+            case OPT_NOCORRECTIQ:
+                config->no_correct_iq = 1;
+                break;
+            case OPT_DEBUG:
+                ozy_set_debug(1);
+                break;
+            case OPT_THREAD_DEBUG:
+                config->thread_debug = 1;
+                break;
+
+       default:
+                fprintf(stderr,"Usage: \n");
+                fprintf(stderr,"  dspserver --receiver N (default 0)\n");
+                fprintf(stderr,"            --server 0.0.0.0 (default 127.0.0.1)\n");
+                fprintf(stderr,"            --soundcard (machine dependent)\n");
+                fprintf(stderr,"            --offset 0 \n");
+                fprintf(stderr,"            --share (will register this server for other users \n");
+                fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
+		fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
+		fprintf(stderr,"            --hpsdr (if using hpsdr hardware with no local mike and headphone)\n");
+		fprintf(stderr,"            --hpsdrloc (if using hpsdr hardware with LOCAL mike and headphone)\n");
+		fprintf(stderr,"            --nocorrectiq (select if using non QSD receivers, like Hermes, Perseus, HiQSDR, Mercury)\n");
+>>>>>>> 71add21e8ae7b7c060885b5929d314e2ad0865a2
 #ifdef THREAD_DEBUG
             fprintf(stderr,"            --debug-threads (enable threading assertions)\n");
 #endif /* THREAD_DEBUG */
@@ -300,20 +391,38 @@ int main(int argc,char* argv[]) {
     reset_for_buflen(0,1024);
     reset_for_buflen(1,1024);
 
-    client_init(receiver);
+    client_init(receiver);        // create the main thread responsible for listen TCP socket
+                                  // on the read callback:
+                                  //    accept and interpret the commands from remote GUI  
+                                  //    parse mic data from remote and enque them into Mic_audio_stream queue
+                                  //    see client.c
+                                  //
+                                  // on the write callback:
+                                  //    read the audio_stream_queue and send into the TCP socket
+                                  //
     audio_stream_init(receiver);
     audio_stream_reset();
 
     codec2 = codec2_create(CODEC2_MODE_3200);
     G711A_init();
-    ozy_init(config.server_address);
-
+    ozy_init(config.server_address);   // create and starts iq_thread in ozy.c in order to
+                                       // receive iq stream from hardware server
+                                       // process it in DttSP
+                                       // makes the sample rate adaption for resulting audio
+                                       // puts audio stream in a queue (via calls to audio_stream_queue_add 
+                                       // in audio_stream_put_samples() in audiostream.c)
+                                       //
+                                       // in case of HPSDR hardware (that is provided with a local D/A converter
+                                       // sends via ozy_send() the audio back to the hardware server
     SetMode(1, 0, USB);
     SetTXFilter(1, 150, 2850);
     SetTXOsc(1, LO_offset);
     SetTXAMCarrierLevel(1, 0.5);
 
-    tx_init();	// starts the tx_thread
+    tx_init();	// create and starts the tx_thread (see client.c)
+                // the tx_thread reads the Mic_audio_stream queue, makes the sample rate adaption
+                // process the data into DttSP in order to get the modulation process done,
+                // and sends back to the hardware server process (via ozy_send() )
 
 #ifdef THREAD_DEBUG
     /* Note that some thread interactions will be lost at startup due to

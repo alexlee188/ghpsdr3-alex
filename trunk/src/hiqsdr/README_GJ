@@ -16,23 +16,21 @@ The configuration file is saved in the home directory of the user as hiqsdr.cfg 
 0!2000000!FILTER BYPASS
 2!3500000!80 M
 0!4000000!FILTER BYPASS
-3!5000000!60 M
-0!5100000!FILTER BYPASS
-4!7000000!40 M
+3!7000000!40 M
 0!7300000!FILTER BYPASS
-5!10100000!30M
+4!10100000!30M
 0!10150000!FILTER BYPASS
-6!14000000!20 M
+5!14000000!20 M
 0!14350000!FILTER BYPASS
-7!18068000!17 M
+6!18068000!17 M
 0!18168000!FILTER BYPASS
-8!21000000!15 M
+7!21000000!15 M
 0!21450000!FILTER BYPASS
-9!24890000!12 M
+8!24890000!12 M
 0!24990000!FILTER BYPASS
-10!28000000!10 M
+9!28000000!10 M
 0!29700000!FILTER BYPASS
-11!51000000!6 M
+10!51000000!6 M
 0!53000000!FILTER BYPASS
 
 Lines beginning with # are ignored by the parser and are used for user comments and version numbers etc. The example shown is the default template if no .cfg exists.
@@ -48,7 +46,7 @@ Each time a frequency change is made the filter is checked to see if it still co
 
 As set up the default table assumes a filter for each band and that the through filter (filter bypass) will be used if not in the range of a ham band filter. Your own filter setup may be for continuous filter coverage or wider filters than shown and it will be necessary to edit the table. The last entry should always be set to filter bypass.
 
-Assuming 1.5 octave filters starting at 1.8 MHz for continuous coverage plus a 6 M filter the table would look as follows ...
+Assuming .75 octave filters starting at 1.8 MHz for continuous coverage plus a 6 M filter the table would look as follows ...
 
 0!0!FILTER BYPASS
 1!1800000!160 M

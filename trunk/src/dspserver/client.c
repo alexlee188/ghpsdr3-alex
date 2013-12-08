@@ -105,7 +105,7 @@ static int low,high;            // filter low/high
 // same as BUFFER_SIZE defined in softrock server
 // format is float left_buffer[BUFFER_SIZE] followed by right_buffer[BUFFER_SIZE] non-interleaved
 static float tx_buffer[TX_BUFFER_SIZE*2];
-static float tx_IQ_buffer[TX_BUFFER_SIZE*2];
+static float tx_IQ_buffer[TX_BUFFER_SIZE*4];
 
 static int samples_per_frame, bits_per_frame;
 
@@ -570,6 +570,7 @@ void* rtp_tx_thread(void *arg){
 
 
 void *tx_thread(void *arg){
+<<<<<<< HEAD
     unsigned char *bits;
     struct audio_entry *item;
     // short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
@@ -608,6 +609,45 @@ void *tx_thread(void *arg){
     }
 
     sdr_thread_register("tx_thread");
+=======
+   unsigned char *bits;
+   struct audio_entry *item;
+   // short codec2_buffer[CODEC2_SAMPLES_PER_FRAME];
+   short *codec2_buffer;  // samples_per_frame is  now a variable
+   int tx_buffer_counter = 0;
+   int rc;
+   int j, i;
+
+   // #if CODEC2_SAMPLES_PER_FRAME > MIC_ALAW_BUFFER_SIZE
+   //    float data_in [CODEC2_SAMPLES_PER_FRAME*2];		// stereo
+   //    float data_out[CODEC2_SAMPLES_PER_FRAME*2*24];	// 192khz/8khz
+   // #else
+   //    float data_in [MIC_ALAW_BUFFER_SIZE*2];		// stereo
+   //    float data_out[MIC_ALAW_BUFFER_SIZE*2*24];	        // 192khz/8khz
+   // #endif
+   float *data_in, *data_out;
+
+   SRC_DATA data;
+   void *mic_codec2 = (void *) codec2_create(CODEC2_MODE_3200);
+
+   samples_per_frame = codec2_samples_per_frame( (struct CODEC2 *) mic_codec2 );
+   bits_per_frame = codec2_bits_per_frame( (struct CODEC2 *) mic_codec2 );
+
+   codec2_buffer = (short *) malloc( sizeof( short ) * samples_per_frame );
+
+   if (samples_per_frame > MIC_ALAW_BUFFER_SIZE) {
+     data_in = (float *) malloc( sizeof( float ) * samples_per_frame * 2 );
+     data_out = (float *) malloc( sizeof( float ) * samples_per_frame * 24 );
+   }
+   else {
+     data_in = (float *) malloc( sizeof( float ) * MIC_ALAW_BUFFER_SIZE * 2 );
+     data_out = (float *) malloc( sizeof( float ) * MIC_ALAW_BUFFER_SIZE * 24 );
+   }
+
+   sdr_log(SDR_LOG_INFO, "tx_thread STARTED\n");
+
+   sdr_thread_register("tx_thread");
+>>>>>>> 71add21e8ae7b7c060885b5929d314e2ad0865a2
 
     while (1){
         sem_wait(&mic_semaphore);
@@ -693,11 +733,30 @@ void *tx_thread(void *arg){
 			tx_buffer[tx_buffer_counter] = data_out[2*i];
 			tx_buffer[tx_buffer_counter + TX_BUFFER_SIZE] = data_out[2*i+1];
 			tx_buffer_counter++;
+<<<<<<< HEAD
 			if (tx_buffer_counter >= TX_BUFFER_SIZE && mox){ // KD0OSS added AND mox
 				// use DttSP to process Mic data into tx IQ
 				Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
 				// send Tx IQ to server, buffer is non-interleaved.
                                 ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+=======
+			if (tx_buffer_counter >= TX_BUFFER_SIZE){
+
+				if (hpsdr && !hpsdr_local) {             
+					memset (tx_IQ_buffer, 0, sizeof(tx_IQ_buffer));
+					// use DttSP to process Mic data into tx IQ
+					Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], &tx_IQ_buffer[TX_BUFFER_SIZE*2], &tx_IQ_buffer[TX_BUFFER_SIZE*3], TX_BUFFER_SIZE, 1);
+					// send Tx IQ to server, buffer is non-interleaved.
+					if (mox) {
+						ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+					}
+				} else if (!hpsdr) {
+					// use DttSP to process Mic data into tx IQ
+					Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], &tx_IQ_buffer[TX_BUFFER_SIZE*0], &tx_IQ_buffer[TX_BUFFER_SIZE*1], TX_BUFFER_SIZE, 1);
+					// send Tx IQ to server, buffer is non-interleaved.
+					ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+				}
+>>>>>>> 71add21e8ae7b7c060885b5929d314e2ad0865a2
 				tx_buffer_counter = 0;
 			}
 		} // end for i

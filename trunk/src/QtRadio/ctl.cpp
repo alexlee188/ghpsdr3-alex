@@ -31,8 +31,13 @@ Ctl::Ctl(QWidget *parent) :
 {
     ui->setupUi(this);
 
+<<<<<<< HEAD
     moxPwr = 80;
     TunePwr = 50;
+=======
+    moxPwr = 100;
+    TunePwr = 0;
+>>>>>>> 71add21e8ae7b7c060885b5929d314e2ad0865a2
     audioGain = 100;
     ui->audioSlider->setValue(audioGain);
     ui->pwrSlider->setValue(moxPwr);
@@ -120,6 +125,8 @@ void Ctl::HideTX(bool cantx){
         ui->btnTune->setEnabled(false);
     }
 }
+
+
 /*
 void Ctl::on_checkBox_stateChanged(int arg1)
 {
@@ -175,8 +182,26 @@ void Ctl::RigCtlTX(bool rigctlptt){
         on_btnMox_clicked(true);
     }else{
         on_btnMox_clicked(false);
-    }
+      }
 }
+
+void Ctl::loadSettings(QSettings *settings)
+{
+    settings->beginGroup("Ctl");
+    moxPwr = settings->value("moxPwr",100).toInt();
+    TunePwr = settings->value("tunePwr",0).toInt();
+    settings->endGroup();
+}
+
+void Ctl::saveSettings(QSettings *settings)
+{
+    settings->beginGroup("Ctl");
+    settings->setValue("moxPwr", moxPwr);
+    settings->setValue("tunePwr", TunePwr);
+    settings->endGroup();
+}
+
+
 
 void Ctl::on_btnMaster_clicked()
 {

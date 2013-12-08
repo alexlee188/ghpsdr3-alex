@@ -34,7 +34,7 @@
 #if QT_VERSION >= 0x050000
 #include <QtWidgets/QComboBox>
 #else
-#include <QtGui/QComboBox>
+#include <QComboBox>
 #endif
 
 #include <QMutex>
@@ -52,8 +52,11 @@
 #define BIGENDIAN
 // There are problems running at 8000 samples per second on Mac OS X
 // The resolution is to run at 8011 samples persecond.
-#define SAMPLE_RATE_FUDGE 11
-//#define SAMPLE_RATE_FUDGE 0
+//
+// Update: KD0NUZ - June 28, 2013, OSX 10.8.4 - Crashes with FUDGE > 0
+//
+//#define SAMPLE_RATE_FUDGE 11
+#define SAMPLE_RATE_FUDGE 0
 
 class Audio;
 
@@ -147,6 +150,7 @@ public slots:
 private:
     QAudioFormat     audio_format;
     QAudioOutput*    audio_output;
+    bool             connected;
     QThread* audio_output_thread;
     QAudioDeviceInfo audio_device;
     Audio_playback*  audio_out;

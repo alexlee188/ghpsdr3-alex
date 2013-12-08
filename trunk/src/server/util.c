@@ -92,7 +92,6 @@ void dump_udp_buffer(unsigned char* buffer) {
 }
 
 void dump_metis_buffer(char* prefix,int frame,unsigned char* buffer) {
-    int i;
     fprintf(stderr, "%s header\n",prefix);
     fprintf(stderr, "  %02X%02X%02X%02X%02X%02X%02X%02X\n",
                 buffer[0],buffer[1],buffer[2],buffer[3],

@@ -87,6 +87,12 @@ esac
 dnl # library (in DttSP) used but `RANLIB' is undefined:  the usual way to define `RANLIB' is to add `AC_PROG_RANLIB'
 dnl #AC_PROG_RANLIB
 
+case $host in
+*-linux*)
+   CFLAGS="$CFLAGS -I/usr/include/libusb-1.0/"
+   ;;
+esac
+
 
 #
 # Check for compilation options which affect debugging
@@ -277,7 +283,7 @@ if test "x${have_config}" = xno; then
 fi
 
 if test "x${have_usb10}" = xyes; then
-    AC_CHECK_HEADERS([libusb-1.0/libusb.h], [], [have_usb10=no])
+    AC_CHECK_HEADERS([libusb.h], [], [have_usb10=no])
 fi
 
 if test "x${have_usb10}" = xno; then

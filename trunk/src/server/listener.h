@@ -24,6 +24,11 @@
 *
 */
 
+#ifndef __LISTENER_H_
+#define __LISTENER_H_
+
 #define LISTEN_PORT 11000
 
 void create_listener_thread();
+
+#endif
