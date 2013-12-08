@@ -31,7 +31,7 @@ Ctl::Ctl(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    moxPwr = 100;
+    moxPwr = 80;
     TunePwr = 50;
     audioGain = 100;
     ui->audioSlider->setValue(audioGain);
@@ -54,7 +54,7 @@ void Ctl::on_btnMox_clicked(bool checked)
     bool ptt;
 
     ui->btnTune->setChecked(false); //Override the tune button
-    if(checked) { //We are going from Rx to Tx
+    if (checked) { //We are going from Rx to Tx
         ui->btnMox->setChecked(true);
         ptt = true;
         ui->pwrSlider->setValue(moxPwr);

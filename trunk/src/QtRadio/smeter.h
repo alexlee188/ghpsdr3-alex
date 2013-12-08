@@ -22,6 +22,7 @@ public:
     sMeter();
     sMeter(QWidget* parent=0);
     virtual ~sMeter();
+    Meter* sMeterMain;
     int meter_dbm;
     int sub_meter_dbm;
     void setSubRxState(bool state);
@@ -34,7 +35,6 @@ signals:
 public slots:
 
 private:
-    Meter* sMeterMain;
     Meter* sMeterSub;
     bool subRx;
 };

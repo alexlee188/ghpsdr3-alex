@@ -4,9 +4,9 @@
 
 
 sMeter::sMeter(QWidget* parent) : QFrame(parent) {
-    sMeterMain=new Meter("Main Rx");
-    sMeterSub=new Meter("Sub Rx");
-    meter_dbm = -121;
+    sMeterMain=new Meter("Main Rx", SIGMETER);
+    sMeterSub=new Meter("Sub Rx", SIGMETER);
+    meter_dbm = 1;
     sub_meter_dbm = -121;
     subRx = FALSE;
 }

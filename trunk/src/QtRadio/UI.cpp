@@ -63,6 +63,7 @@
 #include "powermate.h"
 #include "Frequency.h"
 #include "EqualizerDialog.h"
+#include "calc.h" // added by KD0OSS
 
 UI::UI(const QString server) {
 
@@ -2405,7 +2406,10 @@ void UI::selectXVTR(QAction* action) {
 
 void UI::getMeterValue(int m, int s)
 {
-    widget.sMeterFrame->meter_dbm = m;
+    int dbm=0;
+
+    dbm = m;
+    widget.sMeterFrame->meter_dbm = dbm;
     widget.sMeterFrame->sub_meter_dbm = s;
     widget.sMeterFrame->update();
 }
@@ -2558,6 +2562,8 @@ void UI::pttChange(int caller, bool ptt)
     {
         if (ptt)
         {    // Going from Rx to Tx ................
+            delete widget.sMeterFrame->sMeterMain;
+            widget.sMeterFrame->sMeterMain = new Meter("Main Pwr", POWMETER);
             workingMode = mode.getMode(); //Save the current mode for restoration when we finish tuning
             if (caller == 1)
             { //We have clicked the tune button so switch to AM and set carrier level
@@ -2603,6 +2609,8 @@ void UI::pttChange(int caller, bool ptt)
             txNow = true; // KD0OSS
         } else
         {    // Going from Tx to Rx .................
+            delete widget.sMeterFrame->sMeterMain;
+            widget.sMeterFrame->sMeterMain = new Meter("Main Rx", SIGMETER);
             if (caller == 1)
             {
                 //Send signal to sdr to go to Rx
