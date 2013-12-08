@@ -113,7 +113,7 @@ void init_amd(AMD a)
 void am_demod(AMD a)
 {
 	int i;
-	double audio;
+    double audio=0;
 	double vco[2];
 	double corr[2];
 	double det;

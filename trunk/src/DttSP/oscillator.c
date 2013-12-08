@@ -120,15 +120,15 @@ void
 ComplexOSC (OSC p)
 {
   int i;
-  COMPLEX z, delta_z;
+//  COMPLEX z, delta_z;
 
   if (OSCphase (p) > TWOPI)
     OSCphase (p) -= TWOPI;
   else if (OSCphase (p) < -TWOPI)
     OSCphase (p) += TWOPI;
 
-  z = Cmplx ((REAL) cos (OSCphase (p)), (IMAG) sin (OSCphase (p))),
-    delta_z = Cmplx ((REAL) cos (OSCfreq (p)), (IMAG) sin (OSCfreq (p)));
+//  z = Cmplx ((REAL) cos (OSCphase (p)), (IMAG) sin (OSCphase (p))),
+//    delta_z = Cmplx ((REAL) cos (OSCfreq (p)), (IMAG) sin (OSCfreq (p)));
 
   for (i = 0; i < OSCsize (p); i++)
     /*z = CXBdata ((CXB) OSCbase (p), i)

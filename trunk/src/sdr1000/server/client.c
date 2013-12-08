@@ -54,11 +54,11 @@ void client_thread(void* arg)
     int bytes_read;
     char* response;
 
-fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
+    fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
 
     client->state=RECEIVER_DETACHED;
 
-    while(1) 
+    while(1)
     {
         bytes_read=recv(client->socket,command,sizeof(command),0);
         if(bytes_read<=0) {
@@ -71,7 +71,7 @@ fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),n
         fprintf(stderr,"response: '%s'\n",response);
     }
 
-    if(client->state==RECEIVER_ATTACHED) 
+    if(client->state==RECEIVER_ATTACHED)
     {
         receiver[client->receiver].client=(CLIENT*)NULL;
         client->state=RECEIVER_DETACHED;
@@ -92,50 +92,51 @@ char* parse_command(CLIENT* client,char* command)
     fprintf(stderr,"parse_command: '%s'\n",command);
 
     token=strtok(command," \r\n");
-    if(token!=NULL) 
+    if(token!=NULL)
     {
-        if(strcmp(token,"settxmode") == 0) 
+        if(strcmp(token,"settxmode") == 0)
         {
             // PTT on/off
             token = strtok(NULL," \r\n");
-            if(token != NULL) 
+            if(token != NULL)
             {
                 int mode = atoi(token);
                 return set_tx_mode(client, mode);
-            } 
-            else 
+            }
+            else
             {
                 return INVALID_COMMAND;
             }
-        } 
-        else if(strcmp(token,"mox") == 0) 
+        }
+        else if(strcmp(token,"mox") == 0)
         {
             // PTT on/off
             token = strtok(NULL," \r\n");
-            if(token != NULL) 
+            if(token != NULL)
             {
                 int ptt = atoi(token);
+                mox = ptt;
                 return set_ptt(client, ptt);
-            } 
-            else 
+            }
+            else
             {
                 return INVALID_COMMAND;
             }
-        } 
-        else if(strcmp(token,"attach")==0) 
+        }
+        else if(strcmp(token,"attach")==0)
         {
             // select receiver
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
                 int rx=atoi(token);
                 return attach_receiver(rx,client);
-            } 
-            else 
+            }
+            else
             {
                 return INVALID_COMMAND;
             }
-        } 
-        else if(strcmp(token,"detach")==0) 
+        }
+        else if(strcmp(token,"detach")==0)
         {
             // select receiver
             token=strtok(NULL," \r\n");
@@ -145,30 +146,30 @@ char* parse_command(CLIENT* client,char* command)
             } else {
                 return INVALID_COMMAND;
             }
-        } 
-        else if(strcmp(token,"frequency")==0) 
+        }
+        else if(strcmp(token,"frequency")==0)
         {
             // set frequency
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
-               long f=atol(token);
-               return set_frequency(client,f);
+                long f=atol(token);
+                return set_frequency(client,f);
             } else {
                 return INVALID_COMMAND;
             }
-        } 
-        else if(strcmp(token,"freqcaloffset")==0) 
+        }
+        else if(strcmp(token,"freqcaloffset")==0)
         {
             // set frequency cal offset
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
-               long f=atol(token);
-               return set_frequency_offset(client,f);
+                long f=atol(token);
+                return set_frequency_offset(client,f);
             } else {
                 return INVALID_COMMAND;
             }
-        } 
-        else if(strcmp(token,"start")==0) 
+        }
+        else if(strcmp(token,"start")==0)
         {
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
@@ -196,8 +197,8 @@ char* parse_command(CLIENT* client,char* command)
                 // invalid command string
                 return INVALID_COMMAND;
             }
-        } 
-        else if(strcmp(token,"stop")==0) 
+        }
+        else if(strcmp(token,"stop")==0)
         {
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
@@ -224,8 +225,8 @@ char* parse_command(CLIENT* client,char* command)
             // set attenuator
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
-               long av=atol(token);
-               return set_attenuator(client,av);
+                long av=atol(token);
+                return set_attenuator(client,av);
             } else {
                 return INVALID_COMMAND;
             }
@@ -233,8 +234,8 @@ char* parse_command(CLIENT* client,char* command)
             // set spur reduction
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
-               unsigned char enabled=(unsigned char)atoi(token);
-               return set_spurreduction(client,enabled);
+                unsigned char enabled=(unsigned char)atoi(token);
+                return set_spurreduction(client,enabled);
             } else {
                 return INVALID_COMMAND;
             }
@@ -243,11 +244,11 @@ char* parse_command(CLIENT* client,char* command)
             unsigned char enabled;
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
-               if (strcmp(token, "on") == 0)
-                   enabled = 1;
-               else
-                   enabled = 0;
-               return set_record(client,enabled);
+                if (strcmp(token, "on") == 0)
+                    enabled = 1;
+                else
+                    enabled = 0;
+                return set_record(client,enabled);
             } else {
                 return INVALID_COMMAND;
             }
@@ -255,8 +256,8 @@ char* parse_command(CLIENT* client,char* command)
             // get PA ADC value
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
-               unsigned char channel=(unsigned char)atoi(token);
-               return get_pa_adc(client,channel);
+                unsigned char channel=(unsigned char)atoi(token);
+                return get_pa_adc(client,channel);
             } else {
                 return INVALID_COMMAND;
             }
@@ -280,9 +281,10 @@ void* audio_thread(void* arg)
     int audio_length;
     int old_state, old_type;
     int bytes_read;
+    int offset=0;
     int on=1;
     static int pos;
-  //  FILE *file = fopen("/tmp/sdr_tx.raw", "wb");
+    //  FILE *file = fopen("/tmp/sdr_tx.raw", "wb");
 
     fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 
@@ -290,7 +292,7 @@ void* audio_thread(void* arg)
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&old_type);
 
     rx->audio_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
-    if(rx->audio_socket<0) 
+    if(rx->audio_socket<0)
     {
         perror("create socket failed for server audio socket");
         exit(1);
@@ -304,7 +306,7 @@ void* audio_thread(void* arg)
     audio.sin_addr.s_addr=htonl(INADDR_ANY);
     audio.sin_port=htons(audio_port+(rx->id*2));
 
-    if(bind(rx->audio_socket,(struct sockaddr*)&audio,audio_length)<0) 
+    if(bind(rx->audio_socket,(struct sockaddr*)&audio,audio_length)<0)
     {
         perror("bind socket failed for server audio socket");
         exit(1);
@@ -312,26 +314,26 @@ void* audio_thread(void* arg)
 
     fprintf(stderr,"listening for rx %d audio on port %d\n",rx->id,audio_port+(rx->id*2));
 
-    while(1) 
+    while(1)
     {
         // get audio from a client
         bytes_read=recvfrom(rx->audio_socket,rx->output_buffer,sizeof(rx->output_buffer),0,(struct sockaddr*)&audio,(socklen_t*)&audio_length);
-        if(bytes_read < 0) 
+        if(bytes_read < 0)
         {
             perror("recvfrom socket failed for audio buffer");
             exit(1);
         }
-//fprintf(stderr, "seq: %d\n", ((char)rx->output_buffer[6] << 8) + (char)rx->output_buffer[7]);
-        memcpy((char*)output_buffer+pos, (char*)rx->output_buffer+12, bytes_read-12);
-        pos += bytes_read-12;
-//fprintf(stderr, "pos: %d\n", pos);
+        //fprintf(stderr, "seq: %d\n", ((char)rx->output_buffer[6] << 8) + (char)rx->output_buffer[7]);
+        memcpy((char*)output_buffer+pos, (char*)rx->output_buffer+offset, bytes_read-offset);
+        pos += bytes_read-offset;
+        //fprintf(stderr, "pos: %d\n", pos);
         if ((pos / sizeof(float)) >= (BUFFER_SIZE*2))
         {
-          //  fwrite((float*)output_buffer, sizeof(float), (BUFFER_SIZE*2), file);
+            //  fwrite((float*)output_buffer, sizeof(float), (BUFFER_SIZE*2), file);
             process_sdr1000_output_buffer((float*)&output_buffer, (float*)&output_buffer[BUFFER_SIZE]);
             pos = 0;
         }
     }
-//fclose(file);
+    //fclose(file);
 } // end audio_thread
 

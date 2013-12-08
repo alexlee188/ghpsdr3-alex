@@ -40,7 +40,7 @@ Bridgewater, NJ 08807
 void
 snap_spectrum (SpecBlock * sb, int label)
 {
-	int i, j;
+    int i, j=0;
 
 	// where most recent signal started
 	j = sb->fill;
@@ -82,7 +82,7 @@ snap_spectrum (SpecBlock * sb, int label)
 void
 snap_scope (SpecBlock * sb, int label)
 {
-	int i, j;
+    int i, j=0;
 
 	// where most recent signal started
 	j = sb->fill;

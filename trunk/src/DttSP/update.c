@@ -891,7 +891,7 @@ SetRXAGC (unsigned int thread, unsigned subrx, AGCMODE setit)
 DttSP_EXP void
 SetRXAGCAttack (unsigned int thread, unsigned subrx, int attack)
 {
-	REAL tmp = (REAL)attack;
+//	REAL tmp = (REAL)attack;
 	sem_wait(&top[thread].sync.upd.sem);
 	//rx[thread][subrx].dttspagc.gen->mode = 1; this shouldn't be here -- causes change of mode on init
 /*	rx[thread][subrx].dttspagc.gen->hangindex =
@@ -1159,7 +1159,7 @@ SetTXALCSt (unsigned int thread, BOOLEAN state)
 DttSP_EXP void
 SetTXLevelerAttack (unsigned int thread, int attack)
 {
-	REAL tmp = (REAL) attack;
+//	REAL tmp = (REAL) attack;
 	sem_wait(&top[thread].sync.upd.sem);
 /*
 	tx[thread].leveler.gen->attack = (REAL) (1.0 - exp (-1000.0 / (tmp * uni[thread].samplerate)));
@@ -1188,7 +1188,7 @@ SetTXLevelerAttack (unsigned int thread, int attack)
 DttSP_EXP void
 SetTXLevelerDecay (unsigned int thread, int decay)
 {
-	REAL tmp = (REAL) decay;
+//	REAL tmp = (REAL) decay;
 	sem_wait(&top[thread].sync.upd.sem);
 /*
 	tx[thread].leveler.gen->decay =

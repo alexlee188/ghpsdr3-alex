@@ -41,9 +41,9 @@ filter_OvSv(FiltOvSv pflt) {
   int i, m = pflt->fftlen, n = pflt->buflen;
   COMPLEX *zfvec = pflt->zfvec,
           *zivec = pflt->zivec,
-          *zovec = pflt->zovec,
+       //   *zovec = pflt->zovec,
           *zrvec = pflt->zrvec;
-  REAL scl = pflt->scale;
+//  REAL scl = pflt->scale;
 
   /* input sig -> z */
 

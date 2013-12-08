@@ -160,7 +160,7 @@ IIR_BPF_2P
 new_IIR_BPF_2P (CXB buf, REAL samplerate, REAL cuttoff_freq_Hz, REAL Q)				  
 {
 	REAL w = (REAL)TWOPI*cuttoff_freq_Hz / samplerate;
-	REAL T = 1/samplerate;
+//	REAL T = 1/samplerate;
 	IIR_BPF_2P bpf = (IIR_BPF_2P)malloc(sizeof(iir_bpf_2p));
 	bpf->sigbuf = buf;
 	bpf->kf = (w*w)/(1 + Q*w + w*w);  
@@ -193,7 +193,7 @@ IIR_HPF_2P
 new_IIR_HPF_2P (CXB buf, REAL samplerate, REAL cuttoff_freq_Hz, REAL Q)				  
 {
 	REAL w = (REAL)TWOPI*cuttoff_freq_Hz / samplerate;
-	REAL T = 1/samplerate;
+//	REAL T = 1/samplerate;
 	IIR_HPF_2P hpf = (IIR_HPF_2P)malloc(sizeof(iir_hpf_2p));
 	hpf->sigbuf = buf;
 	hpf->kf = (w*w)/(4 + 2*Q*w + w*w);  

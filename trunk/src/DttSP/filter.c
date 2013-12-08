@@ -92,7 +92,7 @@ newFIR_Lowpass_REAL (REAL cutoff, REAL sr, int size)
 		int msize = size-1;
 		RealFIR p;
 		REAL *h, *w, fc = cutoff / sr;
-		REAL corrector = 0.0, midpoint;
+        REAL midpoint;
 		int i;
 		midpoint = (REAL)(0.5*(REAL)msize);
 		p = newFIR_REAL (size, "newFIR_Lowpass_REAL");
@@ -126,7 +126,7 @@ newFIR_Lowpass_COMPLEX (REAL cutoff, REAL sr, int size)
 	else
 	{
 		int msize=size-1;
-		BOOLEAN even=FALSE;
+//		BOOLEAN even=FALSE;
 		ComplexFIR p;
 		COMPLEX *h;
 		REAL *w, fc = cutoff / sr, midpoint;

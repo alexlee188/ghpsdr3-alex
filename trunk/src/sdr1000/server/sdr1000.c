@@ -68,6 +68,8 @@ long caloffset;
 
 int tx_mode;
 
+extern int mox;
+
 FILE *file;
 
 void* sdr1000_io_thread(void* arg);
@@ -82,7 +84,7 @@ int create_sdr1000_thread() {
     rc=sdr1000_init();
     if(rc<0) exit(1);
 
-    // create a thread to read from the audio deice
+    // create a thread to read from the audio device
     rc=pthread_create(&sdr1000_io_thread_id,NULL,sdr1000_io_thread,NULL);
     if(rc != 0) {
         fprintf(stderr,"pthread_create failed on sdr1000_io_thread: rc=%d\n", rc);
@@ -93,37 +95,37 @@ int create_sdr1000_thread() {
 }
 
 void sdr1000_set_device(char* d) {
-fprintf(stderr,"sdr1000_set_device %s\n",d);
+    fprintf(stderr,"sdr1000_set_device %s\n",d);
     strcpy(device,d);
 }
 
 void sdr1000_set_frequency_offset(char* d) { //kd0oss added
-fprintf(stderr,"sdr1000_set_frequency_offset %s hz\n",d);
+    fprintf(stderr,"sdr1000_set_frequency_offset %s hz\n",d);
     caloffset = atol(d);
 }
 
 char* sdr1000_get_device() {
-fprintf(stderr,"sdr1000_get_device %s\n",device);
+    fprintf(stderr,"sdr1000_get_device %s\n",device);
     return device;
 }
 
 void sdr1000_set_input(char* d) {
-fprintf(stderr,"sdr1000_set_input %s\n",d);
+    fprintf(stderr,"sdr1000_set_input %s\n",d);
     strcpy(input,d);
 }
 
 char* sdr1000_get_input() {
-fprintf(stderr,"sdr1000_get_input %s\n",input);
+    fprintf(stderr,"sdr1000_get_input %s\n",input);
     return input;
 }
 
 void sdr1000_set_output(char* d) {
-fprintf(stderr,"sdr1000_set_output %s\n",d);
+    fprintf(stderr,"sdr1000_set_output %s\n",d);
     strcpy(output,d);
 }
 
 char* sdr1000_get_output() {
-fprintf(stderr,"sdr1000_get_output %s\n",output);
+    fprintf(stderr,"sdr1000_get_output %s\n",output);
     return output;
 }
 
@@ -140,29 +142,29 @@ int sdr1000_get_receivers() {
 }
 
 void sdr1000_set_sample_rate(int r) {
-fprintf(stderr,"sdr1000_set_sample_rate %d\n",r);
+    fprintf(stderr,"sdr1000_set_sample_rate %d\n",r);
     switch(r) {
-        case 48000:
-            sample_rate=r;
-            speed=0;
-            break;
-        case 96000:
-            sample_rate=r;
-            speed=1;
-            break;
-        case 192000:
-            sample_rate=r;
-            speed=2;
-            break;
-        default:
-            fprintf(stderr,"Invalid sample rate (48000,96000,192000)!\n");
-            exit(1);
-            break;
+    case 48000:
+        sample_rate=r;
+        speed=0;
+        break;
+    case 96000:
+        sample_rate=r;
+        speed=1;
+        break;
+    case 192000:
+        sample_rate=r;
+        speed=2;
+        break;
+    default:
+        fprintf(stderr,"Invalid sample rate (48000,96000,192000)!\n");
+        exit(1);
+        break;
     }
 }
 
 int sdr1000_get_sample_rate() {
-fprintf(stderr,"sdr1000_get_sample_rate %d\n",sample_rate);
+    fprintf(stderr,"sdr1000_get_sample_rate %d\n",sample_rate);
     return sample_rate;
 }
 
@@ -202,7 +204,7 @@ int sdr1000_init() {
         receiver[i].frequency_changed=1;
     }
 
-fprintf(stderr,"server configured for %d receivers at %d\n",receivers,sample_rate);
+    fprintf(stderr,"server configured for %d receivers at %d\n",receivers,sample_rate);
     return rc;
 }
 
@@ -215,9 +217,11 @@ void* sdr1000_io_thread(void* arg) {
     int i,j;
 
     while(1) {
-    //   receiver[current_receiver].adc[0] = SDR1000_get_pa_adc(0);
-    //   receiver[current_receiver].adc[1] = SDR1000_get_pa_adc(1);
-
+        if (mox)
+        {
+            receiver[current_receiver].adc[0] = SDR1000_get_pa_adc(0);
+            receiver[current_receiver].adc[1] = SDR1000_get_pa_adc(1);
+        }
 #ifdef PORTAUDIO
         // read an input buffer (blocks until all bytes read)
         rc=sdr1000_read(receiver[current_receiver].input_buffer,&receiver[current_receiver].input_buffer[BUFFER_SIZE]);
@@ -235,7 +239,7 @@ void* sdr1000_io_thread(void* arg) {
         if (bytes < 0) {
             fprintf(stderr,"sdr1000_io_thread: read failed %d\n",bytes);
         } else if (bytes != sizeof(input_buffer)) {
-            fprintf(stderr,"sfoftrock_io_thread: only read %d bytes\n",bytes);
+            fprintf(stderr,"softrock_io_thread: only read %d bytes\n",bytes);
         } else {
             // process input buffer
             rx_frame++;
@@ -260,11 +264,11 @@ void process_sdr1000_input_buffer(char* buffer) {
     float left_sample_float,right_sample_float;
     int rc;
 
-        // extract the samples
+    // extract the samples
     while(b<(BUFFER_SIZE*2*2)) {
         // extract each of the receivers
         for(r=0;r<receivers;r++) {
-//fprintf(stderr,"%d: %02X%02X %02X%02X\n",samples,buffer[b]&0xFF,buffer[b+1]&0xFF,buffer[b+2]&0xFF,buffer[b+3]&0xFF);
+            //fprintf(stderr,"%d: %02X%02X %02X%02X\n",samples,buffer[b]&0xFF,buffer[b+1]&0xFF,buffer[b+2]&0xFF,buffer[b+3]&0xFF);
             left_sample   = (int)((unsigned char)buffer[b++]);
             left_sample  |= (int)((signed char)buffer[b++])<<8;
             //left_sample  += (int)((unsigned char)buffer[b++])<<8;
@@ -275,15 +279,15 @@ void process_sdr1000_input_buffer(char* buffer) {
             //right_sample += (int)((signed char)buffer[b++])<<16;
             left_sample_float=(float)left_sample/32767.0; // 16 bit sample
             right_sample_float=(float)right_sample/32767.0; // 16 bit sample
-/*
+            /*
             left_sample_float=(float)left_sample/8388607.0; // 24 bit sample
             right_sample_float=(float)right_sample/8388607.0; // 24 bit sample
 */
             receiver[r].input_buffer[samples]=left_sample_float;
             receiver[r].input_buffer[samples+BUFFER_SIZE]=right_sample_float;
 
-//fprintf(stderr,"%d: %d %d\n",samples,left_sample,right_sample);
-//fprintf(stderr,"%d: %f %f\n",samples,left_sample_float,right_sample_float);
+            //fprintf(stderr,"%d: %d %d\n",samples,left_sample,right_sample);
+            //fprintf(stderr,"%d: %f %f\n",samples,left_sample_float,right_sample_float);
         }
         samples++;
 
@@ -303,7 +307,7 @@ void process_sdr1000_input_buffer(char* buffer) {
 #ifdef PORTAUDIO
 void process_sdr1000_output_buffer(float* left_output_buffer,float* right_output_buffer) {
 
-    sdr1000_write(left_output_buffer,right_output_buffer);    
+    sdr1000_write(left_output_buffer,right_output_buffer);
 }
 #else
 void process_sdr1000_output_buffer(float* left_output_buffer,float* right_output_buffer) {
@@ -315,7 +319,7 @@ void process_sdr1000_output_buffer(float* left_output_buffer,float* right_output
     for(i=0;i<BUFFER_SIZE;i++) {
         left_sample=(int)(left_output_buffer[i]*32767.0F);
         right_sample=(int)(right_output_buffer[i]*32767.0F);
-/*
+        /*
         left_sample=(int)(left_output_buffer[i]*8388607.0F);
         right_sample=(int)(right_output_buffer[i]*8388607.0F);
 */

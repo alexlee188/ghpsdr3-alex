@@ -188,7 +188,7 @@ char* set_record(CLIENT* client, unsigned char enabled) { //kd0oss added
     {
         setRecord = enabled;
         if (file != NULL)
-        { 
+        {
             fclose(file);
             file = NULL;
             printf("Stopped recording.\n");
@@ -231,7 +231,7 @@ char* set_frequency_offset(CLIENT* client,long frequency) { //kd0oss added
 }
 
 char* get_pa_adc(CLIENT* client, unsigned char channel) { //kd0oss added
-    char buffer[5];
+    static char buffer[5];
 
     if(client->state==RECEIVER_DETACHED) {
         return CLIENT_DETACHED;
@@ -255,15 +255,15 @@ void send_IQ_buffer(int rx)
     BUFFER buffer;
     int rc;
 
-    if(rx>=sdr1000_get_receivers()) 
+    if(rx>=sdr1000_get_receivers())
     {
         fprintf(stderr,"send_spectrum_buffer: invalid rx: %d\n",rx);
         return;
     }
 
-    if(receiver[rx].client!=(CLIENT*)NULL) 
+    if(receiver[rx].client!=(CLIENT*)NULL)
     {
-        if(receiver[rx].client->iq_port!=-1) 
+        if(receiver[rx].client->iq_port!=-1)
         {
             // send the IQ buffer
 
@@ -277,15 +277,15 @@ void send_IQ_buffer(int rx)
             // keep UDP packets to 514 bytes or less
             //     8 bytes sequence number
             //     2 byte offset
-            //     2 byte length
             //     2 byte ADC from SDR1000 PA
+            //     2 byte length
             offset=0;
-            while(offset<sizeof(receiver[rx].input_buffer)) 
+            while(offset<sizeof(receiver[rx].input_buffer))
             {
                 buffer.sequence=sequence;
                 buffer.offset=offset;
-         //       buffer.adc[0] = receiver[rx].adc[0]; // KD0OSS
-         //       buffer.adc[1] = receiver[rx].adc[1]; // KD0OSS
+                buffer.adc[0] = receiver[rx].adc[0]; // KD0OSS
+                buffer.adc[1] = receiver[rx].adc[1]; // KD0OSS
                 buffer.length=sizeof(receiver[rx].input_buffer)-offset;
                 if(buffer.length>500) buffer.length=500;
 
@@ -315,7 +315,7 @@ void send_IQ_buffer(int rx)
 
                 rc=sendto(iq_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&client,client_length);
 
-                if(rc<=0) 
+                if(rc<=0)
                 {
                     perror("sendto failed for iq data");
                     exit(1);
@@ -347,7 +347,7 @@ void send_IQ_buffer(int rx)
 
             rc=sendto(iq_socket,receiver[rx].input_buffer,sizeof(receiver[rx].input_buffer),0,(struct sockaddr*)&client,client_length);
 
-            if(rc<=0) 
+            if(rc<=0)
             {
                 perror("sendto failed for iq data");
                 exit(1);

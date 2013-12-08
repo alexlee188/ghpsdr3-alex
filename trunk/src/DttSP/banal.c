@@ -172,7 +172,7 @@ char *
 fmt_tv (struct timeval *tv)
 {
 	static char buff[256];
-	snprintf (buff, sizeof (buff), "%ds%du", tv->tv_sec, tv->tv_usec);
+    snprintf (buff, sizeof (buff), "%ds%du", (int)tv->tv_sec, (int)tv->tv_usec);
 	return buff;
 }
 
