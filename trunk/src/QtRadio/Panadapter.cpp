@@ -42,6 +42,7 @@ lineObject::lineObject(PanadapterScene *scene, QPoint start, QPoint stop, QPen p
 
 void lineObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    painter->translate(0.5, 0.5);
     painter->setPen(itemPen);
     painter->drawLine(itemStart, itemStop);
 }
@@ -66,6 +67,7 @@ notchFilterObject::notchFilterObject(PanadapterScene *scene, int index, QPoint l
 
 void notchFilterObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    painter->translate(0.5, 0.5);
     painter->setOpacity(1.0);
     painter->setPen(itemColor);
     painter->drawRect(itemLocation.x(),itemLocation.y()-1,itemWidth,height);
@@ -91,6 +93,7 @@ filterObject::filterObject(PanadapterScene *scene, QPoint location, float fwidth
 
 void filterObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    painter->translate(0.5, 0.5);
     painter->setBrush(Qt::SolidPattern);
     painter->setOpacity(0.5);
     painter->fillRect(itemLocation.x(),itemLocation.y(),itemWidth,height,itemColor);
@@ -114,6 +117,7 @@ textObject::textObject(PanadapterScene *scene, QString text, QPoint location, QC
 
 void textObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    painter->translate(0.5, 0.5);
     painter->setOpacity(1.0);
     painter->setPen(QPen(itemColor, 1));
     painter->setFont(QFont("Arial", 10));
@@ -135,6 +139,7 @@ spectrumObject::spectrumObject(int width, int height){
 
 void spectrumObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
     // plot Panadapter
+    painter->translate(0.5, 0.5);
     painter->setOpacity(0.9);
     painter->setPen(QPen(Qt::yellow, 1));
     if(plot.count() == plotWidth) {
@@ -653,8 +658,8 @@ void Panadapter::drawCursor(int vfo, bool disable)
         cursorX = width()/2 + (float)(subRxFrequency-frequency+LO_offset) * (float)width()*zoom_factor/(float)sampleRate;
         pen = QPen(QBrush(Qt::blue,Qt::SolidPattern), 1);
     }
-
-    lineObject *cursor = new lineObject(panadapterScene, QPoint(cursorX,splitViewBoundary), QPoint(cursorX,0), pen);
+    qDebug("offset: %d    curs: %d", offset, cursorX);
+    lineObject *cursor = new lineObject(panadapterScene, QPoint(cursorX, splitViewBoundary), QPoint(cursorX,0), pen);
     panadapterScene->addItem(cursor);
     cursor->update();
     panadapterScene->sceneItems.insert(QString("c%1").arg(vfo), cursor);
@@ -854,13 +859,13 @@ void Panadapter::drawFrequencyLines(void)
         if(f>0) {
             if((f % lineStep)<(long long)hzPerPixel) {
            //     qDebug("height: %d", height());
-                lineObject *lineItem = new lineObject(panadapterScene, QPoint(i,splitViewBoundary), QPoint(i,0), QPen(QColor(255,255,255,128), 1,Qt::DotLine));
+                lineObject *lineItem = new lineObject(panadapterScene, QPoint(i-2,splitViewBoundary), QPoint(i-2,0), QPen(QColor(255,255,255,128), 1,Qt::DotLine));
                 panadapterScene->addItem(lineItem);
                 lineItem->update();
                 panadapterScene->sceneItems.insert(QString("fl%1").arg(lines), lineItem);
 
                 text.sprintf("%lld.%02lld",f/1000000,f%1000000/10000);
-                textObject *textItem = new textObject(panadapterScene, text, QPoint(i,(splitViewBoundary)-10), Qt::lightGray);
+                textObject *textItem = new textObject(panadapterScene, text, QPoint(i-2,(splitViewBoundary)-10), Qt::lightGray);
                 panadapterScene->addItem(textItem);
                 textItem->update();
                 panadapterScene->sceneItems.insert(QString("ft%1").arg(lines), textItem);
@@ -1385,6 +1390,7 @@ waterfallObject::waterfallObject(int width, int height) {
 
 void waterfallObject::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
     // plot waterfall
+    painter->translate(0.5, 0.5);
     painter->drawImage(0,ypos,image,0,cy,image.width(),image.height()/2,Qt::AutoColor);
     if (cy <= 0) cy = image.height()/2 - 1;
     else cy--;          // "scroll"
