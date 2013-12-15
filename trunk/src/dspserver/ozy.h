@@ -83,17 +83,14 @@ extern int receiver;
 
 extern double LO_offset;
 
-<<<<<<< HEAD
-int hpsdr;
 /**  added by KD0OSS **/
 int sdr1000;
 unsigned char txfwd;
 unsigned char txref;
 /**********************/
-=======
+
 extern int hpsdr;
 extern int hpsdr_local;
->>>>>>> 71add21e8ae7b7c060885b5929d314e2ad0865a2
 
 // values saved from last change to send to slaves
 long long lastFreq;
