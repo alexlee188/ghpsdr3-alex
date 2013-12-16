@@ -6,7 +6,7 @@
 sMeter::sMeter(QWidget* parent) : QFrame(parent) {
     sMeterMain=new Meter("Main Rx", SIGMETER);
     sMeterSub=new Meter("Sub Rx", SIGMETER);
-    meter_dbm = 1;
+    meter_dbm = -121;
     sub_meter_dbm = -121;
     subRx = FALSE;
 }
@@ -27,7 +27,7 @@ void sMeter::paintEvent(QPaintEvent*)
     // Draw the Main Rx S-Meter
     QPainter painter(this);
     QImage image=sMeterMain->getImage(meter_dbm);
-    painter.drawImage(4,0,image);
+    painter.drawImage(4,3,image);
 
     // Draw the Sub Rx S-Meter
     if(subRx) {

@@ -31,13 +31,8 @@ Ctl::Ctl(QWidget *parent) :
 {
     ui->setupUi(this);
 
-<<<<<<< HEAD
     moxPwr = 80;
     TunePwr = 50;
-=======
-    moxPwr = 100;
-    TunePwr = 0;
->>>>>>> 71add21e8ae7b7c060885b5929d314e2ad0865a2
     audioGain = 100;
     ui->audioSlider->setValue(audioGain);
     ui->pwrSlider->setValue(moxPwr);
@@ -188,9 +183,10 @@ void Ctl::RigCtlTX(bool rigctlptt){
 void Ctl::loadSettings(QSettings *settings)
 {
     settings->beginGroup("Ctl");
-    moxPwr = settings->value("moxPwr",100).toInt();
-    TunePwr = settings->value("tunePwr",0).toInt();
+    moxPwr = settings->value("moxPwr",50).toInt();
+    TunePwr = settings->value("tunePwr",1).toInt();
     settings->endGroup();
+    ui->pwrSlider->setValue(moxPwr); // KD0OSS
 }
 
 void Ctl::saveSettings(QSettings *settings)
@@ -200,8 +196,6 @@ void Ctl::saveSettings(QSettings *settings)
     settings->setValue("tunePwr", TunePwr);
     settings->endGroup();
 }
-
-
 
 void Ctl::on_btnMaster_clicked()
 {

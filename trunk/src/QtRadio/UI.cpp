@@ -446,6 +446,7 @@ UI::~UI() {
     rtp->deleteLater();
     codec2_destroy(mic_codec2);
     equalizer->deleteLater();
+    saveSettings();
 }
 
 void UI::actionAbout() {
@@ -2424,11 +2425,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-<<<<<<< HEAD
-                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  7 Sep 2013"); // KD0OSS  Fixed Qt version format
-=======
                    + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  29 Sep 2013"); // KD0OSS  Fixed Qt version format
->>>>>>> 71add21e8ae7b7c060885b5929d314e2ad0865a2
     lastmessage = message;
 }
 
