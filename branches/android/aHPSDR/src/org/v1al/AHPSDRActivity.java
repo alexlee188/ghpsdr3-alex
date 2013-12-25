@@ -86,7 +86,37 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
-        SharedPreferences prefs = getSharedPreferences("aHPSDR", 0);
+        restorePrefs();
+
+		connection=null;
+
+		spectrumView = new SpectrumView(this, width, (int)((float)height/2.3f));
+		spectrumView.setRenderer(renderer);
+		spectrumView.setGLSurfaceView(mGLSurfaceView);
+		spectrumView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
+				ViewGroup.LayoutParams.MATCH_PARENT, 1.0f));
+		
+		mGLSurfaceView.setSpectrumView(spectrumView);
+		mGLSurfaceView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
+				ViewGroup.LayoutParams.MATCH_PARENT, 1.0f));
+			
+		LinearLayout ll = new LinearLayout(this);
+		ll.setOrientation(LinearLayout.VERTICAL);
+		ll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
+						ViewGroup.LayoutParams.MATCH_PARENT));
+		ll.addView(spectrumView);
+		ll.addView(mGLSurfaceView);
+		setContentView(ll);
+		
+		//filterAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
+		//filterAdapter = new ArrayAdapter<String>(this, R.layout.row, R.id.filter);
+		filterAdapter = new CustomAdapter(this, R.layout.row, R.id.selection);
+		//serverAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
+		serverAdapter = new CustomAdapter(this, R.layout.row, R.id.selection);
+	}
+
+	public void restorePrefs() {
+		SharedPreferences prefs = getSharedPreferences("aHPSDR", 0);
         band=prefs.getInt("Band", BAND_20);
 		filter=prefs.getInt("Filter",FILTER_5);
 		mode=prefs.getInt("Mode",MODE_USB);
@@ -160,41 +190,18 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		tx_state[0]=prefs.getBoolean("txAllow", false);
 		jd_state[0]=prefs.getBoolean("jogSpec", false);
 		dsp_state[3]=prefs.getBoolean("IQ", false);
-
-		connection=null;
-
-		spectrumView = new SpectrumView(this, width, (int)((float)height/2.3f));
-		spectrumView.setRenderer(renderer);
-		spectrumView.setGLSurfaceView(mGLSurfaceView);
-		spectrumView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
-				ViewGroup.LayoutParams.MATCH_PARENT, 1.0f));
-		
-		mGLSurfaceView.setSpectrumView(spectrumView);
-		mGLSurfaceView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
-				ViewGroup.LayoutParams.MATCH_PARENT, 1.0f));
-			
-		LinearLayout ll = new LinearLayout(this);
-		ll.setOrientation(LinearLayout.VERTICAL);
-		ll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 
-						ViewGroup.LayoutParams.MATCH_PARENT));
-		ll.addView(spectrumView);
-		ll.addView(mGLSurfaceView);
-		setContentView(ll);
-		
-		//filterAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
-		//filterAdapter = new ArrayAdapter<String>(this, R.layout.row, R.id.filter);
-		filterAdapter = new CustomAdapter(this, R.layout.row, R.id.selection);
-		//serverAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
-		serverAdapter = new CustomAdapter(this, R.layout.row, R.id.selection);
 	}
 
 	@Override
     protected void onStop(){
         Log.i("AHPSDRActivity","onStop");
         super.onStop();
-        boolean isSlave = connection.getHasBeenSlave();
         connection.close();
+        savePrefs();
+    }
 
+	public void savePrefs() {
+		boolean isSlave = connection.getHasBeenSlave();
         SharedPreferences prefs = getSharedPreferences("aHPSDR", 0);
         SharedPreferences.Editor editor = prefs.edit();
         if (!isSlave){
@@ -231,7 +238,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		editor.putBoolean("jogSpec", jd_state[0]);
 		editor.putBoolean("IQ", dsp_state[3]);
 		editor.commit();
-    }
+	}
 
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
@@ -259,6 +266,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		super.onStart();
 		Log.i("AHPSDR", "onStart");
 		spectrumView.setAverage(-100);
+		restorePrefs();
 	}
 
 	public void onResume() {
@@ -270,12 +278,14 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		setConnectionDefaults();
 		mySetTitle();
 		spectrumView.setAverage(-100);
+		restorePrefs();
 	}
 
 	public void onPause() {
 		super.onPause();
 		mGLSurfaceView.onPause();
 		Log.i("AHPSDR", "onPause");
+		savePrefs();
 	}
 
 	public void onDestroy() {
@@ -283,6 +293,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		Log.i("AHPSDR", "onDestroy");
 		//update.close();
 		connection.close();
+		savePrefs();
 	}
 
 	public boolean onCreateOptionsMenu(Menu menu) {
