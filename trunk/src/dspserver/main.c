@@ -79,7 +79,7 @@
 * 
 */
 
-const char *version = "20130929;-master"; //YYYYMMDD; text desc
+const char *version = "20131208;-master-softrock-tx"; //YYYYMMDD; text desc
 
 // main.c
 
