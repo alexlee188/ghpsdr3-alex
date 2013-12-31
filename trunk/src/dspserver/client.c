@@ -2252,11 +2252,11 @@ void setprintcountry()
 void printcountry(struct sockaddr_in *client){
     pthread_t lookup_thread;
     int ret;
-    in_addr_t *client_addr;
+    in_addr_t client_addr;
 
-    client_addr = malloc(sizeof(*client_addr));
-    *client_addr = client->sin_addr.s_addr;
+    client_addr = client->sin_addr.s_addr;
 
+    // client_add is passed as 32 bit value to thread
     ret = pthread_create(&lookup_thread, NULL, printcountrythread,
                          (void*) client_addr);
     if (ret == 0) pthread_detach(lookup_thread);
@@ -2271,8 +2271,7 @@ void *printcountrythread(void *arg)
   struct in_addr addr;
   char ipstr[16];
 
-  addr.s_addr = *(in_addr_t*)arg;
-  free(arg);
+  addr.s_addr = (in_addr_t)arg;
   inet_ntop(AF_INET, (void *)&addr, ipstr, sizeof(ipstr));
   /* Open the command for reading. */
   sprintf(sCmd,"wget -q -O - --post-data 'ip=%s' http://www.selfseo.com/ip_to_country.php 2>/dev/null | sed -e '/ is assigned to /!d' -e 's/.*border=1> \\([^<]*\\).*/\\1/'",
