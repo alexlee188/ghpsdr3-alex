@@ -79,7 +79,7 @@
 * 
 */
 
-const char *version = "20131002;-bigfftmaster"; //YYYYMMDD; text desc
+const char *version = "20140115;-bigfftmaster"; //YYYYMMDD; text desc
 extern int DEFSPEC;//by w3sz
 
 // main.c
