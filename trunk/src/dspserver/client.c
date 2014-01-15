@@ -101,7 +101,8 @@ static int low,high;            // filter low/high
 // same as BUFFER_SIZE defined in softrock server
 // format is float left_buffer[BUFFER_SIZE] followed by right_buffer[BUFFER_SIZE] non-interleaved
 static float tx_buffer[TX_BUFFER_SIZE*2];
-static float tx_IQ_buffer[TX_BUFFER_SIZE*4];
+static float tx_IQ_buffer[TX_BUFFER_SIZE*4]; // for hpsdr hardware, all 4 TX_BUFFER_SIZE are used
+                                             // for non hpsd hardware, only first 2 are used
 
 static int samples_per_frame, bits_per_frame;
 
@@ -517,7 +518,8 @@ void* rtp_tx_thread(void *arg){
                     	if(!hpsdr || mox) {
                             Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], tx_IQ_buffer, &tx_IQ_buffer[TX_BUFFER_SIZE], TX_BUFFER_SIZE, 1);
                             // send Tx IQ to server, buffer is non-interleaved.
-                            ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+                            // for non hpsdr hardware, only first two TX_BUFFER_SIZE are used
+                            ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer)/2,"client");
                         }
                         iq_buffer_counter=0;
                     } // end iq_bufer_counter
@@ -623,11 +625,13 @@ void *tx_thread(void *arg){
 					if (mox) {
 						ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
 					}
-				} else if (!hpsdr) {
+				} else if (!hpsdr) { // for example, softrock
+                                        memset (tx_IQ_buffer, 0, sizeof(tx_IQ_buffer));
 					// use DttSP to process Mic data into tx IQ
 					Audio_Callback(tx_buffer, &tx_buffer[TX_BUFFER_SIZE], &tx_IQ_buffer[TX_BUFFER_SIZE*0], &tx_IQ_buffer[TX_BUFFER_SIZE*1], TX_BUFFER_SIZE, 1);
 					// send Tx IQ to server, buffer is non-interleaved.
-					ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer),"client");
+                                        // for non hpsdr hardware, only first two TX_BUFFER_SIZE are used
+					ozy_send((unsigned char *)tx_IQ_buffer,sizeof(tx_IQ_buffer)/2,"client");
 				}
 				tx_buffer_counter = 0;
 			}
@@ -2248,11 +2252,11 @@ void setprintcountry()
 void printcountry(struct sockaddr_in *client){
     pthread_t lookup_thread;
     int ret;
-    in_addr_t *client_addr;
+    in_addr_t client_addr;
 
-    client_addr = malloc(sizeof(*client_addr));
-    *client_addr = client->sin_addr.s_addr;
+    client_addr = client->sin_addr.s_addr;
 
+    // client_add is passed as 32 bit value to thread
     ret = pthread_create(&lookup_thread, NULL, printcountrythread,
                          (void*) client_addr);
     if (ret == 0) pthread_detach(lookup_thread);
@@ -2267,8 +2271,7 @@ void *printcountrythread(void *arg)
   struct in_addr addr;
   char ipstr[16];
 
-  addr.s_addr = *(in_addr_t*)arg;
-  free(arg);
+  addr.s_addr = (in_addr_t)arg;
   inet_ntop(AF_INET, (void *)&addr, ipstr, sizeof(ipstr));
   /* Open the command for reading. */
   sprintf(sCmd,"wget -q -O - --post-data 'ip=%s' http://www.selfseo.com/ip_to_country.php 2>/dev/null | sed -e '/ is assigned to /!d' -e 's/.*border=1> \\([^<]*\\).*/\\1/'",
