@@ -32,7 +32,7 @@ Ctl::Ctl(QWidget *parent) :
     ui->setupUi(this);
 
     moxPwr = 100;
-    TunePwr = 0;
+    TunePwr = 1;
     audioGain = 100;
     ui->audioSlider->setValue(audioGain);
     ui->pwrSlider->setValue(moxPwr);
@@ -75,6 +75,7 @@ void Ctl::on_btnTune_clicked(bool checked)
     if(checked) { //We are going from Rx to Tx
         ui->btnTune->setChecked(true);
         ptt = true;
+        if (TunePwr<1) TunePwr=1;
         ui->pwrSlider->setValue(TunePwr);
     }
     else {
@@ -183,7 +184,7 @@ void Ctl::loadSettings(QSettings *settings)
 {
     settings->beginGroup("Ctl");
     moxPwr = settings->value("moxPwr",100).toInt();
-    TunePwr = settings->value("tunePwr",0).toInt();
+    TunePwr = settings->value("tunePwr",1).toInt();
     settings->endGroup();
 }
 

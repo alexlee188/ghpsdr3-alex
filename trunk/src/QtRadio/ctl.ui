@@ -66,6 +66,9 @@
    <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
+   <property name="minimum">
+    <number>1</number>
+   </property>
    <property name="maximum">
     <number>100</number>
    </property>
