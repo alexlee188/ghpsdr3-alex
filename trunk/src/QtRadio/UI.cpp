@@ -449,6 +449,27 @@ UI::~UI() {
     saveSettings();
 }
 
+void UI::keyPressEvent(QKeyEvent *event)  // KD0OSS
+{
+    if (event->nativeVirtualKey() == configure.pttKeyId && !event->isAutoRepeat() && !txNow)
+    {
+        pttChange(0, true);
+    }
+
+    QMainWindow::keyPressEvent(event);
+}
+
+void UI::keyReleaseEvent(QKeyEvent *event) // KD0OSS
+{
+    if (event->nativeVirtualKey() == configure.pttKeyId && !event->isAutoRepeat() && txNow)
+    {
+        pttChange(0, false);
+        widget.ctlFrame->micBar->setValue(0);
+    }
+
+    QMainWindow::keyReleaseEvent(event);
+}
+
 void UI::actionAbout() {
     about.setVisible(TRUE);
 }

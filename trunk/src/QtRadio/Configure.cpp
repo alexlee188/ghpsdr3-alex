@@ -106,6 +106,7 @@ Configure::Configure() {
     widget.rxDCBlockCheckBox->setChecked(false);  //KD0OSS
     widget.txDCBlockCheckBox->setChecked(false);  //KD0OSS
     widget.windowComboBox->setCurrentIndex(11);  //KD0OSS
+    widget.pttKeyEdit->setText("None");  // KD0OSS
 
     connect(widget.spectrumHighSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotSpectrumHighChanged(int)));
     connect(widget.spectrumLowSpinBox,SIGNAL(valueChanged(int)),this,SLOT(slotSpectrumLowChanged(int)));
@@ -154,6 +155,8 @@ Configure::Configure() {
     connect(widget.alcAttackSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onAlcAttackChanged(int))); //KD0OSS
     connect(widget.alcDecaySpinBox,SIGNAL(valueChanged(int)),this,SLOT(onAlcDecayChanged(int))); //KD0OSS
     connect(widget.alcHangSpinBox,SIGNAL(valueChanged(int)),this,SLOT(onAlcHangChanged(int))); //KD0OSS
+
+    connect(widget.pttKeySetButton, SIGNAL(toggled(bool)), this, SLOT(setPTTKey(bool))); // KD0OSS
 /*
     connect(widget.nbTransitionSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onNbTransitionChanged(double))); //KD0OSS
     connect(widget.nbLeadSpinBox,SIGNAL(valueChanged(double)),this,SLOT(onNbLeadChanged(double))); //KD0OSS
@@ -350,6 +353,8 @@ void Configure::loadSettings(QSettings* settings) {
     settings->beginGroup("TxSettings");
     widget.allowTx->setChecked(settings->value("allowTx",FALSE).toBool());
     widget.txDCBlockCheckBox->setChecked(settings->value("txDCBlock",FALSE).toBool());  //KD0OSS
+    widget.pttKeyEdit->setText(settings->value("pttKeyText", "None").toString());
+    pttKeyId = settings->value("pttKeyId", 0).toUInt();
     settings->endGroup();
 
     settings->beginGroup("TxIQimage");  //KD0OSS
@@ -468,6 +473,8 @@ void Configure::saveSettings(QSettings* settings) {
     settings->beginGroup("TxSettings");
     settings->setValue("allowTx",widget.allowTx->checkState());
     settings->setValue("txDCBlock",widget.txDCBlockCheckBox->checkState());  //KD0OSS
+    settings->setValue("pttKeyId", pttKeyId); //KD0OSS
+    settings->setValue("pttKeyText", widget.pttKeyEdit->text());
     settings->endGroup();
     settings->beginGroup("TxIQimage"); // KD0OSS
     settings->setValue("TxIQPhaseCorrect",widget.txIQPhaseSpinBox->value());
@@ -1162,3 +1169,18 @@ void Configure::onAlcHangChanged(int arg1) // KD0OSS
     emit alcHangChanged(arg1);
 }
 
+void Configure::setPTTKey(bool enabled) // KD0OSS
+{
+    capturePTTKey = enabled;
+}
+
+void Configure::keyReleaseEvent(QKeyEvent *event) // KD0OSS
+{
+    if (capturePTTKey)
+    {
+        pttKeyId = event->nativeVirtualKey();
+        widget.pttKeyEdit->setText(QString("0x%1 [%2]").arg(pttKeyId, 8, 16, QChar('0')).arg(event->text()));
+        widget.pttKeySetButton->setChecked(false);
+        capturePTTKey = false;
+    }
+}

@@ -95,6 +95,8 @@ public:
     void loadSettings();
     void saveSettings();
     void closeEvent(QCloseEvent* event);
+    void keyPressEvent(QKeyEvent * event); // KD0OSS
+    void keyReleaseEvent(QKeyEvent * event); // KD0OSS
     void sendCommand(QString command);
     long long rigctlGetFreq();
     QString rigctlGetMode();

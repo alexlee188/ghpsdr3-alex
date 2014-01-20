@@ -30,6 +30,7 @@ Ctl::Ctl(QWidget *parent) :
     ui(new Ui::Ctl)
 {
     ui->setupUi(this);
+    micBar = ui->MicProgressBar;
 
     moxPwr = 80;
     TunePwr = 50;

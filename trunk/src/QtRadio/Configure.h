@@ -30,6 +30,7 @@
 #include <QDebug>
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
+#include <QKeyEvent>
 
 #include "ui_Configure.h"
 
@@ -47,9 +48,12 @@ public:
     void initXvtr(Xvtr* xvtr);
     void loadSettings(QSettings* settings);
     void saveSettings(QSettings* settings);
+    void keyReleaseEvent(QKeyEvent* event); // KD0OSS
 
     void connected(bool state);
     void updateXvtrList(Xvtr* xvtr);
+
+    quint32  pttKeyId;  // KD0OSS
 
     QString getHost();
     void addHost(QString host);
@@ -254,6 +258,8 @@ private slots:
     void onAlcDecayChanged(int); //KD0OSS
     void onAlcHangChanged(int); //KD0OSS
 
+    void setPTTKey(bool); //KD0OSS
+
     void on_userpasssave_clicked();
 
     void on_spinBox_cwPitch_valueChanged(int arg1);
@@ -264,6 +270,9 @@ private slots:
 
 private:
     Ui::Configure widget;
+
+    bool capturePTTKey;  // KD0OSS
+
 };
 
 #endif	/* _CONFIGURE_H */

@@ -26,6 +26,7 @@
 #define CTL_H
 
 #include <QtCore>
+#include <QProgressBar>
 
 #if QT_VERSION >= 0x050000
 #include <QtWidgets/QFrame>
@@ -50,6 +51,8 @@ public:
     int audioGain;
     void loadSettings(QSettings* settings);
     void saveSettings(QSettings* settings);
+
+    QProgressBar *micBar;
 
 signals:
 #if QT_VERSION < 0x050000 && !defined Q_MOC_RUN
