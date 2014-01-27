@@ -37,6 +37,7 @@ BookmarkDialog.moc.cpp           \
 Bookmarks.moc.cpp                \
 BookmarksDialog.moc.cpp          \
 BookmarksEditDialog.moc.cpp      \
+calc.moc.cpp                     \
 Configure.moc.cpp                \
 Connection.moc.cpp               \
 Filter.moc.cpp                   \
@@ -88,6 +89,7 @@ BookmarkDialog.moc.cpp         \
 Bookmarks.moc.cpp              \
 BookmarksDialog.moc.cpp        \
 BookmarksEditDialog.moc.cpp    \
+calc.moc.cpp                   \
 Configure.moc.cpp              \
 Connection.moc.cpp             \
 Filter.moc.cpp                 \
@@ -120,7 +122,7 @@ QtRadio_SOURCES = \
 About.cpp      BandStackEntry.cpp       Buffer.cpp       DIGUFilters.cpp  Frequency.cpp      Mode.cpp        EqualizerDialog.cpp  \
 AMFilters.cpp  Bookmark.cpp             Configure.cpp    DSBFilters.cpp   FrequencyInfo.cpp  SAMFilters.cpp  Xvtr.cpp       \
 Audio.cpp      BookmarkDialog.cpp       Connection.cpp   Filter.cpp       KeypadDialog.cpp   Panadapter.cpp  XvtrEntry.cpp  \
-Band.cpp       Bookmarks.cpp            CWLFilters.cpp   FiltersBase.cpp  LSBFilters.cpp     UI.cpp                         \
+Band.cpp       Bookmarks.cpp            CWLFilters.cpp   FiltersBase.cpp  LSBFilters.cpp     UI.cpp          calc.cpp       \
 BandLimit.cpp  BookmarksDialog.cpp      CWUFilters.cpp   Filters.cpp      main.cpp           USBFilters.cpp                 \
 Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.cpp          vfo.cpp         smeter.cpp     \
 ctl.cpp rigctl.cpp\
@@ -130,7 +132,7 @@ G711A.cpp RTP.cpp hardware.cpp hardware_hermes.cpp hardware_perseus.cpp hardware
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  EqualizerDialog.h \
 Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Panadapter.h    XvtrEntry.h  \
-Band.h       Bookmark.h         codec2.h               DIGLFilters.h  Filters.h      LSBFilters.h     UI.h          Xvtr.h       \
+Band.h       Bookmark.h         codec2.h               DIGLFilters.h  Filters.h      LSBFilters.h     UI.h          calc.h  Xvtr.h       \
 BandLimit.h  BookmarksDialog.h  Configure.h            DIGUFilters.h  FMNFilters.h   Meter.h          USBFilters.h  smeter.h \
 ctl.h rigctl.h\
 Audioinput.h \
@@ -172,6 +174,7 @@ BookmarkDialog.moc.cpp           \
 Bookmarks.moc.cpp                \
 BookmarksDialog.moc.cpp          \
 BookmarksEditDialog.moc.cpp      \
+calc.moc.cpp                     \
 Configure.moc.cpp                \
 Connection.moc.cpp               \
 Filter.moc.cpp                   \
