@@ -90,7 +90,7 @@ int ozy_open(void) {
     return 0;
 }
 
-int ozy_close() {
+void ozy_close() {
     int rc;
 
     rc=libusb_attach_kernel_driver(ozy_handle,0);

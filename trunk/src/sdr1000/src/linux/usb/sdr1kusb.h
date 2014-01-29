@@ -154,6 +154,7 @@ protected:
 	static void* _run(void* ptr) {
 		Sdr1kUsb* _this = (Sdr1kUsb*) ptr;
 		_this->usbThread();
+		return 0;
 	}
 	pthread_t usb_thread;
 	void startUsbThread() {

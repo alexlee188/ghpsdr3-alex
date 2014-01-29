@@ -42,9 +42,6 @@
 
 #include <sdr1kusb.h> 
 
-/// Number of open instances
-static int init_count = 0;
-
 // PIO Register Address
 #define PIO_IC01 0x9
 #define PIO_IC03 0xA

@@ -123,7 +123,7 @@ Prefix: '${prefix}'.
 Compiler: '${CC} ${CFLAGS} ${CPPFLAGS}'
 Now type 'make @<:@<target>@:>@'
 
- where the otpional <target> is:
+ where the optional <target> is:
 
     all           - build all binaries
     install       - install everything

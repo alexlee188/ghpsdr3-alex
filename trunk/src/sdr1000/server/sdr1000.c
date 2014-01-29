@@ -42,19 +42,17 @@
 static pthread_t sdr1000_io_thread_id;
 
 static int rx_frame=0;
-static int tx_frame=0;
 static int receivers=1;
 static int current_receiver=0;
 
 static int speed=0;
 static int sample_rate=48000;
 
+#ifndef PORTAUDIO
 static int samples=0;
+#endif
 
 static int input_buffers;
-
-static struct sockaddr_in client;
-static int client_length;
 
 static int iq_socket;
 static struct sockaddr_in iq_address;
@@ -209,7 +207,7 @@ void* sdr1000_io_thread(void* arg) {
     int bytes;
 #endif
     int rc;
-    int i,j;
+    int i;
 
     while(1) {
 

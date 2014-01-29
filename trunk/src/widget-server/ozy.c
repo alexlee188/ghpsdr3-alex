@@ -315,7 +315,7 @@ void ozy_set_sample_rate(int r) {
 
 }
 
-int ozy_set_playback_sleep(int sleep) {
+void ozy_set_playback_sleep(int sleep) {
     playback_sleep=sleep;
 }
 
