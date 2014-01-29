@@ -80,6 +80,7 @@ fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),n
     fprintf(stderr,"client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
 
     free(client);
+    return 0;
 } // end client_thread
 
 
@@ -248,11 +249,9 @@ char* parse_command(CLIENT* client,char* command)
             // invalid command string
             return INVALID_COMMAND;
         }
-    } else {
-        // empty command string
-        return INVALID_COMMAND;
     }
-
+    // empty command string
+    return INVALID_COMMAND;
 } // end parse_command
 
 

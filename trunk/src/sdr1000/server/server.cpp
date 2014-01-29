@@ -30,7 +30,7 @@ static struct option long_options[] = {
     {0,0, 0, 0},
 };
 
-static char* short_options="rplusdio";
+static const char* short_options="rplusdio";
 static int option_index;
 
 static int rfe=0;

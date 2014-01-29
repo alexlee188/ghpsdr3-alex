@@ -34,6 +34,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "client.h"
 #include "receiver.h"
@@ -218,7 +219,7 @@ char* set_frequency_offset(CLIENT* client,long frequency) { //kd0oss added
 }
 
 char* get_pa_adc(CLIENT* client, unsigned char channel) { //kd0oss added
-    char buffer[5];
+    static char buffer[5];
 
     if(client->state==RECEIVER_DETACHED) {
         return CLIENT_DETACHED;

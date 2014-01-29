@@ -204,7 +204,7 @@ fprintf(stderr,"sdr1000_open: %s\n",sdr1000_get_device());
     return 0;
 }
 
-int sdr1000_close() {
+void sdr1000_close() {
 #ifdef PORTAUDIO
     int rc=Pa_Terminate();
     if(rc!=paNoError) {

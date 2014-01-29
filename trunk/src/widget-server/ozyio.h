@@ -26,7 +26,7 @@
 
 
 int ozy_open(void);
-int ozy_close();
+void ozy_close();
 int ozy_set_speed(char);
 int ozy_write(int ep,unsigned char* buffer,int buffer_size);
 int ozy_read(int ep,unsigned char* buffer,int buffer_size);

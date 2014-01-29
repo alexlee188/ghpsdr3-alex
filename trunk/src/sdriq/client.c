@@ -398,10 +398,8 @@ const char* parse_command(CLIENT* client,char* command) {
             // invalid command string
             return INVALID_COMMAND;
         }
-    } else {
-        // empty command string
-        return INVALID_COMMAND;
     }
+    // empty command string
     return INVALID_COMMAND;
 }
 
