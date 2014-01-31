@@ -99,6 +99,13 @@ if test "x${have_ortp}" = xyes; then
     AC_CHECK_HEADERS([ortp/ortp.h], [], [have_ortp=no])
 fi
 
+if test "x${have_ortp}" = xyes; then
+    AC_LINK_IFELSE(
+        [AC_LANG_CALL([], [rtp_session_set_pktinfo])],
+        [AC_DEFINE(HAVE_RTCP_ORTP, 1, [have ORTP with RTCP functionality])],
+        [])
+fi
+
 if test "x${have_ortp}" = xno; then
     AC_MSG_ERROR([
 -----------------------------------
