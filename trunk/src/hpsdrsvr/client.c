@@ -170,11 +170,9 @@ fprintf(stderr,"parse_command: '%s'\n",command);
             // invalid command string
             return INVALID_COMMAND;
         }
-    } else {
-        // empty command string
-        return INVALID_COMMAND;
     }
-
+    // empty command string
+    return INVALID_COMMAND;
 }
 
 void* audio_thread(void* arg) {

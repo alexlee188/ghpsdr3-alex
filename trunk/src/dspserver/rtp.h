@@ -26,6 +26,7 @@
 */
 
 #define LOCAL_RTP_PORT 5004
+#define LOCAL_RTCP_PORT 5005
 
 void rtp_init();
 RtpSession* rtp_listen(const char *remote_addr, unsigned short remote_port);
