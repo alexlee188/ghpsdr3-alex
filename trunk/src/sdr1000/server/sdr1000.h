@@ -41,6 +41,7 @@ extern int sdr1000_get_receivers();
 extern void sdr1000_set_sample_rate(int r);
 extern int sdr1000_get_sample_rate();
 extern void sdr1000_set_frequency_offset(char* d);
+extern void process_sdr1000_output_buffer(float* left_output_buffer,float* right_output_buffer);
 
 extern void sdr1000_set_input(char* d);
 extern char* sdr1000_get_input();

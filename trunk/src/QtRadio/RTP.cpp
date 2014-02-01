@@ -28,7 +28,11 @@ int RTP::init(const char* host,int port) {
     rtpSession=rtp_session_new(RTP_SESSION_SENDRECV);
     rtp_session_set_scheduling_mode(rtpSession,1);
     rtp_session_set_blocking_mode(rtpSession,0);
+#ifdef HAVE_RTCP_ORTP
+    rtp_session_set_local_addr(rtpSession,"0.0.0.0",-1,-1);
+#else
     rtp_session_set_local_addr(rtpSession,"0.0.0.0",-1);
+#endif
 
     //rtp_session_set_remote_addr(rtpSession,host,port);
     //qDebug() << "RTP connect to remote: [" << host << "] [" << port << "]";

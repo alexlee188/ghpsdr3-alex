@@ -29,7 +29,7 @@
 #endif
 
 extern int sdr1000_open(void);
-extern int sdr1000_close();
+extern void sdr1000_close();
 #ifdef PORTAUDIO
 extern int sdr1000_write(float* left_samples,float* right_samples);
 extern int sdr1000_read(float* left_samples,float* right_samples);

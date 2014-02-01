@@ -80,8 +80,8 @@ fprintf(stderr,"setSoundcard: %d\n",card);
         case SDR_IQ:
             //multimeterCalibrationOffset=-240.0f - 25.0f;
             //displayCalibrationOffset=-18.0f;
-            multimeterCalibrationOffset=-40.0f;
-            displayCalibrationOffset=-80.0f;
+            multimeterCalibrationOffset=-240.0f - 25.0f;
+            displayCalibrationOffset=-240.0f - 18.0f;
             break;
     }
 

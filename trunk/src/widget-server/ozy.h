@@ -47,7 +47,7 @@ void ozy_set_timing(int t);
 
 void ozy_set_record(char* filename);
 void ozy_set_playback(char* filename);
-int ozy_set_playback_sleep(int sleep);
+void ozy_set_playback_sleep(int sleep);
 
 void ozy_set_class(int);
 
