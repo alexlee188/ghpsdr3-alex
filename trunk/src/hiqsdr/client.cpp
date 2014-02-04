@@ -36,7 +36,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <string>     // c++ std strings
-
+#include <math.h>
 #include "hiqsdr.h"
 #include "client.h"
 #include "receiver.h"
@@ -49,8 +49,20 @@ static int counter = 0;
 #define SCALE_FACTOR_32B 2147483647.0      // 2^32 / 2 - 1 = 2147483647.0
 #define SCALE_FACTOR_0   0.0
 #define SCALE_FACTOR_1   1.0
+#define SMALL_PACKETS
 
 #define ADC_CLIP 0x01
+
+static float tx_input_buffer[BUFFER_SIZE*3]; // IQ data from dspserver
+
+
+
+int hpsdr=0;
+
+struct sockaddr_in tx_data_addr;
+int tx_data_length = sizeof(tx_data_addr);
+int tx_data_port = 48249;
+int tx_data_socket;
 
 
 int user_data_callback(void *buf, int buf_size, void *extra)
@@ -254,6 +266,23 @@ const char* parse_command(CLIENT* client,char* command) {
             } else {
                 return INVALID_COMMAND;
             }
+
+
+	} else if(strcmp(token,"mox")==0) {
+  		   token=strtok(NULL," \r\n");
+            	   if(token!=NULL) {
+                   int moxtoken=atoi(token);
+		   fprintf(stderr,"Moxtoken='%d'\n",moxtoken);
+		   hiqsdr_setPTT(moxtoken);
+
+		   return "OK";	                   
+            } else {
+                return INVALID_COMMAND;
+            }
+                 
+
+
+
         } else if(strcmp(token,"start")==0) {
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
@@ -424,5 +453,187 @@ const char* parse_command(CLIENT* client,char* command) {
         return INVALID_COMMAND;
     }
     return INVALID_COMMAND;
+
 }
 
+
+	
+
+
+
+void* tx_iq_thread(void* arg) {
+    int tx_iq_socket;
+    struct sockaddr_in tx_iq_addr;
+    int tx_iq_length = sizeof(tx_iq_addr);
+    BUFFER buffer;   
+    short tx_send_buffer[3*BUFFER_SIZE];
+    int size_waiting_data=0;
+    short tx_udp_buffer[601] = { 0 };
+    int write_pointer=0 ,read_pointer = 0;
+    int i = 0;
+    
+    
+    
+     //setup tx_data_socket  -  socket to send tx data to hiqsdr HW
+ 
+    tx_data_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
+    if(tx_data_socket<0) {
+        perror("create socket failed for tx iq socket ");
+        exit (1);
+    }
+
+    memset(&tx_data_addr,0,tx_data_length);
+
+    tx_data_addr.sin_family=AF_INET;
+    
+    inet_pton (AF_INET, hiqsdr_get_ip_address (), &tx_data_addr.sin_addr);
+    fprintf(stderr,"tx_ip_address: %s",hiqsdr_get_ip_address ());
+    
+ 
+    tx_data_addr.sin_port=htons(tx_data_port);
+
+ 
+    fprintf(stderr,"tx_iq_thread\n");
+
+    // create a socket to receive iq from the dspserver
+ 
+    tx_iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
+    if(tx_iq_socket<0) {
+        perror("tx_iq_thread: create tx_iq socket failed");
+        exit(1);
+    }
+
+    memset(&tx_iq_addr,0,tx_iq_length);
+
+    tx_iq_addr.sin_family=AF_INET;
+    tx_iq_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+    tx_iq_addr.sin_port=htons(AUDIO_PORT);
+
+    if(bind(tx_iq_socket,(struct sockaddr*)&tx_iq_addr,tx_iq_length)<0) {
+        perror("tx_iq_thread: bind socket failed for tx iq socket");
+        exit(1);
+    }
+
+    fprintf(stderr,"tx_iq_thread: iq bound to port %d socket=%d\n",htons(tx_iq_addr.sin_port),tx_iq_socket);
+    
+    while(1) {
+        int bytes_read;
+        int offset = 0;
+        int bytes_written;
+        
+        unsigned long rx_sequence = 0;
+#ifdef SMALL_PACKETS
+        while(1) {
+            bytes_read=recvfrom(tx_iq_socket,(char*)&buffer,sizeof(buffer),0,(struct sockaddr*)&tx_iq_addr,(socklen_t *)&tx_iq_length);
+            if(bytes_read<0) {
+                perror("recvfrom socket failed for tx iq buffer");
+                exit(1);
+            }
+            
+                
+	    
+            if(buffer.offset==0) {
+                offset=0;
+                rx_sequence=buffer.sequence;
+                // start of a frame
+       
+                memcpy((char *)&tx_input_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
+                offset+=buffer.length;
+               //fprintf(stderr,"iq received from dspserver: %f,%f at offset = %d\n",tx_input_buffer[0],tx_input_buffer[1], buffer.offset);
+                   
+              
+               
+            } else {
+                if((rx_sequence==buffer.sequence) && (offset==buffer.offset)) {
+                    memcpy((char *)&tx_input_buffer[buffer.offset/4],(char *)&buffer.data[0],buffer.length);
+                
+                    
+                   
+                    offset+=buffer.length;
+                    
+                    if((hpsdr && (offset==(BUFFER_SIZE*3*4))) || (!hpsdr && (offset==(BUFFER_SIZE*2*4)))) {
+                        
+                        
+                        // if(mox){  - PTT status to be integrated in HIQSDR structure in hiqsdr.cpp
+                       
+                       
+                       // tx_input_buffer is non interleaved - has to be interleaved here!!
+                       
+						#pragma omp parallel for schedule(static) private(i) 
+						
+                         for (i=0;i<(BUFFER_SIZE);i=i+2) { // i from 0 to 1023-> inp.buf. from 0 to 2047
+							
+							 tx_send_buffer[i+1+write_pointer]=(short) (tx_input_buffer[i]*32767.0);            //  take every 2nd samplepair - sample rate reduction
+                             tx_send_buffer[i+write_pointer]=(short) (tx_input_buffer[i+(BUFFER_SIZE)]*32767.0);//  to 48 khz - has to be modified to be dynamic
+                            
+                            
+                            }
+                            
+                    
+                            
+                            
+                            
+							write_pointer = write_pointer + BUFFER_SIZE;  //more 1024 shorts written
+                            size_waiting_data += BUFFER_SIZE;
+                            
+                            while (size_waiting_data >=600) {
+								//copy 600 shorts to the 2nd position of the udp buffer - first pos. is 0 for hiqsdr
+								
+								if (((3*BUFFER_SIZE)-read_pointer) >= 600) {  // we can copy in one step 	
+							    memcpy((char *)&tx_udp_buffer[1],(char *) &tx_send_buffer[read_pointer],1200);
+							    read_pointer+=600;
+							   
+							
+							    }
+							    else {  // we have to copy in 2 steps - end and front of the buffer
+							    memcpy((char *)&tx_udp_buffer[1],(char *) &tx_send_buffer[read_pointer],2*((3*BUFFER_SIZE)-read_pointer));
+							    memcpy((char *)&tx_udp_buffer[1+((3*BUFFER_SIZE)-read_pointer)],(char *) &tx_send_buffer[0],2*(600-((3*BUFFER_SIZE)-read_pointer)));
+							    read_pointer=600-((3*BUFFER_SIZE)-read_pointer);
+							   
+							    }
+							    if (read_pointer>=(3*BUFFER_SIZE)) read_pointer=0;
+							
+							    
+								tx_udp_buffer[0]=0;  //not necessary just for safety that the first short is 0
+								
+								bytes_written=sendto(tx_data_socket,(char*)&tx_udp_buffer,sizeof(tx_udp_buffer),0,(struct sockaddr*)&tx_data_addr,tx_data_length);
+							
+							 
+							
+							
+								
+								if(bytes_written<0) {
+									
+								fprintf(stderr,"tx udp sendto hiqsdr HW failed with : %d audio_socket=%d\n",bytes_written,tx_iq_socket);
+								exit(1);
+								} else {
+									
+																   
+								   }
+								
+								size_waiting_data = size_waiting_data-600;
+							}
+								
+								
+								
+                            
+                        if (write_pointer > (2*BUFFER_SIZE)) write_pointer=0;
+                                          
+                        offset=0;
+                        break;
+                    }
+                } else {
+			fprintf(stderr,"missing TX IQ frames from dspserver\n");
+                }
+            } // else if(buffer.offset==0)
+	} // end while(1)
+#else
+	
+
+#endif
+
+
+
+
+    } // end while
+}

@@ -1,4 +1,5 @@
-/**
+/*
+*
 * @file hiqsdr.cpp
 * @brief HiqSDR server application
 * @author Andrea Montefusco, IW0HDV
@@ -41,6 +42,8 @@
 #include "hiqsdr.h"
 
 
+#define AUDIO_PORT 15000
+
 struct AsynchCtxData {
     void *pUserData;
     HIQSDR_CB udcf ;
@@ -61,6 +64,7 @@ struct Hiqsdr {
     unsigned short tx_data_port;
     int            ctrl_socket;
     int            data_socket;
+    //int			   tx_data_socket;
 
     // radio state
     int  fwv;
@@ -68,19 +72,23 @@ struct Hiqsdr {
     long long bw;
     int  attDb;
     int  antSel;
-    bool Xfilters; // Use the 80/40 extended filters
+	//int  preselItemCnt; // Count of filter entries in hiqsdr.config
     unsigned int  preSel; // Holds filter number
+    //char *preselDesc[16];
 	std::vector<PreselItem> preInfo; //Holds presel filters table
     int  preamp;
 
     // asynch thread for receiving data from hardware
     pthread_t      thread_id;
+   
     AsynchCtxData *pacd;
 };
 
 // module variables
 static struct Hiqsdr hq;
 static int init = 0;
+
+int PTT_status = 0;  //should be integrated into the HIQSDR structure under radio-status
 
 
 // module private utility methods
@@ -109,7 +117,6 @@ int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
    hq.antSel = 0;
    hq.preSel = 0;
    hq.preamp = 0;
-   hq.Xfilters = false;
    hq.rx_data_port = 48247;
    hq.ctrl_port    = hq.rx_data_port+1;   
    hq.tx_data_port = hq.rx_data_port+2;
@@ -168,6 +175,10 @@ int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
         perror("connect socket failed for data socket\n");
         return -1;
    }
+   
+ 
+   
+   
    // end of network configuration
 
    // asynch reception thread data
@@ -191,6 +202,28 @@ int hiqsdr_init (const char*hiqsdr_ip, int hiqsdr_bw, long long hiqsdr_f)
 
 }
 
+// set and release PTT according to the mox status  DL2FW  13.12.2013
+
+void hiqsdr_setPTT(int mox_status)
+{
+	if (mox_status==1) {
+		PTT_status=1;
+		send_deactivation(&hq);
+		}
+	else {
+		PTT_status=0;
+		send_activation(&hq);
+	}
+	
+	send_command (&hq);
+
+
+}
+
+
+
+
+
 int hiqsdr_connect ()
 {
     int rc = send_activation (&hq);
@@ -212,25 +245,25 @@ char *hiqsdr_get_ip_address ()
 
 int hiqsdr_set_frequency (long long f)
 {
-   unsigned int cnt = 0;
+   unsigned int cnt;
 	
    fprintf (stderr, "%s: %Ld\n", __FUNCTION__, f);
    hq.freq = f;
 	
 	// Check to see if freq change caused a band filter change.
-	for (unsigned int x=0; x<(hq.preInfo.size()-1); ++x) {
-		if ((f >= hq.preInfo[x].freq) & (f < hq.preInfo[x+1].freq)){
-			cnt = x; // cnt indexes the filter associated with this frequency.
-			if (!hq.Xfilters) break; 
+	for (cnt=0; cnt<(hq.preInfo.size()-1); ++cnt) {
+		if ((f >= hq.preInfo[cnt].freq) & (f < hq.preInfo[cnt+1].freq)){
+			break; // cnt indexes the filter associated with this frequency.
 		}
 	}
 	// If freq change caused a filter change then store new filter details.
    if (hq.preSel != hq.preInfo[cnt].filtNum) {
 		 hiqsdr_set_preselector(hq.preInfo[cnt].filtNum);
-	}	// TODO check and see if send_command sends all commands, maybe
-		// we dont need to specifically set the preselector??
+	}
+	// else { TODO check and see if send_command sends all commands
    send_command (&hq);
    return 0;
+	// }
 }
 
 int hiqsdr_set_bandwidth (long long b)
@@ -631,29 +664,27 @@ static int createConfigFile(FILE *fc, const char *fn)
 		fprintf(fc, "%d!%d!%s\n", 0, 2000000, "FILTER BYPASS");
 		fprintf(fc, "%d!%d!%s\n", 2, 3500000, "80 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 4000000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 3, 7000000, "40 M");
+		fprintf(fc, "%d!%d!%s\n", 3, 5000000, "60 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 5100000, "FILTER BYPASS");
+		fprintf(fc, "%d!%d!%s\n", 4, 7000000, "40 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 7300000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 4, 10100000, "30M");
+		fprintf(fc, "%d!%d!%s\n", 5, 10100000, "30M");
 		fprintf(fc, "%d!%d!%s\n", 0, 10150000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 5, 14000000, "20 M");
+		fprintf(fc, "%d!%d!%s\n", 6, 14000000, "20 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 14350000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 6, 18068000, "17 M");
+		fprintf(fc, "%d!%d!%s\n", 7, 18068000, "17 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 18168000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 7, 21000000, "15 M");
+		fprintf(fc, "%d!%d!%s\n", 8, 21000000, "15 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 21450000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 8, 24890000, "12 M");
+		fprintf(fc, "%d!%d!%s\n", 9, 24890000, "12 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 24990000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 9, 28000000, "10 M");
+		fprintf(fc, "%d!%d!%s\n", 10, 28000000, "10 M");
 		fprintf(fc, "%d!%d!%s\n", 0, 29700000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 10, 51000000, "6 M");
-		fprintf(fc, "%d!%d!%s\n", 0, 54000000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 11, 3500000, "80 Xm");
-		fprintf(fc, "%d!%d!%s\n", 0, 4000000, "FILTER BYPASS");
-		fprintf(fc, "%d!%d!%s\n", 12, 7000000, "40 Xm");
-		fprintf(fc, "%d!%d!%s\n", 0, 7200000, "FILTER BYPASS");		
+		fprintf(fc, "%d!%d!%s\n", 11, 51000000, "6 M");
+		fprintf(fc, "%d!%d!%s\n", 0, 53000000, "FILTER BYPASS");
 		fclose (fc);
         fprintf (stderr, "Configuration file created at: %s\n", fn);
-		nr = 25;
+		nr = 23;
     } else {
 		perror ("The following error occurred");
 	}
@@ -748,11 +779,16 @@ static int send_command (struct Hiqsdr *hiq) {
     m.rxf_l = compute_phase (hiq->freq);
     m.txf_l = compute_phase (hiq->freq);
 
-    m.txl = 0;    //Tx output level 0 to 255
+    m.txl = 200;    //Tx output level 0 to 255   DL2FW:  has to be dynamic - slider!
 
-    m.txc = 0x02  //   all other operation (e.g. SSB)
-          | 0x04  //   use the HiQSDR extended IO pins (from FPGA version 1.1 on)
-    ;
+   if (PTT_status==1)  { m.txc = 0x02  //   all other operation (e.g. SSB)
+          		| 0x04   //   use the HiQSDR extended IO pins (from FPGA version 1.1 on)
+    			| 0x08;   //  set PTT
+			}
+    else {	 	m.txc = 0x02  //   all other operation (e.g. SSB)
+          		| 0x04;   //   use the HiQSDR extended IO pins (from FPGA version 1.1 on)
+	  }
+
     m.rxc = get_decimation(hiq->bw) - 1;
 
     m.fwv = 3;  // FPGA firmware version
@@ -811,7 +847,7 @@ static int ping_hardware (struct Hiqsdr *hiq, int tmo_s)
     m.rxf_l = compute_phase (hiq->freq);
     m.txf_l = compute_phase (hiq->freq);
 
-    m.txl = 0;    //Tx output level 0 to 255
+    m.txl = 200;    //Tx output level 0 to 255
 
     m.txc = 0x02; // = all other operation (e.g. SSB)
     m.rxc = get_decimation(hiq->bw) - 1;
@@ -845,16 +881,16 @@ static int ping_hardware (struct Hiqsdr *hiq, int tmo_s)
             } else {
                 if (bytes_read >= 14 && bytes_read <= 22) {
                    if (ma.fwv == 0) {
-                       fprintf (stderr, "Frame length is %d and firmware version is %02x\n", bytes_read, ma.fwv);
+                       fprintf (stderr, "Frame lenght is %d and firmware version is %02x\n", bytes_read, ma.fwv);
                        hiq->fwv = ma.fwv;
                        rc = 0; //OK, old firmware
                    } else { // new
-                       fprintf (stderr, "Frame length is %d and firmware version is %02x\n", bytes_read, ma.fwv);
+                       fprintf (stderr, "Frame lenght is %d and firmware version is %02x\n", bytes_read, ma.fwv);
                        hiq->fwv = ma.fwv;
                        rc = 0;
                    }
                 } else {
-                    fprintf (stderr, "Unxpected frame length: %d proceed at your risk !\n", bytes_read);
+                    fprintf (stderr, "Unxpected frame lenght: %d proceed at your risk !\n", bytes_read);
                     rc = 0;
                 }
             } 
@@ -986,6 +1022,7 @@ int main (int argc, const char** argv)
     int ndp, rc;
     long long int f_rx = 3679995LL;
     long long int f_tx = 3676350LL;
+    
 
     fprintf (stderr, "%lld Hz, Rx phase: %08lX\n", f_rx, compute_phase(f_rx) );
     fprintf (stderr, "%lld Hz, Tx phase: %08lX\n", f_tx, compute_phase(f_tx) );

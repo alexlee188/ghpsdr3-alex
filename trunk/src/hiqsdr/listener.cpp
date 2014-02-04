@@ -47,14 +47,25 @@ char* parse_command(CLIENT* client,char* command);
 void create_listener_thread() {
 
     pthread_t thread_id;
+    pthread_t tx_iq_thread_id;
     int rc;
-
+    
+    
+    fprintf(stderr,"Try to create listener_thread\n");
     // create the thread to listen for TCP connections
     rc=pthread_create(&thread_id,NULL,listener_thread,NULL);
     if(rc<0) {
         perror("pthread_create listener_thread failed");
         exit(1);
     }
+    
+      fprintf(stderr,"Try to create tx_iq_thread\n");
+        
+        rc=pthread_create(&tx_iq_thread_id,NULL,tx_iq_thread,NULL);
+        if(rc<0) {
+            perror("pthread_create tx_iq_thread failed");
+            exit(1);                                           
+        }
     
 }
 
@@ -66,6 +77,7 @@ void* listener_thread(void* arg) {
     int rc;
     int on=1;
 
+    
     // create TCP socket to listen on
     s=socket(AF_INET,SOCK_STREAM,0);
     if(s<0) {
@@ -85,7 +97,7 @@ void* listener_thread(void* arg) {
         exit(1);
     }
 
-fprintf(stderr,"Listening for TCP connections on port %d\n",LISTEN_PORT);
+fprintf(stderr,"Listening ---  for TCP connections on port %d\n",LISTEN_PORT);
 
     while(1) {
 
@@ -112,8 +124,10 @@ fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),n
         rc=pthread_create(&client->thread_id,NULL,client_thread,(void *)client);
         if(rc<0) {
             perror("pthread_create command_thread failed");
-            exit(1);
+            exit(1);                                           
         }
+        
+       
 
     }
 }

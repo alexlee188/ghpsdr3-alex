@@ -253,6 +253,7 @@ void send_IQ_buffer (RECEIVER *pRec) {
                 buffer.offset=offset;
                 buffer.length=sizeof(pRec->input_buffer)-offset;
                 if(buffer.length>500) buffer.length=500;
+                // float has 4 bytes -> offset/4
                 memcpy ((char*)&buffer.data[0], (char*)&(pRec->input_buffer[offset/4]), buffer.length);
                 rc = sendto (iq_socket, (char*)&buffer, sizeof(buffer), 0, (struct sockaddr*)&client,client_length);
                 if(rc<=0) {

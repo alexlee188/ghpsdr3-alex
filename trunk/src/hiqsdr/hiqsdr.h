@@ -47,9 +47,14 @@ int hiqsdr_get_preamp (void);
 int hiqsdr_start_asynch_input (HIQSDR_CB cb, void *pud);
 int hiqsdr_stop_asynch_input ();
 int hiqsdr_deinit (void);
+
+void hiqsdr_setPTT(int mox_status);
+
 static int createConfigFile(FILE *fc, const char *fn);
 
 char *hiqsdr_get_ip_address ();
+
+
 
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
