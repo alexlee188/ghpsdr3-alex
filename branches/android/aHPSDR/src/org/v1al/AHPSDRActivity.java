@@ -558,6 +558,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
             builder = new AlertDialog.Builder(this);
             builder.setTitle("Enter frequency (in Hz):");
             final EditText freq = new EditText(this);
+            freq.setText(Long.toString(connection.getFrequency()));
             builder.setView(freq);
             builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
@@ -1292,7 +1293,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		};
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(35)");
+	    connection.sendCommand("setClient glSDR(36)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setBand(band);
