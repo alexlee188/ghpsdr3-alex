@@ -632,12 +632,13 @@ void Audio_processing::codec2Decode(char* buffer,int length) {
     short v[samples_per_frame];
     int bits_size = codec2_bits_per_frame(codec2)/8;
     unsigned char bits[bits_size];
+    float ber_est = 0.0f;
 
     j = 0;
     k = 0;
     while (j < length) {
         memcpy(bits,&buffer[j],bits_size);
-        codec2_decode(codec2, v, bits);
+        codec2_decode(codec2, v, bits, ber_est);
         for (i=0; i < samples_per_frame; i++){
             //buffer_in[i] = (float)v[i]/32767.0f;
             pdecoded_buffer->enqueue(v[i]);
