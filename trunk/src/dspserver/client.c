@@ -551,7 +551,6 @@ void *tx_thread(void *arg){
    //    float data_out[MIC_ALAW_BUFFER_SIZE*2*24];	        // 192khz/8khz
    // #endif
    float *data_in, *data_out;
-   float ber_est = 0.0;
 
    SRC_DATA data;
    void *mic_codec2 = (void *) codec2_create(CODEC2_MODE_3200);
@@ -586,7 +585,7 @@ void *tx_thread(void *arg){
            if (audiostream_conf.micEncoding == MIC_ENCODING_CODEC2){
 	           bits = item->buf;	// each frame is BITS_SIZE long for Codec 2
 	           // process codec2 encoded mic_buffer
-	           codec2_decode(mic_codec2, codec2_buffer, bits, ber_est);
+	           codec2_decode(mic_codec2, codec2_buffer, bits);
 	           // mic data is mono, so copy to both right and left channels
 	           #pragma omp parallel for schedule(static) private(j) 
                    for (j=0; j < samples_per_frame; j++) {
