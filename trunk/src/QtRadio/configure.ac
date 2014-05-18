@@ -73,7 +73,7 @@ have_ortp=no
 AC_SEARCH_LIBS([ortp_init], [ortp],[have_ortp=yes])
 
 if test "x${have_codec2}" = xyes; then
-    AC_CHECK_HEADERS([codec2.h], [], [have_codec2=no])
+    AC_CHECK_HEADERS([codec2/codec2.h], [], [have_codec2=no])
 fi
 
 if test "x${have_codec2}" = xno; then
