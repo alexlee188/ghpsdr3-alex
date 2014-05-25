@@ -208,7 +208,7 @@ fi
 
 
 if test "x${have_codec2}" = xyes; then
-    AC_CHECK_HEADERS([codec2.h], [], [have_codec2=no])
+    AC_CHECK_HEADERS([codec2/codec2.h], [], [have_codec2=no])
 fi
 
 if test "x${have_codec2}" = xno; then
@@ -510,7 +510,7 @@ Prefix: '${prefix}'.
 Compiler: '${CC} ${CFLAGS} ${CPPFLAGS}'
 Now type 'make @<:@<target>@:>@'
 
- where the otpional <target> is:
+ where the optional <target> is:
 
     all           - build all binaries
     install       - install everything
