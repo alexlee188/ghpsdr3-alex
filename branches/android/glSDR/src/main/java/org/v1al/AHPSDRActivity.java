@@ -49,7 +49,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
 import android.util.DisplayMetrics;
-// import org.bitcoin.protocols.payments.Protos;
+import org.bitcoin.protocols.payments.Protos;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -63,13 +63,11 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/*
 import com.google.bitcoin.core.Address;
 import com.google.bitcoin.core.AddressFormatException;
 import com.google.bitcoin.core.NetworkParameters;
 import com.google.bitcoin.script.ScriptBuilder;
 import com.google.protobuf.ByteString;
-*/
 
 import de.schildbach.wallet.integration.android.BitcoinIntegration;
 
