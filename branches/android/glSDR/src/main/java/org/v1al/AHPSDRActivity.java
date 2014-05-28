@@ -49,7 +49,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
 import android.util.DisplayMetrics;
-import org.bitcoin.protocols.payments.Protos;
+// import org.bitcoin.protocols.payments.Protos;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -63,11 +63,13 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+/*
 import com.google.bitcoin.core.Address;
 import com.google.bitcoin.core.AddressFormatException;
 import com.google.bitcoin.core.NetworkParameters;
 import com.google.bitcoin.script.ScriptBuilder;
 import com.google.protobuf.ByteString;
+*/
 
 import de.schildbach.wallet.integration.android.BitcoinIntegration;
 
@@ -336,6 +338,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		menu.add(0, MENU_MIC_GAIN, 0, "MIC GAIN");
 		menu.add(0, MENU_MASTER, 0, "MASTER");
 		menu.add(0, MENU_ABOUT, 0, "About");
+		menu.add(0, MENU_DONATE, 0, "Donate Bitcoin");
 		menu.add(0, MENU_QUIT, 0, "Quit");
 		return true;
 	}
@@ -1268,6 +1271,23 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			about.setTitle("About glSDR");
 			about.show();
 			break;
+		case MENU_DONATE:
+			builder = new AlertDialog.Builder(this);
+			builder.setTitle("Donate bitcoins");
+			builder.setMessage("Please donate bitcoins to help the project team to maintain the servers and upgrade the service.");
+			builder.setPositiveButton("DONATE", new DialogInterface.OnClickListener(){
+				public void onClick(DialogInterface dialog, int which){
+					dialog.dismiss();
+			}
+			});
+			builder.setNegativeButton("NOT NOW", new DialogInterface.OnClickListener() {
+			    public void onClick(DialogInterface dialog, int which) {
+			        dialog.dismiss();
+			    }
+			});
+			AlertDialog alert = builder.create();
+			alert.show();
+			break;
 		default:
 			dialog = null;
 			break;
@@ -1405,6 +1425,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int MENU_MIC_GAIN = 16;
 	public static final int MENU_SPECTRUM_AVERAGE = 17;
 	public static final int MENU_ABOUT = 18;
+	public static final int MENU_DONATE = 19;
 
 	public static final CharSequence[] bands = { "160", "80", "60", "40", "30",
 			"20", "17", "15", "12", "10", "6", "GEN", "WWV", "Reset" };

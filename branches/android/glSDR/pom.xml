@@ -28,12 +28,6 @@
 			<artifactId>integration-android</artifactId>
 			<version>2.0</version>
 		</dependency>
-		<!-- com.google.bitcoin.* -->
-		<dependency>
-			<groupId>com.google</groupId>
-			<artifactId>bitcoinj</artifactId>
-			<version>0.11.2</version>
-		</dependency>
 	</dependencies>
 	<build>
 		<finalName>${project.artifactId}</finalName>
