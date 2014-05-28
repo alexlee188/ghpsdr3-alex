@@ -3,7 +3,6 @@ package org.v1al;
 import android.app.Activity;
 
 
-
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -50,6 +49,28 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
 import android.util.DisplayMetrics;
+import org.bitcoin.protocols.payments.Protos;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.style.TypefaceSpan;
+import android.view.View;
+import android.widget.Button;
+import android.widget.RadioButton;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.bitcoin.core.Address;
+import com.google.bitcoin.core.AddressFormatException;
+import com.google.bitcoin.core.NetworkParameters;
+import com.google.bitcoin.script.ScriptBuilder;
+import com.google.protobuf.ByteString;
+
+import de.schildbach.wallet.integration.android.BitcoinIntegration;
+
 
 public class AHPSDRActivity extends Activity implements SensorEventListener {
 	/** Called when the activity is first created. */
