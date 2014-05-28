@@ -1,6 +1,6 @@
 <h3>glSDR</h3>
-Version 36<br>
-Copyright 2012-13 Alex Lee<br>
+Version 37<br>
+Copyright 2012-14 Alex Lee<br>
 <b>http://napan.ca/ghpsdr3/index.php/Main_Page</b><br><br>
 List of servers<br>
 <b>http://qtradio.napan.ca/qtradio/qtradio.pl</b><br><br>

@@ -60,7 +60,7 @@ public class Connection extends Thread {
 		    int N = 10 * AudioRecord.getMinBufferSize(8000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
 		    if (N < micBufferSize * 40) N = micBufferSize * 40; // 40 * 58 = 2320
 		    
-		    recorder = new AudioRecord(AudioSource.MIC, 8000,
+		    recorder = new AudioRecord(AudioSource.VOICE_COMMUNICATION, 8000,
 		    				AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, N);
 		    
 		    recorder.setPositionNotificationPeriod(micBufferSize * nMicBuffers);
