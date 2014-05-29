@@ -1276,15 +1276,14 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			builder.setPositiveButton("DONATE", new DialogInterface.OnClickListener(){
 				public void onClick(DialogInterface dialog, int which){
 					dialog.dismiss();
-			}
-			});
+					}
+				});
 			builder.setNegativeButton("NOT NOW", new DialogInterface.OnClickListener() {
 			    public void onClick(DialogInterface dialog, int which) {
 			        dialog.dismiss();
-			    }
-			});
-			AlertDialog alert = builder.create();
-			alert.show();
+			    	}
+				});
+			dialog = builder.create();
 			break;
 		default:
 			dialog = null;
