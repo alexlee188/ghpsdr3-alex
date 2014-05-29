@@ -1275,6 +1275,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			builder.setMessage("Please donate bitcoins to help the project team to maintain the servers and upgrade the service.");
 			builder.setPositiveButton("DONATE", new DialogInterface.OnClickListener(){
 				public void onClick(DialogInterface dialog, int which){
+					handleDonate();
 					dialog.dismiss();
 					}
 				});
@@ -1381,6 +1382,15 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 				mHandler.postDelayed(updateTitle, 500);
 			}
 	    }
+	}
+	
+	// Handle bitcoin Donation
+	
+	private void handleDonate()
+	{
+		final String address = DONATION_ADDRESSES_TESTNET[0];
+
+		BitcoinIntegration.requestForResult(AHPSDRActivity.this, REQUEST_CODE, address);
 	}
 	
 	private Timer timer;
@@ -1579,4 +1589,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	// The Renderer
 	Renderer renderer = null;
 
+	// constants for Bitcoin Donation
+	private static final String[] DONATION_ADDRESSES_MAINNET = { "12voruGfjz6LNTQeq8DyXD7U5kRQkfCTTW", "18rB6RA6Tc75sZCRGDyBbrtWd82RrpmEPo" };
+	private static final String[] DONATION_ADDRESSES_TESTNET = { "my16ohVdTJK5w5eba6AbTRLatsN3gpGLaK", "mg2Y2CRKK1ACQcNBEUVFRSM7pHeu4kBxuF" };
+	private static final int REQUEST_CODE = 0;
+	
 }
