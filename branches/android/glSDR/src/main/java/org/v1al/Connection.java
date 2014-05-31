@@ -7,7 +7,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 
-import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -18,7 +17,6 @@ import android.media.MediaRecorder.AudioSource;
 import android.os.Build;
 import android.util.Log;
 
-@TargetApi(Build.VERSION_CODES.CUPCAKE)
 public class Connection extends Thread {
 	public Connection(String server, int port, int width) {
 		// Log.i("Connection",server+":"+port);
@@ -60,7 +58,7 @@ public class Connection extends Thread {
 		    int N = 10 * AudioRecord.getMinBufferSize(8000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
 		    if (N < micBufferSize * 40) N = micBufferSize * 40; // 40 * 58 = 2320
 		    
-		    recorder = new AudioRecord(AudioSource.VOICE_COMMUNICATION, 8000,
+		    recorder = new AudioRecord(AudioSource.MIC, 8000,
 		    				AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, N);
 		    
 		    recorder.setPositionNotificationPeriod(micBufferSize * nMicBuffers);
