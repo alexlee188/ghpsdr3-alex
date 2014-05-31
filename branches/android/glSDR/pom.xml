@@ -41,26 +41,26 @@
 		<pluginManagement>
 			<plugins>
 				<plugin>
-					<groupId>com.jayway.maven.plugins.android.generation2</groupId>
-					<artifactId>android-maven-plugin</artifactId>
-					<version>3.7.0</version>
-					<extensions>true</extensions>
+				<groupId>com.jayway.maven.plugins.android.generation2</groupId>
+				<artifactId>android-maven-plugin</artifactId>
+				<version>3.7.0</version>
+				<extensions>true</extensions>
 				</plugin>
 			</plugins>
 		</pluginManagement>
-	<plugins>
+		<plugins>
 			<plugin>
 				<groupId>com.jayway.maven.plugins.android.generation2</groupId>
 				<artifactId>android-maven-plugin</artifactId>
 				<configuration>
     				<sdk>
-					<platform>10</platform>
+				<platform>10</platform>
     				</sdk>
 				</configuration>
 			</plugin>
-		<plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-jarsigner-plugin</artifactId>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jarsigner-plugin</artifactId>
 				<executions>
     					<execution>
         					<id>signing</id>
@@ -81,6 +81,10 @@
             				<storepass>${sign.storepass}</storepass>
             				<keypass>${sign.keypass}</keypass>
             				<verbose>true</verbose>
+          				<arguments>
+              				<argument>-tsa</argument>
+              				<argument>https://timestamp.geotrust.com/tsa</argument>
+            				</arguments>
         				</configuration>
     				</execution>
 				</executions>
@@ -101,16 +105,16 @@
         			</outputApk>
     				</zipalign>
 			</configuration>
-		<executions>
+			<executions>
     			<execution>
         			<id>alignApk</id>
         			<phase>package</phase>
         			<goals>
-            				<goal>zipalign</goal>
+            			<goal>zipalign</goal>
         			</goals>
     			</execution>
-		</executions>
-		</plugin>
-	</plugins>
+			</executions>
+			</plugin>
+		</plugins>
 	</build>
 </project>
