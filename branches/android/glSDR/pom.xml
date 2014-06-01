@@ -87,9 +87,6 @@
 			<configuration>
  				<sdk><platform>10</platform></sdk>
 				<release>true</release>
-    				<sign>
-        			<debug>false</debug>
-    				</sign>
     				<zipalign>
         			<verbose>true</verbose>
 				<skip>false</skip>
@@ -101,7 +98,7 @@
 			<executions>
     			<execution>
         			<id>alignApk</id>
-        			<phase>package</phase>
+        			<phase>install</phase>
         			<goals>
             			<goal>zipalign</goal>
         			</goals>
