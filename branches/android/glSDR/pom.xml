@@ -86,6 +86,7 @@
 				<inherited>true</inherited>
 			<configuration>
  				<sdk><platform>10</platform></sdk>
+				<release>true</release>
     				<sign>
         			<debug>false</debug>
     				</sign>
