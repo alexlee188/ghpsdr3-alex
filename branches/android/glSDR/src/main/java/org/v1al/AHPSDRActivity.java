@@ -1388,7 +1388,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	
 	private void handleDonate()
 	{
-		final String address = DONATION_ADDRESSES_TESTNET[0];
+		final String address = DONATION_ADDRESSES_MAINNET[0];
 
 		BitcoinIntegration.requestForResult(AHPSDRActivity.this, REQUEST_CODE, address);
 	}
