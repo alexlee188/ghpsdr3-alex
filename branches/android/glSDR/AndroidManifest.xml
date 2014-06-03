@@ -8,6 +8,12 @@
     <compatible-screens></compatible-screens>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.INTERNET" />
+    <supports-screens 
+        android:anyDensity="true"
+        android:smallScreens="false"
+        android:normalScreens="true"
+        android:largeScreens="true"
+    	android:xlargeScreens="true" />
     <application android:icon="@drawable/icon" android:label="@string/app_name">
         <activity android:name="org.v1al.AHPSDRActivity"
                   android:label="@string/app_name">
