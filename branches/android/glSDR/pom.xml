@@ -13,7 +13,13 @@
 		<platform.version> 2.3.3</platform.version>
 		<android.plugin.version>3.8.2</android.plugin.version>
 	</properties>
-
+	<licenses>
+		<license>
+			<name>GNU General Public License</name>
+			<url>http://www.gnu.org/licenses/gpl.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
 	<dependencies>
 		<dependency>
 			<groupId>com.google.android</groupId>
@@ -87,13 +93,16 @@
 			<configuration>
  				<sdk><platform>10</platform></sdk>
 				<release>true</release>
-    				<zipalign>
-        			<verbose>true</verbose>
+				<proguard>
+					<skip>true</skip>
+				</proguard>
+    			<zipalign>
+        		<verbose>true</verbose>
 				<skip>false</skip>
         <inputApk>${project.build.directory}/${project.artifactId}.apk</inputApk>
         <outputApk>${project.build.directory}/${project.artifactId}-signed-aligned.apk
         			</outputApk>
-    				</zipalign>
+    			</zipalign>
 			</configuration>
 			<executions>
     			<execution>
