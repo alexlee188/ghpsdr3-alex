@@ -211,6 +211,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		tx_state[0]=prefs.getBoolean("txAllow", false);
 		jd_state[0]=prefs.getBoolean("jogSpec", false);
 		dsp_state[3]=prefs.getBoolean("IQ", false);
+		dsp_state[4]=prefs.getBoolean("RXDCBlock", false);
 	}
 
 	@Override
@@ -258,6 +259,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		editor.putBoolean("txAllow", tx_state[0]);
 		editor.putBoolean("jogSpec", jd_state[0]);
 		editor.putBoolean("IQ", dsp_state[3]);
+		editor.putBoolean("RXDCBlock", dsp_state[4]);
 		editor.commit();
 	}
 
@@ -1142,6 +1144,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 							case DSP_IQ:
 								connection.setIQCorrection(state);
 								break;
+							case DSP_RXDC_BLOCK:
+								connection.setRXDCBlock(state);
+								break;
 							}
 
 							dialog.dismiss();
@@ -1332,7 +1337,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		};
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(38)");
+	    connection.sendCommand("setClient glSDR(39)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setBand(band);
@@ -1344,7 +1349,8 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	    spectrumView.setJogButtonDirection(jd_state[0]);
 	    connection.setTxUser(txUser);
 	    connection.setTxPass(txPass);
-	    connection.setIQCorrection(dsp_state[3]);					
+	    connection.setIQCorrection(dsp_state[3]);
+	    connection.setRXDCBlock(dsp_state[4]);					
 		spectrumView.setConnection(connection);
 		mGLSurfaceView.setConnection(connection);
 		spectrumView.setAverage(-100);
@@ -1496,14 +1502,15 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	public static final int AGC_MEDIUM = 3;
 	public static final int AGC_FAST = 4;
 
-	public static final CharSequence[] dsps = { "NR", "ANF", "NB", "IQ CORRECTION" };
+	public static final CharSequence[] dsps = { "NR", "ANF", "NB", "IQ CORRECTION", "RX DC Block" };
 
 	public static final int DSP_NR = 0;
 	public static final int DSP_ANF = 1;
 	public static final int DSP_NB = 2;
 	public static final int DSP_IQ = 3;
+	public static final int DSP_RXDC_BLOCK = 4;
 
-	private boolean[] dsp_state = { false, false, false, false };
+	private boolean[] dsp_state = { false, false, false, false, false };
 	
 	public static final CharSequence[] txs = { "Allow Tx" };
 	public static final CharSequence[] jds = { "> Buttons Move Spectrum" };

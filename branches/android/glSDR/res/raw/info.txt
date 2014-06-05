@@ -1,5 +1,5 @@
 <h3>glSDR</h3>
-Version 38<br>
+Version 39<br>
 Copyright 2012-14 Alex Lee<br>
 <b>http://napan.ca/ghpsdr3/index.php/Main_Page</b><br><br>
 List of servers<br>

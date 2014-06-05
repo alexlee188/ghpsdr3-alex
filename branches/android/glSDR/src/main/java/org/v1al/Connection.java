@@ -538,6 +538,11 @@ public class Connection extends Thread {
 		sendCommand("RxIQmuVal 0.1");
 		sendCommand("setIQEnable " + (state ? "true" : "false"));
 	}
+
+	public void setRXDCBlock(boolean state){
+		sendCommand("setrxdcblock " + (state ? "1" : "0"));
+		sendCommand("setrxdcblockgain 32");
+	}
 	
 	public void setGain(int gain) {
 		sendCommand("SetRXOutputGain " + gain);
