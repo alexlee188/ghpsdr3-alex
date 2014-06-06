@@ -210,6 +210,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		txPass=prefs.getString("txPass", "");
 		tx_state[0]=prefs.getBoolean("txAllow", false);
 		jd_state[0]=prefs.getBoolean("jogSpec", false);
+		dsp_state[0]=prefs.getBoolean("NR", false);
+		dsp_state[1]=prefs.getBoolean("ANF", false);
+		dsp_state[2]=prefs.getBoolean("NB", false);
 		dsp_state[3]=prefs.getBoolean("IQ", false);
 		dsp_state[4]=prefs.getBoolean("RXDCBlock", false);
 	}
@@ -258,6 +261,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		editor.putString("txPass", txPass);
 		editor.putBoolean("txAllow", tx_state[0]);
 		editor.putBoolean("jogSpec", jd_state[0]);
+		editor.putBoolean("NR", dsp_state[0]);
+		editor.putBoolean("ANF", dsp_state[1]);
+		editor.putBoolean("NB", dsp_state[2]);
 		editor.putBoolean("IQ", dsp_state[3]);
 		editor.putBoolean("RXDCBlock", dsp_state[4]);
 		editor.commit();
@@ -1148,10 +1154,13 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 								connection.setRXDCBlock(state);
 								break;
 							}
-
-							dialog.dismiss();
 						}
 					});
+			builder.setPositiveButton("SAVE", new DialogInterface.OnClickListener(){
+				public void onClick(DialogInterface dialog, int which){
+					dialog.dismiss();
+					}
+				});
 			dialog = builder.create();
 			break;
 		case MENU_TX:
@@ -1337,7 +1346,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		};
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(39)");
+	    connection.sendCommand("setClient glSDR(40)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setBand(band);
@@ -1349,6 +1358,9 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	    spectrumView.setJogButtonDirection(jd_state[0]);
 	    connection.setTxUser(txUser);
 	    connection.setTxPass(txPass);
+	    connection.setNR(dsp_state[0]);
+	    connection.setANF(dsp_state[1]);
+	    connection.setNB(dsp_state[2]);
 	    connection.setIQCorrection(dsp_state[3]);
 	    connection.setRXDCBlock(dsp_state[4]);					
 		spectrumView.setConnection(connection);
