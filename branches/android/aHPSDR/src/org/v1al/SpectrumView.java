@@ -15,7 +15,6 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.util.Log;
 
-@TargetApi(Build.VERSION_CODES.FROYO)
 public class SpectrumView extends View implements OnTouchListener {
 
 	public SpectrumView(Context context, int width, int height) {

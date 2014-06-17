@@ -1248,9 +1248,6 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 			about.setTitle("About glSDR");
 			about.show();
 			break;
-		case MENU_MASTER:
-			connection.setMaster();
-			break;
 		default:
 			dialog = null;
 			break;
