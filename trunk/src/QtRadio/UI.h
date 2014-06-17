@@ -121,6 +121,8 @@ signals:
 public slots:
     void getMeterValue(int m, int s);
 
+    bool newDspServerCheck(void); // KD0OSS
+
     void actionConfigure();
     void actionEqualizer(); // KD0OSS
     void actionAbout();
@@ -135,7 +137,7 @@ public slots:
 
     void actionMuteMainRx();
     void actionMuteSubRx();
-
+/*
     void actionGain_10();
     void actionGain_20();
     void actionGain_30();
@@ -146,7 +148,7 @@ public slots:
     void actionGain_80();
     void actionGain_90();
     void actionGain_100();
-
+*/
     void actionSquelch();
     void actionSquelchReset();
     void squelchValueChanged(int);
@@ -191,6 +193,7 @@ public slots:
     void actionFilter7();
     void actionFilter8();
     void actionFilter9();
+    void actionFilter10();
 
     void actionANF();
     void actionNR();
@@ -220,6 +223,7 @@ public slots:
     void modeChanged(int previousMode,int newMode);
     void filtersChanged(FiltersBase* previousFilters,FiltersBase* newFilters);
     void filterChanged(int previousFilter,int newFilter);
+    void variableFilter(int low, int high); // KD0OSS
     void frequencyChanged(long long frequency);
 
     void updateSpectrum();
@@ -249,8 +253,26 @@ public slots:
     void receiverChanged(int rx);
     void rxDCBlockChanged(bool state); //KD0OSS
     void txDCBlockChanged(bool state); //KD0OSS
+    void rxDCBlockGainChanged(int value); //KD0OSS
     void setTxIQPhase(double value); //KD0OSS
     void setTxIQGain(double value); //KD0OSS
+
+    void agcSlopeChanged(int); //KD0OSS
+    void agcMaxGainChanged(int); //KD0OSS
+    void agcAttackChanged(int); //KD0OSS
+    void agcDecayChanged(int); //KD0OSS
+    void agcHangChanged(int); //KD0OSS
+    void agcFixedGainChanged(int); //KD0OSS
+    void agcHangThreshChanged(int); //KD0OSS
+    void levelerStateChanged(int); //KD0OSS
+    void levelerMaxGainChanged(int); //KD0OSS
+    void levelerAttackChanged(int); //KD0OSS
+    void levelerDecayChanged(int); //KD0OSS
+    void levelerHangChanged(int); //KD0OSS
+    void alcStateChanged(int); //KD0OSS
+    void alcAttackChanged(int); //KD0OSS
+    void alcDecayChanged(int); //KD0OSS
+    void alcHangChanged(int); //KD0OSS
 
     void AGCTLevelChanged(int level); //KD0OSS
     void enableRxEq(bool); // KD0OSS
@@ -262,7 +284,7 @@ public slots:
     void sdromThresholdChanged(double);
     void windowTypeChanged(int); //KD0OSS
     void statusMessage(QString); //KD0OSS
-    void removeNotchFilter(void);
+    void removeNotchFilter(void); //KD0OSS
 
     void actionBookmark();
     void addBookmark();
@@ -296,8 +318,8 @@ public slots:
     void setRxIQPhase(double value); //KD0OSS
     void setRxIQGain(double value); //KD0OSS
     void cwPitchChanged(int cwPitch);
-    void testSliderChange(int value);
-    void testButtonClick(bool state);
+//    void testSliderChange(int value);
+//    void testButtonClick(bool state);
     void resetbandedges(double offset);
 
     void hardware (QString);
@@ -314,6 +336,8 @@ private slots:
     void on_zoomSpectrumSlider_sliderMoved(int position);
     void setSampleZoom(bool);  // KD0OSS
     void addNotchFilter(void);   // KD0OSS
+    void setAudioMuted(bool); // KD0OSS
+    void audioGainChanged(void); // KD0OSS
 
 private:
     void printWindowTitle(QString message);
@@ -404,7 +428,7 @@ private:
     Bookmarks bookmarks;
 
     KeypadDialog keypad;
-    Meter* sMeter;
+//    Meter* sMeter;
     int meter;
 //    int txPwr;
     long long txFrequency;
@@ -429,8 +453,12 @@ private:
     QString servername;
     bool canTX;
     bool chkTX;
+    bool txNow; // KD0OSS
     double loffset;
     bool protocol3;
+
+    Waterfallgl *waterfallgl;
+    QWidget *container;
 };
 
 #endif	/* _UI_H */

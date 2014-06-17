@@ -33,6 +33,7 @@
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsItemGroup>
+#include <QtOpenGL/QGLWidget>
 #else
 #include <QGraphicsView>
 #include <QGraphicsScene>
@@ -44,7 +45,6 @@
 #include <QAction>
 #include <QMenu>
 #include <QMouseEvent>
-//#include <QGLWidget>
 
 #include "Meter.h"
 #include "Connection.h"
@@ -54,7 +54,7 @@
 
 class PanadapterScene;
 
-class waterfallObject : public QObject, public QGraphicsItem
+class waterfallObject : public QWidget, public QGraphicsItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
@@ -69,13 +69,9 @@ public:
     void setHigh(int high);
     int getLow();
     int getHigh();
-    void setWaterfallgl(Waterfallgl*);
 
     void setAutomatic(bool state);
     bool getAutomatic();
-
-public slots:
-    void updateWaterfall(char*, int, int);
 
 private:
     uint calculatePixel(int sample);
@@ -87,7 +83,6 @@ private:
     int waterfallHigh;
     int waterfallLow;
     bool waterfallAutomatic;
-    int cy;         // current row
     int colorLowR;
     int colorLowG;
     int colorLowB;
@@ -99,11 +94,12 @@ private:
     int colorHighB;
     int sampleRate;
     short LO_offset; 
-    Waterfallgl *waterfallgl;
     float average;
+
 };
 
-class spectrumObject : public QObject, public QGraphicsItem
+
+class spectrumObject : public QWidget, public QGraphicsItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
@@ -119,7 +115,6 @@ private:
     int plotWidth;
     int plotHeight;
 };
-
 
 class filterObject : public QObject, public QGraphicsItem
 {
@@ -269,6 +264,7 @@ signals:
     void squelchValueChanged(int step);
     void statusMessage(QString);
     void removeNotchFilter(void);
+    void variableFilter(int low, int high);
 
 protected:
  //   void paintEvent(QPaintEvent*);
@@ -288,7 +284,6 @@ public slots:
     void addNotchFilter(int index);    // KD0OSS
     void enableNotchFilter(bool enable);   // KD0OSS
     void enableNotchFilter(int index, bool enable);   // KD0OSS
-    void updateWaterfall(void);
 
 private slots:
     void drawCursor(int vfo, bool disable);  // KD0OSS
@@ -304,6 +299,7 @@ private slots:
     void updateNotchFilter(int);  // KD0OSS
     void deleteNotchFilter(void);  // KD0OSS
     void deleteAllNotchFilters(void);  // KD0OSS
+    void redrawItems(void);
 
 private:
     float* samples;
@@ -334,6 +330,7 @@ private:
 
     int filterLow;
     int filterHigh;
+    bool filterSelected;
     int avg;
     int size;
     long long frequency;

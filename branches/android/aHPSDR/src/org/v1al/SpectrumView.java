@@ -3,21 +3,16 @@ package org.v1al;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import android.annotation.TargetApi;
+import android.R.bool;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.View.OnTouchListener;
-import android.opengl.GLSurfaceView;
-import android.os.Build;
-import android.util.AttributeSet;
 import android.util.Log;
 
 @TargetApi(Build.VERSION_CODES.FROYO)
@@ -43,6 +38,10 @@ public class SpectrumView extends View implements OnTouchListener {
 	
 	public void setAverage(int a){
 		average = a;
+	}
+	
+	public void setJogButtonDirection(boolean withSpectrum){
+		jogWithSpectrum = withSpectrum;
 	}
 	
 	void setSensors(float sensor1,float sensor2,float sensor3) {
@@ -319,42 +318,34 @@ public class SpectrumView extends View implements OnTouchListener {
 					moved=false;
 					scroll=false;
 					jog=false;
-					if(startX<=50 && startY>=(HEIGHT-66) && startY <= HEIGHT) {
-						// frequency down 100
-						jog=true;
-						jogAmount=-100;
-						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
-						timer=new Timer();
-						timer.schedule(new JogTask(), 1000);
-					} else if(startX>=(WIDTH-50) && startY>=(HEIGHT-66) && startY <= HEIGHT) {
-						// frequency up 100 Hz
-						jog=true;
-						jogAmount=100;
-						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
-						timer=new Timer();
-						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=200) && (startX>=125) && (startY>=(HEIGHT-66))
-							&& (startY <= HEIGHT)) {
-						// frequency down 1000 Hz kb3omm added 1k decrement
-						jog=true;
-						jogAmount=-1000;
-						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
-						timer=new Timer();
-						timer.schedule(new JogTask(), 1000);
-					} else if((startX<=(WIDTH-125)) && (startX>=(WIDTH-200)) 
-							&& (startY>=(HEIGHT-66)) && (startY <= HEIGHT)) {
-						// frequency up 1000 Hz kb3omm added 1k increment
-						jog=true;
-						jogAmount=1000;
-						connection.setFrequency((long) (connection.getFrequency() + jogAmount));
-						timer=new Timer();
-						timer.schedule(new JogTask(), 1000);
-					} else if ((startX>=(WIDTH-50)) && (startY>=100) && startY <=(HEIGHT-100)
+					// kl7na wanted bigger area around the buttons so you don't find yourself
+					// jumping to an entirely new frequency so he commented the lines below and
+					// replaced them with those just below that.  He also wanted the first push
+					// of the jog buttons to move to the next 100 Hz or 1 KHz increment and then
+					// jump 100 Hz or 1 KHz from there.
+					long frequency = connection.getFrequency();
+					long freqRound100Hz = (long) (Math.round(connection.getFrequency()/100f)*100);
+					long freqRoundKHz = (long) (Math.round(connection.getFrequency()/1000f)*1000);
+					if(startX<=80 && startY>=(HEIGHT-96) && startY <= HEIGHT+30)
+						if(jogWithSpectrum) jogFreqUp100Hz(frequency, freqRound100Hz);
+						else jogFreqDown100Hz(frequency, freqRound100Hz);
+					else if(startX>=(WIDTH-80) && startY>=(HEIGHT-96) && startY <= HEIGHT+30)
+						if(jogWithSpectrum) jogFreqDown100Hz(frequency, freqRound100Hz);
+						else jogFreqUp100Hz(frequency, freqRound100Hz);
+					else if((startX<=230) && (startX>=95) && (startY>=(HEIGHT-96))
+							&& (startY <= HEIGHT+30))
+						if(jogWithSpectrum) jogFreqUp1KHz(frequency, freqRoundKHz);
+						else jogFreqDown1KHz(frequency, freqRoundKHz);
+					else if((startX<=(WIDTH-95)) && (startX>=(WIDTH-230)) 
+							&& (startY>=(HEIGHT-96)) && (startY <= HEIGHT+30))
+						if(jogWithSpectrum) jogFreqDown1KHz(frequency, freqRoundKHz);
+						else jogFreqUp1KHz(frequency, freqRoundKHz);
+					else if ((startX>=(WIDTH-80)) && (startY>=100) && startY <=(HEIGHT-100)
 							&& connection.getAllowTx()){
 						jog = true;
 						if (!connection.getMOX()) connection.setMOX(true);
 						else connection.setMOX(false);
-					}
+					}// end kl7na button size and 100 Hz and 1 KHz even step edits.
 				}
 				break;
 			case MotionEvent.ACTION_MOVE:
@@ -422,6 +413,66 @@ public class SpectrumView extends View implements OnTouchListener {
 		
 		return true;
 	}
+
+	private void jogFreqDown1KHz(long frequency, long freqRoundKHz) {
+		{
+			// frequency down 1000 Hz kb3omm added 1k decrement
+			jog=true;
+			if (frequency < freqRoundKHz) 
+				jogAmount = -1000 - (frequency-freqRoundKHz);
+			else if (frequency > freqRoundKHz)
+				jogAmount = -(frequency - freqRoundKHz);
+			else jogAmount= -1000;
+			connection.setFrequency(frequency + jogAmount);
+			timer=new Timer();
+			timer.schedule(new JogTask(), 1000);
+		}
+	}
+
+	private void jogFreqUp1KHz(long frequency, long freqRoundKHz) {
+		{
+			// frequency up 1000 Hz kb3omm added 1k increment
+			jog=true;
+			if ((double) frequency < freqRoundKHz) 
+				jogAmount = freqRoundKHz-frequency;
+			else if (frequency > freqRoundKHz)
+				jogAmount = 1000 - (frequency - freqRoundKHz);
+			else jogAmount = 1000;
+			connection.setFrequency(frequency + jogAmount);
+			timer=new Timer();
+			timer.schedule(new JogTask(), 1000);
+		}
+	}
+
+	private void jogFreqDown100Hz(long frequency, long freqRound100Hz) {
+		{
+			// frequency down 100
+			jog=true;
+			if (frequency < freqRound100Hz) 
+				jogAmount = -100 - (frequency-freqRound100Hz);
+			else if (frequency > freqRound100Hz)
+				jogAmount = -(frequency - freqRound100Hz);
+			else jogAmount= -100;
+			connection.setFrequency(frequency + jogAmount);
+			timer=new Timer();
+			timer.schedule(new JogTask(), 1000);
+		}
+	}
+
+	private void jogFreqUp100Hz(long frequency, long freqRound100Hz) {
+		{
+			// frequency up 100 Hz
+			jog=true;
+			if (frequency < freqRound100Hz) 
+				jogAmount = freqRound100Hz-frequency;
+			else if (frequency > freqRound100Hz)
+				jogAmount = 100 - (frequency - freqRound100Hz);
+			else jogAmount = 100;
+			connection.setFrequency(frequency + jogAmount);
+			timer=new Timer();
+			timer.schedule(new JogTask(), 1000);
+		}
+	}
 	
 	class JogTask extends TimerTask {
 	    public void run() {
@@ -486,6 +537,7 @@ public class SpectrumView extends View implements OnTouchListener {
 	
 	private Timer timer;
 	private long jogAmount;
+	private boolean jogWithSpectrum;
 	
 	private float scaleFactor = 1f;
 	private ScaleGestureDetector detector;

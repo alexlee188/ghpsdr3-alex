@@ -80,6 +80,7 @@ fprintf(stderr,"client connected: %s:%d\n",inet_ntoa(client->address.sin_addr),n
     fprintf(stderr,"client disconnected: %s:%d\n",inet_ntoa(client->address.sin_addr),ntohs(client->address.sin_port));
 
     free(client);
+    return 0;
 } // end client_thread
 
 
@@ -214,11 +215,24 @@ char* parse_command(CLIENT* client,char* command)
                 return INVALID_COMMAND;
             }
         } else if(strcmp(token,"setspurreduction")==0) {
-            // set attenuator
+            // set spur reduction
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
                unsigned char enabled=(unsigned char)atoi(token);
                return set_spurreduction(client,enabled);
+            } else {
+                return INVALID_COMMAND;
+            }
+        } else if(strcmp(token,"record")==0) {
+            // set record
+            unsigned char enabled;
+            token=strtok(NULL," \r\n");
+            if(token!=NULL) {
+               if (strcmp(token, "on") == 0)
+                   enabled = 1;
+               else
+                   enabled = 0;
+               return set_record(client,enabled);
             } else {
                 return INVALID_COMMAND;
             }
@@ -235,11 +249,9 @@ char* parse_command(CLIENT* client,char* command)
             // invalid command string
             return INVALID_COMMAND;
         }
-    } else {
-        // empty command string
-        return INVALID_COMMAND;
     }
-
+    // empty command string
+    return INVALID_COMMAND;
 } // end parse_command
 
 

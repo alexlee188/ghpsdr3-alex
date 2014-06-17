@@ -12,17 +12,20 @@ _UsingSDK = false
 
 greaterThan(QT_MAJOR_VERSION, 4) {
     message("Using Qt5")
-    QT       += core gui widgets multimedia opengl
-
+    QT       += core gui widgets multimedia
 
 #    INCLUDEPATH += /opt/qt5/include
 #    INCLUDEPATH += /opt/qt5/include/QtMultimedia
 #    INCLUDEPATH += /opt/qt5/include/QtNetwork
 
-    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtCore
-    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtGui
-    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtWidgets
-    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtMultimedia
+    #KD0NUZ OSX Homebrew includes/libs
+    INCLUDEPATH += /usr/local/include
+    LIBS += -L/usr/local/lib
+
+#    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtCore
+#    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtGui
+#    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtWidgets
+#    INCLUDEPATH += /usr/local/Qt-5.0.2/include/QtMultimedia
 } else {
     $$_UsingSDK {
         message("Using the Nokia Qt SDK installation")
@@ -96,7 +99,6 @@ SOURCES += main.cpp\
     hardware_hiqsdr.cpp \
     hardware_hermes.cpp \
     Panadapter.cpp \
-    OpenGLWindow.cpp \
     Waterfallgl.cpp
 
 
@@ -158,7 +160,6 @@ HEADERS  += \
     hardware_hermes.h \
     hardware_rtlsdr.h \
     Panadapter.h \
-    OpenGLWindow.h \
     Waterfallgl.h
 
 FORMS    += \   

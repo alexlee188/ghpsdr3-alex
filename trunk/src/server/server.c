@@ -36,6 +36,7 @@
 #include <netdb.h>
 #include <pthread.h>
 #include <getopt.h>
+#include <unistd.h>
 #else // Windows
 #include "pthread.h"
 #include <winsock.h>
@@ -51,6 +52,7 @@
 #include "metis.h"
 
 static struct option long_options[] = {
+
     {"receivers",required_argument, 0, 0},
     {"samplerate",required_argument, 0, 1},
     {"dither",required_argument, 0, 2},
@@ -69,12 +71,15 @@ static struct option long_options[] = {
     {"metisip",required_argument,0,15},
     {"fpga",required_argument,0,16},
     {"ozyhex",required_argument,0,17},
+    {"hermes",required_argument,0,18},
     {0,0,0,0},
+
 };
 static char* short_options="";
 static int option_index;
 
 static int metis=0;
+static int hermes=0;
 static char* interface="eth0";
 static char* metisip="0.0.0.0";
 
@@ -93,15 +98,15 @@ int main(int argc,char* argv[]) {
 
     process_args(argc,argv);
 
-    if(metis) {
+    if(metis || hermes) {
         metis_discover(interface,metisip);
         sleep(1);
         // see if we have any Metis boards
-        fprintf(stderr,"Found %d Metis cards\n",metis_found());
+        fprintf(stderr,"Found %d Metis/Hermes cards\n",metis_found());
         if(metis_found()==0) {
             exit(1);
         }
-        ozy_set_buffers(2);
+        ozy_set_buffers(2, hermes);
     }
 
     init_receivers();
@@ -109,18 +114,16 @@ int main(int argc,char* argv[]) {
 
     create_listener_thread();
 
-    if(metis) {
+    if(metis || hermes) {
         metis_start_receive_thread();
     } else {
         create_ozy_thread();
     }
 
     while(1) {
-#ifdef __linux__
-        sleep(10);
-#else   // Windows
-        Sleep(10);
-#endif
+	    char ch;
+	    while((ch = getc(stdin)) != EOF) 
+	      if (ch == 'q') break;
     }
 }
 
@@ -133,7 +136,6 @@ void process_args(int argc,char* argv[]) {
         switch(i) {
             case 0: // receivers
                 ozy_set_receivers(atoi(optarg));
-                break;
                 break;
             case 1: // sample rate
                 ozy_set_sample_rate(atoi(optarg));
@@ -246,10 +248,29 @@ fprintf(stderr,"metisip=%s\n",metisip);
                 }
                 break;
 
+            case 18: // hermes flag
+                hermes=1;
+                ozy_set_hermes(hermes);
+                ozy_set_hermes_power(0);
+                if(optarg) {                
+                    int h_power;
+                    if (sscanf (optarg, "%d", &h_power) == 1 && h_power >= 0 && h_power <= 255 ) {
+                        ozy_set_hermes_power(h_power);
+                    } else {
+                        fprintf(stderr,"invalid Hermes power value\n");   
+                        exit (1);
+                    }
+                } else {
+                    fprintf(stderr,"missing Hermes power value\n");   
+                    exit (1);
+                }
+                break;
+
+
             default:
                 fprintf(stderr,"Usage: \n");
                 fprintf(stderr,"  server --receivers N (default 1)\n");
-                fprintf(stderr,"         --samplerate 48000|96000|192000\n");
+                fprintf(stderr,"         --samplerate 48000|96000|192000|384000\n");
                 fprintf(stderr,"         --dither off|on\n");
                 fprintf(stderr,"         --random off|on\n");
                 fprintf(stderr,"         --preamp off|on\n");
@@ -262,6 +283,7 @@ fprintf(stderr,"metisip=%s\n",metisip);
                 fprintf(stderr,"         --interface if\n");
                 fprintf(stderr,"         --fpga <file name>\n");                
                 fprintf(stderr,"         --ozyhex <file name>\n");
+                fprintf(stderr,"         --hermes <power 0-255>\n");
                 exit(1);
                 break;
                

@@ -42,19 +42,17 @@
 static pthread_t sdr1000_io_thread_id;
 
 static int rx_frame=0;
-static int tx_frame=0;
 static int receivers=1;
 static int current_receiver=0;
 
 static int speed=0;
 static int sample_rate=48000;
 
+#ifndef PORTAUDIO
 static int samples=0;
+#endif
 
 static int input_buffers;
-
-static struct sockaddr_in client;
-static int client_length;
 
 static int iq_socket;
 static struct sockaddr_in iq_address;
@@ -94,7 +92,7 @@ fprintf(stderr,"sdr1000_set_device %s\n",d);
     strcpy(device,d);
 }
 
-void sdr1000_set_frequency_offset(char* d) {
+void sdr1000_set_frequency_offset(char* d) { //kd0oss added
 fprintf(stderr,"sdr1000_set_frequency_offset %s hz\n",d);
     caloffset = atol(d);
 }
@@ -209,7 +207,7 @@ void* sdr1000_io_thread(void* arg) {
     int bytes;
 #endif
     int rc;
-    int i,j;
+    int i;
 
     while(1) {
 
@@ -298,8 +296,7 @@ void process_sdr1000_input_buffer(char* buffer) {
 #ifdef PORTAUDIO
 void process_sdr1000_output_buffer(float* left_output_buffer,float* right_output_buffer) {
 
-    sdr1000_write(left_output_buffer,right_output_buffer);
-    
+    sdr1000_write(left_output_buffer,right_output_buffer);    
 }
 #else
 void process_sdr1000_output_buffer(float* left_output_buffer,float* right_output_buffer) {
@@ -325,6 +322,4 @@ void process_sdr1000_output_buffer(float* left_output_buffer,float* right_output
 
     sdr1000_write(output_buffer,sizeof(output_buffer));
 }
-
-
 #endif

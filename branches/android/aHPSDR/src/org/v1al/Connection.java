@@ -184,6 +184,7 @@ public class Connection extends Thread {
             } else {
             	result = false;
             }
+
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"

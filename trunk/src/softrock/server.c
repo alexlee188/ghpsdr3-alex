@@ -64,6 +64,8 @@ static struct option long_options[] = {
     {"playback",required_argument, 0, 'p'},
 	{"receivers",required_argument, 0, 14},
 	{"jack",no_argument, 0, 'j'},
+
+    {"peaberry",no_argument, 0, 16},
 	{0, 0, 0, 0}
 };
 
@@ -76,6 +78,7 @@ double multiplier=4;
 int i2cAddress = 0x55;
 double fXtall = 114.285;
 char* usbSerialID=NULL;
+char* unitName = "DG8SAQ-I2C";
 int setByValue = 1;
 
 usb_dev_handle* handle = NULL;
@@ -93,7 +96,7 @@ int main(int argc,char* argv[]) {
 
     if(si570) {
         usb_init();
-        rc=usbOpenDevice(&handle,0x16C0,"www.obdev.at",0x05DC,"DG8SAQ-I2C",usbSerialID);
+        rc=usbOpenDevice(&handle,0x16C0,"www.obdev.at",0x05DC,unitName,usbSerialID);
         if (rc!=0) rc=usbOpenDevice(&handle,0x16C0,"SDR-Widget",0x05DC,"Yoyodyne SDR-Widget",usbSerialID);
         if (rc!=0) {
             fprintf(stderr,"Cannot open USB device\n");
@@ -185,6 +188,9 @@ void process_args(int argc,char* argv[]) {
 			case 'j': // jack
                 softrock_set_jack(1);
                 break;
+	    case 16: // peaberry SDR
+                unitName = "Peaberry SDR";
+                break;
             default:
 				fprintf(stderr,"invalid argument\n");
 				usage(); 
@@ -211,6 +217,7 @@ void usage( void )
 	fprintf(stderr,"	--playback filename (playback this file)  \n");
 	fprintf(stderr,"	--receivers (number of receivers) \n");
 	fprintf(stderr,"	-j or --jack (use Jack Audio Connection Kit for audio in/out)  \n");
+	fprintf(stderr,"	--peaberry (to use a Peaberry SDR v2 unit) \n");
 }
 
 	        

@@ -204,7 +204,7 @@ fprintf(stderr,"sdr1000_open: %s\n",sdr1000_get_device());
     return 0;
 }
 
-int sdr1000_close() {
+void sdr1000_close() {
 #ifdef PORTAUDIO
     int rc=Pa_Terminate();
     if(rc!=paNoError) {
@@ -223,7 +223,7 @@ int sdr1000_write(float* left_samples,float* right_samples)
     int i;
     float audio_buffer[SAMPLES_PER_BUFFER*2];
 
-    if (!tx_mode) return;
+    if (!tx_mode) return 0;
 
     rc=0;
 

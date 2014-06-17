@@ -425,10 +425,10 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
                     //qDebug() << "q-master:" << answer;
                     if (answer.contains("slave")){
                         amSlave = true;
-                        emit printStatusBar("  ...Slave Mode... ");
+                        emit printStatusBar("  ...Slave Mode. ");
                     }else{
                         amSlave = false;
-                        emit printStatusBar("  ...Master Mode... ");
+                        emit printStatusBar("  ...Master Mode. ");
                     }
                 }else if(answer.contains("q-rtpport")){
                     rx.setPattern("rtpport:(\\d+);");

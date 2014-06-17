@@ -53,7 +53,7 @@ snap_spectrum (SpecBlock * sb, int label)
 		{
 			CXBdata (sb->timebuf, i) =
 				Cscl (CXBdata (sb->accum, j), sb->window[i]);
-			j = (++j & sb->mask);
+			j = ((j+1) & sb->mask);
 		}
 	}
 	else
@@ -72,7 +72,7 @@ snap_spectrum (SpecBlock * sb, int label)
 				CXBimag (sb->timebuf, i) +=
 					CXBimag (sb->accum, accumidx) * sb->window[winidx];
 			}
-			j = (++j & sb->mask);
+			j = ((j+1) & sb->mask);
 		}
 
 	}
@@ -91,7 +91,7 @@ snap_scope (SpecBlock * sb, int label)
 	for (i = 0; i < sb->size; i++)
 	{
 		CXBdata (sb->timebuf, i) = CXBdata (sb->accum, j);
-		j = (++j & sb->mask);
+		j = ((j+1) & sb->mask);
 	}
 
 	sb->label = label;

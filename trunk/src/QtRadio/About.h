@@ -8,8 +8,6 @@
 #include <QDialog>
 #endif
 
-#define GITREV "Revision: 0.4 2013  By Rick Schnicker KD0OSS!https://github.com/alexlee188/ghpsdr3-alex!Branch: kd0oss"
-
 namespace Ui {
     class About;
 }

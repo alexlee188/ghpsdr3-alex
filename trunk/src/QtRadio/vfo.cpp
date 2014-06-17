@@ -29,8 +29,8 @@
 #include <QDebug>
 #include <QKeyEvent>
 
-#if !defined(WIN32)
-#include "powermate.h"
+#if defined(LINUX)
+  #include "powermate.h"
 #endif
 
 //#include "Band.h"
@@ -67,8 +67,8 @@ vfo::vfo(QWidget *parent) :
                 this, SLOT(processRIT(int)));
 
 
-#if !defined(WIN32)
-    //  Powermate related stuff
+// Powermate related stuff
+#if defined(LINUX)
     PmInput *input = new PmInput();
     connect(input, SIGNAL(pressed()), this, SLOT(press()));
     connect(input, SIGNAL(released()), this, SLOT(release()));
@@ -133,8 +133,7 @@ void vfo::mousePressEvent(QMouseEvent *event)
 {
     bool isVFOa = false;
     int digit, cnt;
-    QString myStr = "";
-    long long freq;
+    long long freq, newFreq;
 
     if (event->button() == Qt::RightButton) {
 
@@ -162,29 +161,23 @@ void vfo::mousePressEvent(QMouseEvent *event)
                 if (digit < 9) {    // getDigit returns 0 ... 8 if we clicked on vfoA
                     freq = readA();
                     isVFOa = true;
-                    myStr = ui->lbl_Amhz->text() + ui->lbl_Akhz->text() + ui->lbl_Ahz->text();
                 }
                 else {                  // getDigit returns 10 ... 18 if we clicked on vfoB
                     digit = digit - 10; // so convert to 1 ... 8.
                     freq = readB();
-                    myStr = ui->lbl_Bmhz->text() + ui->lbl_Bkhz->text() + ui->lbl_Bhz->text();
-                }
-                for (cnt = myStr.length(); cnt < 9; cnt++) {
-                    myStr = "0" + myStr;
                 }
                 for (cnt = digit; cnt < 9; cnt++) {
-                    myStr[cnt] = QChar('0');
                     ui->hSlider->setValue(0);
                 }
-                freq = freq - myStr.toLongLong();
+                double freqd = (double)freq;
+                newFreq = (long long)(floor(freqd/pow(10,9-digit)+.5)*pow(10,9-digit));
+                freq = freq-newFreq;
                 if (isVFOa) {   //We right clicked on vfoA
                     if(selectedVFO == 'A' || selectedVFO == 'S') {
                         emit frequencyMoved(freq, 1);
-//qDebug()<<Q_FUNC_INFO<<": vfoA, emit frequencyChanged(myStr.toLongLong()) = "<<freq;
                     }
                     else {
-                        writeA(myStr.toLongLong());
-//qDebug()<<Q_FUNC_INFO<<": vfoA, writeA(myStr.toInt()) = "<<freq;
+                        writeA(newFreq);
                     }
                 }
 //                else if(ui->pBtnSubRx->isChecked()) { //We right clicked on vfoB
@@ -195,7 +188,7 @@ void vfo::mousePressEvent(QMouseEvent *event)
 //qDebug()<<Q_FUNC_INFO<<": Line 187 ... vfoB, emit frequencyMoved(freq, 1) = "<<freq;
                 }
                 else {
-                        writeB(myStr.toLongLong());
+                        writeB(newFreq);
 //qDebug()<<Q_FUNC_INFO<<": vfoB, writeA(myStr.toInt()) = "<<freq;
                 }
             }

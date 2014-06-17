@@ -177,6 +177,7 @@ qint64 Audio_playback::readData(char *data, qint64 maxlen)
 
 Audio::Audio() {
     audio_output=NULL;
+    connected = false;
     sampleRate=8000;
     audio_encoding = 0;
     audio_channels=1;
@@ -306,62 +307,64 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
     qDebug() << "Audio::get_audio_devices: default is " << audio_device.deviceName();
 
     audio_output = new QAudioOutput(audio_device, audio_format, this);
-    connect(audio_output,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
+    connected = connect(audio_output,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
 
     qDebug() << "QAudioOutput: error=" << audio_output->error() << " state=" << audio_output->state();
 
-    audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
-    audio_out= new Audio_playback;
-    audio_out->moveToThread(audio_output_thread);
-    audio_output_thread->start(QThread::HighestPriority);
+    if(connected) {
+        audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
+        audio_out= new Audio_playback;
+        audio_out->moveToThread(audio_output_thread);
+        audio_output_thread->start(QThread::HighestPriority);
 
-    audio_out->set_audio_byte_order(audio_format.byteOrder());
-    audio_out->set_audio_encoding(audio_encoding);
-    audio_out->set_decoded_buffer(&decoded_buffer);
-    audio_out->set_rtpSession(0);
-    audio_out->set_rtp_connected(false);
-    audio_out->set_useRTP(false);
-    audio_out->start();
-    audio_output->start(audio_out);
+        audio_out->set_audio_byte_order(audio_format.byteOrder());
+        audio_out->set_audio_encoding(audio_encoding);
+        audio_out->set_decoded_buffer(&decoded_buffer);
+        audio_out->set_rtpSession(0);
+        audio_out->set_rtp_connected(false);
+        audio_out->set_useRTP(false);
+        audio_out->start();
+        audio_output->start(audio_out);
 
-
-#if QT_VERSION >= 0x050000
-     audio_processing->set_audio_channels(audio_format.channelCount());
-#else
-    audio_processing->set_audio_channels(audio_format.channels());
-#endif
-
-    audio_processing->set_audio_encoding(audio_encoding);
-    audio_processing->set_queue(&decoded_buffer);
-
-    if(audio_output->error()!=0) {
-        qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << audio_output->state();
-
-        qDebug() << "Format:";
 
 #if QT_VERSION >= 0x050000
-        qDebug() << "    sample rate: " << audio_format.sampleRate();
+        audio_processing->set_audio_channels(audio_format.channelCount());
 #else
-        qDebug() << "    sample rate: " << audio_format.frequency();
+        audio_processing->set_audio_channels(audio_format.channels());
 #endif
+        audio_processing->set_audio_encoding(audio_encoding);
+        audio_processing->set_queue(&decoded_buffer);
 
-        qDebug() << "    codec: " << audio_format.codec();
-        qDebug() << "    byte order: " << audio_format.byteOrder();
-        qDebug() << "    sample size: " << audio_format.sampleSize();
-        qDebug() << "    sample type: " << audio_format.sampleType();
-
+        if(audio_output->error()!=0) {
+            qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << audio_output->state();
+            qDebug() << "Format:";
 #if QT_VERSION >= 0x050000
-        qDebug() << "    channels: " << audio_format.channelCount();
+            qDebug() << "    sample rate: " << audio_format.sampleRate();
 #else
-        qDebug() << "    channels: " << audio_format.channels();
+            qDebug() << "    sample rate: " << audio_format.frequency();
+#endif
+            qDebug() << "    codec: " << audio_format.codec();
+            qDebug() << "    byte order: " << audio_format.byteOrder();
+            qDebug() << "    sample size: " << audio_format.sampleSize();
+            qDebug() << "    sample type: " << audio_format.sampleType();
+#if QT_VERSION >= 0x050000
+            qDebug() << "    channels: " << audio_format.channelCount();
+#else
+            qDebug() << "    channels: " << audio_format.channels();
 #endif
 
-        audio_out->stop();
-        delete audio_out;
-        delete audio_output;
+            audio_out->stop();
+            delete audio_out;
+            delete audio_output;
+            audio_output = NULL;
+            connected = false;
+        }
     }
-
-
+    else {
+		delete audio_output;
+		audio_output = NULL;
+		connected = false;
+	}
 }
 
 void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioFormat::Endian byteOrder) {
@@ -376,6 +379,8 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
         audio_out->stop();
         delete audio_out;
         delete audio_output;
+		audio_output = NULL;
+		connected = false;
     }
 
     audio_device=info;
@@ -395,59 +400,62 @@ void Audio::select_audio(QAudioDeviceInfo info,int rate,int channels,QAudioForma
     }
 
     audio_output = new QAudioOutput(audio_device, audio_format, this);
-    connect(audio_output,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
+    connected = connect(audio_output,SIGNAL(stateChanged(QAudio::State)),SLOT(stateChanged(QAudio::State)));
 
-    audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
-    audio_out= new Audio_playback;
+    if(connected) {
+		audio_output->setBufferSize(AUDIO_OUTPUT_BUFFER_SIZE);
+		audio_out= new Audio_playback;
 
-    audio_out->moveToThread(audio_output_thread);
-    audio_output_thread->start(QThread::HighestPriority);
+		audio_out->moveToThread(audio_output_thread);
+		audio_output_thread->start(QThread::HighestPriority);
 
-    audio_out->set_audio_byte_order(audio_format.byteOrder());
-    audio_out->set_audio_encoding(audio_encoding);
-    audio_out->set_decoded_buffer(&decoded_buffer);
-    audio_out->set_rtpSession(0);
-    audio_out->set_rtp_connected(false);
-    audio_out->set_useRTP(false);
-    audio_out->start();
-    audio_output->start(audio_out);
+		audio_out->set_audio_byte_order(audio_format.byteOrder());
+		audio_out->set_audio_encoding(audio_encoding);
+		audio_out->set_decoded_buffer(&decoded_buffer);
+		audio_out->set_rtpSession(0);
+		audio_out->set_rtp_connected(false);
+		audio_out->set_useRTP(false);
+		audio_out->start();
+		audio_output->start(audio_out);
 
-
-#if QT_VERSION >= 0x050000
-     audio_processing->set_audio_channels(audio_format.channelCount());
-#else
-    audio_processing->set_audio_channels(audio_format.channels());
-#endif
-
-    audio_processing->set_audio_encoding(audio_encoding);
-    audio_processing->set_queue(&decoded_buffer);
-
-    if(audio_output->error()!=0) {
-        qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << audio_output->state();
-        qDebug() << "Format:";
 
 #if QT_VERSION >= 0x050000
-        qDebug() << "    sample rate: " << audio_format.sampleRate();
+		 audio_processing->set_audio_channels(audio_format.channelCount());
 #else
-        qDebug() << "    sample rate: " << audio_format.frequency();
+		 audio_processing->set_audio_channels(audio_format.channels());
 #endif
+		audio_processing->set_audio_encoding(audio_encoding);
+		audio_processing->set_queue(&decoded_buffer);
 
-        qDebug() << "    codec: " << audio_format.codec();
-        qDebug() << "    byte order: " << audio_format.byteOrder();
-        qDebug() << "    sample size: " << audio_format.sampleSize();
-        qDebug() << "    sample type: " << audio_format.sampleType();
-
+		if(audio_output->error()!=0) {
+			qDebug() << "QAudioOutput: after start error=" << audio_output->error() << " state=" << audio_output->state();
+			qDebug() << "Format:";
 #if QT_VERSION >= 0x050000
-        qDebug() << "    channels: " << audio_format.channelCount();
+			qDebug() << "    sample rate: " << audio_format.sampleRate();
 #else
-        qDebug() << "    channels: " << audio_format.channels();
+			qDebug() << "    sample rate: " << audio_format.frequency();
 #endif
-        audio_out->stop();
-        delete  audio_out;
-        delete audio_output;
-
-    }
-
+			qDebug() << "    codec: " << audio_format.codec();
+			qDebug() << "    byte order: " << audio_format.byteOrder();
+			qDebug() << "    sample size: " << audio_format.sampleSize();
+			qDebug() << "    sample type: " << audio_format.sampleType();
+#if QT_VERSION >= 0x050000
+			qDebug() << "    channels: " << audio_format.channelCount();
+#else
+			qDebug() << "    channels: " << audio_format.channels();
+#endif
+			audio_out->stop();
+			delete audio_out;
+			delete audio_output;
+            audio_output = NULL;
+            connected = false;
+		}
+	}
+	else {
+		delete audio_output;
+		audio_output = NULL;
+		connected = false;
+	}
 }
 
 void Audio::stateChanged(QAudio::State State){

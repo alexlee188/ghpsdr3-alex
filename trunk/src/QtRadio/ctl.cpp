@@ -32,11 +32,14 @@ Ctl::Ctl(QWidget *parent) :
     ui->setupUi(this);
 
     moxPwr = 100;
-    TunePwr = 50;
+    TunePwr = 1;
+    audioGain = 100;
+    ui->audioSlider->setValue(audioGain);
     ui->pwrSlider->setValue(moxPwr);
 
     HideTX(false); // Hide buttons because we have not connected to anything yet
-
+    connect(this, SIGNAL(audioGainInitalized(int)), this, SLOT(setAudioSlider(int)));
+    connect(this, SIGNAL(setAudioMuted(bool)), this, SLOT(setAudioMute(bool)));
     //ui->pwrSlider_2->setValue(0);
     //ui->spinBox->setMaximum(100);
 }
@@ -59,6 +62,7 @@ void Ctl::on_btnMox_clicked(bool checked)
     else {
         ui->btnMox->setChecked(false);
         ptt = false;
+        ui->MicProgressBar->setValue(0);
     }
     emit pttChange(0, ptt);
 }
@@ -71,6 +75,7 @@ void Ctl::on_btnTune_clicked(bool checked)
     if(checked) { //We are going from Rx to Tx
         ui->btnTune->setChecked(true);
         ptt = true;
+        if (TunePwr<1) TunePwr=1;
         ui->pwrSlider->setValue(TunePwr);
     }
     else {
@@ -82,7 +87,7 @@ void Ctl::on_btnTune_clicked(bool checked)
 
 void Ctl::on_pwrSlider_valueChanged(int value)
 {
-    if(ui->btnMox->isChecked()) {
+    if(!ui->btnTune->isChecked()) {
         moxPwr = ui->pwrSlider->value(); //Do nothing until Tx power level adj written for DttSP
     } else if(ui->btnTune->isChecked()) {
         TunePwr = ui->pwrSlider->value();
@@ -115,6 +120,8 @@ void Ctl::HideTX(bool cantx){
         ui->btnTune->setEnabled(false);
     }
 }
+
+
 /*
 void Ctl::on_checkBox_stateChanged(int arg1)
 {
@@ -170,10 +177,51 @@ void Ctl::RigCtlTX(bool rigctlptt){
         on_btnMox_clicked(true);
     }else{
         on_btnMox_clicked(false);
-    }
+      }
 }
+
+void Ctl::loadSettings(QSettings *settings)
+{
+    settings->beginGroup("Ctl");
+    moxPwr = settings->value("moxPwr",100).toInt();
+    TunePwr = settings->value("tunePwr",1).toInt();
+    settings->endGroup();
+}
+
+void Ctl::saveSettings(QSettings *settings)
+{
+    settings->beginGroup("Ctl");
+    settings->setValue("moxPwr", moxPwr);
+    settings->setValue("tunePwr", TunePwr);
+    settings->endGroup();
+}
+
+
 
 void Ctl::on_btnMaster_clicked()
 {
     emit masterBtnClicked();
+}
+
+void Ctl::on_btnMute_clicked(bool checked)
+{
+    ui->audioSlider->setEnabled(!checked);
+    emit audioMuted(checked);
+}
+
+void Ctl::on_audioSlider_valueChanged(int value)
+{
+    audioGain = value;
+    emit audioGainChanged();
+}
+
+void Ctl::setAudioSlider(int gain)
+{
+    ui->audioSlider->setValue(gain);
+}
+
+void Ctl::setAudioMute(bool muted)
+{
+    ui->btnMute->setChecked(muted);
+    ui->audioSlider->setEnabled(!muted);
 }

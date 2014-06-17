@@ -941,13 +941,16 @@ SetRXAGCHang (unsigned int thread, unsigned subrx, int hang)
 	sem_post(&top[thread].sync.upd.sem);
 }
 
-DttSP_EXP void
+DttSP_EXP void // (NR0V) modified
 SetRXAGCSlope (unsigned int thread, unsigned subrx, int slope)
 {
 	sem_wait(&top[thread].sync.upd.sem);
 
-	rx[thread][subrx].dttspagc.gen->slope =
-		(REAL) dB2lin (0.1f * (REAL)slope);
+//	rx[thread][subrx].dttspagc.gen->slope =
+//		(REAL) dB2lin (0.1f * (REAL)slope);
+
+	rx[thread][subrx].wcpagc.gen->var_gain = pow (10.0, (double)slope / 20.0 / 10.0);
+	loadWcpAGC ( rx[thread][subrx].wcpagc.gen );
 
 	sem_post(&top[thread].sync.upd.sem);
 }

@@ -1,0 +1,43 @@
+10
+
+dir
+2280
+http://svn.tapr.org/repos_sdr_hpsdr/trunk/N6LYT/ghpsdr3/branches/android/aHPSDR/res
+http://svn.tapr.org/repos_sdr_hpsdr
+
+
+
+2011-08-17T11:24:12.972555Z
+2048
+jmelton
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fab57ed4-c20f-0410-8556-bd0ba87add53
+
+values
+dir
+
+drawable-hdpi
+dir
+
+drawable-ldpi
+dir
+
+drawable-mdpi
+dir
+
+layout
+dir
+

@@ -47,13 +47,23 @@ public:
     int getTxPwr();
     void clearMoxBtn();
     void RigCtlTX(bool rigctlptt);
+    int audioGain;
+    void loadSettings(QSettings* settings);
+    void saveSettings(QSettings* settings);
 
 signals:
+#if QT_VERSION < 0x050000 && !defined Q_MOC_RUN
+public:  // needed in Qt 4.x where signals means "protected" - IW0HDV
+#endif
     void pttChange(int caller, bool ptt);//0 = MOX, 1 = Tune, 2 = VOX, 3 = Extern H'ware
     void pwrSlider_valueChanged(double pwr);
 //    void testBtnClick(bool state);
 //    void testSliderChange(int value);
     void masterBtnClicked(void);
+    void audioMuted(bool);  // KD0OSS
+    void audioGainChanged(void); // KD0OSS
+    void audioGainInitalized(int); // KD0OSS
+    void setAudioMuted(bool); // KD0OSS
 
 public slots:
     void update_mic_level(qreal level);
@@ -73,6 +83,11 @@ private slots:
 //    void on_pushButton_released();
 
 //    void on_pushButton_toggled(bool checked);
+
+    void on_btnMute_clicked(bool checked); // KD0OSS
+    void on_audioSlider_valueChanged(int value); // KD0OSS
+    void setAudioSlider(int); // KD0OSS
+    void setAudioMute(bool); // KD0OSS
 
 private:
     Ui::Ctl *ui;

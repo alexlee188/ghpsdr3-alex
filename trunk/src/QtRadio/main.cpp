@@ -27,15 +27,13 @@
 #if QT_VERSION >= 0x050000
 #include <QtWidgets/QApplication>
 #else
-#include <QtGui/QApplication>
+#include <QApplication>
 #endif
 
 #include "UI.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <OpenGLWindow.h>
-#include "Waterfallgl.h"
 
 int fOutputDisabled = 0;
 
@@ -104,17 +102,8 @@ int main(int argc, char *argv[]) {
     QString srv("");
 
     if ( args.size() >1 ) srv = args.at(1) ;
+
     // create and show your widgets here
-
-    // Show an opengl window
-    QSurfaceFormat format;
-    format.setSamples(4);
-    TriangleWindow window;
-    window.setFormat(format);
-    window.resize(640, 480);
-    window.show();
-    window.setAnimating(true);
-
     UI widget(srv);
     widget.show();
     return app.exec();

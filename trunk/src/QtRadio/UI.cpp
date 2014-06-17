@@ -60,7 +60,8 @@
 #include "codec2.h"
 #include "servers.h"
 #include "ctl.h"
-//#include "powermate.h"
+#include "powermate.h"
+#include "Frequency.h"
 #include "EqualizerDialog.h"
 
 UI::UI(const QString server) {
@@ -75,6 +76,7 @@ UI::UI(const QString server) {
     configure.thisuser = "None";
     configure.thispass= "None";
     canTX = true;  // set to false if dspserver says so
+    txNow = false; // KD0OSS
     audio = new Audio;
     loffset = 0;
     protocol3 = false;
@@ -110,11 +112,14 @@ UI::UI(const QString server) {
     widget.gridLayout->setVerticalSpacing(0);
     widget.gridLayout->setHorizontalSpacing(0);
 
-    widget.sMeterFrame->setFrameShape(QFrame::Box);
-    widget.sMeterFrame->setFrameShadow(QFrame::Raised);
-    widget.sMeterFrame->setLineWidth(2);
-
     widget.statusbar->showMessage("QtRadio branch: kd0oss 2013");
+
+    waterfallgl = new Waterfallgl;
+    waterfallgl->initialize(512, 512);
+    waterfallgl->setGeometry(0,0, 512, 512);
+
+    container = QWidget::createWindowContainer(waterfallgl);
+    container->setParent(widget.waterfallFrame);
 
     connect(widget.vfoFrame,SIGNAL(getBandFrequency()),this,SLOT(getBandFrequency()));
 
@@ -133,7 +138,6 @@ UI::UI(const QString server) {
     connect(&connection,SIGNAL(audioBuffer(char*,char*)),this,SLOT(audioBuffer(char*,char*)));
     connect(&connection,SIGNAL(spectrumBuffer(char*,char*)),this,SLOT(spectrumBuffer(char*,char*)));
 
-    connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
     connect(audioinput,SIGNAL(mic_send_audio(QQueue<qint16>*)),this,SLOT(micSendAudio(QQueue<qint16>*)));
 
     connect(widget.actionConfig,SIGNAL(triggered()),this,SLOT(actionConfigure()));
@@ -141,7 +145,7 @@ UI::UI(const QString server) {
 
     connect(widget.actionMuteMainRx,SIGNAL(triggered()),this,SLOT(actionMuteMainRx()));
     connect(widget.actionMuteSubRx,SIGNAL(triggered()),this,SLOT(actionMuteSubRx()));
-
+/*
     connect(widget.actionGain_10,SIGNAL(triggered()),this,SLOT(actionGain_10()));
     connect(widget.actionGain_20,SIGNAL(triggered()),this,SLOT(actionGain_20()));
     connect(widget.actionGain_30,SIGNAL(triggered()),this,SLOT(actionGain_30()));
@@ -152,6 +156,9 @@ UI::UI(const QString server) {
     connect(widget.actionGain_80,SIGNAL(triggered()),this,SLOT(actionGain_80()));
     connect(widget.actionGain_90,SIGNAL(triggered()),this,SLOT(actionGain_90()));
     connect(widget.actionGain_100,SIGNAL(triggered()),this,SLOT(actionGain_100()));
+*/
+    connect(widget.ctlFrame,SIGNAL(audioMuted(bool)),this,SLOT(setAudioMuted(bool)));
+    connect(widget.ctlFrame,SIGNAL(audioGainChanged()),this,SLOT(audioGainChanged()));
 
     connect(widget.actionSquelchEnable,SIGNAL(triggered()),this,SLOT(actionSquelch()));
     connect(widget.actionSquelchReset,SIGNAL(triggered()),this,SLOT(actionSquelchReset()));
@@ -196,6 +203,7 @@ UI::UI(const QString server) {
     connect(widget.actionFilter_7,SIGNAL(triggered()),this,SLOT(actionFilter7()));
     connect(widget.actionFilter_8,SIGNAL(triggered()),this,SLOT(actionFilter8()));
     connect(widget.actionFilter_9,SIGNAL(triggered()),this,SLOT(actionFilter9()));
+    connect(widget.actionFilter_10,SIGNAL(triggered()),this,SLOT(actionFilter10()));
 
     connect(widget.actionANF,SIGNAL(triggered()),this,SLOT(actionANF()));
     connect(widget.actionNR,SIGNAL(triggered()),this,SLOT(actionNR()));
@@ -242,6 +250,7 @@ UI::UI(const QString server) {
     // connect up filter changes
     connect(&filters,SIGNAL(filtersChanged(FiltersBase*,FiltersBase*)),this,SLOT(filtersChanged(FiltersBase*,FiltersBase*)));
     connect(&filters,SIGNAL(filterChanged(int,int)),this,SLOT(filterChanged(int,int)));
+    connect(widget.spectrumView,SIGNAL(variableFilter(int,int)),this,SLOT(variableFilter(int,int)));
 
     // connect up spectrum view
     connect(widget.spectrumView, SIGNAL(frequencyMoved(int,int)),
@@ -289,6 +298,7 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(hostChanged(QString)),this,SLOT(hostChanged(QString)));
     connect(&configure,SIGNAL(receiverChanged(int)),this,SLOT(receiverChanged(int)));
     connect(&configure,SIGNAL(rxDCBlockChanged(bool)),this,SLOT(rxDCBlockChanged(bool)));  // KD0OSS
+    connect(&configure,SIGNAL(rxDCBlockGainChanged(int)),this,SLOT(rxDCBlockGainChanged(int)));  // KD0OSS
     connect(&configure,SIGNAL(txDCBlockChanged(bool)),this,SLOT(txDCBlockChanged(bool)));  // KD0OSS
     connect(&configure,SIGNAL(txIQPhaseChanged(double)),this,SLOT(setTxIQPhase(double)));  // KD0OSS
     connect(&configure,SIGNAL(txIQGainChanged(double)),this,SLOT(setTxIQGain(double)));  // KD0OSS
@@ -300,8 +310,27 @@ UI::UI(const QString server) {
 
     connect(&configure,SIGNAL(rxIQPhaseChanged(double)),this,SLOT(setRxIQPhase(double)));  // KD0OSS
     connect(&configure,SIGNAL(rxIQGainChanged(double)),this,SLOT(setRxIQGain(double)));  // KD0OSS
-    connect(&configure, SIGNAL(windowTypeChanged(int)),this,SLOT(windowTypeChanged(int))); //KD0OSS
-
+    connect(&configure,SIGNAL(windowTypeChanged(int)),this,SLOT(windowTypeChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcAttackChanged(int)),this,SLOT(agcAttackChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcMaxGainChanged(int)),this,SLOT(agcMaxGainChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcSlopeChanged(int)),this,SLOT(agcSlopeChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcDecayChanged(int)),this,SLOT(agcDecayChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcHangChanged(int)),this,SLOT(agcHangChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcFixedGainChanged(int)),this,SLOT(agcFixedGainChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(agcHangThreshChanged(int)),this,SLOT(agcHangThreshChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(levelerStateChanged(int)),this,SLOT(levelerStateChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(levelerMaxGainChanged(int)),this,SLOT(levelerMaxGainChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(levelerAttackChanged(int)),this,SLOT(levelerAttackChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(levelerDecayChanged(int)),this,SLOT(levelerDecayChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(levelerHangChanged(int)),this,SLOT(levelerHangChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(alcStateChanged(int)),this,SLOT(alcStateChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(alcAttackChanged(int)),this,SLOT(alcAttackChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(alcDecayChanged(int)),this,SLOT(alcDecayChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(alcHangChanged(int)),this,SLOT(alcHangChanged(int))); //KD0OSS
+/*    connect(&configure,SIGNAL(nbTransitionChanged(int)),this,SLOT(nbTransitionChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(nbLeadChanged(int)),this,SLOT(nbLeadChanged(int))); //KD0OSS
+    connect(&configure,SIGNAL(nbLagChanged(int)),this,SLOT(nbLagChanged(int))); //KD0OSS
+*/
     connect(&bookmarks,SIGNAL(bookmarkSelected(QAction*)),this,SLOT(selectBookmark(QAction*)));
     connect(&bookmarkDialog,SIGNAL(accepted()),this,SLOT(addBookmark()));
 
@@ -339,8 +368,8 @@ UI::UI(const QString server) {
     connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
     connect(&configure,SIGNAL(RxIQspinChanged(double)),this,SLOT(RxIQspinChanged(double)));
     connect(&configure,SIGNAL(spinBox_cwPitchChanged(int)),this,SLOT(cwPitchChanged(int)));
-    connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
-    connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
+//    connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
+//    connect(widget.ctlFrame,SIGNAL(testSliderChange(int)),this,SLOT(testSliderChange(int)));
     connect(&connection,SIGNAL(hardware(QString)),this,SLOT(hardware(QString)));
     connect(widget.ctlFrame,SIGNAL(masterBtnClicked()),this,SLOT(masterButtonClicked()));
 
@@ -363,6 +392,8 @@ UI::UI(const QString server) {
     audio_byte_order=configure.getByteOrder();
 
     widget.spectrumView->connection = &connection; // KD0OSS
+    widget.spectrumView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    widget.spectrumView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     equalizer = new EqualizerDialog(&connection); // KD0OSS
 
@@ -397,6 +428,7 @@ UI::UI(const QString server) {
     //widget.spectrumView->setReceiver(configure.getReceiver()); //deleted by gvj
 
     //Configure statusBar
+ //   modeInfo.setMinimumWidth(350);
     widget.statusbar->addPermanentWidget(&modeInfo);
 
     widget.actionSubrx->setDisabled(TRUE);
@@ -430,6 +462,8 @@ void UI::loadSettings() {
     QSettings settings("G0ORX", "QtRadio");
     qDebug() << "loadSettings: " << settings.fileName();
 
+    widget.ctlFrame->loadSettings(&settings);
+//    Ctl.loadSettings(&settings);
     band.loadSettings(&settings);
     xvtr.loadSettings(&settings);
     configure.loadSettings(&settings);
@@ -438,6 +472,7 @@ void UI::loadSettings() {
     bookmarks.buildMenu(widget.menuView_Bookmarks);
     settings.beginGroup("UI");
     if(settings.contains("gain")) gain=subRxGain=settings.value("gain").toInt();
+    emit widget.ctlFrame->audioGainInitalized(gain);  // KD0OSS
     if(settings.contains("agc")) agc=settings.value("agc").toInt();
     if(settings.contains("squelch")) squelchValue=settings.value("squelch").toInt();
     if(settings.contains("pwsmode")) pwsmode=settings.value("pwsmode").toInt();  // KD0OSS
@@ -449,7 +484,7 @@ void UI::loadSettings() {
     }
     settings.endGroup();
 
-    // KD0OSS
+    // KD0OSS ******************************************
     settings.beginGroup("AudioEqualizer");
     if (settings.contains("eqMode"))
     {
@@ -476,7 +511,7 @@ void UI::loadSettings() {
         equalizer->set10BandEqualizer();
     }
     settings.endGroup();
-
+    // **************************************************
     widget.vfoFrame->readSettings(&settings);
     setPwsMode(pwsmode);  // KD0OSS
 }
@@ -490,7 +525,7 @@ void UI::saveSettings() {
     qDebug() << "saveSettings: " << settings.fileName();
 
   //  settings.clear();
-
+    widget.ctlFrame->saveSettings(&settings);
     configure.saveSettings(&settings);
     band.saveSettings(&settings);
     xvtr.saveSettings(&settings);
@@ -508,11 +543,12 @@ void UI::saveSettings() {
     settings.setValue("geometry", saveGeometry());
     settings.endGroup();
 
+    // KD0OSS  ********************************************************
     settings.beginGroup("AudioEqualizer");
     settings.setValue("rxEqEnabled", widget.rxEqEnableCB->isChecked());
     settings.setValue("txEqEnabled", widget.txEqEnableCB->isChecked());
     settings.endGroup();
-
+    //  ***************************************************************
     widget.vfoFrame->writeSettings(&settings);
 }
 
@@ -580,6 +616,8 @@ void UI::setFPS(void){
 }
 
 void UI::resizeEvent(QResizeEvent *){
+    container->resize(widget.spectrumView->width(), widget.waterfallFrame->height());
+
     if (protocol3){
         QString command;
         command.clear(); QTextStream(&command) << "setFPS " << widget.spectrumView->width() << " " << fps;
@@ -642,8 +680,8 @@ void UI::actionConnect() {
 
     // Initialise RxIQMu. Set RxIQMu to disabled, set value and then enable if checked.
     RxIQspinChanged(configure.getRxIQspinBoxValue());
-    rxDCBlockChanged(configure.getRxDCBlockValue());
-    txDCBlockChanged(configure.getTxDCBlockValue());
+//    rxDCBlockChanged(configure.getRxDCBlockValue());
+//    txDCBlockChanged(configure.getTxDCBlockValue());
     widget.zoomSpectrumSlider->setValue(0);
     on_zoomSpectrumSlider_sliderMoved(0);
 }
@@ -745,7 +783,7 @@ void UI::connected() {
     widget.actionSubrx->setDisabled(FALSE);
     widget.actionMuteSubRx->setDisabled(TRUE);
 
-    setPwsMode(pwsmode);
+    setPwsMode(pwsmode); // KD0OSS
 
     // select audio encoding
     command.clear(); QTextStream(&command) << "setEncoding " << audio->get_audio_encoding();
@@ -818,8 +856,53 @@ void UI::connected() {
     command.clear(); QTextStream(&command) << "SetNB " << (widget.actionNB->isChecked()?"true":"false");
     connection.sendCommand(command);
 
-    //command.clear(); QTextStream(&command) << "SetDCBlock 1";
-    //connection.sendCommand(command);
+    printWindowTitle("Remote connected");
+
+    // Added by KD0OSS *****************************************
+//    if (dspversion >= 20130609)
+    {
+        qDebug("Sending advanced setup commands.");
+        command.clear(); QTextStream(&command) << "setrxdcblock " << configure.getRxDCBlockValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxdcblock " << configure.getTxDCBlockValue();
+        connection.sendCommand(command);
+
+        command.clear(); QTextStream(&command) << "setrxagcslope " << configure.getRxAGCSlopeValue();
+ //       connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setrxagcmaxgain " << configure.getRxAGCMaxGainValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setrxagcattack " << configure.getRxAGCAttackValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setrxagcdecay " << configure.getRxAGCDecayValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setrxagchang " << configure.getRxAGCHangValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setfixedagc " << configure.getRxAGCFixedGainValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "setrxagchangthreshold " << configure.getRxAGCHangThreshValue();
+        connection.sendCommand(command);
+
+        command.clear(); QTextStream(&command) << "settxlevelerstate " << configure.getLevelerEnabledValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxlevelermaxgain " << configure.getLevelerMaxGainValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxlevelerattack " << configure.getLevelerAttackValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxlevelerdecay " << configure.getLevelerDecayValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxlevelerhang " << configure.getLevelerHangValue();
+        connection.sendCommand(command);
+
+        command.clear(); QTextStream(&command) << "setalcstate " << configure.getALCEnabledValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxalcattack " << configure.getALCAttackValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxalcdecay " << configure.getALCDecayValue();
+        connection.sendCommand(command);
+        command.clear(); QTextStream(&command) << "settxalchang " << configure.getALCHangValue();
+        connection.sendCommand(command);
+    }
+    // ***************************KD0OSS******************************
 
     //
     // hardware special command
@@ -828,16 +911,14 @@ void UI::connected() {
     command.clear(); QTextStream(&command) << "*hardware?";
     connection.sendCommand(command);
 
-
     // start the spectrum
     //qDebug() << "starting spectrum timer";
     connection.SemSpectrum.release();
     spectrumTimer->start(1000/fps);
-    printWindowTitle("Remote connected");
     connection_valid = TRUE;
     if((mode.getStringMode()=="CWU")||(mode.getStringMode()=="CWL")) frequencyChanged(frequency); //gvj dummy call to set Rx offset for cw
 
-    widget.spectrumView->enableNotchFilter(false);
+    widget.spectrumView->enableNotchFilter(false); // KD0OSS
 }
 
 void UI::disconnected(QString message) {
@@ -893,19 +974,12 @@ void UI::updateSpectrum() {
 }
 
 void UI::spectrumBuffer(char* header,char* buffer) {
-    //qDebug()<<Q_FUNC_INFO << "spectrumBuffer";
-// g0orx binary header
-/*
-    int length=atoi(&header[26]);
-    sampleRate=atoi(&header[32]);
-*/
 
     int length=((header[3]&0xFF)<<8)+(header[4]&0xFF);
     sampleRate=((header[9]&0xFF)<<24)+((header[10]&0xFF)<<16)+((header[11]&0xFF)<<8)+(header[12]&0xFF);
 
     widget.spectrumView->updateSpectrumFrame(header,buffer,length);
-//    widget.spectrumView->panadapterScene->waterfallItem->updateWaterfall(header,buffer,length);
-//    widget.waterfallView->updateWaterfall(header,buffer,length);
+    waterfallgl->updateWaterfall(buffer, length, 0);
     connection.freeBuffers(header,buffer);
 }
 
@@ -921,6 +995,11 @@ void UI::audioBuffer(char* header,char* buffer) {
 
 
 void UI::micSendAudio(QQueue<qint16>* queue){
+    if (!txNow)
+    {
+        queue->clear();
+        return;
+    }
     if(useRTP) {
         while(!queue->isEmpty()) {
             qint16 sample=queue->dequeue();
@@ -1378,6 +1457,9 @@ void UI::filtersChanged(FiltersBase* previousFilters,FiltersBase* newFilters) {
             case 9:
                 widget.actionFilter_9->setChecked(FALSE);
                 break;
+            case 10:
+                widget.actionFilter_10->setChecked(FALSE);
+                break;
         }
     }
 
@@ -1399,6 +1481,7 @@ qDebug()<<Q_FUNC_INFO<<":   1092 band.getFilter = "<<band.getFilter()<<", modeFl
     widget.actionFilter_7->setText(newFilters->getText(7));
     widget.actionFilter_8->setText(newFilters->getText(8));
     widget.actionFilter_9->setText(newFilters->getText(9));
+    widget.actionFilter_10->setText(newFilters->getText(10));
 
     // check new filter
     if(newFilters!=NULL) {
@@ -1433,12 +1516,15 @@ qDebug()<<Q_FUNC_INFO<<":   1092 band.getFilter = "<<band.getFilter()<<", modeFl
             case 9:
                 widget.actionFilter_9->setChecked(TRUE);
                 break;
+            case 10:
+                widget.actionFilter_10->setChecked(TRUE);
+                break;
         }
     }
 
     filters.selectFilter(filters.getFilter());
     widget.spectrumView->setFilter(filters.getText());
-    printStatusBar(" .. Initial frequency");    //added by gvj
+    printStatusBar(" .. Initial frequency. ");    //added by gvj
 }
 
 void UI::actionCWL() {
@@ -1571,6 +1657,10 @@ void UI::actionFilter9() {
     filters.selectFilter(9);
 }
 
+void UI::actionFilter10() {
+    filters.selectFilter(10);
+}
+
 void UI::filterChanged(int previousFilter,int newFilter) {
     QString command;
 
@@ -1608,6 +1698,9 @@ void UI::filterChanged(int previousFilter,int newFilter) {
         case 9:
             widget.actionFilter_9->setChecked(FALSE);
             break;
+        case 10:
+            widget.actionFilter_10->setChecked(FALSE);
+            break;
     }
 
     switch(newFilter) {
@@ -1641,7 +1734,13 @@ void UI::filterChanged(int previousFilter,int newFilter) {
         case 9:
             widget.actionFilter_9->setChecked(TRUE);
             break;
+        case 10:
+            widget.actionFilter_10->setChecked(TRUE);
+            break;
     }
+
+    if (previousFilter != 10 && newFilter == 10)
+        return;
 
     if(mode.getMode()==MODE_CWL) {
         low=-cwPitch-filters.getLow();
@@ -1660,6 +1759,54 @@ void UI::filterChanged(int previousFilter,int newFilter) {
     widget.spectrumView->setFilter(filters.getText());
 //    widget.waterfallView->setFilter(low,high);
     band.setFilter(newFilter);
+}
+
+void UI::variableFilter(int low, int high)
+{
+    QString command;
+
+    switch(filters.getFilter()) {
+    case 0:
+        widget.actionFilter_0->setChecked(FALSE);
+        break;
+    case 1:
+        widget.actionFilter_1->setChecked(FALSE);
+        break;
+    case 2:
+        widget.actionFilter_2->setChecked(FALSE);
+        break;
+    case 3:
+        widget.actionFilter_3->setChecked(FALSE);
+        break;
+    case 4:
+        widget.actionFilter_4->setChecked(FALSE);
+        break;
+    case 5:
+        widget.actionFilter_5->setChecked(FALSE);
+        break;
+    case 6:
+        widget.actionFilter_6->setChecked(FALSE);
+        break;
+    case 7:
+        widget.actionFilter_7->setChecked(FALSE);
+        break;
+    case 8:
+        widget.actionFilter_8->setChecked(FALSE);
+        break;
+    case 9:
+        widget.actionFilter_9->setChecked(FALSE);
+        break;
+    }
+
+    widget.actionFilter_10->setChecked(TRUE);
+
+    command.clear(); QTextStream(&command) << "setFilter " << low << " " << high;
+    connection.sendCommand(command);
+    if (filters.getFilter() != 10)
+    {
+        band.setFilter(10);
+        filters.selectFilter(10);
+    }
 }
 
 void UI::frequencyChanged(long long f) {
@@ -1744,6 +1891,26 @@ void UI::actionPolyphase() {
 }
 
 void UI::actionFixed() { // KD0OSS
+    if (!newDspServerCheck())
+    {
+        widget.actionFixed->setChecked(FALSE);
+        switch(agc) {
+        case AGC_LONG:
+            widget.actionLong->setChecked(TRUE);
+            break;
+        case AGC_SLOW:
+            widget.actionSlow->setChecked(TRUE);
+            break;
+        case AGC_MEDIUM:
+            widget.actionMedium->setChecked(TRUE);
+            break;
+        case AGC_FAST:
+            widget.actionFast->setChecked(TRUE);
+            break;
+        }
+        return;
+    }
+
     QString command;
     // reset the current selection
     switch(agc) {
@@ -1895,7 +2062,10 @@ void UI::actionMuteMainRx() {
 
     if(widget.actionMuteMainRx->isChecked()) {
         g=0;
+        emit widget.ctlFrame->setAudioMuted(true);
     }
+    else
+        emit widget.ctlFrame->setAudioMuted(false);
 
     command.clear(); QTextStream(&command) << "SetRXOutputGain " << g;
     connection.sendCommand(command);
@@ -1907,7 +2077,10 @@ void UI::actionMuteSubRx() {
 
     if(widget.actionMuteSubRx->isChecked()) {
         g=0;
+        emit widget.ctlFrame->setAudioMuted(true);
     }
+    else
+        emit widget.ctlFrame->setAudioMuted(false);
 
     command.clear(); QTextStream(&command) << "SetSubRXOutputGain " << g;
     connection.sendCommand(command);
@@ -1939,7 +2112,7 @@ void UI::actionRecord() {
     command.clear(); QTextStream(&command) << "record " << (widget.actionRecord->isChecked()?"on":"off");
     connection.sendCommand(command);
 }
-
+/*
 void UI::actionGain_10() {
     actionGain(10);
 }
@@ -1979,19 +2152,40 @@ void UI::actionGain_90() {
 void UI::actionGain_100() {
     actionGain(100);
 }
-
+*/
 void UI::actionGain(int g) {
     QString command;
-    setGain(false);
+//    setGain(false);
     gain=g;
     subRxGain=g;
-    setGain(true);
+//    setGain(true);
     command.clear(); QTextStream(&command) << "SetRXOutputGain " << g;
     connection.sendCommand(command);
     command.clear(); QTextStream(&command) << "SetSubRXOutputGain " << g;
     connection.sendCommand(command);
 }
 
+void UI::setAudioMuted(bool enabled)
+{
+    if (enabled)
+    {
+        actionGain(0);
+        widget.actionMuteMainRx->setChecked(true);
+        widget.actionMuteSubRx->setChecked(true);
+    }
+    else
+    {
+        actionGain(widget.ctlFrame->audioGain);
+        widget.actionMuteMainRx->setChecked(false);
+        widget.actionMuteSubRx->setChecked(false);
+    }
+}
+
+void UI::audioGainChanged(void)
+{
+    actionGain(widget.ctlFrame->audioGain);
+}
+/*
 void UI::setGain(bool state) {
     switch(gain) {
     case 10:
@@ -2026,14 +2220,12 @@ void UI::setGain(bool state) {
         break;
     }
 }
-
+*/
 void UI::nrValuesChanged(int taps,int delay,double gain,double leakage) {
     QString command;
     command.clear(); QTextStream(&command) << "SetNRVals " << taps << " " << delay << " "
                                            << gain << " " << leakage;
     connection.sendCommand(command);
-
-
 }
 
 void UI::anfValuesChanged(int taps,int delay,double gain,double leakage) {
@@ -2099,7 +2291,6 @@ void UI::selectBookmark(QAction* action) {
 
     filters.selectFilter(bookmarks.getFilter());
     qDebug() << "Bookmark Filter: " << bookmarks.getFilter();
-
 }
 
 void UI::selectABookmark() {
@@ -2230,20 +2421,26 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + " 22 May 2013");
+                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  21 May 2014"); // KD0OSS  Fixed Qt version format
     lastmessage = message;
-
 }
 
 void UI::printStatusBar(QString message)
 {
-    modeInfo.setText(band.getStringMem()+", "+mode.getStringMode()+", "+filters.getText()+message);
+    Frequency freqInfo; // KD0OSS Added frequency description.
+    static QString description;
+    static long long lastFreq;
+
+    if (lastFreq != frequency)
+        description = freqInfo.getFrequencyInfo(frequency).getDescription();
+
+    modeInfo.setText(description + "  " + band.getStringMem()+", "+mode.getStringMode()+", "+filters.getText()+message);
+    lastFreq = frequency;
 }
 
 void UI::initRigCtl ()
 {
-        rigCtl = new RigCtlServer ( this, this );
-
+    rigCtl = new RigCtlServer ( this, this );
 }
 
 long long UI::rigctlGetFreq()
@@ -2382,6 +2579,8 @@ void UI::pttChange(int caller, bool ptt)
             }
             connection.sendCommand(command);
             widget.vfoFrame->pttChange(ptt); //Update the VFO to reflect that we are transmitting
+            connect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
+            txNow = true; // KD0OSS
         } else {    // Going from Tx to Rx .................
             if(caller==1) {
                 //Restore AM carrier level to 0.5 the standard carrier level for AM mode.
@@ -2405,6 +2604,8 @@ void UI::pttChange(int caller, bool ptt)
                     case MODE_DIGU:actionDIGU();break;
                 }
             }
+            txNow = false; // KD0OSS
+
             //Un-mute the receiver audio
             connection.setMuted(false);
             //Send signal to sdr to go to Rx
@@ -2415,6 +2616,7 @@ void UI::pttChange(int caller, bool ptt)
             }
             connection.sendCommand(command);
             widget.vfoFrame->pttChange(ptt); //Set band select buttons etc. to Rx state on VFO
+            disconnect(audioinput,SIGNAL(mic_update_level(qreal)),widget.ctlFrame,SLOT(update_mic_level(qreal)));
         }
     } else widget.ctlFrame->clearMoxBtn();
 }
@@ -2611,6 +2813,7 @@ void UI::setTxIQGain(double value)  // KD0OSS
     qDebug()<<Q_FUNC_INFO<<":   The value of Tx IQ Gain = "<<value;
 }
 
+/*
 void UI::testSliderChange(int value)
 {
     QString command;
@@ -2632,7 +2835,7 @@ void UI::testButtonClick(bool state)
 }
 
 //>>>>>>> Connected test controls to main UI
-
+*/
  void UI::resetbandedges(double offset)
  {
      loffset= offset;
@@ -2698,6 +2901,14 @@ void UI::rigSetPTT(int enabled){
 void UI::rxDCBlockChanged(bool state) {  // KD0OSS
         QString command;
         command.clear(); QTextStream(&command) << "setrxdcblock " << state;
+//        qDebug("%s", command);
+        connection.sendCommand(command);
+        qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::rxDCBlockGainChanged(int value) {  // KD0OSS
+        QString command;
+        command.clear(); QTextStream(&command) << "setrxdcblockgain " << value;
 //        qDebug("%s", command);
         connection.sendCommand(command);
         qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
@@ -2802,6 +3013,8 @@ void UI::actionPwsMode3()   // KD0OSS
 
 void UI::AGCTLevelChanged(int level)   // KD0OSS
 {
+    if (!newDspServerCheck()) return;
+
     QString command;
     command.clear(); QTextStream(&command) << "setfixedagc " << level;
 //        qDebug("%s", command);
@@ -2812,6 +3025,8 @@ void UI::AGCTLevelChanged(int level)   // KD0OSS
 
 void UI::enableRxEq(bool enable)   // KD0OSS
 {
+    if (!newDspServerCheck()) return;
+
     QString command;
     command.clear(); QTextStream(&command) << "setrxgreqcmd " << enable;
     connection.sendCommand(command);
@@ -2820,6 +3035,8 @@ void UI::enableRxEq(bool enable)   // KD0OSS
 
 void UI::enableTxEq(bool enable)   // KD0OSS
 {
+    if (!newDspServerCheck()) return;
+
     QString command;
     command.clear(); QTextStream(&command) << "settxgreqcmd " << enable;
     connection.sendCommand(command);
@@ -2828,6 +3045,8 @@ void UI::enableTxEq(bool enable)   // KD0OSS
 
 void UI::addNotchFilter(void)   // KD0OSS
 {
+    if (!newDspServerCheck()) return;
+
     if (notchFilterIndex >= 9)
     {
         QMessageBox::warning(this, "Tracking Notch Filter Error", "Maximum of 9 notch filters reached!");
@@ -2839,6 +3058,8 @@ void UI::addNotchFilter(void)   // KD0OSS
 
 void UI::removeNotchFilter(void)
 {
+    if (!newDspServerCheck()) return;
+
     notchFilterIndex--;
     if (notchFilterIndex < 0)
         notchFilterIndex = 0;
@@ -2869,4 +3090,175 @@ void UI::statusMessage(QString message)
 void UI::masterButtonClicked(void)
 {
     connection.sendCommand("setMaster " + configure.thisuser + " " + configure.thispass);
+}
+
+bool UI::newDspServerCheck(void)
+{
+    if (dspversion >= 20130609 || dspversion == 0)
+        return true;
+    else
+    {
+        QMessageBox::warning(this, "Advanced Features Error", "DSP server version 20130609 or greater required.");
+        return false;
+    }
+}
+
+void UI::agcSlopeChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagcslope " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcMaxGainChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagcmaxgain " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcAttackChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagcattack " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcDecayChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagcdecay " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcHangChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagchang " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcHangThreshChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setrxagchangthreshold " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::agcFixedGainChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "setfixedagc " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::levelerStateChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxlevelerstate " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::levelerMaxGainChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxlevelermaxgain " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::levelerAttackChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxlevelerattack " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::levelerDecayChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxlevelerdecay " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::levelerHangChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxlevelerhang " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::alcStateChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxalcstate " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::alcDecayChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxalcdecay " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::alcAttackChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxalcattack " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
+}
+
+void UI::alcHangChanged(int value)   // KD0OSS
+{
+    if (!newDspServerCheck()) return;
+
+    QString command;
+    command.clear(); QTextStream(&command) << "settxalchang " << value;
+    connection.sendCommand(command);
+    qDebug()<<Q_FUNC_INFO<<":   The command sent is "<< command;
 }

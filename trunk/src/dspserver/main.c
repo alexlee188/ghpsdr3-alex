@@ -79,7 +79,11 @@
 * 
 */
 
+<<<<<<< HEAD
 const char *version = "20130122;-opengl-ssl"; //YYYYMMDD; text desc
+=======
+const char *version = "20140115;-opengl"; //YYYYMMDD; text desc
+>>>>>>> opengl
 
 // main.c
 
@@ -126,7 +130,8 @@ enum {
     OPT_HPSDR,
     OPT_NOCORRECTIQ,
     OPT_DEBUG,
-    OPT_THREAD_DEBUG
+    OPT_THREAD_DEBUG,
+    OPT_HPSDRLOC
 };
 
 struct option longOptions[] = {
@@ -142,6 +147,7 @@ struct option longOptions[] = {
     {"hpsdr",no_argument, NULL, OPT_HPSDR},
     {"nocorrectiq",no_argument, NULL, OPT_NOCORRECTIQ},
     {"debug",no_argument, NULL, OPT_DEBUG},
+    {"hpsdrloc",no_argument, NULL, OPT_HPSDRLOC},
 #ifdef THREAD_DEBUG
     {"debug-threads",no_argument, NULL, OPT_THREAD_DEBUG},
 #endif /* THREAD_DEBUG */
@@ -206,6 +212,9 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
             case OPT_HPSDR:
                 ozy_set_hpsdr();
                 break;
+            case OPT_HPSDRLOC:
+                ozy_set_hpsdr_local();
+                break;
             case OPT_NOCORRECTIQ:
                 config->no_correct_iq = 1;
                 break;
@@ -218,15 +227,16 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
 
        default:
                 fprintf(stderr,"Usage: \n");
-                fprintf(stderr,"  dspserver --receivers N (default 1)\n");
+                fprintf(stderr,"  dspserver --receiver N (default 0)\n");
                 fprintf(stderr,"            --server 0.0.0.0 (default 127.0.0.1)\n");
                 fprintf(stderr,"            --soundcard (machine dependent)\n");
                 fprintf(stderr,"            --offset 0 \n");
                 fprintf(stderr,"            --share (will register this server for other users \n");
                 fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
 		fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
-		fprintf(stderr,"            --hpsdr (if using hpsdr hardware)\n");
-		fprintf(stderr,"            --nocorrectiq (select if using non QSD receivers, like Perseus, HiQSDR, Mercury)\n");
+		fprintf(stderr,"            --hpsdr (if using hpsdr hardware with no local mike and headphone)\n");
+		fprintf(stderr,"            --hpsdrloc (if using hpsdr hardware with LOCAL mike and headphone)\n");
+		fprintf(stderr,"            --nocorrectiq (select if using non QSD receivers, like Hermes, Perseus, HiQSDR, Mercury)\n");
 #ifdef THREAD_DEBUG
                 fprintf(stderr,"            --debug-threads (enable threading assertions)\n");
 #endif /* THREAD_DEBUG */
@@ -294,20 +304,38 @@ int main(int argc,char* argv[]) {
     reset_for_buflen(0,1024);
     reset_for_buflen(1,1024);
 
-    client_init(receiver);
+    client_init(receiver);        // create the main thread responsible for listen TCP socket
+                                  // on the read callback:
+                                  //    accept and interpret the commands from remote GUI  
+                                  //    parse mic data from remote and enque them into Mic_audio_stream queue
+                                  //    see client.c
+                                  //
+                                  // on the write callback:
+                                  //    read the audio_stream_queue and send into the TCP socket
+                                  //
     audio_stream_init(receiver);
     audio_stream_reset();
 
     codec2 = codec2_create(CODEC2_MODE_3200);
     G711A_init();
-    ozy_init(config.server_address);
-
+    ozy_init(config.server_address);   // create and starts iq_thread in ozy.c in order to
+                                       // receive iq stream from hardware server
+                                       // process it in DttSP
+                                       // makes the sample rate adaption for resulting audio
+                                       // puts audio stream in a queue (via calls to audio_stream_queue_add 
+                                       // in audio_stream_put_samples() in audiostream.c)
+                                       //
+                                       // in case of HPSDR hardware (that is provided with a local D/A converter
+                                       // sends via ozy_send() the audio back to the hardware server
     SetMode(1, 0, USB);
     SetTXFilter(1, 150, 2850);
     SetTXOsc(1, LO_offset);
     SetTXAMCarrierLevel(1, 0.5);
 
-    tx_init();	// starts the tx_thread
+    tx_init();	// create and starts the tx_thread (see client.c)
+                // the tx_thread reads the Mic_audio_stream queue, makes the sample rate adaption
+                // process the data into DttSP in order to get the modulation process done,
+                // and sends back to the hardware server process (via ozy_send() )
 
 #ifdef THREAD_DEBUG
     /* Note that some thread interactions will be lost at startup due to

@@ -87,6 +87,12 @@ esac
 dnl # library (in DttSP) used but `RANLIB' is undefined:  the usual way to define `RANLIB' is to add `AC_PROG_RANLIB'
 dnl #AC_PROG_RANLIB
 
+case $host in
+*-linux*)
+   CFLAGS="$CFLAGS -I/usr/include/libusb-1.0/"
+   ;;
+esac
+
 
 #
 # Check for compilation options which affect debugging
@@ -277,7 +283,7 @@ if test "x${have_config}" = xno; then
 fi
 
 if test "x${have_usb10}" = xyes; then
-    AC_CHECK_HEADERS([libusb-1.0/libusb.h], [], [have_usb10=no])
+    AC_CHECK_HEADERS([libusb.h], [], [have_usb10=no])
 fi
 
 if test "x${have_usb10}" = xno; then
@@ -335,7 +341,7 @@ fi
 if test "x${have_samplerate}" = xno; then
     AC_MSG_ERROR([
 -----------------------------------
-  The samplerate library and header file required to build ghpsdr3.
+  The samplerate library and header file is required to build ghpsdr3.
 -----------------------------------])
 
 fi
@@ -344,10 +350,17 @@ if test "x${have_ortp}" = xyes; then
     AC_CHECK_HEADERS([ortp/ortp.h], [], [have_ortp=no])
 fi
 
+if test "x${have_ortp}" = xyes; then
+    AC_LINK_IFELSE(
+        [AC_LANG_CALL([], [rtp_session_set_pktinfo])],
+        [AC_DEFINE(HAVE_RTCP_ORTP, 1, [have ORTP with RTCP functionality])],
+        [])
+fi
+
 if test "x${have_ortp}" = xno; then
     AC_MSG_ERROR([
 -----------------------------------
-  The ortp library and header file required to build ghpsdr3.
+  The ortp library and header file is required to build ghpsdr3.
 -----------------------------------])
 
 fi
@@ -356,7 +369,7 @@ fi
 if test "x${have_gomp}" = xno; then
     AC_MSG_ERROR([
 -----------------------------------
-  The gomp library required to build ghpsdr3.
+  The gomp library is required to build ghpsdr3.
 -----------------------------------])
 
 fi

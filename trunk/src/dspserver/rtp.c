@@ -50,6 +50,10 @@
 #include <semaphore.h>
 #include <ortp/ortp.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "rtp.h"
 
 unsigned int recv_ts=0;
@@ -89,7 +93,11 @@ RtpSession *rtpSession;
     rtp_session_set_scheduling_mode(rtpSession,TRUE);
     rtp_session_set_blocking_mode(rtpSession,FALSE);
 
+#ifdef HAVE_RTCP_ORTP
+    rtp_session_set_local_addr(rtpSession,"0.0.0.0",LOCAL_RTP_PORT,LOCAL_RTCP_PORT);
+#else
     rtp_session_set_local_addr(rtpSession,"0.0.0.0",LOCAL_RTP_PORT);
+#endif
     rtp_session_set_remote_addr(rtpSession, remote_addr, remote_port );
 
     rtp_session_set_connected_mode(rtpSession,TRUE);
