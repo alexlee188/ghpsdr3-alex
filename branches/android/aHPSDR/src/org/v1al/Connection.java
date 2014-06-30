@@ -30,7 +30,6 @@ import android.media.MediaRecorder.AudioSource;
 import android.os.Build;
 import android.util.Log;
 
-@TargetApi(Build.VERSION_CODES.CUPCAKE)
 public class Connection extends Thread {
 	public Connection(String server, int port, int width) {
 		// Log.i("Connection",server+":"+port);
