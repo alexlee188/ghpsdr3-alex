@@ -100,27 +100,27 @@ public class Connection extends Thread {
 	}
 	
 	public void close() {
-        Log.i("Connection","close");
-        running=false;
-        if(socket!=null) {
-                try {
-                        socket.close();
-                } catch (Exception e) {
+		Log.i("Connection","close");
+		running=false;
+		if(socket!=null) {
+		        try {
+		                socket.close();
+		        } catch (Exception e) {
 
-                }
-                socket=null;
-        }
-        if(audioTrack!=null) {
-            audioTrack.stop();
-            audioTrack.release();
-            audioTrack = null;
-        }
-        if (recorder != null){
-        	recorder.stop();
-        	recorder.release();
-        	recorder = null;
-        }
-    }
+		        }
+		        socket=null;
+		}
+		if(audioTrack!=null) {
+		    audioTrack.stop();
+		    audioTrack.release();
+		    audioTrack = null;
+		}
+		if (recorder != null){
+			recorder.stop();
+			recorder.release();
+			recorder = null;
+		}
+    	}
 
 	public boolean isRunning() {
 		return running;

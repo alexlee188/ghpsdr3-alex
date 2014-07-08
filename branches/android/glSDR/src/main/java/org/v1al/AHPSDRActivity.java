@@ -107,7 +107,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
-        restorePrefs();
+        	restorePrefs();
 
 		connection=null;
 
@@ -129,74 +129,71 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		ll.addView(mGLSurfaceView);
 		setContentView(ll);
 		
-		//filterAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
-		//filterAdapter = new ArrayAdapter<String>(this, R.layout.row, R.id.filter);
 		filterAdapter = new CustomAdapter(this, R.layout.row, R.id.selection);
-		//serverAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
 		serverAdapter = new CustomAdapter(this, R.layout.row, R.id.selection);
 	}
 
 	public void restorePrefs() {
 		SharedPreferences prefs = getSharedPreferences("aHPSDR", 0);
-        band=prefs.getInt("Band", BAND_20);
+		band=prefs.getInt("Band", BAND_20);
 		filter=prefs.getInt("Filter",FILTER_5);
 		mode=prefs.getInt("Mode",MODE_USB);
-    	band_160_freq = prefs.getLong("band_160_freq", 1850000L);
-    	band_80_freq = prefs.getLong("band_80_freq", 3850000L);
-    	band_60_freq = prefs.getLong("band_60_freq", 5371500L);
-    	band_40_freq = prefs.getLong("band_40_freq", 7050000L);
-    	band_30_freq = prefs.getLong("band_30_freq", 10135000L);
-    	band_20_freq = prefs.getLong("band_20_freq", 14200000L);
-    	band_17_freq = prefs.getLong("band_17_freq", 18130000L);
-    	band_15_freq = prefs.getLong("band_15_freq", 21270000L);
-    	band_12_freq = prefs.getLong("band_12_freq", 24910000L);
-    	band_10_freq = prefs.getLong("band_10_freq", 28500000L);
-    	band_6_freq = prefs.getLong("band_6_freq", 50200000L);
-    	band_gen_freq = prefs.getLong("band_gen_freq", 15310000L);
-    	band_wwv_freq = prefs.getLong("band_wwv_freq", 10000000L);
-    	long band_default_frequency = 14200000L;
-    	switch (band){
-    	case BAND_160:
-    		band_default_frequency = prefs.getLong("band_160_freq", 1850000L);
-    		break;
-    	case BAND_80:
-        	band_default_frequency = prefs.getLong("band_80_freq", 3850000L);
-        	break;
-    	case BAND_60:
-        	band_default_frequency = prefs.getLong("band_60_freq", 5371500L);
-        	break;
-    	case BAND_40:
-        	band_default_frequency = prefs.getLong("band_40_freq", 7050000L);
-        	break;
-    	case BAND_30:
-        	band_default_frequency = prefs.getLong("band_30_freq", 10135000L);
-        	break;
-    	case BAND_20:
-        	band_default_frequency = prefs.getLong("band_20_freq", 14200000L);
-        	break;
-    	case BAND_17:
-        	band_default_frequency = prefs.getLong("band_17_freq", 18130000L);
-        	break;
-    	case BAND_15:
-        	band_default_frequency = prefs.getLong("band_15_freq", 21270000L);
-        	break;
-    	case BAND_12:
-        	band_default_frequency = prefs.getLong("band_12_freq", 24910000L);
-        	break;
-    	case BAND_10:
-        	band_default_frequency = prefs.getLong("band_10_freq", 28500000L);
-        	break;
-    	case BAND_6:
-        	band_default_frequency = prefs.getLong("band_6_freq", 50200000L);
-        	break;
-    	case BAND_GEN:
-        	band_default_frequency = prefs.getLong("band_gen_freq", 15310000L);
-        	break;
-    	case BAND_WWV:
-        	band_default_frequency = prefs.getLong("band_wwv_freq", 10000000L);
-        	break;
-    	}
-    	frequency = prefs.getLong("Frequency", band_default_frequency);
+	    	band_160_freq = prefs.getLong("band_160_freq", 1850000L);
+	    	band_80_freq = prefs.getLong("band_80_freq", 3850000L);
+	    	band_60_freq = prefs.getLong("band_60_freq", 5371500L);
+	    	band_40_freq = prefs.getLong("band_40_freq", 7050000L);
+	    	band_30_freq = prefs.getLong("band_30_freq", 10135000L);
+	    	band_20_freq = prefs.getLong("band_20_freq", 14200000L);
+	    	band_17_freq = prefs.getLong("band_17_freq", 18130000L);
+	    	band_15_freq = prefs.getLong("band_15_freq", 21270000L);
+	    	band_12_freq = prefs.getLong("band_12_freq", 24910000L);
+	    	band_10_freq = prefs.getLong("band_10_freq", 28500000L);
+	    	band_6_freq = prefs.getLong("band_6_freq", 50200000L);
+	    	band_gen_freq = prefs.getLong("band_gen_freq", 15310000L);
+	    	band_wwv_freq = prefs.getLong("band_wwv_freq", 10000000L);
+	    	long band_default_frequency = 14200000L;
+	    	switch (band){
+	    	case BAND_160:
+	    		band_default_frequency = prefs.getLong("band_160_freq", 1850000L);
+	    		break;
+	    	case BAND_80:
+			band_default_frequency = prefs.getLong("band_80_freq", 3850000L);
+			break;
+	    	case BAND_60:
+			band_default_frequency = prefs.getLong("band_60_freq", 5371500L);
+			break;
+	    	case BAND_40:
+			band_default_frequency = prefs.getLong("band_40_freq", 7050000L);
+			break;
+	    	case BAND_30:
+			band_default_frequency = prefs.getLong("band_30_freq", 10135000L);
+			break;
+	    	case BAND_20:
+			band_default_frequency = prefs.getLong("band_20_freq", 14200000L);
+			break;
+	    	case BAND_17:
+			band_default_frequency = prefs.getLong("band_17_freq", 18130000L);
+			break;
+	    	case BAND_15:
+			band_default_frequency = prefs.getLong("band_15_freq", 21270000L);
+			break;
+	    	case BAND_12:
+			band_default_frequency = prefs.getLong("band_12_freq", 24910000L);
+			break;
+	    	case BAND_10:
+			band_default_frequency = prefs.getLong("band_10_freq", 28500000L);
+			break;
+	    	case BAND_6:
+			band_default_frequency = prefs.getLong("band_6_freq", 50200000L);
+			break;
+	    	case BAND_GEN:
+			band_default_frequency = prefs.getLong("band_gen_freq", 15310000L);
+			break;
+	    	case BAND_WWV:
+			band_default_frequency = prefs.getLong("band_wwv_freq", 10000000L);
+			break;
+	    	}
+	    	frequency = prefs.getLong("Frequency", band_default_frequency);
 		filterLow=prefs.getInt("FilterLow",150);
 		filterHigh=prefs.getInt("FilterHigh", 2850);
 		gain=prefs.getInt("Gain", 5);
@@ -218,38 +215,38 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	}
 
 	@Override
-    protected void onStop(){
-        Log.i("AHPSDRActivity","onStop");
-        super.onStop();
-        connection.close();
-        savePrefs();
-    }
+    	protected void onStop(){
+		Log.i("AHPSDRActivity","onStop");
+		super.onStop();
+		connection.close();
+		savePrefs();
+    	}
 
 	public void savePrefs() {
 		boolean isSlave = connection.getHasBeenSlave();
-        SharedPreferences prefs = getSharedPreferences("aHPSDR", 0);
-        SharedPreferences.Editor editor = prefs.edit();
-        if (!isSlave){
-	        editor.putInt("Band", band);
-			editor.putLong("Frequency", connection.getFrequency());
-	        editor.putInt("Filter", filter);
-			editor.putInt("Mode", connection.getMode());
-			editor.putInt("FilterLow", connection.getFilterLow());
-			editor.putInt("FilterHigh", connection.getFilterHigh());
-        }
-    	editor.putLong("band_160_freq", band_160_freq);
-    	editor.putLong("band_80_freq", band_80_freq);
-    	editor.putLong("band_60_freq", band_60_freq);
-    	editor.putLong("band_40_freq", band_40_freq);
-    	editor.putLong("band_30_freq", band_30_freq);
-    	editor.putLong("band_20_freq", band_20_freq);
-    	editor.putLong("band_17_freq", band_17_freq);
-    	editor.putLong("band_15_freq", band_15_freq);
-    	editor.putLong("band_12_freq", band_12_freq);
-    	editor.putLong("band_10_freq", band_10_freq);
-    	editor.putLong("band_6_freq", band_6_freq);
-    	editor.putLong("band_gen_freq", band_gen_freq);
-    	editor.putLong("band_wwv_freq", band_wwv_freq);
+		SharedPreferences prefs = getSharedPreferences("aHPSDR", 0);
+		SharedPreferences.Editor editor = prefs.edit();
+		if (!isSlave){
+			editor.putInt("Band", band);
+				editor.putLong("Frequency", connection.getFrequency());
+			editor.putInt("Filter", filter);
+				editor.putInt("Mode", connection.getMode());
+				editor.putInt("FilterLow", connection.getFilterLow());
+				editor.putInt("FilterHigh", connection.getFilterHigh());
+		}
+	    	editor.putLong("band_160_freq", band_160_freq);
+	    	editor.putLong("band_80_freq", band_80_freq);
+	    	editor.putLong("band_60_freq", band_60_freq);
+	    	editor.putLong("band_40_freq", band_40_freq);
+	    	editor.putLong("band_30_freq", band_30_freq);
+	    	editor.putLong("band_20_freq", band_20_freq);
+	    	editor.putLong("band_17_freq", band_17_freq);
+	    	editor.putLong("band_15_freq", band_15_freq);
+	    	editor.putLong("band_12_freq", band_12_freq);
+	    	editor.putLong("band_10_freq", band_10_freq);
+	    	editor.putLong("band_6_freq", band_6_freq);
+	    	editor.putLong("band_gen_freq", band_gen_freq);
+	    	editor.putLong("band_wwv_freq", band_wwv_freq);
 		editor.putInt("Gain", gain);
 		editor.putInt("Micgain", micgain);
 		editor.putInt("AGC", agc);
@@ -270,11 +267,11 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	}
 
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    }
+    	}
 
-    public void onSensorChanged(SensorEvent event) {
+    	public void onSensorChanged(SensorEvent event) {
     	spectrumView.setSensors(event.values[0],event.values[1],event.values[2]);
-    }
+    	}
 
 	public boolean onTrackballEvent(MotionEvent event) {
 		switch (event.getAction()) {
@@ -314,13 +311,13 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		super.onPause();
 		mGLSurfaceView.onPause();
 		Log.i("AHPSDR", "onPause");
+		connection.close();
 		savePrefs();
 	}
 
 	public void onDestroy() {
 		super.onDestroy();
 		Log.i("AHPSDR", "onDestroy");
-		//update.close();
 		connection.close();
 		savePrefs();
 	}
