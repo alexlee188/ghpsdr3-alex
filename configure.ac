@@ -74,8 +74,8 @@ case $build_cpu in
 
     armv7l)
       AC_MSG_NOTICE([Platform: ARM 7])
-      CFLAGS="-O3 -pipe -march=armv7 -mfpu=neon -fno-tree-vectorize -fopenmp"
-      CXXFLAGS="-O3 -pipe -march=armv7 -mfpu=neon -fno-tree-vectorize -fopenmp"
+      CFLAGS="-O3 -pipe -mfpu=neon -fno-tree-vectorize -fopenmp"
+      CXXFLAGS="-O3 -pipe  -mfpu=neon -fno-tree-vectorize -fopenmp"
       export CFLAGS
       export CXXFLAGS
       AC_MSG_NOTICE([${CFLAGS}])
@@ -89,7 +89,7 @@ dnl #AC_PROG_RANLIB
 
 case $host in
 *-linux*)
-   CFLAGS="$CFLAGS -I/usr/include/libusb-1.0/"
+   CFLAGS="$CFLAGS -I/usr/include/libusb-1.0/ -I/usr/local/include/"
    ;;
 esac
 
