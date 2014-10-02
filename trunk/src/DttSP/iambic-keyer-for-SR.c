@@ -399,8 +399,8 @@ read_iambic_key(KeyerState ks, KeyerLogic kl, double ticklen) {
   poll_status = 0;
 
   if (ks->flag.revpdl) {
-    dah_debounce_buf[debounce_buf_i] = status & L_KEY_DOWN;
-    dit_debounce_buf[debounce_buf_i] = status & R_KEY_DOWN;
+    dit_debounce_buf[debounce_buf_i] = status & L_KEY_DOWN;
+    dah_debounce_buf[debounce_buf_i] = status & R_KEY_DOWN;
   } else {
     dit_debounce_buf[debounce_buf_i] = status & R_KEY_DOWN;
     dah_debounce_buf[debounce_buf_i] = status & L_KEY_DOWN;
