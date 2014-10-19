@@ -36,6 +36,7 @@
 #include <QTimer>
 #include <QThread>
 #include <ortp/ortp.h>
+#include <codec2/codec2.h>
 #include "UI.h"
 #include "About.h"
 #include "Configure.h"
@@ -57,7 +58,6 @@
 #include "Meter.h"
 #include "Panadapter.h"
 #include "smeter.h"
-#include "codec2.h"
 #include "servers.h"
 #include "ctl.h"
 #include "powermate.h"
