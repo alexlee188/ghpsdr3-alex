@@ -14,7 +14,9 @@
 #include <QBasicTimer>
 #include <QSettings>
 #include "Band.h"
+#if defined __linux__
 #include "powermate.h"
+#endif
 
 namespace Ui {
     class vfo;

@@ -29,7 +29,7 @@
 #include <QDebug>
 #include <QKeyEvent>
 
-#if defined(LINUX)
+#if defined __linux__
   #include "powermate.h"
 #endif
 
@@ -67,7 +67,7 @@ vfo::vfo(QWidget *parent) :
                 this, SLOT(processRIT(int)));
 
 // Powermate related stuff
-#if defined(LINUX)
+#if defined __linux__
     PmInput *input = new PmInput();
     connect(input, SIGNAL(pressed()), this, SLOT(press()));
     connect(input, SIGNAL(released()), this, SLOT(release()));

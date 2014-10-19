@@ -23,7 +23,7 @@
 *
 */
 
-#if defined(LINUX)
+#if defined __linux__
 
 #include <QDebug>
 #include "powermate.h"

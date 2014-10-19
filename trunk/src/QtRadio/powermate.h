@@ -1,4 +1,3 @@
-#if defined(LINUX)
 #ifndef POWERMATE_H
 #define POWERMATE_H
 
@@ -29,4 +28,3 @@ class PmInput : public QThread {
 
 #endif
 
-#endif
