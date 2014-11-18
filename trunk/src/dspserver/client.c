@@ -2003,19 +2003,19 @@ void readcb(struct bufferevent *bev, void *ctx){
                 goto badcommand;
             if(strcmp(tokens[0],"true")==0) {
                 if (config.no_correct_iq == 0) {
-                   SetCorrectIQEnable(1);
-                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(1)\n"); 
+		   SetCorrectIQEnable(0,0,1);
+                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0,0,1)\n"); 
                 } else {
-                   SetCorrectIQEnable(0);
-                   sdr_log(SDR_LOG_INFO,"IGNORING (due to --no-correctiq option): setiqenable true, SetCorrectIQEnable(0)\n");
+		   SetCorrectIQEnable(0,0,0);
+                   sdr_log(SDR_LOG_INFO,"IGNORING (due to --no-correctiq option): setiqenable true, SetCorrectIQEnable(0,0,0)\n");
                 }
             } else if(strcmp(tokens[0],"false")==0) {
                 if (config.no_correct_iq == 0) {
-                   SetCorrectIQEnable(0);
-                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
+		   SetCorrectIQEnable(0,0,0);
+                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0,0,0)\n");
                 } else {
-                   SetCorrectIQEnable(0);
-                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
+ 		   SetCorrectIQEnable(0,0,0);
+                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0,0,0)\n");
                 }
             } else {
                 goto badcommand;

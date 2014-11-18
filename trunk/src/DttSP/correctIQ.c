@@ -36,80 +36,71 @@ Bridgewater, NJ 08807
 
 #include <common.h>
 
-
-
-IQ
-newCorrectIQ (REAL phase, REAL gain, REAL mu)
-{
-	IQ iq = (IQ) safealloc (1, sizeof (iqstate), "IQ state");
-	iq->phase = phase;
-	iq->gain = gain;
-	iq->mu = mu;
-	iq->leakage = 0.000000f;
-	iq->MASK=15;
-	iq->index=0;
-	iq->w = (COMPLEX *)safealloc(16,sizeof(COMPLEX),"correctIQ w");
-	iq->y = (COMPLEX *)safealloc(16,sizeof(COMPLEX),"correctIQ y");
-	iq->del = (COMPLEX *)safealloc(16,sizeof(COMPLEX),"correctIQ del");
-	memset((void *)iq->w,0,16*sizeof(COMPLEX));
-	iq->wbir_tuned = TRUE;
-	iq->wbir_state = FastAdapt;
-	return iq;
+IQ newCorrectIQ (REAL phase, REAL gain, REAL mu) {
+  IQ iq = (IQ) safealloc (1, sizeof (iqstate), "IQ state");
+  iq->samplerate = 48000;
+  iq->phase = phase;
+  iq->gain = gain;
+  iq->mu = mu;
+  iq->_w = Cmplx(0.0,0.0);
+  iq->_mu = iq->mu / iq->samplerate;
+  return iq;
 }
 
-void
-delCorrectIQ (IQ iq)
-{
-	safefree((char *)iq->w);
-	safefree((char *)iq->y);
-	safefree((char *)iq->del);
-	safefree ((char *) iq);
+void delCorrectIQ (IQ iq) {
+  safefree ((char *) iq);
 }
 
-int IQdoit = 1;
-
-void
-correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan)
-{
-	int i;
-	REAL doit;
-	if (IQdoit == 0) return;
-	if (subchan == 0) doit = iq->mu;
-	else doit = 0;
-	if(!isTX)
-	{
-
-		// if (subchan == 0) // removed so that sub rx's will get IQ correction
-		switch (iq->wbir_state) {
-			case FastAdapt:
-				break;
-			case SlowAdapt:
-				break;
-			case NoAdapt:
-				break;
-			default:
-				break;
-		}
-
-		for (i = 0; i < CXBhave (sigbuf); i++)
-		{
-			iq->del[iq->index] = CXBdata(sigbuf, i);
-			iq->y[iq->index] = Cadd(iq->del[iq->index], Cmul(iq->w[0], Conjg(iq->del[iq->index])));
-			iq->y[iq->index] = Cadd(iq->y[iq->index], Cmul(iq->w[1], Conjg(iq->y[iq->index])));
-			iq->w[1] = Csub(iq->w[1], Cscl(Cmul(iq->y[iq->index], iq->y[iq->index]), doit));  // this is where the adaption happens
-
-			CXBdata(sigbuf, i) = iq->y[iq->index];
-			iq->index = (iq->index + iq->MASK) & iq->MASK;
-		}
-		//fprintf(stderr, "w1 real: %g, w1 imag: %g\n", iq->w[1].re, iq->w[1].im); fflush(stderr); 
-	}
-	else
-	{
-		for (i = 0; i < CXBhave (sigbuf); i++)
-		{
-			CXBimag (sigbuf, i) += iq->phase * CXBreal (sigbuf, i);
-			CXBreal (sigbuf, i) *= iq->gain;
-		}
-	}
-
+void correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan) {
+  // see if enable state has changed
+  if (iq->enable != iq->_enable) {
+    // copy enable state 
+    iq->_enable = iq->enable;
+    if (iq->_enable) {
+      // and restart filter from zero when enabled
+      iq->_w = Cmplx(0.0,0.0);
+    }
+  }
+  // if we are enabled
+  if (iq->_enable) {
+    int i;
+    // if we are a transmitter
+    if (isTX) {
+      // we are a transmitter
+      // apply specified fixed phase and gain correction
+      for (i = 0; i < CXBhave (sigbuf); i++) {
+	CXBimag (sigbuf, i) += iq->phase * CXBreal (sigbuf, i);
+	CXBreal (sigbuf, i) *= iq->gain;
+      }
+    } else {
+      // we are a receiver
+      REAL delta2 = 0.0;       /* sum squared magnitude signal level of buffer */
+      COMPLEX y0;	       /* uncorrected input sample value */
+      COMPLEX y1;	       /* corrected output sample value */
+      for (i = 0; i < CXBhave (sigbuf); i++) {
+	y0 = CXBdata(sigbuf, i);			/* get incoming sample */
+	y1 = Cadd(y0, Cmul(iq->_w, Conjg(y0)));		/* adjust incoming sample */
+	CXBdata(sigbuf, i) = y1;			/* store adjusted sample */
+	iq->_w = Csub(iq->_w, Cscl(Cmul(y1, y1), iq->_mu));	/* adapt the filter */
+	delta2 += Csqrmag(y1);				/* accumulate squared signal */
+	/* the Csqrmag(y1) computation could share multiplies with Cmul(y1, y1) */
+      }
+      // if the filter blew up
+      if (isnan(y1.re) || isnan(y1.im) || fabs(y1.re) + fabs(y1.im) >= 1) {
+	// then reset iq->_w 
+	iq->_w = Cmplx(0.0,0.0);
+	// and zero the sample buffer
+	for (i = 0; i < CXBhave (sigbuf); i++)
+	  CXBdata(sigbuf, i) = Cmplx(0.0,0.0);
+	// and we'll start over again next buffer
+      } else {
+	// adjust iq->_mu
+	// (delta2 / CXBhave(sigbuf)) is the actual average unscaled correction per sample
+	// (1.0 / iq->samplerate) is the desired average scaled correction per sample
+	// but when the filter really converges, then delta2 becomes ~ equal to 0
+	// and mu should not be inflated to increase delta2 when we converge.
+	iq->_mu = (1.0  / iq->samplerate) / (delta2 / CXBhave(sigbuf)) * iq->mu;
+      }
+    }
+  }
 }

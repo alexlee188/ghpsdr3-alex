@@ -3,6 +3,7 @@
 *.moc.cpp
 *~
 .deps
+.dirstamp
 Makefile
 Makefile.in
 aclocal.m4
@@ -53,6 +54,7 @@ trunk/src/QtRadio/ui_UI.h
 trunk/src/QtRadio/ui_ctl.h
 trunk/src/QtRadio/ui_servers.h
 trunk/src/QtRadio/ui_vfo.h
+trunk/src/QtRadio/ui_EqualizerDialog.h
 trunk/src/dspserver/Makefile
 trunk/src/dspserver/Makefile.in
 trunk/src/dspserver/dspserver
@@ -69,6 +71,7 @@ trunk/src/hiqsdr/hiqsdr-server
 trunk/src/hiqsdr/hiqsdr-test
 trunk/src/sdriq/sdriq-server
 trunk/src/sdriq/sdriq-test
+trunk/src/sdr1000/sdr1000
 branches/android/aHPSDR/bin/*
 build-aux/libtool.m4
 build-aux/ltoptions.m4

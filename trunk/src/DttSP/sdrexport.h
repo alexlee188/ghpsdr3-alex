@@ -124,7 +124,6 @@ extern struct _uni
   } mix;
   int cpdlen;
   long tick,oldtick;
-  WBIR_STATE wbir_state;
 } uni[3];
 
 //------------------------------------------------------------------------
