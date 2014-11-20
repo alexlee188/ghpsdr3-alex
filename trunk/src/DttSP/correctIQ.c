@@ -36,14 +36,17 @@ Bridgewater, NJ 08807
 
 #include <common.h>
 
-IQ newCorrectIQ (REAL phase, REAL gain, REAL mu) {
+IQ newCorrectIQ (REAL phase, REAL gain, REAL log10_mu_scale) {
   IQ iq = (IQ) safealloc (1, sizeof (iqstate), "IQ state");
+  iq->enable = 0;
+  iq->is_enabled = 0;
   iq->samplerate = 48000;
   iq->phase = phase;
   iq->gain = gain;
-  iq->mu = mu;
-  iq->_w = Cmplx(0.0,0.0);
-  iq->_mu = iq->mu / iq->samplerate;
+  iq->log10_mu_scale = log10_mu_scale;
+  iq->w = Cmplx(0.0,0.0);
+  iq->mu = pow(10.0, iq->mu) / iq->samplerate;
+  iq->sig2 = 0;
   return iq;
 }
 
@@ -53,16 +56,21 @@ void delCorrectIQ (IQ iq) {
 
 void correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan) {
   // see if enable state has changed
-  if (iq->enable != iq->_enable) {
+  if (iq->enable != iq->is_enabled) {
     // copy enable state 
-    iq->_enable = iq->enable;
-    if (iq->_enable) {
+    iq->is_enabled = iq->enable;
+    // generate a log line
+    if (iq->is_enabled) {
       // and restart filter from zero when enabled
-      iq->_w = Cmplx(0.0,0.0);
+      iq->w = Cmplx(0.0,0.0);
+      iq->mu = pow(10.0, iq->log10_mu_scale) * CXBhave(sigbuf)  / iq->samplerate;
+      iq->sig2 = 0;
+    } else {
+      fprintf(stderr, "correctIQ: enable %d, w (%10g,%10g), mu %10g, sig2 %10g\n", iq->enable, iq->w.re, iq->w.im, iq->mu, iq->sig2);
     }
   }
   // if we are enabled
-  if (iq->_enable) {
+  if (iq->is_enabled) {
     int i;
     // if we are a transmitter
     if (isTX) {
@@ -74,32 +82,38 @@ void correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan) {
       }
     } else {
       // we are a receiver
-      REAL delta2 = 0.0;       /* sum squared magnitude signal level of buffer */
-      COMPLEX y0;	       /* uncorrected input sample value */
-      COMPLEX y1;	       /* corrected output sample value */
+      COMPLEX y0;      /* uncorrected input sample value */
+      COMPLEX y1;      /* corrected output sample value */
+      REAL sig2 = 0.0; /* sum squared magnitude signal level of buffer */
+
       for (i = 0; i < CXBhave (sigbuf); i++) {
 	y0 = CXBdata(sigbuf, i);			/* get incoming sample */
-	y1 = Cadd(y0, Cmul(iq->_w, Conjg(y0)));		/* adjust incoming sample */
+	y1 = Cadd(y0, Cmul(iq->w, Conjg(y0)));		/* adjust incoming sample */
 	CXBdata(sigbuf, i) = y1;			/* store adjusted sample */
-	iq->_w = Csub(iq->_w, Cscl(Cmul(y1, y1), iq->_mu));	/* adapt the filter */
-	delta2 += Csqrmag(y1);				/* accumulate squared signal */
+	iq->w = Csub(iq->w, Cscl(Cmul(y1, y1), iq->mu));/* adapt the filter */
+	sig2 += Csqrmag(y1);				/* accumulate squared signal */
 	/* the Csqrmag(y1) computation could share multiplies with Cmul(y1, y1) */
       }
+
       // if the filter blew up
-      if (isnan(y1.re) || isnan(y1.im) || fabs(y1.re) + fabs(y1.im) >= 1) {
+      if (isnan(y1.re) || isnan(y1.im) || Csqrmag(y1) >= 1) {
 	// then reset iq->_w 
-	iq->_w = Cmplx(0.0,0.0);
+	iq->w = Cmplx(0.0,0.0);
 	// and zero the sample buffer
 	for (i = 0; i < CXBhave (sigbuf); i++)
 	  CXBdata(sigbuf, i) = Cmplx(0.0,0.0);
 	// and we'll start over again next buffer
       } else {
 	// adjust iq->_mu
-	// (delta2 / CXBhave(sigbuf)) is the actual average unscaled correction per sample
+	// (sig2 / CXBhave(sigbuf)) is the actual average unscaled correction per sample
 	// (1.0 / iq->samplerate) is the desired average scaled correction per sample
-	// but when the filter really converges, then delta2 becomes ~ equal to 0
-	// and mu should not be inflated to increase delta2 when we converge.
-	iq->_mu = (1.0  / iq->samplerate) / (delta2 / CXBhave(sigbuf)) * iq->mu;
+	// (1.0 / iq->samplerate) / (sig2 / CXBhave(sigbuf)) simplifies to
+	// CXBhave(sigbuf)  / (iq->samplerate * sig2)
+	// and then we scale by pow(10.0, iq->log10_mu_scale)
+	sig2 /= CXBhave(sigbuf);
+	iq->mu = pow(10.0, iq->log10_mu_scale) / (iq->samplerate * sig2);
+	iq->sig2 += sig2;
+	iq->sig2 /= 2;
       }
     }
   }
