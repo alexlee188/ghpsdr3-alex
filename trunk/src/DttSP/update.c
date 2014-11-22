@@ -891,7 +891,7 @@ SetRXAGC (unsigned int thread, unsigned subrx, AGCMODE setit)
 DttSP_EXP void
 SetRXAGCAttack (unsigned int thread, unsigned subrx, int attack)
 {
-  /*	REAL tmp = (REAL)attack; */
+	REAL tmp = (REAL)attack;
 	sem_wait(&top[thread].sync.upd.sem);
 	//rx[thread][subrx].dttspagc.gen->mode = 1; this shouldn't be here -- causes change of mode on init
 /*	rx[thread][subrx].dttspagc.gen->hangindex =
@@ -1159,7 +1159,7 @@ SetTXALCSt (unsigned int thread, BOOLEAN state)
 DttSP_EXP void
 SetTXLevelerAttack (unsigned int thread, int attack)
 {
-  /*	REAL tmp = (REAL) attack; */
+	REAL tmp = (REAL) attack;
 	sem_wait(&top[thread].sync.upd.sem);
 /*
 	tx[thread].leveler.gen->attack = (REAL) (1.0 - exp (-1000.0 / (tmp * uni[thread].samplerate)));
@@ -1188,7 +1188,7 @@ SetTXLevelerAttack (unsigned int thread, int attack)
 DttSP_EXP void
 SetTXLevelerDecay (unsigned int thread, int decay)
 {
-  /*	REAL tmp = (REAL) decay; */
+	REAL tmp = (REAL) decay;
 	sem_wait(&top[thread].sync.upd.sem);
 /*
 	tx[thread].leveler.gen->decay =
@@ -1276,7 +1276,6 @@ SetCorrectIQ (unsigned int thread, unsigned int subrx, double phase, double gain
 	sem_wait(&top[thread].sync.upd.sem);
 	rx[thread][subrx].iqfix->phase = (REAL) (0.001 * phase);
 	rx[thread][subrx].iqfix->gain = (REAL) (1.0 + 0.001 * gain);
-	rx[thread][subrx].iqfix->samplerate = uni[thread].samplerate;
 	sem_post(&top[thread].sync.upd.sem);
 }
 
@@ -1285,7 +1284,6 @@ SetCorrectIQGain (unsigned int thread, unsigned int subrx, double gain)
 {
 	sem_wait(&top[thread].sync.upd.sem);
 	rx[thread][subrx].iqfix->gain = (REAL) (1.0 + 0.001 * gain);
-	rx[thread][subrx].iqfix->samplerate = uni[thread].samplerate;
 	sem_post(&top[thread].sync.upd.sem);
 }
 
@@ -1294,7 +1292,6 @@ SetCorrectIQPhase (unsigned int thread, unsigned int subrx, double phase)
 {
 	sem_wait(&top[thread].sync.upd.sem);
 	rx[thread][subrx].iqfix->phase = (REAL) (0.001 * phase);
-	rx[thread][subrx].iqfix->samplerate = uni[thread].samplerate;
 	sem_post(&top[thread].sync.upd.sem);
 }
 
@@ -1303,64 +1300,54 @@ SetCorrectIQEnable(unsigned int thread, unsigned int subrx, int enable)
 {
 	sem_wait(&top[0].sync.upd.sem);
 	rx[thread][subrx].iqfix->enable = enable;
-	rx[thread][subrx].iqfix->samplerate = uni[thread].samplerate;
 	sem_post(&top[0].sync.upd.sem);
 }
 
 DttSP_EXP void
-SetCorrectRXIQMu (unsigned int thread, unsigned int subrx, double log10_mu_scale)
+SetCorrectRXIQMu (unsigned int thread, unsigned int subrx, double mu_scale_dB)
 {
 	sem_wait(&top[thread].sync.upd.sem);
-	rx[thread][subrx].iqfix->log10_mu_scale = (REAL)log10_mu_scale;
-	rx[thread][subrx].iqfix->samplerate = uni[thread].samplerate;
+	rx[thread][subrx].iqfix->mu_scale_dB = (REAL)mu_scale_dB;
 	sem_post(&top[thread].sync.upd.sem);
-}
-
-DttSP_EXP void
-SetCorrectWBIRState(unsigned int thread,/* WBIR_STATE */int wbir)
-{
-  /*	sem_wait(&top[thread].sync.upd.sem); */
-  /*    uni[thread].wbir_state = wbir; */
-  /*	sem_post(&top[thread].sync.upd.sem); */
 }
 
 DttSP_EXP REAL
 GetCorrectRXIQMu(unsigned int thread, unsigned int subrx)
 {
-	return rx[thread][subrx].iqfix->log10_mu_scale;
+	return rx[thread][subrx].iqfix->mu_scale_dB;
 }
 
 
 DttSP_EXP void
 SetCorrectRXIQw (unsigned int thread, unsigned int subrx, REAL wr, REAL wi, unsigned int index)
 {
-  	sem_wait(&top[thread].sync.upd.sem);
-  	rx[thread][subrx].iqfix->w = Cmplx((REAL)wr,(REAL)wi);
-  	sem_post(&top[thread].sync.upd.sem);
+	sem_wait(&top[thread].sync.upd.sem);
+	rx[thread][subrx].iqfix->w = Cmplx((REAL)wr,(REAL)wi);
+	sem_post(&top[thread].sync.upd.sem);
 }
 
 DttSP_EXP void
 GetCorrectRXIQw(int thread, int subrx, REAL *realw, REAL *imagw, unsigned int index)
 {
-  	sem_wait(&top[thread].sync.upd.sem);
-  	*realw = rx[thread][subrx].iqfix->w.re;
-  	*imagw = rx[thread][subrx].iqfix->w.im;
-  	sem_post(&top[thread].sync.upd.sem);
+	sem_wait(&top[thread].sync.upd.sem);
+	*realw = rx[thread][subrx].iqfix->w.re;
+	*imagw = rx[thread][subrx].iqfix->w.im;
+	sem_post(&top[thread].sync.upd.sem);
 }
 DttSP_EXP void
 SetCorrectRXIQwReal (unsigned int thread, unsigned int subrx, REAL wr, unsigned int index)
 {
-  	sem_wait(&top[thread].sync.upd.sem);
-  	rx[thread][subrx].iqfix->w.re = (REAL)wr;
-  	sem_post(&top[thread].sync.upd.sem);
+	sem_wait(&top[thread].sync.upd.sem);
+	rx[thread][subrx].iqfix->w.re = (REAL)wr;
+	sem_post(&top[thread].sync.upd.sem);
 }
 
 DttSP_EXP void
 SetCorrectRXIQwImag (unsigned int thread, unsigned int subrx, REAL wi, unsigned int index)
 {
-  	sem_wait(&top[thread].sync.upd.sem);
-  	rx[thread][subrx].iqfix->w.im = (REAL)wi;
-  	sem_post(&top[thread].sync.upd.sem);
+	sem_wait(&top[thread].sync.upd.sem);
+	rx[thread][subrx].iqfix->w.im = (REAL)wi;
+	sem_post(&top[thread].sync.upd.sem);
 }
 
 DttSP_EXP void
@@ -1389,19 +1376,19 @@ SetCorrectTXIQPhase (unsigned int thread, double phase)
 }
 
 DttSP_EXP void
-SetCorrectTXIQMu (unsigned int thread, double log10_mu_scale)
+SetCorrectTXIQMu (unsigned int thread, double mu_scale_dB)
 {
-  	sem_wait(&top[thread].sync.upd.sem);
-  	tx[thread].iqfix->log10_mu_scale = (REAL)log10_mu_scale;
-  	sem_post(&top[thread].sync.upd.sem);
+	sem_wait(&top[thread].sync.upd.sem);
+	tx[thread].iqfix->mu_scale_dB = (REAL)mu_scale_dB;
+	sem_post(&top[thread].sync.upd.sem);
 }
 
 DttSP_EXP void
 SetCorrectTXIQW (unsigned int thread, double wr, double wi)
 {
-  	sem_wait(&top[thread].sync.upd.sem);
-  	tx[thread].iqfix->w = Cmplx((REAL)wr,(REAL)wi);
-  	sem_post(&top[thread].sync.upd.sem);
+	sem_wait(&top[thread].sync.upd.sem);
+	tx[thread].iqfix->w = Cmplx((REAL)wr,(REAL)wi);
+	sem_post(&top[thread].sync.upd.sem);
 }
 
 DttSP_EXP void

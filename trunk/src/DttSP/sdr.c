@@ -137,7 +137,7 @@ setup_rx (int k, unsigned int thread)
 		diversity.gain = 1.0;
 		diversity.scalar = Cmplx(1.0,0);
 	}
-	rx[thread][k].iqfix = newCorrectIQ (0.0, 1.0, 0.000f);
+	rx[thread][k].iqfix = newCorrectIQ (0.0, 1.0, 0.000f, uni[thread].samplerate);
 	// Remove the next line
 	//rx[thread][k].iqfix->wbir_state = JustSayNo;
 	// Remove the previous line
@@ -415,7 +415,7 @@ PRIVATE void
 setup_tx (unsigned int thread)
 {
 	/* conditioning */
-	tx[thread].iqfix = newCorrectIQ (0.0, 1.0, 0.0);
+	tx[thread].iqfix = newCorrectIQ (0.0, 1.0, 0.0, uni[thread].samplerate);
 	tx[thread].filt.coef = newFIR_Bandpass_COMPLEX (300.0, 3000.0, 
 		uni[thread].samplerate, uni[thread].buflen + 1);
 	tx[thread].filt.ovsv = newFiltOvSv (FIRcoef (tx[thread].filt.coef),
