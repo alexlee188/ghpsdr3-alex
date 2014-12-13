@@ -236,11 +236,12 @@ dnl Memo: AC_ARG_WITH(package, help-string, [if-given], [if-not-given])
   #
   QT_ADDITIONAL_INCLUDE_PATH=""
   if test x"$QT_VM" = x5; then
-    QT_ADDITIONAL_LDFLAG="-lQt5Multimedia"
+    QT_ADDITIONAL_LDFLAG="-lQtMultimediaKit"
   else
     QT_ADDITIONAL_LDFLAG="-lQtMultimedia"
   fi
 
+  #
   # if there is a suspicious QtMultimediaKit (sibling of the standard Qt include path)
   # we are hit an Ubuntu binary package (11.04)
   #
@@ -257,8 +258,6 @@ dnl Memo: AC_ARG_WITH(package, help-string, [if-given], [if-not-given])
 
   AC_SUBST([QT_ADDITIONAL_INCLUDE_PATH])
   AC_SUBST([QT_ADDITIONAL_LDFLAG])
-
-
 
 
   # Get ready to build a test-app with Qt.
@@ -517,7 +516,7 @@ instead" >&AS_MESSAGE_LOG_FD
 
   # Find the INCPATH of Qt.
   AC_CACHE_CHECK([for the INCPATH to use with Qt], [at_cv_env_QT_INCPATH],
-  [at_cv_env_QT_INCPATH=`sed "/^INCPATH@<:@^A-Z=@:>@*=/!d;$qt_sed_filter" $at_mfile`])
+  [at_cv_env_QT_INCPATH=`sed "/^INCPATH@<:@^A-Z=@:>@*=/!d;$qt_sed_filter;s/isystem /I/g" $at_mfile`])
   AC_SUBST([QT_INCPATH], [$at_cv_env_QT_INCPATH])
 
   AC_SUBST([QT_CPPFLAGS], ["$at_cv_env_QT_DEFINES $at_cv_env_QT_INCPATH"])
