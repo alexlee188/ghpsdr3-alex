@@ -245,7 +245,13 @@ dnl Memo: AC_ARG_WITH(package, help-string, [if-given], [if-not-given])
   # if there is a suspicious QtMultimediaKit (sibling of the standard Qt include path)
   # we are hit an Ubuntu binary package (11.04)
   #
-  if test -f "$QT_INSTALL_HEADERS_UP/QtMultimediaKit/QAudioFormat"; then
+  if test -f "/usr/include/QtMultimediaKit/QAudioFormat"; then
+      QT_ADDITIONAL_INCLUDE_PATH="-I/usr/include/QtMultimediaKit/"
+      QT_ADDITIONAL_LDFLAG="-lQt5Multimedia"
+      if test -f "/usr/include/QtMobility/qmobilityglobal.h"; then
+         QT_ADDITIONAL_INCLUDE_PATH="$QT_ADDITIONAL_INCLUDE_PATH -I/usr/include/QtMobility/"
+      fi
+  elif test -f "$QT_INSTALL_HEADERS_UP/QtMultimediaKit/QAudioFormat"; then
       QT_ADDITIONAL_INCLUDE_PATH="-I$QT_INSTALL_HEADERS_UP/QtMultimediaKit/"
       QT_ADDITIONAL_LDFLAG="-lQtMultimediaKit"
   else
