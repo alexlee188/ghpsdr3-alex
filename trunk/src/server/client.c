@@ -365,7 +365,7 @@ char* parse_command(CLIENT* client,char* command) {
             token=strtok(NULL," \r\n");
             if(token!=NULL) {
                 if (strcmp(token,"on")==0) {
-                    ozy_set_random (0);
+                    ozy_set_random (1);
                     return OK;
                 }
                 if (strcmp(token,"off")==0) {
