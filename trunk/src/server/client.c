@@ -152,7 +152,7 @@ char* parse_command(CLIENT* client,char* command) {
                 if(strcmp(token,"iq")==0) {
                     token=strtok(NULL," \r\n");
                     if(token!=NULL) {
-                        client->iq_port=atoi(token);
+                        client->iq_port=atoi(token); // The iq_port is received from dspserver.
                     }
 
                     //if(pthread_create(&receiver[client->receiver].audio_thread_id,NULL,audio_thread,&receiver[client->receiver])!=0) {

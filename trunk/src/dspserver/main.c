@@ -127,7 +127,10 @@ enum {
     OPT_NOCORRECTIQ,
     OPT_DEBUG,
     OPT_THREAD_DEBUG,
-    OPT_HPSDRLOC
+    OPT_HPSDRLOC,
+    OPT_CLIENTBASEPORT,
+    OPT_SSLCLIENTBASEPORT,
+    OPT_SERVERPORT
 };
 
 struct option longOptions[] = {
@@ -144,6 +147,8 @@ struct option longOptions[] = {
     {"nocorrectiq",no_argument, NULL, OPT_NOCORRECTIQ},
     {"debug",no_argument, NULL, OPT_DEBUG},
     {"hpsdrloc",no_argument, NULL, OPT_HPSDRLOC},
+    {"client-base-port",required_argument,NULL, OPT_CLIENTBASEPORT},
+    {"server-base-port",required_argument,NULL, OPT_SERVERPORT},
 #ifdef THREAD_DEBUG
     {"debug-threads",no_argument, NULL, OPT_THREAD_DEBUG},
 #endif /* THREAD_DEBUG */
@@ -164,6 +169,12 @@ void signal_shutdown(int signum);
 /* ----------------------------------------------------------------------------*/
 void processCommands(int argc,char** argv,struct dspserver_config *config) {
     int c;
+    config->client_base_port = 8000;
+    config->ssl_client_port = config->client_base_port + 1000;
+    config->server_port = 11000;
+    config->command_port = config->server_port + 1000;
+    config->spectrum_port = config->server_port + 2000;
+    config->audio_port = config->server_port + 3000;
     while((c=getopt_long(argc,argv,shortOptions,longOptions,NULL))!=-1) {
         switch(c) {
             case OPT_SOUNDCARD:
@@ -214,6 +225,16 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
             case OPT_NOCORRECTIQ:
                 config->no_correct_iq = 1;
                 break;
+            case OPT_CLIENTBASEPORT:
+                config->client_base_port = atoi(optarg);
+                config->ssl_client_port = config->client_base_port + 1000;
+                break;
+            case OPT_SERVERPORT:
+                config->server_port = atoi(optarg);
+                config->command_port = config->server_port + 1000;
+                config->spectrum_port = config->server_port + 2000;
+                config->audio_port = config->server_port + 3000;  // Used to be 15000 = server_port + 4000. KL7NA
+                break;
             case OPT_DEBUG:
                 ozy_set_debug(1);
                 break;
@@ -228,11 +249,14 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
                 fprintf(stderr,"            --soundcard (machine dependent)\n");
                 fprintf(stderr,"            --offset 0 \n");
                 fprintf(stderr,"            --share (will register this server for other users \n");
-                fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
-		fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
-		fprintf(stderr,"            --hpsdr (if using hpsdr hardware with no local mike and headphone)\n");
-		fprintf(stderr,"            --hpsdrloc (if using hpsdr hardware with LOCAL mike and headphone)\n");
-		fprintf(stderr,"            --nocorrectiq (select if using non QSD receivers, like Hermes, Perseus, HiQSDR, Mercury)\n");
+                fprintf(stderr,"                use the default config file ~/.dspserver.conf) \n");
+                fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
+                fprintf(stderr,"            --hpsdr (if using hpsdr hardware with no local mike and headphone)\n");
+                fprintf(stderr,"            --hpsdrloc (if using hpsdr hardware with LOCAL mike and headphone)\n");
+                fprintf(stderr,"            --nocorrectiq (select if using non QSD receivers, like Hermes, Perseus, HiQSDR, Mercury)\n");
+                fprintf(stderr,"            --client-base-port for QtRadio (default 8000), client-base-port + rx + (0, 1000) used.\n");
+                fprintf(stderr,"            --server-base-port (default 11000), base port for communication with server,like hpsdr-server, etc.\n");
+                fprintf(stderr,"                server-base-port + (1000, 2000 & 3000) are also used for (command,spectrum & audio respectively.)\n");
 #ifdef THREAD_DEBUG
                 fprintf(stderr,"            --debug-threads (enable threading assertions)\n");
 #endif /* THREAD_DEBUG */

@@ -41,6 +41,7 @@
 #include "audiostream.h"
 #include "client.h"
 #include "util.h"
+#include "main.h"
 
 
 /*
@@ -129,9 +130,12 @@ int ptt=0;
 int dot=0;
 int dash=0;
 
-#define COMMAND_PORT 12000
-#define SPECTRUM_PORT 13000
-#define AUDIO_PORT 15000
+//#define COMMAND_PORT 12000
+// Replaced with config.command_port. KL7NA
+//#define SPECTRUM_PORT 13000
+// Replaced with config.spectrum_port.  KL7NA
+//#define AUDIO_PORT 15000
+// Replaced with config.audio_port.  KL7NA
 
 int command_socket;
 int command_port;
@@ -149,7 +153,7 @@ socklen_t server_audio_length=sizeof(server_audio_addr);
 static struct sockaddr_in server_addr;
 static socklen_t server_length=sizeof(server_addr);
 
-short server_port;
+int16_t server_port;
 
 int session;
 
@@ -195,7 +199,7 @@ fprintf(stderr,"iq_thread\n");
 
     iq_addr.sin_family=AF_INET;
     iq_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    iq_addr.sin_port=htons(SPECTRUM_PORT+(receiver*2));
+    iq_addr.sin_port=htons(config.spectrum_port+(receiver*2));
 
     if(bind(iq_socket,(struct sockaddr*)&iq_addr,iq_length)<0) {
         perror("iq_thread: bind socket failed for iq socket");
@@ -412,7 +416,7 @@ int make_connection() {
 
     result=0;
     sprintf(command,"attach %d",receiver);
-    //sprintf(command,"connect %d %d",receiver,SPECTRUM_PORT+(receiver*2));
+    //sprintf(command,"connect %d %d",receiver,config.spectrum_port+(receiver*2));
     send_command(command, response);
 
     token=strtok_r(response," ",&saveptr);
@@ -437,7 +441,7 @@ int make_connection() {
         }
     }
 
-    sprintf(command,"start iq %d",SPECTRUM_PORT+(receiver*2));
+    sprintf(command,"start iq %d",config.spectrum_port+(receiver*2));
     send_command(command, response);
 
     return result;
@@ -664,7 +668,8 @@ int ozy_init(const char *server_address) {
         exit(1);
     }
 
-    server_port=11000;
+    //server_port=11000;
+    server_port = config.server_port;
 
     // create a socket to send commands to the server
     command_socket=socket(AF_INET,SOCK_STREAM,0);
@@ -679,7 +684,7 @@ int ozy_init(const char *server_address) {
 
     command_addr.sin_family=AF_INET;
     command_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    command_addr.sin_port=htons(COMMAND_PORT+(receiver*2));
+    command_addr.sin_port=htons(config.command_port+(receiver*2));
 
     if(bind(command_socket,(struct sockaddr*)&command_addr,command_length)<0) {
         perror("ozy_init: bind socket failed for command socket");
@@ -714,7 +719,7 @@ int ozy_init(const char *server_address) {
     memset(&server_audio_addr,0,server_audio_length);
     server_audio_addr.sin_family=h->h_addrtype;
     memcpy((char *)&server_audio_addr.sin_addr.s_addr,h->h_addr_list[0],h->h_length);
-    server_audio_addr.sin_port=htons(AUDIO_PORT+(receiver*2));
+    server_audio_addr.sin_port=htons(config.audio_port+(receiver*2));
 
     fprintf(stderr,"ozy_init: server audio is in port %d\n",ntohs(server_audio_addr.sin_port));
 

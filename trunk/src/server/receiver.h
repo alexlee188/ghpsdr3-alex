@@ -29,6 +29,8 @@
 
 #define MAX_RECEIVERS 8
 
+#define IQ_SERVER_PORT 11002
+
 #define BUFFER_SIZE 1024
 
 typedef struct _receiver {

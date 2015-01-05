@@ -84,13 +84,13 @@ void* listener_thread(void* arg) {
     memset(&address,0,sizeof(address));
     address.sin_family=AF_INET;
     address.sin_addr.s_addr=INADDR_ANY;
-    address.sin_port=htons(LISTEN_PORT);
+    address.sin_port=htons(listener_port);
     if(bind(s,(struct sockaddr*)&address,sizeof(address))<0) {
         perror("Command bind failed");
         exit(1);
     }
 
-fprintf(stderr,"Listening for TCP connections on port %d\n",LISTEN_PORT);
+fprintf(stderr,"Listening for TCP connections on port %d\n",listener_port);
 
     while(1) {
 

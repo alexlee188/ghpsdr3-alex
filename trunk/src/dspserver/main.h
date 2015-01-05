@@ -40,6 +40,12 @@ struct dspserver_config {
     char server_address[256];
     int thread_debug;
     int no_correct_iq;
+    int16_t client_base_port; // This + rx# is what the QtRadio or glsdr clients connect to.
+    int16_t ssl_client_port;
+    int16_t server_port; // This port is what communicates with the server (hardware server like hpsdr-server).
+    int16_t command_port;
+    int16_t spectrum_port;
+    int16_t audio_port;
 };
 
 extern struct dspserver_config config;

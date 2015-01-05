@@ -72,6 +72,7 @@ static struct option long_options[] = {
     {"fpga",required_argument,0,16},
     {"ozyhex",required_argument,0,17},
     {"hermes",required_argument,0,18},
+    {"base-port",required_argument,0,19},
     {0,0,0,0},
 
 };
@@ -233,7 +234,7 @@ void process_args(int argc,char* argv[]) {
 
             case 15: // metisip
                 metisip=optarg;
-fprintf(stderr,"metisip=%s\n",metisip);
+                fprintf(stderr,"metisip=%s\n",metisip);
                 break;
 
             case 16: // fpga image
@@ -266,6 +267,9 @@ fprintf(stderr,"metisip=%s\n",metisip);
                 }
                 break;
 
+            case 19: // base-port
+                listener_port = optarg;
+                break;
 
             default:
                 fprintf(stderr,"Usage: \n");
@@ -284,6 +288,7 @@ fprintf(stderr,"metisip=%s\n",metisip);
                 fprintf(stderr,"         --fpga <file name>\n");                
                 fprintf(stderr,"         --ozyhex <file name>\n");
                 fprintf(stderr,"         --hermes <power 0-255>\n");
+                fprintf(stderr,"         --base-port <base port number> (default 11000)\n");
                 exit(1);
                 break;
                

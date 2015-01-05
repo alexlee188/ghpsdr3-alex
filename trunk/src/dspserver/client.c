@@ -85,11 +85,13 @@ static int rtp_tx_init_done = 0;
 
 static pthread_t client_thread_id, tx_thread_id, rtp_tx_thread_id;
 
-#define BASE_PORT 8000
-static int port=BASE_PORT;
+//#define BASE_PORT 8000  // Now an arguement for dspserver.
+//static int port=BASE_PORT; // Changes by KL7NA to make ports command line selectable.
+static int16_t port;
 
-#define BASE_PORT_SSL 9000
-static int port_ssl=BASE_PORT_SSL;
+//#define BASE_PORT_SSL 9000
+//static int port_ssl=BASE_PORT_SSL;
+static int16_t port_ssl;
 
 // This must match the size declared in DttSP
 #define SAMPLE_BUFFER_SIZE 4096
@@ -284,8 +286,8 @@ void client_init(int receiver) {
     rtp_init();
     spectrum_timer_init();
 
-    port=BASE_PORT+receiver;
-    port_ssl = BASE_PORT_SSL + receiver;
+    port=config.client_base_port+receiver;
+    port_ssl = config.ssl_client_port + receiver;
     rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
 
     if(rc != 0) {

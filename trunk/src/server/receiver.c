@@ -70,7 +70,7 @@ void init_receivers(void) {
     memset(&iq_addr,0,iq_length);
     iq_addr.sin_family=AF_INET;
     iq_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    iq_addr.sin_port=htons(11002);
+    iq_addr.sin_port=htons(IQ_SERVER_PORT);
 
     if(bind(iq_socket,(struct sockaddr*)&iq_addr,iq_length)<0) {
         perror("bind socket failed for iq socket");
