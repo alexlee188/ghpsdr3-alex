@@ -55,6 +55,8 @@
 #endif
 
 #include "rtp.h"
+#include "client.h"
+#include "main.h"
 
 unsigned int recv_ts=0;
 unsigned int send_ts=0;
@@ -94,9 +96,9 @@ RtpSession *rtpSession;
     rtp_session_set_blocking_mode(rtpSession,FALSE);
 
 #ifdef HAVE_RTCP_ORTP
-    rtp_session_set_local_addr(rtpSession,"0.0.0.0",LOCAL_RTP_PORT,LOCAL_RTCP_PORT);
+    rtp_session_set_local_addr(rtpSession,INADDR_DSPSERVER,LOCAL_RTP_PORT,LOCAL_RTCP_PORT);
 #else
-    rtp_session_set_local_addr(rtpSession,"0.0.0.0",LOCAL_RTP_PORT);
+    rtp_session_set_local_addr(rtpSession,INADDR_DSPSERVER,LOCAL_RTP_PORT);
 #endif
     rtp_session_set_remote_addr(rtpSession, remote_addr, remote_port );
 

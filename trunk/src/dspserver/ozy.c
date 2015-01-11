@@ -42,6 +42,7 @@
 #include "client.h"
 #include "util.h"
 
+#include "main.h"
 
 /*
  *   ozy interface
@@ -178,6 +179,7 @@ void* iq_thread(void* arg) {
     int iq_length = sizeof(iq_addr);
     BUFFER buffer;
     int on=1;
+    const char *dspserver_address = (const char *)arg;
 
     sdr_thread_register("iq_thread");
 fprintf(stderr,"iq_thread\n");
@@ -194,7 +196,8 @@ fprintf(stderr,"iq_thread\n");
     memset(&iq_addr,0,iq_length);
 
     iq_addr.sin_family=AF_INET;
-    iq_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+    fprintf(stderr,"iq_thread: iq address: %s\n", dspserver_address);
+    iq_addr.sin_addr.s_addr=inet_addr(dspserver_address);
     iq_addr.sin_port=htons(SPECTRUM_PORT+(receiver*2));
 
     if(bind(iq_socket,(struct sockaddr*)&iq_addr,iq_length)<0) {
@@ -643,7 +646,7 @@ void setSpeed(int s) {
 * 
 * @return 
 */
-int ozy_init(const char *server_address) {
+int ozy_init(const char *server_address, const char *dspserver_address) {
     int rc;
     struct hostent *h;
     int on=1;
@@ -678,7 +681,8 @@ int ozy_init(const char *server_address) {
     memset(&command_addr,0,command_length);
 
     command_addr.sin_family=AF_INET;
-    command_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+    fprintf(stderr,"ozy_init: command address: %s\n", dspserver_address);
+    command_addr.sin_addr.s_addr=inet_addr(dspserver_address);
     command_addr.sin_port=htons(COMMAND_PORT+(receiver*2));
 
     if(bind(command_socket,(struct sockaddr*)&command_addr,command_length)<0) {
@@ -700,7 +704,8 @@ int ozy_init(const char *server_address) {
 
     memset(&audio_addr,0,audio_length);
     audio_addr.sin_family=AF_INET;
-    audio_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    fprintf(stderr,"ozy_init: audio address: %s\n", dspserver_address);
+    audio_addr.sin_addr.s_addr = inet_addr(dspserver_address);
     audio_addr.sin_port=htons(0);
 
    if(bind(audio_socket,(struct sockaddr*)&audio_addr,audio_length)<0) {
@@ -759,7 +764,7 @@ int ozy_init(const char *server_address) {
 
 
     // create a thread to listen for iq frames
-    rc=pthread_create(&iq_thread_id,NULL,iq_thread,NULL);
+    rc=pthread_create(&iq_thread_id,NULL,iq_thread,(void*)dspserver_address);
     if(rc != 0) {
         fprintf(stderr,"pthread_create failed on iq_thread: rc=%d\n", rc);
     }

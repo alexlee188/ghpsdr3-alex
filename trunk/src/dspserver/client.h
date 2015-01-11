@@ -130,4 +130,7 @@ static SSL_CTX *evssl_init(void);
 
 extern double mic_src_ratio;
 
+extern struct dspserver_config config;
+#define INADDR_DSPSERVER config.dspserver_address
+
 #endif
