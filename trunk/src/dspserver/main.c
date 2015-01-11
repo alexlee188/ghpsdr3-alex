@@ -234,7 +234,7 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
                 fprintf(stderr,"Usage: \n");
                 fprintf(stderr,"  dspserver --receiver N (default 0)\n");
                 fprintf(stderr,"            --server 0.0.0.0 (default 127.0.0.1)\n");
-                fprintf(stderr,"            --address 0.0.0.0 (default 127.0.0.1)\n");
+                fprintf(stderr,"            --address 0.0.0.0 (default is any address, i.e. 0.0.0.0)\n");
                 fprintf(stderr,"            --soundcard (machine dependent)\n");
                 fprintf(stderr,"            --offset 0 \n");
                 fprintf(stderr,"            --share (will register this server for other users \n");
@@ -273,7 +273,7 @@ int main(int argc,char* argv[]) {
     char directory[MAXPATHLEN];
     strcpy(config.soundCardName,"HPSDR");
     strcpy(config.server_address,"127.0.0.1"); // localhost
-    strcpy(config.dspserver_address,"127.0.0.1"); // localhost
+    strcpy(config.dspserver_address,"0.0.0.0"); // any address
     strcpy(config.share_config_file, getenv("HOME"));
     strcat(config.share_config_file, "/dspserver.conf");
     processCommands(argc,argv,&config);
