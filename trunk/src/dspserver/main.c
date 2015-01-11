@@ -253,10 +253,17 @@ void processCommands(int argc,char** argv) {
 
 int main(int argc,char* argv[]) {
     config_dspserver = malloc(sizeof(struct dspserver_config));
-    memset(&config_dspserver, 0, sizeof(config_dspserver));
+    if (config_dspserver == NULL) {
+        fprintf(stderr,"couldn't malloc for config_dspserver. \n");
+        exit(1);
+    }
+
     // Register signal and signal handler
     signal(SIGINT, signal_shutdown);    
     char directory[MAXPATHLEN];
+
+    memset(config_dspserver, 0, sizeof(struct dspserver_config));
+    fprintf(stderr, "server_port %d \n",config_dspserver->server_port);
     strcpy(config_dspserver->soundCardName,"HPSDR");
     strcpy(config_dspserver->server_address,"127.0.0.1"); // localhost
     strcpy(config_dspserver->share_config_file, getenv("HOME"));
