@@ -96,7 +96,7 @@ int lastMode;
 * 
 * @return 
 */
-extern int ozy_init(const char *server_address);
+extern int ozy_init(void);
 
 
 /* --------------------------------------------------------------------------*/

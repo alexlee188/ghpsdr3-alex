@@ -79,6 +79,7 @@
 #include "G711A.h"
 #include "util.h"
 
+extern struct dspserver_config *config_dspserver;
 static int timing=0;
 
 static int rtp_tx_init_done = 0;
@@ -286,8 +287,8 @@ void client_init(int receiver) {
     rtp_init();
     spectrum_timer_init();
 
-    port=config.client_base_port+receiver;
-    port_ssl = config.ssl_client_port + receiver;
+    port=config_dspserver->client_base_port+receiver;
+    port_ssl = config_dspserver->ssl_client_port + receiver;
     rc=pthread_create(&client_thread_id,NULL,client_thread,NULL);
 
     if(rc != 0) {
@@ -1339,8 +1340,8 @@ void readcb(struct bufferevent *bev, void *ctx){
             value[1]=atoi(tokens[1]);
             value[2]=atoi(tokens[2]);
             value[3]=atoi(tokens[3]);
-            SetGrphRXEQ(0,0,&value);
-            SetGrphRXEQ(0,1,&value);
+            SetGrphRXEQ(0,0,(int*)&value);
+            SetGrphRXEQ(0,1,(int*)&value);
         } else if(strncmp(cmd,"setrx10bdgreq",11)==0) { // KD0OSS
             int value[11];
             if (tokenize_cmd(&saveptr, tokens, 11) != 11)
@@ -1356,8 +1357,8 @@ void readcb(struct bufferevent *bev, void *ctx){
             value[8]=atoi(tokens[8]);
             value[9]=atoi(tokens[9]);
             value[10]=atoi(tokens[10]);
-            SetGrphRXEQ10(0,0,&value);
-            SetGrphRXEQ10(0,1,&value);
+            SetGrphRXEQ10(0,0,(int*)&value);
+            SetGrphRXEQ10(0,1,(int*)&value);
         } else if(strncmp(cmd,"settxgreqcmd",12)==0) { // KD0OSS
             int state;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -1372,7 +1373,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             value[1]=atoi(tokens[1]);
             value[2]=atoi(tokens[2]);
             value[3]=atoi(tokens[3]);
-            SetGrphTXEQ(1,&value);
+            SetGrphTXEQ(1,(int*)&value);
         } else if(strncmp(cmd,"settx10bdgreq",11)==0) { // KD0OSS
             int value[11];
             if (tokenize_cmd(&saveptr, tokens, 11) != 11)
@@ -1388,7 +1389,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             value[8]=atoi(tokens[8]);
             value[9]=atoi(tokens[9]);
             value[10]=atoi(tokens[10]);
-            SetGrphTXEQ10(1,&value);
+            SetGrphTXEQ10(1,(int*)&value);
         } else if(strncmp(cmd,"setnr",5)==0) {
             int nr = 0;
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
@@ -2004,7 +2005,7 @@ void readcb(struct bufferevent *bev, void *ctx){
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
             if(strcmp(tokens[0],"true")==0) {
-                if (config.no_correct_iq == 0) {
+                if (config_dspserver->no_correct_iq == 0) {
                    SetCorrectIQEnable(1);
                    sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(1)\n"); 
                 } else {
@@ -2012,7 +2013,7 @@ void readcb(struct bufferevent *bev, void *ctx){
                    sdr_log(SDR_LOG_INFO,"IGNORING (due to --no-correctiq option): setiqenable true, SetCorrectIQEnable(0)\n");
                 }
             } else if(strcmp(tokens[0],"false")==0) {
-                if (config.no_correct_iq == 0) {
+                if (config_dspserver->no_correct_iq == 0) {
                    SetCorrectIQEnable(0);
                    sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
                 } else {
@@ -2041,7 +2042,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(cmd,"rxiqmuval",9)==0) {
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
-            if (config.no_correct_iq == 0) {
+            if (config_dspserver->no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of mu sent = '%s'\n",tokens[0]);
                 SetCorrectRXIQMu(0, 0, atof(tokens[0]));
             } else {
@@ -2050,7 +2051,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(cmd,"txiqcorrectval",14)==0) {  //KD0OSS
             if (tokenize_cmd(&saveptr, tokens, 2) != 2)
                 goto badcommand;
-            if (config.no_correct_iq == 0) {
+            if (config_dspserver->no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of IQ sent = '%s', '%s'\n",tokens[0], tokens[1]);
                 SetCorrectTXIQ(1, atof(tokens[0]), atof(tokens[1]));
             } else {
@@ -2059,7 +2060,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(cmd,"txiqphasecorrectval",19)==0) {  //KD0OSS
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
-            if (config.no_correct_iq == 0) {
+            if (config_dspserver->no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of Tx IQ phase sent = '%s'\n",tokens[0]);
                 SetCorrectTXIQPhase(1, atof(tokens[0]));
             } else {
@@ -2068,7 +2069,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(cmd,"txiqgaincorrectval",18)==0) {  //KD0OSS
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
-            if (config.no_correct_iq == 0) {
+            if (config_dspserver->no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of Tx IQ gain sent = '%s'\n",tokens[0]);
                 SetCorrectTXIQGain(1, atof(tokens[0]));
             } else {
@@ -2077,7 +2078,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(cmd,"rxiqphasecorrectval",19)==0) {  //KD0OSS
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
-            if (config.no_correct_iq == 0) {
+            if (config_dspserver->no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of Rx IQ phase sent = '%s'\n",tokens[0]);
                 SetCorrectIQPhase(0, 0, atof(tokens[0]));
                 SetCorrectIQPhase(0, 1, atof(tokens[0]));
@@ -2087,7 +2088,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(cmd,"rxiqgaincorrectval",18)==0) {  //KD0OSS
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;
-            if (config.no_correct_iq == 0) {
+            if (config_dspserver->no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of Rx IQ gain sent = '%s'\n",tokens[0]);
                 SetCorrectIQGain(0, 0, atof(tokens[0]));
                 SetCorrectIQGain(0, 1, atof(tokens[0]));
@@ -2097,7 +2098,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(cmd,"rxiqcorrectwr",13)==0) {  //KD0OSS
             if (tokenize_cmd(&saveptr, tokens, 2) != 2)
                 goto badcommand;
-            if (config.no_correct_iq == 0) {
+            if (config_dspserver->no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of Rx IQ wReal sent = '%s' and '%s'\n",tokens[0], tokens[1]);
                 SetCorrectRXIQwReal(0, 0, atof(tokens[0]), atoi(tokens[1]));
                 SetCorrectRXIQwReal(0, 1, atof(tokens[0]), atoi(tokens[1]));
@@ -2107,7 +2108,7 @@ void readcb(struct bufferevent *bev, void *ctx){
         } else if(strncmp(cmd,"rxiqcorrectwi",13)==0) {  //KD0OSS
             if (tokenize_cmd(&saveptr, tokens, 2) != 2)
                 goto badcommand;
-            if (config.no_correct_iq == 0) {
+            if (config_dspserver->no_correct_iq == 0) {
                 sdr_log(SDR_LOG_INFO,"The value of Rx IQ wImage sent = '%s' and '%s'\n",tokens[0], tokens[1]);
                 SetCorrectRXIQwImag(0, 0, atof(tokens[0]), atoi(tokens[1]));
                 SetCorrectRXIQwImag(0, 1, atof(tokens[0]), atoi(tokens[1]));
@@ -2251,29 +2252,36 @@ void setprintcountry()
 	fprintf(stderr,"Country Lookup is On\n");
 }
 
+struct country_stuff {
+    in_addr_t client_addr;
+};
+
 void printcountry(struct sockaddr_in *client){
     pthread_t lookup_thread;
     int ret;
-    in_addr_t client_addr;
+    struct country_stuff holds_client_address;
 
-    client_addr = client->sin_addr.s_addr;
+    holds_client_address.client_addr = client->sin_addr.s_addr;
 
     // client_add is passed as 32 bit value to thread
     ret = pthread_create(&lookup_thread, NULL, printcountrythread,
-                         (void*) client_addr);
+                         (void*) &holds_client_address);
     if (ret == 0) pthread_detach(lookup_thread);
 }
 
 void *printcountrythread(void *arg)
 {
   // looks for the country for the connecting IP
+
   FILE *fp;
   char path[1035];
   char sCmd[255];
   struct in_addr addr;
   char ipstr[16];
 
-  addr.s_addr = (in_addr_t)arg;
+  struct country_stuff *stuff = arg;
+  //addr.s_addr = (in_addr_t)arg;
+  addr.s_addr = stuff->client_addr;
   inet_ntop(AF_INET, (void *)&addr, ipstr, sizeof(ipstr));
   /* Open the command for reading. */
   sprintf(sCmd,"wget -q -O - --post-data 'ip=%s' http://www.selfseo.com/ip_to_country.php 2>/dev/null | sed -e '/ is assigned to /!d' -e 's/.*border=1> \\([^<]*\\).*/\\1/'",

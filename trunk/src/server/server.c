@@ -268,7 +268,7 @@ void process_args(int argc,char* argv[]) {
                 break;
 
             case 19: // base-port
-                listener_port = optarg;
+                listener_port = atoi(optarg);
                 break;
 
             default:

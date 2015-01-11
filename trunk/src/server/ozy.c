@@ -1090,7 +1090,7 @@ void process_bandscope_buffer(unsigned char* buffer) {
 void process_ozy_output_buffer(float *left_output_buffer,float *right_output_buffer,
                                float *left_tx_buffer,float *right_tx_buffer,int mox_state) {
     //unsigned char ozy_samples[1024*8];
-    int j,c;
+    int j;
     short left_rx_sample;
     short right_rx_sample;
     short left_tx_sample;
@@ -1108,7 +1108,7 @@ void process_ozy_output_buffer(float *left_output_buffer,float *right_output_buf
         // process the output 
         // skipping all the samples more that 48 kS/s
         // 
-        for(j=0,c=0;j<BUFFER_SIZE;j+=output_sample_increment) {
+        for(j=0;j<BUFFER_SIZE;j+=output_sample_increment) {
 
             if(mox) {
                 left_rx_sample=0.0;

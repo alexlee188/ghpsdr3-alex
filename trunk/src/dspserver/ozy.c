@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   ozy.c
  * Author: jm57878
  *
@@ -43,10 +43,12 @@
 #include "util.h"
 #include "main.h"
 
-
 /*
  *   ozy interface
  */
+
+
+extern struct dspserver_config *config_dspserver;
 
 #define SMALL_PACKETS
 
@@ -131,11 +133,11 @@ int dot=0;
 int dash=0;
 
 //#define COMMAND_PORT 12000
-// Replaced with config.command_port. KL7NA
+// Replaced with config_dspserver.command_port. KL7NA
 //#define SPECTRUM_PORT 13000
-// Replaced with config.spectrum_port.  KL7NA
+// Replaced with config_dspserver.spectrum_port.  KL7NA
 //#define AUDIO_PORT 15000
-// Replaced with config.audio_port.  KL7NA
+// Replaced with config_dspserver.audio_port.  KL7NA
 
 int command_socket;
 int command_port;
@@ -173,7 +175,6 @@ double src_ratio;
 
 
 
-
 void dump_udp_buffer(unsigned char* buffer);
 
 void* iq_thread(void* arg) {
@@ -199,7 +200,7 @@ fprintf(stderr,"iq_thread\n");
 
     iq_addr.sin_family=AF_INET;
     iq_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    iq_addr.sin_port=htons(config.spectrum_port+(receiver*2));
+    iq_addr.sin_port=htons(config_dspserver->spectrum_port+(receiver*2));
 
     if(bind(iq_socket,(struct sockaddr*)&iq_addr,iq_length)<0) {
         perror("iq_thread: bind socket failed for iq socket");
@@ -441,7 +442,7 @@ int make_connection() {
         }
     }
 
-    sprintf(command,"start iq %d",config.spectrum_port+(receiver*2));
+    sprintf(command,"start iq %d",config_dspserver->spectrum_port+(receiver*2));
     send_command(command, response);
 
     return result;
@@ -642,13 +643,15 @@ void setSpeed(int s) {
 }
 
 /* --------------------------------------------------------------------------*/
-/** 
+/**
 * @brief Initialize Ozy Server
-* 
-* @return 
+*
+* @return
 */
-int ozy_init(const char *server_address) {
+
+int ozy_init() {
     int rc;
+    char server_address[SERVER_ADDRESS_LENGTH];
     struct hostent *h;
     int on=1;
 
@@ -659,18 +662,35 @@ int ozy_init(const char *server_address) {
 
     rc = sem_init(&ozy_cmd_semaphore, 0, 1);
     if (rc < 0) {
-        perror("ozy command semaphore init failed");
+        perror("ozy command semaphore init failed\n");
     }
 
     h=gethostbyname(server_address);
     if(h==NULL) {
         fprintf(stderr,"ozy_init: unknown host %s\n",server_address);
+        fprintf(stderr,"h_errno is %d \n",h_errno);
+        perror("gethostbyaddr");
+                switch (h_errno)
+                {
+                    case HOST_NOT_FOUND:
+                        printf("HOST_NOT_FOUND\n");
+                        break;
+                    case NO_ADDRESS:
+                        printf("NO_ADDRESS\n");
+                        break;
+                        /* case NO_DATA: print ("NO_DATA\n"); break; */
+                    case NO_RECOVERY:
+                        printf("NO_RECOVERY\n");
+                        break;
+                    case TRY_AGAIN:
+                        printf("TRY_AGAIN\n");
+                        break;
+                }
         exit(1);
     }
 
     //server_port=11000;
-    server_port = config.server_port;
-
+    server_port = config_dspserver->server_port;
     // create a socket to send commands to the server
     command_socket=socket(AF_INET,SOCK_STREAM,0);
     if(command_socket<0) {
@@ -684,7 +704,7 @@ int ozy_init(const char *server_address) {
 
     command_addr.sin_family=AF_INET;
     command_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    command_addr.sin_port=htons(config.command_port+(receiver*2));
+    command_addr.sin_port=htons(config_dspserver->command_port+(receiver*2));
 
     if(bind(command_socket,(struct sockaddr*)&command_addr,command_length)<0) {
         perror("ozy_init: bind socket failed for command socket");
@@ -719,7 +739,7 @@ int ozy_init(const char *server_address) {
     memset(&server_audio_addr,0,server_audio_length);
     server_audio_addr.sin_family=h->h_addrtype;
     memcpy((char *)&server_audio_addr.sin_addr.s_addr,h->h_addr_list[0],h->h_length);
-    server_audio_addr.sin_port=htons(config.audio_port+(receiver*2));
+    server_audio_addr.sin_port=htons(config_dspserver->audio_port+(receiver*2));
 
     fprintf(stderr,"ozy_init: server audio is in port %d\n",ntohs(server_audio_addr.sin_port));
 
@@ -730,7 +750,7 @@ int ozy_init(const char *server_address) {
     server_addr.sin_port=htons(server_port);
 
 
-    fprintf(stderr,"ozy_init: server %s\n",server_address);
+    fprintf(stderr,"ozy_init: server %s\n",config_dspserver->server_address);
 
     // connect
     rc=connect(command_socket,(struct sockaddr*)&server_addr,server_length);
@@ -756,10 +776,10 @@ int ozy_init(const char *server_address) {
                              2, &sr_error
                            ) ;
 
-        if (sr_state == 0) { 
-            fprintf (stderr, "ozy_init: SR INIT ERROR: %s\n", src_strerror (sr_error)); 
+        if (sr_state == 0) {
+            fprintf (stderr, "ozy_init: SR INIT ERROR: %s\n", src_strerror (sr_error));
         } else {
-            fprintf (stderr, "ozy_init: sample rate init successfully at ratio: %f\n", src_ratio); 
+            fprintf (stderr, "ozy_init: sample rate init successfully at ratio: %f\n", src_ratio);
         }
 
 

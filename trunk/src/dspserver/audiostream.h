@@ -23,6 +23,8 @@
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 *
 */
+#ifndef AUDIOSTREAM_H
+#define AUDIOSTREAM_H
 
 /* --------------------------------------------------------------------------*/
 /**
@@ -96,3 +98,4 @@ void audio_stream_queue_free(void);
 void Mic_stream_queue_free(void);
 
 
+#endif

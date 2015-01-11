@@ -83,35 +83,12 @@ const char *version = "20131230;-master"; //YYYYMMDD; text desc
 
 // main.c
 
-#include <fcntl.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <getopt.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <signal.h>
-#include <sys/param.h>
 
-#include "client.h"
-#include "dttsp.h"
-#include "audiostream.h"
-#include "soundcard.h"
-#include "ozy.h"
-#include "version.h"
-#include "codec2loc.h"
-#include "register.h"
-#include "sdrexport.h"
-#include "G711A.h"
-#include "rtp.h"
-#include "util.h"
 #include "main.h"
 
 char propertyPath[128];
+
+struct dspserver_config *config_dspserver;
 
 enum {
     OPT_SOUNDCARD = 1,
@@ -167,21 +144,16 @@ void signal_shutdown(int signum);
 * @param argv
 */
 /* ----------------------------------------------------------------------------*/
-void processCommands(int argc,char** argv,struct dspserver_config *config) {
+void processCommands(int argc,char** argv) {
     int c;
-    config->client_base_port = 8000;
-    config->ssl_client_port = config->client_base_port + 1000;
-    config->server_port = 11000;
-    config->command_port = config->server_port + 1000;
-    config->spectrum_port = config->server_port + 2000;
-    config->audio_port = config->server_port + 3000;
+    fprintf(stderr,"In processCommands, config_dspserver.client_base_port: %d \n",config_dspserver->client_base_port);
     while((c=getopt_long(argc,argv,shortOptions,longOptions,NULL))!=-1) {
         switch(c) {
             case OPT_SOUNDCARD:
-                if (strlen(optarg) > sizeof(config->soundCardName) - 1) {
+                if (strlen(optarg) > sizeof(config_dspserver->soundCardName) - 1) {
                     fprintf(stderr, "Warning: Sound card name will be truncated\n");
                 }
-                strncpy(config->soundCardName,optarg,sizeof(config->soundCardName));
+                strncpy(config_dspserver->soundCardName,optarg,sizeof(config_dspserver->soundCardName));
                 break;
             case OPT_RECEIVER:
                 /* FIXME: global */
@@ -189,13 +161,13 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
                 break;
             case OPT_SERVER:
                 /* FIXME: global */
-                if (strlen(optarg) > sizeof(config->server_address) - 1) {
+                if (strlen(optarg) > sizeof(config_dspserver->server_address) - 1) {
                     fprintf(stderr, "Warning: server address will be truncated\n");
                 }
-                strncpy(config->server_address, optarg, sizeof(config->server_address));
+                strncpy(config_dspserver->server_address, optarg, sizeof(config_dspserver->server_address));
                 break;
             case OPT_OFFSET:
-                config->offset=atoi(optarg);
+                config_dspserver->offset=atoi(optarg);
                 break;
             case OPT_TIMING:
                 client_set_timing();
@@ -207,10 +179,10 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
                 toShareOrNotToShare = 1;
                 break;
             case OPT_SHARECONFIG:
-                if (strlen(optarg) > sizeof(config->share_config_file) - 1) {
+                if (strlen(optarg) > sizeof(config_dspserver->share_config_file) - 1) {
                     fprintf(stderr, "Warning: share config file path is too long for this system\n");
                 }
-                strncpy(config->share_config_file,optarg, sizeof(config->share_config_file));
+                strncpy(config_dspserver->share_config_file,optarg, sizeof(config_dspserver->share_config_file));
                 break;
             case OPT_LO:
                 /* global */
@@ -223,23 +195,23 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
                 ozy_set_hpsdr_local();
                 break;
             case OPT_NOCORRECTIQ:
-                config->no_correct_iq = 1;
+                config_dspserver->no_correct_iq = 1;
                 break;
             case OPT_CLIENTBASEPORT:
-                config->client_base_port = atoi(optarg);
-                config->ssl_client_port = config->client_base_port + 1000;
+                config_dspserver->client_base_port = atoi(optarg);
+                config_dspserver->ssl_client_port = config_dspserver->client_base_port + 1000;
                 break;
             case OPT_SERVERPORT:
-                config->server_port = atoi(optarg);
-                config->command_port = config->server_port + 1000;
-                config->spectrum_port = config->server_port + 2000;
-                config->audio_port = config->server_port + 3000;  // Used to be 15000 = server_port + 4000. KL7NA
+                config_dspserver->server_port = atoi(optarg);
+                config_dspserver->command_port = config_dspserver->server_port + 1000;
+                config_dspserver->spectrum_port = config_dspserver->server_port + 2000;
+                config_dspserver->audio_port = config_dspserver->server_port + 3000;  // Used to be 15000 = server_port + 4000. KL7NA
                 break;
             case OPT_DEBUG:
                 ozy_set_debug(1);
                 break;
             case OPT_THREAD_DEBUG:
-                config->thread_debug = 1;
+                config_dspserver->thread_debug = 1;
                 break;
 
        default:
@@ -278,32 +250,40 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
 */
 /* ----------------------------------------------------------------------------*/
 
-struct dspserver_config config;
 
 int main(int argc,char* argv[]) {
-    memset(&config, 0, sizeof(config));
+    config_dspserver = malloc(sizeof(struct dspserver_config));
+    memset(&config_dspserver, 0, sizeof(config_dspserver));
     // Register signal and signal handler
     signal(SIGINT, signal_shutdown);    
     char directory[MAXPATHLEN];
-    strcpy(config.soundCardName,"HPSDR");
-    strcpy(config.server_address,"127.0.0.1"); // localhost
-    strcpy(config.share_config_file, getenv("HOME"));
-    strcat(config.share_config_file, "/dspserver.conf");
-    processCommands(argc,argv,&config);
+    strcpy(config_dspserver->soundCardName,"HPSDR");
+    strcpy(config_dspserver->server_address,"127.0.0.1"); // localhost
+    strcpy(config_dspserver->share_config_file, getenv("HOME"));
+    strcat(config_dspserver->share_config_file, "/dspserver.conf");
+    config_dspserver->client_base_port = 8000;
+    config_dspserver->ssl_client_port = config_dspserver->client_base_port + 1000;
+    config_dspserver->server_port = 11000;
+    config_dspserver->command_port = config_dspserver->server_port + 1000;
+    config_dspserver->spectrum_port = config_dspserver->server_port + 2000;
+    config_dspserver->audio_port = config_dspserver->server_port + 3000;
+//    fprintf(stderr,"In main:293 config_dspserver.client_base_port: %d \n",config_dspserver.client_base_port);
+//    fprintf(stderr,"In main:294 config_dspserver.server_port: %d \n",config_dspserver.server_port);
+    processCommands(argc,argv);
 
 #ifdef THREAD_DEBUG
     sdr_threads_init();
 #endif /* THREAD_DEBUG */
 
-    fprintf(stderr, "Reading conf file %s\n", config.share_config_file);
-    init_register(config.share_config_file); // we now read our conf always
-	 // start web registration if set
+    fprintf(stderr, "Reading conf file %s\n", config_dspserver->share_config_file);
+    init_register(config_dspserver->share_config_file); // we now read our conf always
+     // start web registration if set
     if  (toShareOrNotToShare) {
         fprintf(stderr, "Activating Web register\n");
     }
     fprintf(stderr,"gHPSDR rx %d (Version %s)\n",receiver,VERSION);
     printversion();
-    setSoundcard(getSoundcardId(config.soundCardName));
+    setSoundcard(getSoundcardId(config_dspserver->soundCardName));
 
     // initialize DttSP
     if(getcwd(directory, sizeof(directory))==NULL) {
@@ -314,7 +294,7 @@ int main(int argc,char* argv[]) {
     Release_Update();
     SetTRX(0,0); // thread 0 is for receive
     SetTRX(1,1);  // thread 1 is for transmit
-    SetRingBufferOffset(0,config.offset);
+    SetRingBufferOffset(0,config_dspserver->offset);
     SetThreadProcessingMode(0,RUN_PLAY);
     SetThreadProcessingMode(1,RUN_PLAY);
     SetSubRXSt(0,1,1);
@@ -338,7 +318,7 @@ int main(int argc,char* argv[]) {
 
     codec2 = codec2_create(CODEC2_MODE_3200);
     G711A_init();
-    ozy_init(config.server_address);   // create and starts iq_thread in ozy.c in order to
+    ozy_init();   // create and starts iq_thread in ozy.c in order to
                                        // receive iq stream from hardware server
                                        // process it in DttSP
                                        // makes the sample rate adaption for resulting audio
@@ -362,7 +342,7 @@ int main(int argc,char* argv[]) {
      * the fact that the subsystem threads are all started.  We can't
      * init this until late, though, or we'll catch initializations
      * performed at boot time as errors. */
-    if (config.thread_debug) {
+    if (config_dspserver.thread_debug) {
         sdr_threads_debug(TRUE);
     }
 #endif /* THREAD_DEBUG */
@@ -388,3 +368,4 @@ void signal_shutdown(int signum)
    // Terminate program
    exit(signum);
 }
+
