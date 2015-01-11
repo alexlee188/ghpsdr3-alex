@@ -990,7 +990,8 @@ void* client_thread(void* arg) {
 
     memset(&server,0,sizeof(server));
     server.sin_family=AF_INET;
-    server.sin_addr.s_addr=htonl(INADDR_ANY);
+    fprintf(stderr,"client_thread: server socket address: %s\n", INADDR_DSPSERVER);    
+    server.sin_addr.s_addr=inet_addr(INADDR_DSPSERVER);
     server.sin_port=htons(port);
 
     if(bind(serverSocket,(struct sockaddr *)&server,sizeof(server))<0) {
@@ -1009,7 +1010,8 @@ void* client_thread(void* arg) {
     // setting up ssl server
     memset(&server_ssl,0,sizeof(server_ssl));
     server_ssl.sin_family=AF_INET;
-    server_ssl.sin_addr.s_addr=htonl(INADDR_ANY);
+    fprintf(stderr,"client_thread: server SSL socket address: %s\n", INADDR_DSPSERVER);     
+    server_ssl.sin_addr.s_addr=inet_addr(INADDR_DSPSERVER);
     server_ssl.sin_port=htons(port_ssl);
 
     ctx = evssl_init();

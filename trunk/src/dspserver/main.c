@@ -117,6 +117,7 @@ enum {
     OPT_SOUNDCARD = 1,
     OPT_RECEIVER,
     OPT_SERVER,
+    OPT_DSPSERVER,
     OPT_OFFSET,
     OPT_TIMING,
     OPT_LOOKUPCOUNTRY,
@@ -134,6 +135,7 @@ struct option longOptions[] = {
     {"soundcard",required_argument, NULL, OPT_SOUNDCARD},
     {"receiver",required_argument, NULL, OPT_RECEIVER},
     {"server",required_argument, NULL, OPT_SERVER},
+    {"address",required_argument, NULL, OPT_DSPSERVER},
     {"offset",required_argument, NULL, OPT_OFFSET},
     {"timing",no_argument, NULL, OPT_TIMING},
     {"lookupcountry",no_argument, NULL, OPT_LOOKUPCOUNTRY},
@@ -183,6 +185,13 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
                 }
                 strncpy(config->server_address, optarg, sizeof(config->server_address));
                 break;
+            case OPT_DSPSERVER:
+                /* FIXME: global */
+                if (strlen(optarg) > sizeof(config->dspserver_address) - 1) {
+                    fprintf(stderr, "Warning: dspserver address will be truncated\n");
+                }
+                strncpy(config->dspserver_address, optarg, sizeof(config->dspserver_address));
+                break;
             case OPT_OFFSET:
                 config->offset=atoi(optarg);
                 break;
@@ -225,14 +234,15 @@ void processCommands(int argc,char** argv,struct dspserver_config *config) {
                 fprintf(stderr,"Usage: \n");
                 fprintf(stderr,"  dspserver --receiver N (default 0)\n");
                 fprintf(stderr,"            --server 0.0.0.0 (default 127.0.0.1)\n");
+                fprintf(stderr,"            --address 0.0.0.0 (default 127.0.0.1)\n");
                 fprintf(stderr,"            --soundcard (machine dependent)\n");
                 fprintf(stderr,"            --offset 0 \n");
                 fprintf(stderr,"            --share (will register this server for other users \n");
                 fprintf(stderr,"                     use the default config file ~/.dspserver.conf) \n");
-		fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
-		fprintf(stderr,"            --hpsdr (if using hpsdr hardware with no local mike and headphone)\n");
-		fprintf(stderr,"            --hpsdrloc (if using hpsdr hardware with LOCAL mike and headphone)\n");
-		fprintf(stderr,"            --nocorrectiq (select if using non QSD receivers, like Hermes, Perseus, HiQSDR, Mercury)\n");
+                fprintf(stderr,"            --lo 0 (if no LO offset desired in DDC receivers, or 9000 in softrocks\n");
+                fprintf(stderr,"            --hpsdr (if using hpsdr hardware with no local mike and headphone)\n");
+                fprintf(stderr,"            --hpsdrloc (if using hpsdr hardware with LOCAL mike and headphone)\n");
+                fprintf(stderr,"            --nocorrectiq (select if using non QSD receivers, like Hermes, Perseus, HiQSDR, Mercury)\n");
 #ifdef THREAD_DEBUG
                 fprintf(stderr,"            --debug-threads (enable threading assertions)\n");
 #endif /* THREAD_DEBUG */
@@ -263,6 +273,7 @@ int main(int argc,char* argv[]) {
     char directory[MAXPATHLEN];
     strcpy(config.soundCardName,"HPSDR");
     strcpy(config.server_address,"127.0.0.1"); // localhost
+    strcpy(config.dspserver_address,"127.0.0.1"); // localhost
     strcpy(config.share_config_file, getenv("HOME"));
     strcat(config.share_config_file, "/dspserver.conf");
     processCommands(argc,argv,&config);
@@ -314,7 +325,7 @@ int main(int argc,char* argv[]) {
 
     codec2 = codec2_create(CODEC2_MODE_3200);
     G711A_init();
-    ozy_init(config.server_address);   // create and starts iq_thread in ozy.c in order to
+    ozy_init(config.server_address,config.dspserver_address);   // create and starts iq_thread in ozy.c in order to
                                        // receive iq stream from hardware server
                                        // process it in DttSP
                                        // makes the sample rate adaption for resulting audio
