@@ -345,7 +345,7 @@ private:
     void setSubRxPan();
     void actionGain(int g);
     void setGain(bool state);
-    void initRigCtl(unsigned short);
+    void initRigCtl(unsigned short rigctl_port);
     void setPwsMode(int mode); //KD0OSS
     RigCtlServer *rigCtl;
     QString getversionstring();
