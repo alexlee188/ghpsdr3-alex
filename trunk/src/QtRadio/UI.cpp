@@ -64,13 +64,13 @@
 #include "Frequency.h"
 #include "EqualizerDialog.h"
 
-UI::UI(const QString server) {
+UI::UI(const QString server, unsigned short rigctl_port) {
 
     widget.setupUi(this);
     servers = 0;
     pHwDlg = 0;
     meter = -121;
-    initRigCtl();
+    initRigCtl(rigctl_port);
     fprintf(stderr, "rigctl: Calling init\n");
     servername = "Unknown";
     configure.thisuser = "None";
@@ -2437,9 +2437,9 @@ void UI::printStatusBar(QString message)
     lastFreq = frequency;
 }
 
-void UI::initRigCtl ()
+void UI::initRigCtl(unsigned short rigctl_port)
 {
-    rigCtl = new RigCtlServer ( this, this );
+    rigCtl = new RigCtlServer ( this, this, rigctl_port );
 }
 
 long long UI::rigctlGetFreq()

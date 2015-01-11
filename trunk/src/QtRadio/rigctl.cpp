@@ -401,15 +401,17 @@ void RigCtlSocket::readyRead() {
         }
 }
 
-RigCtlServer::RigCtlServer(QObject *parent, UI *main)
+const unsigned short RigCtlServer::RIGCTL_PORT(19090);
+
+RigCtlServer::RigCtlServer(QObject *parent, UI *main,  unsigned short rigctl_port)
         : QObject(parent),
           main(main) {
         server = new QTcpServer(this);
-        if (!server->listen(QHostAddress::Any, 19090)) { // or listen(QHostAddress::LocalHost, 19090)) {
-                fprintf(stderr, "rigctl: failed to bind socket\n");
+        if (!server->listen(QHostAddress::Any, rigctl_port)) {
+                fprintf(stderr, "rigctl: failed to bind socket on port %d\n", rigctl_port);
                 return;
         }
-        fprintf(stderr, "rigctl: Listening\n");
+        fprintf(stderr, "rigctl: Listening on port %d\n", rigctl_port);
         connect(server, SIGNAL(newConnection()), this, SLOT(newConnection()));
 }
 

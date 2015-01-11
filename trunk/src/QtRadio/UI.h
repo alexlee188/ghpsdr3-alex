@@ -90,7 +90,7 @@
 class UI : public QMainWindow {
     Q_OBJECT
 public:
-    UI(const QString server = QString(""));
+    UI(const QString server = QString(""), unsigned short rigctl_port = RigCtlServer::RIGCTL_PORT);
     virtual ~UI();
     void loadSettings();
     void saveSettings();
@@ -345,7 +345,7 @@ private:
     void setSubRxPan();
     void actionGain(int g);
     void setGain(bool state);
-    void initRigCtl();
+    void initRigCtl(unsigned short);
     void setPwsMode(int mode); //KD0OSS
     RigCtlServer *rigCtl;
     QString getversionstring();
