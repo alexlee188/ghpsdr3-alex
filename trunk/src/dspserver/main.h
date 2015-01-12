@@ -28,35 +28,10 @@
 
 #if ! defined __MAIN_H__
 #define __MAIN_H__
-
-#include <fcntl.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <getopt.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <signal.h>
-#include <sys/param.h>
-
-#include "client.h"
-#include "dttsp.h"
-#include "audiostream.h"
-#include "soundcard.h"
-#include "ozy.h"
-#include "version.h"
-#include "codec2loc.h"
-#include "register.h"
-#include "sdrexport.h"
-#include "G711A.h"
-#include "rtp.h"
-#include "util.h"
-
+//#include <sys/param.h>  //For MAXPATHLEN
+#include "defs.h"
 #define SERVER_ADDRESS_LENGTH 256
+//#define MAXPATHLEN 2048
 extern const char *version;
 
 struct dspserver_config {

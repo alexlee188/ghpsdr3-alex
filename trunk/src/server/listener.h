@@ -27,9 +27,9 @@
 #ifndef __LISTENER_H_
 #define __LISTENER_H_
 
-//#define LISTEN_PORT 11000
+#define LISTEN_PORT 11000 // default
 
-static unsigned short listener_port;
+static unsigned short listener_port = LISTEN_PORT;
 
 void create_listener_thread();
 

@@ -651,7 +651,6 @@ void setSpeed(int s) {
 
 int ozy_init() {
     int rc;
-    char server_address[SERVER_ADDRESS_LENGTH];
     struct hostent *h;
     int on=1;
 
@@ -664,12 +663,14 @@ int ozy_init() {
     if (rc < 0) {
         perror("ozy command semaphore init failed\n");
     }
-
-    h=gethostbyname(server_address);
+    fprintf(stderr,"In ozy:658 config.client_base_port: %d \n",config_dspserver->client_base_port);
+fprintf(stderr, "config_dspserver->server_address %s \n", config_dspserver->server_address);
+    h=gethostbyname(config_dspserver->server_address);
     if(h==NULL) {
-        fprintf(stderr,"ozy_init: unknown host %s\n",server_address);
-        fprintf(stderr,"h_errno is %d \n",h_errno);
-        perror("gethostbyaddr");
+        //fprintf(stderr,"ozy_init: unknown host %s\n",config_dspserver->server_address);
+        //fprintf(stderr,"h_errno is %d \n",h_errno);
+        perror("gethostbyname");
+                fprintf(stderr, "config_dspserver->server_address %s \n", config_dspserver->server_address);
                 switch (h_errno)
                 {
                     case HOST_NOT_FOUND:

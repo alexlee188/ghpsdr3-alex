@@ -82,7 +82,32 @@
 const char *version = "20131230;-master"; //YYYYMMDD; text desc
 
 // main.c
+#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <getopt.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <signal.h>
 
+
+#include "client.h"
+#include "dttsp.h"
+#include "audiostream.h"
+#include "soundcard.h"
+#include "ozy.h"
+#include "version.h"
+#include "codec2loc.h"
+#include "register.h"
+#include "sdrexport.h"
+#include "G711A.h"
+#include "rtp.h"
+#include "util.h"
 
 #include "main.h"
 
@@ -273,7 +298,7 @@ int main(int argc,char* argv[]) {
     config_dspserver->server_port = 11000;
     config_dspserver->command_port = config_dspserver->server_port + 1000;
     config_dspserver->spectrum_port = config_dspserver->server_port + 2000;
-    config_dspserver->audio_port = config_dspserver->server_port + 3000;
+    config_dspserver->audio_port = config_dspserver->server_port + 4000;
 //    fprintf(stderr,"In main:293 config_dspserver.client_base_port: %d \n",config_dspserver.client_base_port);
 //    fprintf(stderr,"In main:294 config_dspserver.server_port: %d \n",config_dspserver.server_port);
     processCommands(argc,argv);

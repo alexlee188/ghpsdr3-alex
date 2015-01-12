@@ -269,6 +269,7 @@ void process_args(int argc,char* argv[]) {
 
             case 19: // base-port
                 listener_port = atoi(optarg);
+                fprintf(stderr,"port set by argument to %d \n",listener_port);
                 break;
 
             default:
