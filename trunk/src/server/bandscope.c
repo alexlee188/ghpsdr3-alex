@@ -42,6 +42,7 @@
 #include "messages.h"
 #include "ozy.h"
 
+extern unsigned short listener_port;
 BANDSCOPE bandscope;
 static int bs_socket;
 static struct sockaddr_in bs_addr;
@@ -64,7 +65,7 @@ void init_bandscope() {
     memset(&bs_addr,0,bs_length);
     bs_addr.sin_family=AF_INET;
     bs_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    bs_addr.sin_port=htons(11004);
+    bs_addr.sin_port=htons(listener_port + 4);
 
     if(bind(bs_socket,(struct sockaddr*)&bs_addr,bs_length)<0) {
         perror("bind socket failed for bs socket");
