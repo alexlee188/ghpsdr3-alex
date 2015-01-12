@@ -109,7 +109,7 @@
       </rect>
      </property>
      <property name="maximum">
-      <number>3</number>
+      <number>7</number>
      </property>
     </widget>
     <widget class="QPushButton" name="pBtnAddHost">
