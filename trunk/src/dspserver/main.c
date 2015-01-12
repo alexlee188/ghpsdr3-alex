@@ -288,7 +288,6 @@ int main(int argc,char* argv[]) {
     char directory[MAXPATHLEN];
 
     memset(config_dspserver, 0, sizeof(struct dspserver_config));
-    fprintf(stderr, "server_port %d \n",config_dspserver->server_port);
     strcpy(config_dspserver->soundCardName,"HPSDR");
     strcpy(config_dspserver->server_address,"127.0.0.1"); // localhost
     strcpy(config_dspserver->share_config_file, getenv("HOME"));
@@ -299,8 +298,7 @@ int main(int argc,char* argv[]) {
     config_dspserver->command_port = config_dspserver->server_port + 1000;
     config_dspserver->spectrum_port = config_dspserver->server_port + 2000;
     config_dspserver->audio_port = config_dspserver->server_port + 4000;
-//    fprintf(stderr,"In main:293 config_dspserver.client_base_port: %d \n",config_dspserver.client_base_port);
-//    fprintf(stderr,"In main:294 config_dspserver.server_port: %d \n",config_dspserver.server_port);
+
     processCommands(argc,argv);
 
 #ifdef THREAD_DEBUG

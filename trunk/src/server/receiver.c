@@ -44,7 +44,7 @@
 #include "util.h"
 
 #define SMALL_PACKETS
-
+extern unsigned short listener_port;
 RECEIVER receiver[MAX_RECEIVERS];
 static int iq_socket;
 static struct sockaddr_in iq_addr;
@@ -56,6 +56,7 @@ static unsigned long sequence=0L;
 
 void init_receivers(void) {
     int i;
+    unsigned short iq_server_port = listener_port+2;
     for(i=0;i<MAX_RECEIVERS;i++) {
         receiver[i].client=(CLIENT*)NULL;
     }
@@ -70,7 +71,7 @@ void init_receivers(void) {
     memset(&iq_addr,0,iq_length);
     iq_addr.sin_family=AF_INET;
     iq_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    iq_addr.sin_port=htons(IQ_SERVER_PORT);
+    iq_addr.sin_port=htons(iq_server_port);
 
     if(bind(iq_socket,(struct sockaddr*)&iq_addr,iq_length)<0) {
         perror("bind socket failed for iq socket");
