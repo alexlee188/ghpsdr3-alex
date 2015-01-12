@@ -53,7 +53,9 @@
 
 #define SMALL_PACKETS
 
-short audio_port=AUDIO_PORT;
+extern unsigned short listener_port;
+
+short audio_port;
 
 char* parse_command(CLIENT* client,char* command);
 void* audio_thread(void* arg);
@@ -399,7 +401,7 @@ void* audio_thread(void* arg) {
     unsigned long sequence=0L;
     unsigned short offset=0;;
 
-
+    audio_port=listener_port + 4000;
 fprintf(stderr,"audio_thread port=%d\n",audio_port+(rx->id*2));
 
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,&old_state);

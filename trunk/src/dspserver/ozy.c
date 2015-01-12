@@ -663,8 +663,7 @@ int ozy_init() {
     if (rc < 0) {
         perror("ozy command semaphore init failed\n");
     }
-    fprintf(stderr,"In ozy:658 config.client_base_port: %d \n",config_dspserver->client_base_port);
-fprintf(stderr, "config_dspserver->server_address %s \n", config_dspserver->server_address);
+
     h=gethostbyname(config_dspserver->server_address);
     if(h==NULL) {
         //fprintf(stderr,"ozy_init: unknown host %s\n",config_dspserver->server_address);

@@ -86,6 +86,8 @@ static char* metisip="0.0.0.0";
 
 void process_args(int argc,char* argv[]);
 
+unsigned short listener_port = LISTEN_PORT;
+
 int main(int argc,char* argv[]) {
 
 #ifndef __linux__

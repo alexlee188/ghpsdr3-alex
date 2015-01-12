@@ -230,7 +230,7 @@ void processCommands(int argc,char** argv) {
                 config_dspserver->server_port = atoi(optarg);
                 config_dspserver->command_port = config_dspserver->server_port + 1000;
                 config_dspserver->spectrum_port = config_dspserver->server_port + 2000;
-                config_dspserver->audio_port = config_dspserver->server_port + 3000;  // Used to be 15000 = server_port + 4000. KL7NA
+                config_dspserver->audio_port = config_dspserver->server_port + 4000;
                 break;
             case OPT_DEBUG:
                 ozy_set_debug(1);

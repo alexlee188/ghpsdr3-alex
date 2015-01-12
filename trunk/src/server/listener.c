@@ -44,7 +44,7 @@
 #include "client.h"
 #include "listener.h"
 
-
+extern unsigned short listener_port;
 void* listener_thread(void* arg);
 void* client_thread(void* arg);
 char* parse_command(CLIENT* client,char* command);
