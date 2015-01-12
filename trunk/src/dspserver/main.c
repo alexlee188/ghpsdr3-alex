@@ -253,7 +253,7 @@ void processCommands(int argc,char** argv) {
                 fprintf(stderr,"            --nocorrectiq (select if using non QSD receivers, like Hermes, Perseus, HiQSDR, Mercury)\n");
                 fprintf(stderr,"            --client-base-port for QtRadio (default 8000), client-base-port + rx + (0, 1000) used.\n");
                 fprintf(stderr,"            --server-base-port (default 11000), base port for communication with server,like hpsdr-server, etc.\n");
-                fprintf(stderr,"                server-base-port + (1000, 2000 & 3000) are also used for (command,spectrum & audio respectively.)\n");
+                fprintf(stderr,"                server-base-port + (1000, 2000 & 4000) are also used for (command,spectrum & audio respectively.)\n");
 #ifdef THREAD_DEBUG
                 fprintf(stderr,"            --debug-threads (enable threading assertions)\n");
 #endif /* THREAD_DEBUG */
