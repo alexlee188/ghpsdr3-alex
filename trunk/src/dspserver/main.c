@@ -171,7 +171,7 @@ void signal_shutdown(int signum);
 /* ----------------------------------------------------------------------------*/
 void processCommands(int argc,char** argv) {
     int c;
-    fprintf(stderr,"In processCommands, config_dspserver.client_base_port: %d \n",config_dspserver->client_base_port);
+
     while((c=getopt_long(argc,argv,shortOptions,longOptions,NULL))!=-1) {
         switch(c) {
             case OPT_SOUNDCARD:

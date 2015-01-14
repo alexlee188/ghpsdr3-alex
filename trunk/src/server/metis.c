@@ -67,6 +67,9 @@ static int discovery_length;
 
 static int discovering;
 
+static char desired_ip_address[256];
+static int rig_with_right_ip = 0;
+
 static unsigned char hw_address[6];
 static long ip_address;
 
@@ -83,7 +86,7 @@ static int found=0;
 int ep;
 long sequence=-1;
 
-void* metis_receive_thread(void* arg);
+void* metis_process_discovery_thread(void* arg);
 void* metis_watchdog_thread(void* arg);
 void metis_send_buffer(unsigned char* buffer,int length);
 
@@ -130,6 +133,10 @@ void metis_discover(char* interface,char* metisip) {
 
     fprintf(stderr,"Looking for Metis card on interface %s\n",interface);
 
+    if(metisip != NULL) {
+        strcpy(desired_ip_address, metisip); // Save the desired IP address.
+        fprintf(stderr, "Looking for metis/hermes at IP address: %s \n", desired_ip_address);
+    }
     discovering=1;
     
     // send a broadcast to locate metis boards on the network
@@ -157,7 +164,7 @@ void metis_discover(char* interface,char* metisip) {
 
 
     // start a receive thread to get discovery responses
-    rc=pthread_create(&receive_thread_id,NULL,metis_receive_thread,NULL);
+    rc=pthread_create(&receive_thread_id,NULL,metis_process_discovery_thread,NULL);
     if(rc != 0) {
         fprintf(stderr,"pthread_create failed on metis_receive_thread: rc=%d\n", rc);
         exit(1);
@@ -232,7 +239,6 @@ char* metis_mac_address(int entry) {
 */
 
 void metis_start_receive_thread() {
-    int i;
     int rc;
     struct hostent *h;
 
@@ -240,9 +246,9 @@ void metis_start_receive_thread() {
 
     discovering=0;
 
-    h=gethostbyname(metis_cards[0].ip_address);
+    h=gethostbyname(metis_cards[rig_with_right_ip].ip_address);
     if(h==NULL) {
-        fprintf(stderr,"metis_start_receiver_thread: unknown host %s\n",metis_cards[0].ip_address);
+        fprintf(stderr,"metis_start_receiver_thread: unknown host %s\n",metis_cards[rig_with_right_ip].ip_address);
         exit(1);
     }
 
@@ -260,13 +266,13 @@ void metis_start_receive_thread() {
     buffer[2]=0x04;    // data send state send (0x00=stop)
     buffer[3]=0x01;    // I/Q only
 
-    for(i=0;i<60;i++) {
+    for(int i=0;i<60;i++) {
         buffer[i+4]=0x00;
     }
 
     metis_send_buffer(&buffer[0],64);
 
-fprintf(stderr,"starting metis_watchdog_thread\n");
+    fprintf(stderr,"starting metis_watchdog_thread\n");
     // start a watchdog to make sure we are receiving frames
     rc=pthread_create(&watchdog_thread_id,NULL,metis_watchdog_thread,NULL);
     if(rc != 0) {
@@ -298,16 +304,16 @@ static unsigned char input_buffer[2048];
 
 */
 
-void* metis_receive_thread(void* arg) {
+void* metis_process_discovery_thread(void* arg) {
     struct sockaddr_in addr;
     unsigned int length;
     int bytes_read;
-
+fprintf(stderr, "in metis_process_discovery_thread.\n");
     length=sizeof(addr);
     while(1) {
    	bytes_read=recvfrom(discovery_socket,input_buffer,sizeof(input_buffer),0,(struct sockaddr*)&addr,&length);
         if(bytes_read<0) {
-            perror("recvfrom socket failed for metis_receive_thread");
+            perror("recvfrom socket failed for  metis_process_discovery_thread");
             exit(1);
         }
 
@@ -355,7 +361,7 @@ void* metis_receive_thread(void* arg) {
                                        (addr.sin_addr.s_addr>>16)&0xFF,
                                        (addr.sin_addr.s_addr>>24)&0xFF);
                             fprintf(stderr,"Metis IP address %s\n",metis_cards[found].ip_address);
-                            metis_cards[found].code_version = input_buffer[9];
+                            if(strcmp(metis_cards[found].ip_address,desired_ip_address)==0) rig_with_right_ip = found;
                             switch (input_buffer[10]) {
                                case 0x00:
                                   metis_cards[found].board_id = "Metis";
@@ -373,10 +379,12 @@ void* metis_receive_thread(void* arg) {
                             fprintf(stderr,"Board id: %s",metis_cards[found].board_id);
                             fprintf(stderr," version:  %1.2F\n",metis_cards[found].code_version /10.0);
 
-                            found++;
+
                             if(input_buffer[2]==3) {
-                                fprintf(stderr,"Metis is sending\n");
+                                fprintf(stderr,"Metis is sending\n"); //This means that card number found is already being used by another hpsdr-server, etc.
+                                // We don't want to connect to a server that is already sending.
                             }
+                            found++;
                         } else {
                             fprintf(stderr,"too many metis cards!\n");
                         }

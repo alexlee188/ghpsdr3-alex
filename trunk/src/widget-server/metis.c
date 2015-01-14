@@ -68,6 +68,7 @@ static int discovering;
 static unsigned char hw_address[6];
 static long ip_address;
 
+
 static int data_socket;
 static struct sockaddr_in data_addr;
 static int data_addr_length;
@@ -80,7 +81,7 @@ static int found=0;
 int ep;
 long sequence=-1;
 
-void* metis_receive_thread(void* arg);
+void* metis_process_discovery_thread(void* arg);
 void metis_send_buffer(char* buffer,int length);
 
 #define inaddrr(x) (*(struct in_addr *) &ifr->x[sizeof sa.sin_port])
@@ -153,9 +154,9 @@ void metis_discover(char* interface,char* metisip) {
 
 
     // start a receive thread to get discovery responses
-    rc=pthread_create(&receive_thread_id,NULL,metis_receive_thread,NULL);
+    rc=pthread_create(&receive_thread_id,NULL,metis_process_discovery_thread,NULL);
     if(rc != 0) {
-        fprintf(stderr,"pthread_create failed on metis_receive_thread: rc=%d\n", rc);
+        fprintf(stderr,"pthread_create failed on metis_process_discovery_thread: rc=%d\n", rc);
         exit(1);
     }
 
@@ -251,7 +252,7 @@ void metis_start_receive_thread() {
 
 }
 
-void* metis_receive_thread(void* arg) {
+void* metis_process_discovery_thread(void* arg) {
     struct sockaddr_in addr;
     int length;
     unsigned char buffer[2048];
@@ -261,7 +262,7 @@ void* metis_receive_thread(void* arg) {
     while(1) {
    	bytes_read=recvfrom(discovery_socket,buffer,sizeof(buffer),0,(struct sockaddr*)&addr,&length);
         if(bytes_read<0) {
-            perror("recvfrom socket failed for metis_receive_thread");
+            perror("recvfrom socket failed for metis_process_discovery_thread");
             exit(1);
         }
 

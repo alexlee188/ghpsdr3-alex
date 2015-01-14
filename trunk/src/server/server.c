@@ -68,7 +68,7 @@ static struct option long_options[] = {
     {"sleep",required_argument,0,12},
     {"metis",no_argument,0,13},
     {"interface",required_argument,0,14},
-    {"metisip",required_argument,0,15},
+    {"metis-ip",required_argument,0,15},
     {"fpga",required_argument,0,16},
     {"ozyhex",required_argument,0,17},
     {"hermes",required_argument,0,18},
@@ -76,13 +76,13 @@ static struct option long_options[] = {
     {0,0,0,0},
 
 };
-static char* short_options="";
+static char short_options[256] = "";
 static int option_index;
 
 static int metis=0;
 static int hermes=0;
-static char* interface="eth0";
-static char* metisip="0.0.0.0";
+static char *interface ="eth0";
+static char *metisip =NULL;  // If metisip == "", no desired IP specified; any will do.
 
 void process_args(int argc,char* argv[]);
 
@@ -235,8 +235,7 @@ void process_args(int argc,char* argv[]) {
                 break;
 
             case 15: // metisip
-                metisip=optarg;
-                fprintf(stderr,"metisip=%s\n",metisip);
+               metisip=optarg;
                 break;
 
             case 16: // fpga image
@@ -288,6 +287,7 @@ void process_args(int argc,char* argv[]) {
                 fprintf(stderr,"         --timing 1\n");
                 fprintf(stderr,"         --metis\n");
                 fprintf(stderr,"         --interface if\n");
+                fprintf(stderr,"         --metis-ip <ip>\n");
                 fprintf(stderr,"         --fpga <file name>\n");                
                 fprintf(stderr,"         --ozyhex <file name>\n");
                 fprintf(stderr,"         --hermes <power 0-255>\n");
