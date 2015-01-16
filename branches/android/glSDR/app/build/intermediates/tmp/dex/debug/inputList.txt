@@ -1,0 +1,1 @@
+/home/frohro/AndroidStudioProjects/glSDR1/app/build/intermediates/classes/debug
