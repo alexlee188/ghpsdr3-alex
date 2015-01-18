@@ -77,5 +77,6 @@ int ozy_get_hermes_sw_ver(void);
 void ozy_set_alex_rx_att (unsigned int a);
 void ozy_set_alex_rx_antenna (unsigned int a);
 void ozy_set_alex_tx_relay (unsigned int t);
+void ozy_set_j16 (void);
 
 #endif

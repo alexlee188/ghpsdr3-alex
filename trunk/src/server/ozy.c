@@ -121,6 +121,7 @@ static struct timeb tx_start_time;
 static struct timeb tx_end_time;
 static int rx_sample_count=0;
 static int tx_sample_count=0;
+static int j16=0;
 
 static unsigned char control_in[5]={0x00,0x00,0x00,0x00,0x00};
 static unsigned char control_out_metis[5]={
@@ -427,6 +428,81 @@ void ozy_set_receivers(int r) {
 int ozy_get_receivers() {
     return receivers;
 }
+
+/*
+J16 pins
+=====
+17 out1   D    bit 0
+18 out2   C    bit 1
+19 out3   B    bit 2
+20 out4   A    bit 3
+
+e.g D switches 15m filter.
+
+Band-----------------------------J16 --------------BPF/LPF DB25 Pins ---
+1 ---->    39.85 - 64.4 MHz   BC      (6m)              1 2              
+
+2 ---->    23.2 - 39.85 MHz  ABC     (12m/10m)        4 2 1
+
+3 ---->    19.6 - 23.2 MHz      D    (15m)                3
+
+4 ---->    16.2 - 19.6 MHz   A  D    (17m)              4 3
+
+5 ---->    12.1 - 16.2 MHz    B D    (20m)              1 3
+
+6 ---->    8.7 - 12.1 MHz    AB D    (30m)            4 1 3
+
+7 ---->    6.2 - 8.7 MHz,      CD    (40m)              2 3
+
+8 ---->    4.665 - 6.2 MHz   A CD    (60m)            4 2 3
+
+9 ---->    2.75 - 4.665 MHz   BCD    (80m)            1 2 3
+
+10 -- >    1.70 - 2.75 MHz   ABCD    (160m)         4 1 2 3
+
+
+4. OC6 User open-collector output 7 (23)
+5. OC5 User open-collector output 6 (22)
+6. OC4 User open-collector output 5 (21)
+7. OC3 User open-collector output 4 (20)
+8. OC2 User open-collector output 3 (19)
+9. OC1 User open-collector output 2 (18).
+10. OC0 User open-collector output 1 (17)
+
+*/
+
+
+typedef struct _filter_j16 {
+    long f1;
+    long f2;
+    unsigned char j16; 
+} filter_j16;
+
+filter_j16 fltj16_tbl [] =
+{
+	{ 1700000,  2750000,   0x0f },
+	{ 2750000,  4665000,   0x07 },
+	{ 4665000,  6200000,   0x0b },
+	{ 6200000,  8700000,   0x03 },
+	{ 8700000,  12100000,  0x0d },
+	{ 12100000, 16200000,  0x05 },
+	{ 16200000, 19600000,  0x09 },
+	{ 19600000, 23200000,  0x01 },	
+        { 23200000, 39850000,  0x0e },
+	{ 39850000, 64400000,  0x06 },
+};
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+
+int get_j16_from_freq (long f)
+{
+    int i;
+    for (i = 0; i < ARRAY_SIZE(fltj16_tbl); ++i) {
+        if ( (f >= fltj16_tbl[i].f1)  &&  (f <= fltj16_tbl[i].f2) )
+            return fltj16_tbl[i].j16;
+    }
+    return -1;
+}
+
 
 void ozy_set_sample_rate(int r) {
     switch(r) {
@@ -767,6 +843,16 @@ void write_ozy_output_buffer_hermes () {
                 ozy_output_buffer[6]=receiver[current_receiver].frequency>>8;
                 ozy_output_buffer[7]=receiver[current_receiver].frequency;
                 receiver[current_receiver].frequency_changed=0;
+                
+                if (j16) {  
+                   //
+                   // update j16 open collector outputs
+                   //
+                   if (current_receiver == 0) {
+                      int x = get_j16_from_freq (receiver[current_receiver].frequency);
+                      if (x >= 0) ozy_set_open_collector_outputs (x);
+                   }
+                }
 
             } else if (mox) {
                 //  C0
@@ -1090,7 +1176,7 @@ void process_bandscope_buffer(unsigned char* buffer) {
 void process_ozy_output_buffer(float *left_output_buffer,float *right_output_buffer,
                                float *left_tx_buffer,float *right_tx_buffer,int mox_state) {
     //unsigned char ozy_samples[1024*8];
-    int j,c;
+    int j;
     short left_rx_sample;
     short right_rx_sample;
     short left_tx_sample;
@@ -1108,7 +1194,7 @@ void process_ozy_output_buffer(float *left_output_buffer,float *right_output_buf
         // process the output 
         // skipping all the samples more that 48 kS/s
         // 
-        for(j=0,c=0;j<BUFFER_SIZE;j+=output_sample_increment) {
+        for(j=0;j<BUFFER_SIZE;j+=output_sample_increment) {
 
             if(mox) {
                 left_rx_sample=0.0;
@@ -1275,3 +1361,9 @@ int  ozy_get_adc_overflow (void)
 {
     return lt2208ADCOverflow;
 }
+
+void ozy_set_j16 (void)
+{
+    j16 = 1;
+}
+
