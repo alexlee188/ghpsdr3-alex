@@ -30,6 +30,8 @@
 #include <QApplication>
 #endif
 
+#include <QCommandLineParser>
+
 #include "UI.h"
 
 #include <stdio.h>
@@ -94,17 +96,32 @@ int main(int argc, char *argv[]) {
 
     qDebug() << "QThread: Main GUI thread : " << app.thread()->currentThread();
 
-    //trying to get the arguments into a list    
-    QStringList args = app.arguments();
+    QCommandLineParser parser;
+    parser.setApplicationDescription("QtRadio");
+    parser.addHelpOption();
 
-    for (int i = 0; i < args.size(); ++i)
-         fprintf (stderr, "%d: %s\n", i,  args.at(i).toLocal8Bit().constData() );
-     
-    QString srv("");
+    // the server option
+    QCommandLineOption serverAddressOption(QStringList() << "s" << "server-address",
+            "Connect to server SERVER_ADDRESS, default none.",
+            "SERVER_ADDRESS", "");
+    parser.addOption(serverAddressOption);
 
-    if ( args.size() >1 ) srv = args.at(1) ;
+    // the address option
+    QCommandLineOption rigctlPortOption(QStringList() << "r" << "rigctl-port",
+            "Listen on port RIGCTL_PORT for rigctl clients, default "+
+            QString::number(RigCtlServer::RIGCTL_PORT)+".",
+            "RIGCTL_PORT", QString::number(RigCtlServer::RIGCTL_PORT));
+    parser.addOption(rigctlPortOption);
+
+    // Process the actual command line arguments given by the user
+    parser.process(app);
+
+    // provide some default values
+    QString srv((parser.isSet(serverAddressOption))?parser.value(serverAddressOption):"");
+    QString rigctl((parser.isSet(rigctlPortOption))?parser.value(rigctlPortOption):QString::number(RigCtlServer::RIGCTL_PORT));
+
     // create and show your widgets here
-    UI widget(srv);
+    UI widget(srv, rigctl.toUShort());
 
     widget.show();
     return app.exec();

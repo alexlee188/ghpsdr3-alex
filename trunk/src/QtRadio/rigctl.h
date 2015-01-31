@@ -5,7 +5,6 @@
 #include <QtNetwork/QTcpServer>
 #include <QtNetwork/QTcpSocket>
 
-
 class UI;
 
 class RigCtlSocket : public QObject {
@@ -28,7 +27,8 @@ class RigCtlServer : public QObject {
         Q_OBJECT
 
         public:
-                RigCtlServer(QObject *parent = 0, UI *main = 0);
+                RigCtlServer(QObject *parent = 0, UI *main = 0, unsigned short rigctl_port = RIGCTL_PORT);
+                static const unsigned short RIGCTL_PORT;
 
         public slots:
                 void newConnection(void);
