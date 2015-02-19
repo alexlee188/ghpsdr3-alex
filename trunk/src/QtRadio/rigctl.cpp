@@ -116,8 +116,20 @@ void RigCtlSocket::readyRead() {
             out << "0" << "\n";
             output = true;
         } else if (command[0] == 's') { // get_split_vfo
+            // simple "we don't do split" response
+
+            // TODO - if split is selected then VFOS will be returned
+            // which is invalid. This needs to be '1\n<Tx-VFO>' if split is
+            // enabled and the Tx-VFO probably needs to be VFOB
             out << "0" << "\n";
-           //out << main->rigctlGetVFO().toAscii() << "\n";
+            // if split is to be supported then this needs to be the
+            // Tx VFO and other split functions will probably need to
+            // be implemented
+#if QT_VERSION >= 0x050000
+            out << main->rigctlGetVFO().toUtf8() << "\n";
+#else
+            out << main->rigctlGetVFO().toAscii() << "\n";
+#endif
             output = true;
         } else if (command[0] == 'T') { // set_ptt  no tx yet but this keeps grig and fldigi happy
             int enabled = command.mid(space + 1).toInt();
