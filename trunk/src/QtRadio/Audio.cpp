@@ -45,8 +45,9 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+#include <codec2/codec2.h>
 #include "Audio.h"
-#include "codec2.h"
+
 
 
 Audio_playback::Audio_playback()

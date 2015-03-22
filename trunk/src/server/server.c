@@ -72,6 +72,7 @@ static struct option long_options[] = {
     {"fpga",required_argument,0,16},
     {"ozyhex",required_argument,0,17},
     {"hermes",required_argument,0,18},
+    {"j16",no_argument,0,19},
     {0,0,0,0},
 
 };
@@ -266,6 +267,9 @@ fprintf(stderr,"metisip=%s\n",metisip);
                 }
                 break;
 
+            case 19: // j16 flag
+                ozy_set_j16();
+                break;
 
             default:
                 fprintf(stderr,"Usage: \n");
@@ -284,6 +288,7 @@ fprintf(stderr,"metisip=%s\n",metisip);
                 fprintf(stderr,"         --fpga <file name>\n");                
                 fprintf(stderr,"         --ozyhex <file name>\n");
                 fprintf(stderr,"         --hermes <power 0-255>\n");
+                fprintf(stderr,"         --j16\n");
                 exit(1);
                 break;
                

@@ -36,6 +36,7 @@
 #include <QTimer>
 #include <QThread>
 #include <ortp/ortp.h>
+#include <codec2/codec2.h>
 #include "UI.h"
 #include "About.h"
 #include "Configure.h"
@@ -57,20 +58,19 @@
 #include "Meter.h"
 #include "Panadapter.h"
 #include "smeter.h"
-#include "codec2.h"
 #include "servers.h"
 #include "ctl.h"
 #include "powermate.h"
 #include "Frequency.h"
 #include "EqualizerDialog.h"
 
-UI::UI(const QString server) {
+UI::UI(const QString server, unsigned short rigctl_port) {
 
     widget.setupUi(this);
     servers = 0;
     pHwDlg = 0;
     meter = -121;
-    initRigCtl();
+    initRigCtl(rigctl_port);
     fprintf(stderr, "rigctl: Calling init\n");
     servername = "Unknown";
     configure.thisuser = "None";
@@ -2439,9 +2439,9 @@ void UI::printStatusBar(QString message)
     lastFreq = frequency;
 }
 
-void UI::initRigCtl ()
+void UI::initRigCtl(unsigned short rigctl_port)
 {
-    rigCtl = new RigCtlServer ( this, this );
+    rigCtl = new RigCtlServer ( this, this, rigctl_port );
 }
 
 long long UI::rigctlGetFreq()

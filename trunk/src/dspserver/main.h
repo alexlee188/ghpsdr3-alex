@@ -36,6 +36,7 @@ struct dspserver_config {
     int offset;
     char share_config_file[MAXPATHLEN];
     char server_address[256];
+    char dspserver_address[256];
     int thread_debug;
     int no_correct_iq;
 };

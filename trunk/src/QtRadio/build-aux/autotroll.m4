@@ -237,28 +237,37 @@ dnl Memo: AC_ARG_WITH(package, help-string, [if-given], [if-not-given])
   QT_ADDITIONAL_INCLUDE_PATH=""
   if test x"$QT_VM" = x5; then
     QT_ADDITIONAL_LDFLAG="-lQt5Multimedia"
+    echo "QT version 5 detected (via qmake): adding Qt5Multimedia library"
   else
     QT_ADDITIONAL_LDFLAG="-lQtMultimedia"
   fi
 
-  # if there is a suspicious QtMultimediaKit (sibling of the standard Qt include path)
-  # we are hit an Ubuntu binary package (11.04)
   #
-  if test -f "$QT_INSTALL_HEADERS_UP/QtMultimediaKit/QAudioFormat"; then
+  # if there is a suspicious QtMultimediaKit (sibling of the standard Qt include path)
+  # we have hit an Ubuntu binary package (11.04)
+  #
+  if test -f "/usr/include/QtMultimediaKit/QAudioFormat"; then
+      QT_ADDITIONAL_INCLUDE_PATH="-I/usr/include/QtMultimediaKit/"
+      QT_ADDITIONAL_LDFLAG="-lQt5Multimedia"
+      if test -f "/usr/include/QtMobility/qmobilityglobal.h"; then
+         QT_ADDITIONAL_INCLUDE_PATH="$QT_ADDITIONAL_INCLUDE_PATH -I/usr/include/QtMobility/"
+      fi
+      echo "QT /usr/include/QtMultimediaKit/QAudioFormat found: adding Qt5Multimedia library"
+  elif test -f "$QT_INSTALL_HEADERS_UP/QtMultimediaKit/QAudioFormat"; then
       QT_ADDITIONAL_INCLUDE_PATH="-I$QT_INSTALL_HEADERS_UP/QtMultimediaKit/"
       QT_ADDITIONAL_LDFLAG="-lQtMultimediaKit"
+      echo "QT $QT_INSTALL_HEADERS_UP/QtMultimediaKit/QAudioFormat found (via QT_INSTALL_HEADERS_UP): adding QtMultimediaKit library"
   else
       QT_ADDITIONAL_INCLUDE_PATH="-I$QT_INSTALL_HEADERS/QtMultimedia/"
   fi
   if test -f "$QT_INSTALL_HEADERS_UP/QtMobility/qmobilityglobal.h"; then
       QT_ADDITIONAL_INCLUDE_PATH="$QT_ADDITIONAL_INCLUDE_PATH -I$QT_INSTALL_HEADERS_UP/QtMobility/"
       QT_ADDITIONAL_LDFLAG="-lQtMultimediaKit"
+      echo "QT $QT_INSTALL_HEADERS_UP/QtMobility/qmobilityglobal.h found: adding QtMultimediaKit library"
   fi
 
   AC_SUBST([QT_ADDITIONAL_INCLUDE_PATH])
   AC_SUBST([QT_ADDITIONAL_LDFLAG])
-
-
 
 
   # Get ready to build a test-app with Qt.
@@ -517,7 +526,7 @@ instead" >&AS_MESSAGE_LOG_FD
 
   # Find the INCPATH of Qt.
   AC_CACHE_CHECK([for the INCPATH to use with Qt], [at_cv_env_QT_INCPATH],
-  [at_cv_env_QT_INCPATH=`sed "/^INCPATH@<:@^A-Z=@:>@*=/!d;$qt_sed_filter" $at_mfile`])
+  [at_cv_env_QT_INCPATH=`sed "/^INCPATH@<:@^A-Z=@:>@*=/!d;$qt_sed_filter;s/isystem /I/g" $at_mfile`])
   AC_SUBST([QT_INCPATH], [$at_cv_env_QT_INCPATH])
 
   AC_SUBST([QT_CPPFLAGS], ["$at_cv_env_QT_DEFINES $at_cv_env_QT_INCPATH"])
