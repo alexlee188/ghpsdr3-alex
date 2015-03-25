@@ -458,7 +458,7 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
         sem_post(&spectrum_semaphore);
         sem_wait(&bufferevent_semaphore);
         TAILQ_FOREACH(item, &Client_list, entries){
-            //sem_post(&bufferevent_semaphore);
+            sem_post(&bufferevent_semaphore);
             if(item->fps > 0) {
                 if (item->frame_counter-- <= 1) {
                     char *client_samples=malloc(BUFFER_HEADER_SIZE+item->samples);
@@ -470,7 +470,7 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
                     item->frame_counter = (item->fps == 0) ? 50 : 50 / item->fps;
                 }
             }
-            //sem_wait(&bufferevent_semaphore);
+            sem_wait(&bufferevent_semaphore);
         }
         sem_post(&bufferevent_semaphore);
 
