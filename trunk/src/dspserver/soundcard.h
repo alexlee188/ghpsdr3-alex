@@ -38,6 +38,8 @@
 #define UNSUPPORTED_CARD 7
 #define HPSDR 8
 #define SDR_IQ 9
+#define U7_KX3 10
+#define FCDProPlus 11
 
 int soundcard;
 
