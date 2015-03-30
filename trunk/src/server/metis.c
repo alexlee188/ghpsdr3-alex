@@ -69,6 +69,7 @@ static int discovering;
 
 static char desired_ip_address[256];
 static int rig_with_right_ip = 0;
+static int looking_for_desired_ip = 0;
 
 static unsigned char hw_address[6];
 static long ip_address;
@@ -134,6 +135,7 @@ void metis_discover(char* interface,char* metisip) {
     fprintf(stderr,"Looking for Metis card on interface %s\n",interface);
 
     if(metisip != NULL) {
+        looking_for_desired_ip = 1;
         strcpy(desired_ip_address, metisip); // Save the desired IP address.
         fprintf(stderr, "Looking for metis/hermes at IP address: %s \n", desired_ip_address);
     }
@@ -245,6 +247,12 @@ void metis_start_receive_thread() {
     fprintf(stderr,"Metis starting receive thread\n");
 
     discovering=0;
+    fprintf(stderr,"In metis_start_receive_thread, looking_for_desired_ip is: %d\n",looking_for_desired_ip);
+    fprintf(stderr,"In metis_start_receive_thread, desired_ip_address is: %s\n",desired_ip_address);
+    if((desired_ip_address != NULL) && (looking_for_desired_ip)) { // We haven't found the desired ip device.
+        fprintf(stderr,"No metis type device with that IP address found! \n");
+        exit(1);
+    }
 
     h=gethostbyname(metis_cards[rig_with_right_ip].ip_address);
     if(h==NULL) {
@@ -308,7 +316,7 @@ void* metis_process_discovery_thread(void* arg) {
     struct sockaddr_in addr;
     unsigned int length;
     int bytes_read;
-fprintf(stderr, "in metis_process_discovery_thread.\n");
+    fprintf(stderr, "in metis_process_discovery_thread.\n");
     length=sizeof(addr);
     while(1) {
    	bytes_read=recvfrom(discovery_socket,input_buffer,sizeof(input_buffer),0,(struct sockaddr*)&addr,&length);
@@ -361,7 +369,10 @@ fprintf(stderr, "in metis_process_discovery_thread.\n");
                                        (addr.sin_addr.s_addr>>16)&0xFF,
                                        (addr.sin_addr.s_addr>>24)&0xFF);
                             fprintf(stderr,"Metis IP address %s\n",metis_cards[found].ip_address);
-                            if(strcmp(metis_cards[found].ip_address,desired_ip_address)==0) rig_with_right_ip = found;
+                            if(strcmp(metis_cards[found].ip_address,desired_ip_address)==0) {
+                                looking_for_desired_ip = 0; // We just found it, so so don't look anymore.
+                                rig_with_right_ip = found;
+                            }
                             switch (input_buffer[10]) {
                                case 0x00:
                                   metis_cards[found].board_id = "Metis";

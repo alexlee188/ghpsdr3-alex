@@ -115,7 +115,7 @@ unsigned char iq_samples[SPECTRUM_BUFFER_SIZE];
 
 int lt2208ADCOverflow=0;
 
-int class=0;           // default other
+//int class=0;           // default other
 int lt2208Dither=1;    // default dither on
 int lt2208Random=1;    // default random 0n
 int alexAttenuation=0; // default alex attenuation 0Db

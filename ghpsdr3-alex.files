@@ -638,3 +638,4 @@ trunk/src/widget-server/util.c
 trunk/src/widget-server/util.h
 trunk/src/SpectrumGL.cpp
 trunk/src/SpectrumGL.h
+trunk/src/QtRadio/*.ui
