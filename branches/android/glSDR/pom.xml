@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.v1al</groupId>
 	<artifactId>glSDR</artifactId>
-	<version>42</version>
+	<version>43</version>
 	<packaging>apk</packaging>
 	<name>glSDR</name>
 

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="org.v1al"
-      android:versionCode="42"
-      android:versionName="1.42">
-    <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="8"/>
+      android:versionCode="43"
+      android:versionName="1.43">
+    <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="21"/>
     <uses-feature android:glEsVersion="0x00020000" android:required="true"/>
     <compatible-screens></compatible-screens>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
