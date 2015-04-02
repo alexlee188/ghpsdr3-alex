@@ -2,7 +2,6 @@ package org.v1al;
 
 import android.app.Activity;
 
-
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -51,7 +50,6 @@ import java.util.Vector;
 import android.util.DisplayMetrics;
 import org.bitcoin.protocols.payments.Protos;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Spannable;

@@ -4,13 +4,13 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.v1al</groupId>
 	<artifactId>glSDR</artifactId>
-	<version>42</version>
+	<version>43</version>
 	<packaging>apk</packaging>
 	<name>glSDR</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<platform.version> 2.3.3</platform.version>
+		<platform.version>2.3.3</platform.version>
 		<android.plugin.version>3.8.2</android.plugin.version>
 	</properties>
 	<licenses>
@@ -90,13 +90,13 @@
 				<groupId>com.jayway.maven.plugins.android.generation2</groupId>
 				<artifactId>android-maven-plugin</artifactId>
 				<inherited>true</inherited>
-			<configuration>
- 				<sdk><platform>10</platform></sdk>
-				<release>true</release>
-				<proguard>
-					<skip>true</skip>
+				<configuration>
+	 				<sdk><platform>10</platform></sdk>
+					<release>true</release>
+					<proguard>
+						<skip>true</skip>
 				</proguard>
-			</configuration>
+				</configuration>
 			<executions>
     			<execution>
         			<id>alignApk</id>
