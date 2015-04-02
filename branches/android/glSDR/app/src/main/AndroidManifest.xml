@@ -17,7 +17,7 @@
     <application android:icon="@drawable/icon" android:label="@string/app_name">
         <activity android:name="org.v1al.AHPSDRActivity"
                   android:label="@string/app_name"
-                  android:theme="@style/ThemeOverlay.AppCompat.Dark">
+                  android:theme="@style/Theme.AppCompat">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

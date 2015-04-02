@@ -63,14 +63,12 @@ import android.widget.Toast;
 import android.support.v7.app.ActionBar;
 
 
-public class AHPSDRActivity extends Activity implements SensorEventListener {
+public class AHPSDRActivity extends ActionBarActivity implements SensorEventListener {
 	/** Called when the activity is first created. */
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		setTitle("glSDR: ");
 		
 		DisplayMetrics metrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -1364,14 +1362,14 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 	}
 	
 	private void mySetTitle(){
-		setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
+		//setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
 		mHandler.removeCallbacks(updateTitle);
 		mHandler.postDelayed(updateTitle, 500);
 	}
 	
 	private Runnable updateTitle = new Runnable() {
 		public void run(){
-			setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
+			//setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
 		}
 	};
 	
