@@ -1,7 +1,6 @@
 package org.v1al;
 
 import android.app.Activity;
-
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -330,7 +329,7 @@ public class AHPSDRActivity extends Activity implements SensorEventListener {
 		menu.add(0, MENU_MIC_GAIN, 0, "MIC GAIN");
 		menu.add(0, MENU_MASTER, 0, "MASTER");
 		menu.add(0, MENU_ABOUT, 0, "About");
-		menu.add(0, MENU_DONATE, 0, "Donate Bitcoin");
+		//menu.add(0, MENU_DONATE, 0, "Donate Bitcoin");
 		menu.add(0, MENU_QUIT, 0, "Quit");
 		return true;
 	}

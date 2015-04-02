@@ -1,16 +1,20 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 11
+    compileSdkVersion 21
     buildToolsVersion "21.1.2"
 
     defaultConfig {
         applicationId "org.v1al"
-        minSdkVersion 8
-        targetSdkVersion 8
+        minSdkVersion 11
+        targetSdkVersion 11
         compileOptions {
             sourceCompatibility JavaVersion.VERSION_1_5
             targetCompatibility JavaVersion.VERSION_1_5
+        }
+        dependencies {
+            compile "com.android.support:support-v4:21.0.0"
+            compile "com.android.support:appcompat-v7:21.0.0"
         }
     }
 
