@@ -1362,14 +1362,13 @@ public class AHPSDRActivity extends ActionBarActivity implements SensorEventList
 	}
 	
 	private void mySetTitle(){
-		//setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
 		mHandler.removeCallbacks(updateTitle);
 		mHandler.postDelayed(updateTitle, 500);
 	}
 	
 	private Runnable updateTitle = new Runnable() {
 		public void run(){
-			//setTitle("glSDR: "+server+" (rx"+receiver+") "+qAnswer);
+			setTitle(qAnswer + ": "+server+" (rx"+receiver+")");
 		}
 	};
 	
