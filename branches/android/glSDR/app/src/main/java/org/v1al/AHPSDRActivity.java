@@ -13,6 +13,7 @@ import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -58,6 +59,8 @@ import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import android.support.v7.app.ActionBar;
 
 
 public class AHPSDRActivity extends Activity implements SensorEventListener {
