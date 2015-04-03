@@ -19,7 +19,7 @@ MERGED from com.android.support:support-v4:21.0.0:15:5
 MERGED from com.android.support:appcompat-v7:21.0.0:15:5
 MERGED from com.android.support:support-v4:21.0.0:15:5
 	android:targetSdkVersion
-		ADDED from AndroidManifest.xml:6:40
+		ADDED from AndroidManifest.xml:6:41
 		INJECTED from AndroidManifest.xml:0:0
 		INJECTED from AndroidManifest.xml:0:0
 	android:minSdkVersion
@@ -67,15 +67,17 @@ activity#org.v1al.AHPSDRActivity
 ADDED from AndroidManifest.xml:18:9
 	android:label
 		ADDED from AndroidManifest.xml:19:19
+	android:theme
+		ADDED from AndroidManifest.xml:20:19
 	android:name
 		ADDED from AndroidManifest.xml:18:19
 intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER
-ADDED from AndroidManifest.xml:20:13
+ADDED from AndroidManifest.xml:21:13
 action#android.intent.action.MAIN
-ADDED from AndroidManifest.xml:21:17
-	android:name
-		ADDED from AndroidManifest.xml:21:25
-category#android.intent.category.LAUNCHER
 ADDED from AndroidManifest.xml:22:17
 	android:name
-		ADDED from AndroidManifest.xml:22:27
+		ADDED from AndroidManifest.xml:22:25
+category#android.intent.category.LAUNCHER
+ADDED from AndroidManifest.xml:23:17
+	android:name
+		ADDED from AndroidManifest.xml:23:27
