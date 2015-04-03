@@ -93,3 +93,4 @@ branches/android/aHPSDR/gen/*
 branches/java/jmonitor/build/
 branches/java/jmonitor/dist/
 branches/java/jmonitor/nbproject/private/*
+branches/android/glSDR/app/build/*
