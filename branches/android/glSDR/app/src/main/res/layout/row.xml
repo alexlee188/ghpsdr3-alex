@@ -16,5 +16,6 @@
 		android:layout_width="fill_parent"
 		android:layout_height="match_parent"
 		android:background="#ffffffff"
+		android:textColorHint="@color/text_white_background"
 		android:gravity="center_vertical" />
 </LinearLayout>
