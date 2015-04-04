@@ -12,10 +12,9 @@
 		android:id="@+id/selection"
 		android:textStyle="normal"
         android:textSize="@dimen/abc_text_size_menu_material"
-        android:textColor="@android:color/black"
 		android:layout_width="fill_parent"
 		android:layout_height="match_parent"
 		android:background="#ffffffff"
-		android:textColorHint="@color/text_white_background"
+		android:textColor="@color/text_white_background"
 		android:gravity="center_vertical" />
 </LinearLayout>
