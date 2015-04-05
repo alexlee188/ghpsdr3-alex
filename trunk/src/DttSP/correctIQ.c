@@ -73,9 +73,17 @@ correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan)
 {
 	int i;
 	REAL doit;
-	if (IQdoit == 0) return;
+	if (IQdoit == 0) { // if IQ Correction checkbox in client UI is disabled
+	    if (!isTX){    // and in Rx, do manual IQ correction
+		for (i = 0; i < CXBhave (sigbuf); i++){
+			CXBimag (sigbuf, i) += iq->phase * CXBreal (sigbuf, i);
+			CXBreal (sigbuf, i) *= iq->gain;
+		}
+	    }
+	    return;	// in Tx, NO manual IQ correction
+	}
 	if (subchan == 0) doit = iq->mu;
-	else doit = 0;
+	else doit = iq->mu;	// also get auto IQ correction in sub rx
 	if(!isTX)
 	{
 
