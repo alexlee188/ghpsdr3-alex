@@ -51,7 +51,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>4</number>
    </property>
    <widget class="QWidget" name="Server">
     <attribute name="title">
@@ -1359,12 +1359,18 @@
          <rect>
           <x>95</x>
           <y>46</y>
-          <width>62</width>
+          <width>71</width>
           <height>23</height>
          </rect>
         </property>
+        <property name="decimals">
+         <number>3</number>
+        </property>
         <property name="minimum">
          <double>-99.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.001000000000000</double>
         </property>
        </widget>
        <widget class="QLabel" name="label_38">
@@ -1388,12 +1394,18 @@
          <rect>
           <x>95</x>
           <y>73</y>
-          <width>62</width>
+          <width>71</width>
           <height>23</height>
          </rect>
         </property>
+        <property name="decimals">
+         <number>3</number>
+        </property>
         <property name="minimum">
          <double>-99.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.001000000000000</double>
         </property>
        </widget>
        <widget class="QLabel" name="label_39">

@@ -92,7 +92,6 @@ Configure::Configure() {
     widget.anfLeakSpinBox->setValue(1);
     widget.nbThresholdSpinBox->setValue(20);
     widget.sdromThresholdSpinBox->setValue(20);
-
     widget.ifFrequencyLineEdit->setText("28000000");
     //set up userpass
     QStringList userlist;
@@ -353,15 +352,15 @@ void Configure::loadSettings(QSettings* settings) {
     settings->endGroup();
 
     settings->beginGroup("TxIQimage");  //KD0OSS
-    if (settings->contains("TxIQPhaseCorrect")) widget.txIQPhaseSpinBox->setValue(settings->value("TxIQPhaseCorrect",0).toInt());  //KD0OSS
-    if (settings->contains("TxIQGainCorrect")) widget.txIQGainSpinBox->setValue(settings->value("TxIQGainCorrect",0).toInt());  //KD0OSS
+    if (settings->contains("TxIQPhaseCorrect")) widget.txIQPhaseSpinBox->setValue(settings->value("TxIQPhaseCorrect",0).toDouble());  //KD0OSS
+    if (settings->contains("TxIQGainCorrect")) widget.txIQGainSpinBox->setValue(settings->value("TxIQGainCorrect",0).toDouble());  //KD0OSS
     settings->endGroup();
 
     settings->beginGroup("RxIQimage");
     widget.RxIQcheckBox->setChecked(settings->value("RxIQon/off",TRUE).toBool());
     widget.RxIQspinBox->setValue(settings->value("RxIQmu",25).toInt());
-    widget.rxIQPhaseSpinBox->setValue(settings->value("RxIQPhaseCorrect",0).toInt());  //KD0OSS
-    widget.rxIQGainSpinBox->setValue(settings->value("RxIQGainCorrect",0).toInt());  //KD0OSS
+    widget.rxIQPhaseSpinBox->setValue(settings->value("RxIQPhaseCorrect",0).toDouble());  //KD0OSS
+    widget.rxIQGainSpinBox->setValue(settings->value("RxIQGainCorrect",0).toDouble());  //KD0OSS
     settings->endGroup();
 
     settings->beginGroup("UserPass");
