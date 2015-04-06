@@ -66,27 +66,26 @@ delCorrectIQ (IQ iq)
 	safefree ((char *) iq);
 }
 
-int IQdoit = 1;
+int IQdoit = 1;		// default enable for Rx
+int RXIQ_method = 1;	// 0 = manual, 1 = automatic
+int TXIQdoit = 0;	// default disable for Tx
 
 void
 correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan)
 {
 	int i;
 	REAL doit;
-	if (IQdoit == 0) { // if IQ Correction checkbox in client UI is disabled
-	    if (!isTX){    // and in Rx, do manual IQ correction
-		for (i = 0; i < CXBhave (sigbuf); i++){
+	if (!isTX && (IQdoit == 1) && (RXIQ_method == 0)) {	// manual Rx IQ correction
+	    for (i = 0; i < CXBhave (sigbuf); i++){
 			CXBimag (sigbuf, i) += iq->phase * CXBreal (sigbuf, i);
 			CXBreal (sigbuf, i) *= iq->gain;
-		}
 	    }
-	    return;	// in Tx, NO manual IQ correction
+	    return;
 	}
-	if (subchan == 0) doit = iq->mu;
-	else doit = iq->mu;	// also get auto IQ correction in sub rx
-	if(!isTX)
-	{
 
+	else if(!isTX && (IQdoit == 1) && (RXIQ_method == 1)) 	// automatic Rx IQ correction
+	{
+		doit = iq->mu;
 		// if (subchan == 0) // removed so that sub rx's will get IQ correction
 		switch (iq->wbir_state) {
 			case FastAdapt:
@@ -111,7 +110,7 @@ correctIQ (CXB sigbuf, IQ iq, BOOLEAN isTX, int subchan)
 		}
 		//fprintf(stderr, "w1 real: %g, w1 imag: %g\n", iq->w[1].re, iq->w[1].im); fflush(stderr); 
 	}
-	else
+	else if (isTX && (TXIQdoit == 1))	// TX and TX IQ correction enabled
 	{
 		for (i = 0; i < CXBhave (sigbuf); i++)
 		{

@@ -98,6 +98,7 @@ public:
     QString thisuser;
     QString thispass;
     bool getRxIQcheckboxState();
+    bool getTxIQcheckboxState();
     double getRxIQspinBoxValue();
     int getCwPitch();
     bool getRxIQdivCheckBoxState();
@@ -155,6 +156,8 @@ signals:
     void rxIQPhaseChanged(double arg1); //KD0OSS
     void rxIQGainChanged(double arg1); //KD0OSS
     void RxIQcheckChanged(bool state);
+    void RxIQmethodChanged(bool state);
+    void TxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
     void spinBox_cwPitchChanged(int pitch);
     void avgSpinChanged(int value);
@@ -261,6 +264,10 @@ private slots:
     void on_MicEncodingComboBox_currentIndexChanged(int index);
 
     void on_avgSpinBox_valueChanged(int arg1);
+
+    void on_txIQCheckBox_toggled(bool checked);
+
+    void on_RXIQmethodcheckBox_toggled(bool checked);
 
 private:
     Ui::Configure widget;

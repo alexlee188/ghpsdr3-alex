@@ -206,6 +206,8 @@ extern void SetTXLevelerHang (unsigned int thread, int decay);
 extern void SetTXLevelerTop (unsigned int thread, double maxgain);
 //extern float CalculateTXMeter(int thread,unsigned int subrx);
 extern void SetCorrectIQEnable(int setit);
+extern void SetCorrectTXIQEnable(int setit);
+extern void SetCorrectIQMethod(int setit);
 extern void SetCorrectRXIQMu (unsigned int thread, unsigned int subrx, double mu);
 
 // Following lines added by KD0OSS

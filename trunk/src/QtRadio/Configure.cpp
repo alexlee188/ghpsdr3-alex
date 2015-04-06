@@ -352,12 +352,14 @@ void Configure::loadSettings(QSettings* settings) {
     settings->endGroup();
 
     settings->beginGroup("TxIQimage");  //KD0OSS
+    if (settings->contains("TxIQon/off")) widget.txIQCheckBox->setChecked(settings->value("TxIQon/off",FALSE).toBool());
     if (settings->contains("TxIQPhaseCorrect")) widget.txIQPhaseSpinBox->setValue(settings->value("TxIQPhaseCorrect",0).toDouble());  //KD0OSS
     if (settings->contains("TxIQGainCorrect")) widget.txIQGainSpinBox->setValue(settings->value("TxIQGainCorrect",0).toDouble());  //KD0OSS
     settings->endGroup();
 
     settings->beginGroup("RxIQimage");
     widget.RxIQcheckBox->setChecked(settings->value("RxIQon/off",TRUE).toBool());
+    widget.RXIQmethodcheckBox->setChecked(settings->value("RxIQmethod",TRUE).toBool());
     widget.RxIQspinBox->setValue(settings->value("RxIQmu",25).toInt());
     widget.rxIQPhaseSpinBox->setValue(settings->value("RxIQPhaseCorrect",0).toDouble());  //KD0OSS
     widget.rxIQGainSpinBox->setValue(settings->value("RxIQGainCorrect",0).toDouble());  //KD0OSS
@@ -469,11 +471,13 @@ void Configure::saveSettings(QSettings* settings) {
     settings->setValue("txDCBlock",widget.txDCBlockCheckBox->checkState());  //KD0OSS
     settings->endGroup();
     settings->beginGroup("TxIQimage"); // KD0OSS
+    settings->setValue("TxIQon/off",widget.txIQCheckBox->checkState());
     settings->setValue("TxIQPhaseCorrect",widget.txIQPhaseSpinBox->value());
     settings->setValue("TxIQGainCorrect",widget.txIQGainSpinBox->value());
     settings->endGroup();
     settings->beginGroup("RxIQimage");
     settings->setValue("RxIQon/off",widget.RxIQcheckBox->checkState());
+    settings->setValue("RxIQmethod",widget.RXIQmethodcheckBox->checkState());
     settings->setValue("RxIQmu",widget.RxIQspinBox->value());
     settings->setValue("RxIQPhaseCorrect",widget.rxIQPhaseSpinBox->value());  //KD0OSS
     settings->setValue("RxIQGainCorrect",widget.rxIQGainSpinBox->value());  //KD0OSS
@@ -1015,6 +1019,10 @@ bool Configure::getRxIQcheckboxState()
     return widget.RxIQcheckBox->isChecked();
 }
 
+bool Configure::getTxIQcheckboxState(){
+    return widget.txIQCheckBox->isChecked();
+}
+
 double Configure::getRxIQspinBoxValue()
 {
     return widget.RxIQspinBox->value();
@@ -1161,3 +1169,13 @@ void Configure::onAlcHangChanged(int arg1)
     emit alcHangChanged(arg1);
 }
 
+
+void Configure::on_txIQCheckBox_toggled(bool checked)
+{
+        emit TxIQcheckChanged(checked);
+}
+
+void Configure::on_RXIQmethodcheckBox_toggled(bool checked)
+{
+    emit RxIQmethodChanged(checked);
+}
