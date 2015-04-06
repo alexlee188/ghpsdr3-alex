@@ -537,6 +537,7 @@ public class Connection extends Thread {
 	public void setIQCorrection(boolean state) {
 		sendCommand("RxIQmuVal 0.1");
 		sendCommand("setIQEnable " + (state ? "true" : "false"));
+		sendCommand("setIQmethod true"); // set to automatic
 	}
 
 	public void setRXDCBlock(boolean state){

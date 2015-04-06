@@ -10,11 +10,11 @@
 		android:src="@drawable/blue"/>
 	<TextView
 		android:id="@+id/selection"
-		android:textStyle="bold"
-        android:textSize="25dp"
-        android:textColor="@android:color/secondary_text_dark"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="5dp"
+		android:textStyle="normal"
+        android:textSize="@dimen/abc_text_size_menu_material"
 		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"/>
+		android:layout_height="match_parent"
+		android:background="#ffffffff"
+		android:textColor="@color/text_white_background"
+		android:gravity="center_vertical" />
 </LinearLayout><!-- From: file:/home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/res/layout/row.xml -->

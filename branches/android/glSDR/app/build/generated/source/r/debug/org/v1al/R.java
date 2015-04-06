@@ -1202,6 +1202,7 @@ containing a value of this type.
         public static final int secondary_text_disabled_material_light=0x7f07002e;
         public static final int switch_thumb_normal_material_dark=0x7f07002f;
         public static final int switch_thumb_normal_material_light=0x7f070030;
+        public static final int text_white_background=0x7f07003a;
     }
     public static final class dimen {
         public static final int abc_action_bar_default_height_material=0x7f080000;
