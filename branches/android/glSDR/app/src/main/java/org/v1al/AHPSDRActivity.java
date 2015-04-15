@@ -351,7 +351,7 @@ public class AHPSDRActivity extends ActionBarActivity implements SensorEventList
 		switch (id){
 			case MENU_SERVERS:
 				try { 
-		            URL updateURL = new URL("http://qtradio.napan.ca/qtradio/qtradio.pl"); 
+		            URL updateURL = new URL("http://napan.com/qtradio/qtradio.pl");
 		            URLConnection conn = updateURL.openConnection(); 
 		            conn.setUseCaches(false);
 		            InputStream is = conn.getInputStream(); 
