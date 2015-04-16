@@ -1332,7 +1332,7 @@ public class AHPSDRActivity extends ActionBarActivity implements SensorEventList
 		};
 		connection.start();
 		connection.sendCommand("q-master");
-	    connection.sendCommand("setClient glSDR(47)");
+	    connection.sendCommand("setClient glSDR(48)");
 		connection.setFrequency(frequency);
 		connection.setMode(mode);
 		connection.setBand(band);
