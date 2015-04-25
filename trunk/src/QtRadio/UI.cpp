@@ -2422,7 +2422,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  21 May 2014"); // KD0OSS  Fixed Qt version format
+                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  24 Apr 2015"); // KD0OSS  Fixed Qt version format
     lastmessage = message;
 }
 

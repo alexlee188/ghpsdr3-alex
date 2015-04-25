@@ -68,7 +68,7 @@ void Servers::on_closebutton_clicked()
 void Servers::refreshList()
 {
    ui->treelist->clear();
-   QUrl url("http://qtradio.napan.ca/qtradio/qtradiolist.pl");
+   QUrl url("http://napan.com/qtradio/qtradiolist.pl");
    QNetworkReply* reply = nam->get(QNetworkRequest(url));
 }
 
