@@ -72,7 +72,7 @@ void KeypadDialog::commitFrequency() {
 
 void KeypadDialog::clicked(QAbstractButton* button) {
     qDebug()<<"KeypadDialog::clicked "<<button->text();
-    if(button->text()=="&OK") {
+    if((button->text()=="&OK") || (button->text()=="&OK")){
         commitFrequency();
     } else if(button->text()=="Reset") {
         frequency="";
