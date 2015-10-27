@@ -1,8 +1,8 @@
 bin_PROGRAMS = sdr1000
 AUTOMAKE_OPTIONS = subdir-objects 
 
-sdr1000_CFLAGS = -O3 -Wall -I./src/common -I./src/linux -I./src/linux/usb -I./server -Wno-unused-function $(THREAD_DEBUG_CFLAGS) @SIMD_FLAGS@
-sdr1000_CPPFLAGS = -O3 -Wall -I./src/common -I./src/linux -I./src/linux/usb -I./server -Wno-unused-function $(THREAD_DEBUG_CFLAGS) @SIMD_FLAGS@
+sdr1000_CFLAGS = -O3 -Wall -I$(srcdir)/src/common -I$(srcdir)/src/linux -I$(srcdir)/src/linux/usb -I$(srcdir)/server -Wno-unused-function $(THREAD_DEBUG_CFLAGS) @SIMD_FLAGS@
+sdr1000_CPPFLAGS = -O3 -Wall -I$(srcdir)/src/common -I$(srcdir)/src/linux -I$(srcdir)/src/linux/usb -I$(srcdir)/server -Wno-unused-function $(THREAD_DEBUG_CFLAGS) @SIMD_FLAGS@
 
 sdr1000_SOURCES = server/client.c \
  server/client.h \
@@ -35,3 +35,6 @@ sdr1000_SOURCES = server/client.c \
  src/linux/usb/sdr1kusb.cpp \
  src/linux/usb/sdr1kusb.h \
  src/linux/usb/usb.h
+ 
+ dist_pkgdata_DATA = $(srcdir)/src/linux/usb/firmware.cpp
+
