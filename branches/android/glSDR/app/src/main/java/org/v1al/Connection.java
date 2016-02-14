@@ -54,40 +54,43 @@ public class Connection extends Thread {
 				AudioTrack.MODE_STREAM);
 		
 		    audioTrack.play();
+
+			try {
 		    
-		    int N = 10 * AudioRecord.getMinBufferSize(8000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
-		    if (N < micBufferSize * 40) N = micBufferSize * 40; // 40 * 58 = 2320
-		    
-		    recorder = new AudioRecord(AudioSource.MIC, 8000,
-		    				AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, N);
-		    
-		    recorder.setPositionNotificationPeriod(micBufferSize * nMicBuffers);
-		    final int finalMicBufferSize = micBufferSize;
-		    
-		    OnRecordPositionUpdateListener positionUpdater = new OnRecordPositionUpdateListener () {
-		    	public void onPeriodicNotification(AudioRecord recorder){
-		    		for (int j = 0; j < nMicBuffers; j++){
-			    		short[] micData = new short[micBufferSize];
-			    		recorder.read(micData, 0, finalMicBufferSize);
-			    		if (allowTx & MOX){
-				    		byte[] micEncodedData = new byte[micBufferSize];
-				    		for (int i = 0; i < micBufferSize; i++){
-				    			micEncodedData[i] = aLawEncode[(micData[i] << micGain) & 0xFFFF];
-				    		}
-				    		sendAudio(micEncodedData);
-				    	}
-		    		}
-		    	}
-		    	
-		    	public void onMarkerReached(AudioRecord recorder){
-		    	}
-		    	
-		    };
+				int N = 10 * AudioRecord.getMinBufferSize(8000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
+				if (N < micBufferSize * 40) N = micBufferSize * 40; // 40 * 58 = 2320
+
+				recorder = new AudioRecord(AudioSource.MIC, 8000,
+								AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, N);
+
+				recorder.setPositionNotificationPeriod(micBufferSize * nMicBuffers);
+				final int finalMicBufferSize = micBufferSize;
+
+				OnRecordPositionUpdateListener positionUpdater = new OnRecordPositionUpdateListener () {
+					public void onPeriodicNotification(AudioRecord recorder) {
+						for (int j = 0; j < nMicBuffers; j++) {
+							short[] micData = new short[micBufferSize];
+							recorder.read(micData, 0, finalMicBufferSize);
+							if (allowTx & MOX) {
+								byte[] micEncodedData = new byte[micBufferSize];
+								for (int i = 0; i < micBufferSize; i++) {
+									micEncodedData[i] = aLawEncode[(micData[i] << micGain) & 0xFFFF];
+								}
+								sendAudio(micEncodedData);
+							}
+						}
+					}
+					public void onMarkerReached(AudioRecord recorder) {
+					}
+				};
 		    recorder.setRecordPositionUpdateListener(positionUpdater);
 		    recorder.startRecording();
 		    short[] buffer = new short[micBufferSize*nMicBuffers];
 		    recorder.read(buffer, 0, micBufferSize*nMicBuffers);  // initiate the first read
-		    
+
+			} catch (Exception e){
+				// unable to set up MIC audio recording.  Maybe MIC absent
+			}
 		    
 		} catch (Exception e) {
 			Log.e("Connection", "Error creating socket for " + server + ":"
