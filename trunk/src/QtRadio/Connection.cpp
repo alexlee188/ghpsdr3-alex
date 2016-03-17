@@ -485,7 +485,7 @@ qDebug() << "Connection emit remoteRTP "<<host<<":"<<port;
 
                 //answer.prepend("  Question/Answer ");
                 //emit printStatusBar(answer);
-                qDebug() << "ANSWER bytes "<< bytes <<" answer "<< ans;
+                //qDebug() << "ANSWER bytes "<< bytes <<" answer "<< ans;
                 free(ans);
                 bytes=0;
                 state=READ_HEADER_TYPE;
