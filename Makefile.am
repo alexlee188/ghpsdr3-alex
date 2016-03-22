@@ -5,7 +5,8 @@ SUBDIRS = trunk/src/softrock trunk/src/DttSP trunk/src/dspserver  \
           trunk/src/pylauncher trunk/src/hiqsdr trunk/src/sdriq   \
           trunk/src/sdr1000                                       \
           @MAKE_QTRADIO@                                          \
-          @MAKE_PERSEUS@ @MAKE_USRP@ @MAKE_RTLSDR@
+          @MAKE_PERSEUS@ @MAKE_USRP@ @MAKE_RTLSDR@ \
+	  @MAKE_BACKEND@ 
 
 
 
