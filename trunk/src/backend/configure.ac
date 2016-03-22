@@ -8,22 +8,16 @@ AM_INIT_AUTOMAKE([foreign -Wall])
 
 # Look for an expect interpreter.
 AC_CHECK_FILE([/usr/bin/expect],[have_expect=yes],[have_expect=no])
-AC_PROG_INSTALL
 
-if test "x${have_expect}" = xno; then
-    AC_MSG_ERROR([
+if "x$have_expect" = no; then
+	AC_MSG_ERROR([
 -----------------------------------
   The expect interpreter required to run radio-backend.
 -----------------------------------])
-
 fi
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
-
-#
-# check the compiler option really working
-#
-corw=`gcc -Q --help=target -march=native`
 
 echo \
 "-----------------------------------------------------
@@ -31,9 +25,7 @@ echo \
 ${PACKAGE_NAME} Version ${PACKAGE_VERSION}
 
 Prefix: '${prefix}'.
-Now type 'make install'
-
- to install the radio-backend script.
+Now type 'make install' to install the radio-backend script.
 
 -----------------------------------------------------"
 

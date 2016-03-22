@@ -465,6 +465,16 @@ fi
 
 
 #
+# radio-backend installed if expect is installed
+#
+# Look for an expect interpreter.
+AC_CHECK_FILE([/usr/bin/expect],[
+	MAKE_BACKEND=trunk/src/backend
+	AC_CONFIG_SUBDIRS([trunk/src/backend])
+	AC_SUBST([MAKE_BACKEND])
+])
+
+#
 # Subpackage QtRadio is unconditionally compiled
 #
 
