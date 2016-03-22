@@ -1,0 +1,6 @@
+This is a Tcl/Tk script that behaves as a UI for the ghpsdr-alex3
+dspserver backend and adds a few bells and whistles.
+
+This requires the following packages on Ubuntu 15.10 and later:
+
+      sudo apt-get install tcl tk tcl-snack tcl-tls

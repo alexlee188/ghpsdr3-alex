@@ -1,0 +1,357 @@
+#!/usr/bin/wish
+
+#
+# implement an alternative to QtRado
+# a user interface to dspserver which doesn't require Qt
+# which allows multiple connections rapidly opening and closing
+# to elicit the crash bug
+#
+
+# from dspserver/buffer.h
+# // g0orx binary header
+# #define BUFFER_HEADER_SIZE 15
+# 
+# // 0     buffer type
+# // 1     header version
+# // 2     header subversion
+# // 3-4   samples length
+# // 5-6   main rx meter
+# // 7-8   sub rx meter
+# // 9-12  sample rate
+# // 13-14 IF         (added in version 2.1)
+# 
+# #define AUDIO_BUFFER_HEADER_SIZE 5
+# 
+# // 0     buffer type
+# // 1     header version
+# // 2     header subversion
+# // 3-4   samples length
+# 
+# #define SPECTRUM_BUFFER     0
+# #define AUDIO_BUFFER        1
+# #define BANDSCOPE_BUFFER    2
+# #define RTP_REPLY_BUFFER    3
+# #define ANSWER_BUFFER    	4
+# 
+# // g0orx binary header
+# #define HEADER_VERSION  2
+# #define HEADER_SUBVERSION  1
+#
+
+# from dspserver/audiostream.h
+
+namespace eval ::audiostream {
+
+    array set encoding { ALAW 0 PCM 1 CODEC2 2 ALAW2 3 }
+
+    array set mic_encoding { ALAW 0 CODEC2 1 }
+
+    set buffer_size 2000
+
+    set config_bufsize 2000;    # Size of the current buffer in samples
+    set config_samplerate 8000;	# Sample rate of the current buffer in samples per second
+    set config_channels 1;	# Channels in the current buffer 1 = mono, 2 = stereo
+    set config_encoding 0;	# Wire encoding for the current buffer
+    set config_mic 0;		# Wire encoding for the mic channel
+
+}
+
+# 
+namespace eval ::chan {}
+
+proc ::chan::connect {id host port} {
+    set chan [socket $host $port]
+    chan configure $chan -blocking 0
+    fileevent $chan readable [list ::chan::reader $id $chan]
+    # fileevent $chan writable [list ::chan::writer $id $chan]
+    return $chan
+}
+
+proc ::chan::disconnect {id chan} {
+    close $chan
+}
+
+proc ::chan::reader {id chan} {
+    if {[eof $chan]} {
+	puts "::chan::reader $id $chan -> eof is true"
+    } else {
+	append ::chan::incoming($id) [read $chan]
+	after idle [list ::chan::decoder $id]
+    }
+}
+proc ::chan::decoder {id} {
+    while {[string length $::chan::incoming($id)] > 0} {
+	set type [string index $::chan::incoming($id) 0]
+	switch $type {
+	    0 {
+		# spectrum buffer
+		puts $::chan::incoming($id);
+	    }
+	    1 {
+		# audio buffer
+		puts $::chan::incoming($id);
+	    }
+	    2 {
+		# bandscope buffer
+		puts $::chan::incoming($id);
+	    }
+	    3 {
+		# rtp reply buffer
+		puts $::chan::incoming($id);
+	    }
+	    4 {
+		# answer buffer
+		set samples [scan [string range $::chan::incoming($id) 1 2] %d]
+		set n [expr {3+$samples}]
+		set answer [string range $::chan::incoming($id) 3 [expr {$n-1}]]
+		set ::chan::incoming($id) [string range $::chan::incoming($id) $n end]
+		puts "answer $samples bytes -> {$answer}"
+	    }
+	    * {
+		puts "invalid buffer type: $type"
+	    }
+	}
+	if {	    0} {
+	    if {[binary scan $::chan::incoming($id) aaaSSSIS type version subversion samples main sub sr lo] != 8} {
+		puts "failed to scan header"
+		return
+	    }
+	    if {$type == 1} {
+		puts "buffer type $type version $version subversion $subversion samples $samples"
+		# audio buffer
+		set n [expr {5+$samples}]
+		if {[string length $::chan::incoming($id)] < $n} {
+		    puts "short audio buffer"
+		    return
+		}
+		set samples [string range $::chan::incoming($id) 5 $n]
+		set ::chan::incoming($id) [string range $::chan::incoming($id) $n end]
+		return;
+	    }
+	    puts "buffer type $type version $version subversion $subversion samples $samples main $main sub $sub sr $sr lo $lo"
+	    set n [expr {15+$samples}]
+	    if {[string length $::chan::incoming($id)] < $n} {
+		puts "short buffer"
+		return
+	    }
+	    set samples [string range $::chan::incoming($id) 15 $n]
+	    set ::chan::incoming($id) [string range $::chan::incoming($id) $n end]
+	}
+    }
+}		
+		
+proc ::chan::writer {id chan} {
+    puts "::chan::writer $id $chan"
+}
+
+set ::host rradio
+set ::port 8000
+array set ::chans {}
+
+proc command-fill {n command} {
+    binary scan $command c* b
+    while {[llength $b] < $n} { lappend b 0 }
+    return [binary format c* $b]
+}
+
+proc command-send {id command} {
+    puts -nonewline $::chans($id) [command-fill 64 $command]
+    flush $::chans($id)
+}
+
+proc start {id} {
+    if {[info exists ::chans($id)]} {
+	error "channel for id $id is already open, $::chans($id)"
+    }
+    set ::chans($id) [::chan::connect $id $::host $::port]
+    command-send $id {q-version}
+    command-send $id {q-loffset}
+    command-send $id {q-protocol3}
+    command-send $id {q-master}
+    command-send $id {q-info}
+    command-send $id {q-server}
+    command-send $id {q-cantx# xxxx xxxx}
+}
+
+proc stop {id} {
+    if { ! [info exists ::chans($id)]} {
+	error "channel for id $id is already closed"
+    }
+    ::chan::disconnect $id $::chans($id)
+    unset ::chans($id)
+}
+
+    
+pack [ttk::frame .host] -side top -fill x -expand true
+pack [ttk::label .host.l -text host] -side left
+pack [ttk::entry .host.e -textvar ::host -width 20] -side left
+pack [ttk::frame .port] -side top -fill x -expand true
+pack [ttk::label .port.l -text port] -side left
+pack [ttk::entry .port.e -textvar ::port -width 20] -side left
+
+foreach i {1 2 3 4 5 6 7 8} {
+    pack [ttk::frame .f$i] -side top -fill x -expand true
+    pack [ttk::button .f$i.start -text "start $i" -command [list start $i]] -side left
+    pack [ttk::button .f$i.stop -text "stop $i" -command [list stop $i]] -side left
+}
+
+
+#
+# commands are all converted to lower case in dspserver/client.c
+# commands that begin with * are directed to the hardware module
+# only a subset of commands are available to the slave clients
+# if command starts with q it's a question
+# 
+#
+# commands sent:
+# Bandscope
+# 'getbandscope %width'
+# Connection
+# 'mic ' followed by microphone samples
+# 'q-master'
+# 'q-version'
+# 'q-loffset'
+# 'q-protocol3'
+# EqualizerDialog
+# "setrx10bdgreq %d %d %d %d %d %d %d %d %d %d %d"
+# "setrx3bdgreq %d %d %d %d"
+# hardware_hermes
+# "*getserial?"
+# "*setattenuator " << state
+# "*alextxrelay " << state
+# "*hermesmicboost " << state
+# "*settxdrive " << state
+# "*settxlineingain " << state
+# "*dither " << ((state==Qt::Checked) ? "on" : "off")
+# "*preamp " << ((state==Qt::Checked) ? "on" : "off")
+# "*random " << ((state==Qt::Checked) ? "on" : "off")
+# hardware_hiqsdr
+# "*getserial?"
+# "*getpreselector? " << n
+# "*getpreampstatus?"
+# "*setattenuator " << state
+# "*selectantenna " << n
+# "*selectpresel " << n
+# "*activatepreamp " << ((state==Qt::Checked) ? 1 : 0)
+# hardware_perseus
+# "*getserial?"
+# "*setattenuator " << state
+# "*dither " << ((state==Qt::Checked) ? "on" : "off")
+# "*preamp " << ((state==Qt::Checked) ? "on" : "off")
+# hardware_rtlsdr
+# "*getserial?"
+# "*setattenuator " << newVal
+# hardware_sdr1000
+# "*setattenuator " << newVal
+# "*setspurreduction " << newVal
+# "*getpaadc? " << channel
+# hardware_sdriq
+# "*getserial?"
+# "*setattenuator " << state
+# Panadaptor
+# "setnotchfilter " << 0 << " " << index << " " << notchFilterBW[notchFilterIndex] << " " << audio_freq
+# "setnotchfilter " << 1 << " " << index << " " << notchFilterBW[notchFilterIndex] << " " << audio_freq
+# "enablenotchfilter " << 0 << " " << index << " " << enable
+# "enablenotchfilter " << 1 << " " << index << " " << enable
+# UI
+# "setFPS " << widget.spectrumView->width() << " " << fps
+# "setClient QtRadio"
+# "q-server"
+# "setFrequency " << frequency
+# "setMode " << band.getMode()
+# "setFilter " << low << " " << high
+# "setEncoding " << audio->get_audio_encoding()
+# "startRTPStream " << local_port << " " << audio->get_audio_encoding() << " " << audio_sample_rate << " " << " " << audio_channels
+# "startAudioStream " << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " " << audio_sample_rate << " " << audio_channels << " " << audioinput->getMicEncoding()
+# "SetPan 0.5"
+# "SetAGC " << agc
+# "setpwsmode " << pwsmode
+# "SetANFVals " << configure.getAnfTaps() << " " << configure.getAnfDelay() << " " << configure.getAnfGain() << " " << configure.getAnfLeak()
+# "SetNRVals " << configure.getNrTaps() << " " << configure.getNrDelay() << " " << configure.getNrGain() << " " << configure.getNrLeak()
+# "SetNBVals " << configure.getNbThreshold()
+# "SetSquelchVal " << squelchValue
+# "SetSquelchState " << (widget.actionSquelchEnable->isChecked()?"on":"off")
+# "SetANF " << (widget.actionANF->isChecked()?"true":"false")
+# "SetNR " << (widget.actionNR->isChecked()?"true":"false")
+# "SetNB " << (widget.actionNB->isChecked()?"true":"false")
+#
+# "setrxdcblock " << configure.getRxDCBlockValue()
+# "settxdcblock " << configure.getTxDCBlockValue()
+# "setrxagcslope " << configure.getRxAGCSlopeValue()
+# "setrxagcmaxgain " << configure.getRxAGCMaxGainValue()
+# "setrxagcattack " << configure.getRxAGCAttackValue()
+# "setrxagcdecay " << configure.getRxAGCDecayValue()
+# "setrxagchang " << configure.getRxAGCHangValue()
+# "setfixedagc " << configure.getRxAGCFixedGainValue()
+# "setrxagchangthreshold " << configure.getRxAGCHangThreshValue()
+# "settxlevelerstate " << configure.getLevelerEnabledValue()
+# "settxlevelermaxgain " << configure.getLevelerMaxGainValue()
+# "settxlevelerattack " << configure.getLevelerAttackValue()
+# "settxlevelerdecay " << configure.getLevelerDecayValue()
+# "settxlevelerhang " << configure.getLevelerHangValue()
+# "setalcstate " << configure.getALCEnabledValue()
+# "settxalcattack " << configure.getALCAttackValue()
+# "settxalcdecay " << configure.getALCDecayValue()
+# "settxalchang " << configure.getALCHangValue()
+#
+# "*hardware?"
+# "getSpectrum " << widget.spectrumView->width()
+# "q-master"
+# "q-info"
+# "q-cantx#" + configure.thisuser
+# "SetSubRXFrequency " << frequency - subRxFrequency
+# "SetSubRX " << subRx
+# "SetSubRXOutputGain " << subRxGain
+# "SetSDROMVals " << threshold
+# "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100 <<" "<< configure.thisuser <<" " << configure.thispass
+# "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100
+# "Mox " << "on " << configure.thisuser <<" " << configure.thispass
+# "Mox " << "on"
+# "Mox " << "off " << configure.thisuser <<" " << configure.thispass
+# "Mox " << "off"
+# "SetIQEnable " << (state ? "true":"false")
+# "SetIQmethod " << (state ? "true":"false")
+# "SetTXIQEnable " << (state ? "true":"false")
+# "RxIQmuVal " << num
+# "rxiqphasecorrectval " << value
+# "rxiqgaincorrectval " << value
+# "txiqphasecorrectval " << value
+# "txiqgaincorrectval " << value
+# "testSlider " << value
+# "testbutton " << (state ? "true":"false")
+# "zoom " << position
+# "setrxdcblock " << state
+# "setrxdcblockgain " << value
+# "settxdcblock " << state
+# "setwindow " << type
+# "setpwsmode " << mode
+# "setfixedagc " << level
+# "setrxgreqcmd " << enable
+# "settxgreqcmd " << enable
+# "setMaster " + configure.thisuser + " " + configure.thispass
+# "setrxagcslope " << value
+# "setrxagcmaxgain " << value
+# "setrxagcattack " << value
+# "setrxagcdecay " << value
+# "setrxagchang " << value
+# "setrxagchangthreshold " << value
+# "setfixedagc " << value
+# "settxlevelerstate " << value
+# "settxlevelermaxgain " << value
+# "settxlevelerattack " << value
+# "settxlevelerdecay " << value
+# "settxlevelerhang " << value
+# "settxalcstate " << value
+# "settxalcdecay " << value
+# "settxalcattack " << value
+# "settxalchang " << value
+##
+##
+##
+# commands allowed to slaves
+#    "getspectrum",
+#    "setclient",
+#    "startaudiostream",
+#    "startrtpstream",
+#    "setfps",
+#    "setmaster",

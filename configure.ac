@@ -463,15 +463,51 @@ if test "x${have_uhd}" = xyes; then
 
 fi
 
+#
+# sdrplay-server built and installed if API lib and header installed
+#
+AC_SEARCH_LIBS([mir_sdr_Init], [mirsdrapi-rsp],[
+   AC_CHECK_HEADERS([ mirsdrapi-rsp.h], [
+     AC_MSG_NOTICE([
+-----------------------------------
+  SDRplay enabled.
+-----------------------------------])  
+     AC_CONFIG_SUBDIRS([trunk/src/sdrplay])
+     MAKE_SDRPLAY=trun/src/sdrplay
+     AC_SUBST([MAKE_SDRPLAY])
+   ])
+])
+
+    
+fi
+
 
 #
 # radio-backend installed if expect is installed
 #
 # Look for an expect interpreter.
 AC_CHECK_FILE([/usr/bin/expect],[
-	MAKE_BACKEND=trunk/src/backend
-	AC_CONFIG_SUBDIRS([trunk/src/backend])
-	AC_SUBST([MAKE_BACKEND])
+     AC_MSG_NOTICE([
+-----------------------------------
+  backend enabled.
+-----------------------------------])  
+     MAKE_BACKEND=trunk/src/backend
+     AC_CONFIG_SUBDIRS([trunk/src/backend])
+     AC_SUBST([MAKE_BACKEND])
+])
+
+#
+# tkradio installed if wish is installed
+#
+# Look for a wish interpreter
+AC_CHECK_FILE([/usr/bin/wish],[
+     AC_MSG_NOTICE([
+-----------------------------------
+  tkradio enabled.
+-----------------------------------])  
+     MAKE_TKRADIO=trunk/src/tkradio
+     AC_CONFIG_SUBDIRS([trunk/src/tkradio])
+     AC_SUBST([MAKE_TKRADIO])
 ])
 
 #
