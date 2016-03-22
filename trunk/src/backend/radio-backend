@@ -1,0 +1,11 @@
+#!/usr/bin/expect -f
+
+puts "starting radio-backend"
+
+## start a dspserver with specified hardware
+## locally or at a specified host
+## optionally backgrounding the dspserver and hardware handler
+## optionally starting qtradio or another frontend locally
+
+proc main {argv} {
+}

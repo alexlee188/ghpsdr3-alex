@@ -1,0 +1,13 @@
+The radio-backend scripts run a variety of backends for the
+ghpsdr3-alex radio dspservers.
+
+It depends on the expect package being installed to function.  Expect
+is an extended version of Tcl which contains commands for managing
+commands which require interaction.  This can be done on Ubuntu with
+the command:
+
+  sudo apt-get install expect
+
+The configure for this directory simply checks if expect can be found,
+the Makefile is not configured, it simply installs the script.
+
