@@ -1,5 +1,5 @@
-The radio-backend scripts run a variety of backends for the
-ghpsdr3-alex radio dspservers.
+The radio-backend allows you to automate running backends and ui's for
+the ghpsdr3-alex radio package.  
 
 A backend server consists of a dspserver process and one or two
 processes to implement the hardware server.  Most hardware servers are
@@ -7,11 +7,15 @@ single programs, like rtlsdr-server or sdrplay-server.  But the
 softrock backend can be configured to require a jack server to handle
 the communication with the sound card.
 
+[--background is not yet implemented]
+
 The backend server is by default started in the foreground, so it
 remains connected to the command line, or it can be backgrounded to
 run as a daemon.  It can be run in a specified directory which
-contains the pkey and cert files required for the dspserver ssl
-transport.  It can be run remotely on another host.
+contains the pkey/cert files required for the dspserver ssl transport.
+It can be run remotely on another host.  It can create log files for
+the programs it runs.  It can automatically create the pkey/cert
+files.
 
 The components of the backend server you want to start are specified
 with the --jack, --hw, and --dsp options.  These take a string
@@ -23,6 +27,10 @@ commands which require interaction.  This can be done on Ubuntu with
 the command:
 
   sudo apt-get install expect
+
+The --key option to build the ssl/tls keys requires openssl:
+
+  sudo apt-get install openssl
 
 The configure for this directory simply checks if expect can be found,
 the Makefile is configured to install the script in the expected bindir.
