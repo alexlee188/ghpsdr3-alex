@@ -57,7 +57,8 @@ proc getopts {opts argv} {
 	    }
 	}
     } error]} {
-	error "$error\nusage: radio-backend options\noptions:\n[join $opts \n]"
+	puts "$error\nusage: radio-backend options\noptions:\n[join $opts \n]"
+	exit 2
     }
 }
     
@@ -71,7 +72,11 @@ proc quote-for-ssh {string} {
     # quote a string so it passes through an eval spawn $command
     # which is a ssh host radio-backend --cmd $string ...
     # and remains a --cmd $string when it's interpreted on the far side
-    return "{\"$string\"}"
+    if {[llength $string] > 1} {
+	return "\"$string\""
+    } else {
+	return $string
+    }
 }
 
 proc strip-returns {string} {
@@ -122,22 +127,26 @@ if {[info exists args(--log)]} {
 
 if {[info exists args(--at)]} {
     # rewrite command to call ssh radio-backend ...
-    # going into the quoting purgatory
     set args(--ssh) {}
-    lappend args(--ssh) $args(--at)
+    lappend args(--ssh) ssh $args(--at) radio-backend
     unset args(--at)
-    foreach opt in {--foreground --background} {
+    # copy to ssh and remove locally
+    foreach opt {--foreground --background --key} {
 	if {[info exists args($opt)]} {
 	    lappend args(--ssh) $opt
 	    unset args($opt)
 	}
     }
-    if {[info exists args(--in)]} {
-	lappend args(--ssh) --in $args(--in)
-    }
-    foreach opt in {--jack --hw --dsp --log} {
+    # copy to ssh but preserve locally
+    foreach opt {--in --log} {
 	if {[info exists args($opt)]} {
 	    lappend args(--ssh) $opt $args($opt)
+	}
+    }
+    # copy to ssh and remove locally
+    foreach opt {--jack --hw --dsp} {
+	if {[info exists args($opt)]} {
+	    lappend args(--ssh) $opt [quote-for-ssh $args($opt)]
 	    unset args($opt)
 	}
     }
