@@ -473,14 +473,10 @@ AC_SEARCH_LIBS([mir_sdr_Init], [mirsdrapi-rsp],[
   SDRplay enabled.
 -----------------------------------])  
      AC_CONFIG_SUBDIRS([trunk/src/sdrplay])
-     MAKE_SDRPLAY=trun/src/sdrplay
+     MAKE_SDRPLAY=trunk/src/sdrplay
      AC_SUBST([MAKE_SDRPLAY])
    ])
 ])
-
-    
-fi
-
 
 #
 # radio-backend installed if expect is installed

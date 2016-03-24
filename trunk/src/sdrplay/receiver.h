@@ -62,21 +62,20 @@ typedef struct _receiver {
     long frequency;
     float input_buffer[BUFFER_SIZE*2];
     float output_buffer[BUFFER_SIZE*2];
+    short *i_buffer;
+    short *q_buffer;
     int samples;
-    //
-    // specific to Hiqsdr 
-    //
+
     SdrPlayConfig cfg;
     int frame_counter;
+
     // Average DC component in samples  
-    //
     float dc_average_i;
     float dc_average_q;
     float dc_sum_i;
     float dc_sum_q;
     int   dc_count;
     int   dc_key_delay;
-
 
 } RECEIVER;
 
@@ -89,9 +88,11 @@ typedef struct _buffer {
     unsigned char data[500];
 } BUFFER;
 
-void init_receivers(RtlSdrConfig *);
+void init_receivers(SdrPlayConfig *);
 const char* attach_receiver(int rx,CLIENT* client);
 const char* detach_receiver(int rx,CLIENT* client);
+void start_receiver (RECEIVER *pRec);
+void stop_receiver (RECEIVER *pRec);
 const char* set_frequency(CLIENT* client,long f);
 const char* set_preamp(CLIENT* client, bool);
 const char* set_dither(CLIENT* client, bool);

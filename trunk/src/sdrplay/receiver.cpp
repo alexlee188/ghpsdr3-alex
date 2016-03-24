@@ -59,6 +59,8 @@ void init_receivers (SdrPlayConfig *pCfg)
         receiver[i].client  = (CLIENT*)NULL;
         receiver[i].samples = 0; 
         receiver[i].cfg = *pCfg;
+	receiver[i].i_buffer = NULL;
+	receiver[i].q_buffer = NULL;
     }
 
     iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
@@ -108,10 +110,7 @@ const char* attach_receiver(int rx, CLIENT* client)
     receiver[rx].dc_count      = 0 ; 
     receiver[rx].dc_key_delay  = 0 ; 
 
-
-
-    //sprintf(response,"%s %d",OK,ozy_get_sample_rate());
-    sprintf(response,"%s %d",OK,CORE_BANDWIDTH);
+    sprintf(response,"OK %d", receiver[rx].cfg.sr);
 
     return response;
 }
@@ -132,12 +131,6 @@ const char* detach_receiver (int rx, CLIENT* client) {
 
     // FIX.ME rec
     //rtlsdr_stop_asynch_input ();
-    int r = rtlsdr_cancel_async(receiver[rx].cfg.rtl);
-    if (r < 0)
-       fprintf(stderr, "WARNING: Failed to cancel async: %d.\n", r);
-    else
-       fprintf(stderr, " %p: Async cancelled\n", receiver[rx].cfg.rtl);
-
 
     client->state=RECEIVER_DETACHED;
     receiver[rx].client = (CLIENT*)NULL;
@@ -159,13 +152,11 @@ const char* set_frequency (CLIENT* client, long frequency) {
 
     fprintf (stderr, "%s: %ld\n", __FUNCTION__, receiver[client->receiver].frequency);
 
-    // FIX.ME rec
-//    rtlsdr_set_frequency (frequency);
-    rtlsdr_set_center_freq (receiver[client->receiver].cfg.rtl, frequency);
+    // FIX.ME rec - may need to switch bands
+    mir_sdr_SetRf(frequency/1.0e6, 1, 0);
 
     return OK;
 }
-
 
 const char* set_preamp (CLIENT* client, bool preamp)
 {
@@ -191,11 +182,12 @@ const char* set_random (CLIENT* client, bool)
 
 const char* set_attenuator (CLIENT* client, int new_level_in_db)
 {
-  // FIX.ME rec
-    int r = rtlsdr_set_tuner_gain(receiver[client->receiver].cfg.rtl, new_level_in_db);
-    if (r < 0) fprintf(stderr, "WARNING: Failed to set tuner gain: %d.\n", r);
-         else
-               fprintf(stderr, "Tuner gain set to %.2f dB.\n", new_level_in_db/10.0);
+    // FIX.ME rec - gain reduction vs gain?
+    int r = mir_sdr_SetGr(new_level_in_db, 1, 0);
+
+    if (r != 0) fprintf(stderr, "WARNING: Failed to set tuner gain: %d.\n", r);
+    else
+               fprintf(stderr, "Tuner gain reduction set to %d dB.\n", new_level_in_db);
     return OK;
 }
 
@@ -252,4 +244,32 @@ void send_IQ_buffer (RECEIVER *pRec) {
         }
     }
 }
+
+void start_receiver(RECEIVER *pRec) {
+  SdrPlayConfig *cfg = &(pRec->cfg);
+  int samplesPerPacket;
+  int r = mir_sdr_Init(cfg->gRdB, cfg->fsMHz, cfg->rfMHz, cfg->bwType, cfg->ifType, &samplesPerPacket);
+  if (r != 0) {
+    printf("mir_sdr_Init returned %d\n", r);
+    exit(1);
+  }
+  if (samplesPerPacket != cfg->samplesPerPacket) {
+    if (pRec->i_buffer != NULL) {
+      free(pRec->i_buffer);
+      free(pRec->q_buffer);
+    }
+    pRec->i_buffer = (short *)malloc(samplesPerPacket * sizeof(short));
+    pRec->q_buffer = (short *)malloc(samplesPerPacket * sizeof(short));
+    cfg->samplesPerPacket = samplesPerPacket;
+  }
+}
+
+void stop_receiver(RECEIVER *pRec) {
+  int r = mir_sdr_Uninit();
+  if (r != 0)
+    fprintf(stderr, "WARNING: Failed to stop: %d.\n", r);
+  else
+    fprintf(stderr, "SDRplay stopped\n");
+}
+
 

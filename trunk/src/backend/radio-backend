@@ -1,11 +1,201 @@
 #!/usr/bin/expect -f
 
-puts "starting radio-backend"
-
-## start a dspserver with specified hardware
+## start a dspserver backend with hardware server
 ## locally or at a specified host
 ## optionally backgrounding the dspserver and hardware handler
-## optionally starting qtradio or another frontend locally
+## optionally starting a frontend ui locally
 
-proc main {argv} {
+
+array set id {}
+array set args {}
+array set logs {}
+
+proc getopts {opts argv} {
+    if {[catch {
+	while {[llength $argv] > 0} {
+	    # match the first option
+	    set arg0 [lindex $argv 0]
+	    set done 0
+	    foreach opt $opts {
+		if {$done} break
+		foreach {longopt shortopt arg gloss} $opt break
+		if {[string equal $longopt $arg0]} {
+		    # matched longopt
+		    if {$arg != {}} {
+			# requires an argument
+			if {[llength $argv] < 2} {
+			    error "option $longopt requires an $arg argument"
+			}
+			set ::args($longopt) [lindex $argv 1]
+			set argv [lrange $argv 2 end]
+		    } else {
+			set ::args($longopt) {}
+			set argv [lrange $argv 1 end]
+		    }
+		    set done 1
+		    continue
+		}
+		if {[string equal $shortopt $arg0]} {
+		    # matched shortopt
+		    if {$arg != {}} {
+			# requires an argument
+			if {[llength $argv] < 2} {
+			    error "option $shortopt requires an $arg argument"
+			}
+			set ::args($longopt) [lindex $argv 1]
+			set argv [lrange $argv 2 end]
+		    } else {
+			set ::args($longopt) {}
+			set argv [lrange $argv 1 end]
+		    }
+		    set done 1
+		    continue
+		}
+	    }
+	    if { ! $done} {
+		error "no match for option: $arg0"
+	    }
+	}
+    } error]} {
+	error "$error\nusage: radio-backend options\noptions:\n[join $opts \n]"
+    }
 }
+    
+proc background {} {
+    # the approved backgrounding idiom of expect
+    if {[fork]!=0} exit
+    disconnect
+}
+
+proc quote-for-ssh {string} {
+    # quote a string so it passes through an eval spawn $command
+    # which is a ssh host radio-backend --cmd $string ...
+    # and remains a --cmd $string when it's interpreted on the far side
+    return "{\"$string\"}"
+}
+
+proc strip-returns {string} {
+    while {1} {
+	set i [string first \r $string]
+	if {$i < 0} break
+	set string [string replace $string $i $i {}]
+    }
+    return $string
+}
+
+if {[llength $argv] == 0} {
+    # supply default
+    set argv {
+	--key
+	--hw {rtlsdr-server}
+	--dsp {dspserver --lo 0}
+	--ui {QtRadio -s localhost}
+	--in {~/radio-backend}
+	--log logs/
+    }
+}
+
+getopts {
+    {--at -a host {run radio server at host} }
+    {--in -i path {run radio server in directory at path} }
+    {--hw -h cmd {hardware server command}}
+    {--dsp -d cmd {dsp server command}}
+    {--ui -u cmd {user interface command}}
+    {--jack -j cmd {jackd server command}}
+    {--foreground -f {} {foreground process [default]}}
+    {--background -b {} {background radio server}}
+    {--log -l path {log session to files at path}}
+    {--key -k {} {create ssl/tls key and cert}}
+} $argv
+    
+if {[info exists args(--in)]} {
+    # puts "chdir server to $args(--in)"
+    file mkdir $args(--in)
+    cd $args(--in)
+}
+
+if {[info exists args(--log)]} {
+    set logpfx $args(--log)
+    file mkdir $logpfx
+    append logpfx radio-backend-[timestamp -format %Y-%m-%d-%H-%M-%S]
+}
+
+if {[info exists args(--at)]} {
+    # rewrite command to call ssh radio-backend ...
+    # going into the quoting purgatory
+    set args(--ssh) {}
+    lappend args(--ssh) $args(--at)
+    unset args(--at)
+    foreach opt in {--foreground --background} {
+	if {[info exists args($opt)]} {
+	    lappend args(--ssh) $opt
+	    unset args($opt)
+	}
+    }
+    if {[info exists args(--in)]} {
+	lappend args(--ssh) --in $args(--in)
+    }
+    foreach opt in {--jack --hw --dsp --log} {
+	if {[info exists args($opt)]} {
+	    lappend args(--ssh) $opt $args($opt)
+	    unset args($opt)
+	}
+    }
+}
+
+if {[info exists args(--key)]} {
+    if { ! [file exists pkey]} {
+	spawn openssl genrsa -out pkey 2048
+	expect {*\n} exp_continue eof {}
+	close $spawn_id
+    }
+    if { ! [file exists cert.req]} {
+	spawn openssl req -new -key pkey -out cert.req
+	expect {
+	    {\nCountry*:} { send AQ\n; exp_continue }
+	    {\nState*:} { send Rothera\n; exp_continue }
+	    {\nOrgan*:} { send Fish&Chips\n; exp_continue }
+	    -re {[^:]*:} { send \n; exp_continue }
+	    {\n*} exp_continue
+	    eof {}
+	}
+	close $spawn_id
+    }
+    if { ! [file exists cert]} {
+	spawn openssl x509 -req -days 365 -in cert.req -signkey pkey -out cert
+	expect {
+	    {*\n} exp_continue
+	    eof {}
+	}
+	close $spawn_id
+    }
+}
+	
+log_user 0
+set expects {}
+foreach tag {ssh jack hw dsp ui} {
+    # puts "start loop $tag [info exists args(--$tag)]"
+    if {[info exists args(--$tag)]} { 
+	if {[info exists ::args(--log)]} {
+	    set ::logs($tag) $::logpfx-$tag.log
+	    set fd [open $::logs($tag) w]
+	    fconfigure $fd -buffering none
+	    set glob "puts -nonewline $fd \[strip-returns \$expect_out(0,string)]; exp_continue"
+	    set death "puts $fd \"$tag died\"; exit"
+	    puts $fd "spawn \"$::args(--$tag)\" at [timestamp]"
+	} else {
+	    set glob exp_continue
+	    set death exit
+	}
+	eval spawn $::args(--$tag)
+	lappend expects -i $spawn_id "*\n" $glob eof $death
+	# puts "poll for $tag and prior"
+	expect {*}$expects -i $any_spawn_id -timeout 2 timeout {}
+	# puts "finished poll for $tag and prior"
+    }
+}
+
+lappend expects -i $any_spawn_id -timeout 1 timeout { exp_continue }
+    
+expect {*}$expects
+

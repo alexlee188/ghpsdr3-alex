@@ -148,13 +148,14 @@ int translateSR(SdrPlayConfig &cfg) {
   }
   return 0;
 }
-int translateOptions (int argc, char **argv, SdrPlayConfig &cfg)
+int translateOptions (SdrPlayConfig &cfg)
 {
   cfg.fsMHz = 2.048;
   cfg.ifType = mir_sdr_IF_Zero;
   if (translateGain(cfg) < 0) return -1;
   if (translateFreq(cfg) < 0) return -1;
   if (translateSR(cfg) < 0) return -1;
+  return 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -174,16 +175,19 @@ int main(int argc, char* argv[]) {
   cout << "Freq:                 " << cfg.freq    <<  std::endl;
 
   // Init RTL SDR
-  if (mir_sdr_ApiVersion() != MIR_SDR_API_VERSION) {
+  float ver;
+  if (mir_sdr_ApiVersion(&ver) != mir_sdr_Success || ver != MIR_SDR_API_VERSION) {
     cout << "Mirics API version mismatch" << endl;
     return 254;
   }
-  mir_sdr_ErrT err = 0;
-  if ( ( err = mir_sdr_Init(cfg.gRdB, cfg.fsMHz, cfg.rfMHz, cfg.bwType, cfg.ifType, &cfg.samplesPerPacket))  != mir_sdr_Success)  {
+  mir_sdr_ErrT err = mir_sdr_Success;
+  int samplesPerPacket = 0;
+  if ( ( err = mir_sdr_Init(cfg.gRdB, cfg.fsMHz, cfg.rfMHz, cfg.bwType, cfg.ifType, &samplesPerPacket))  != mir_sdr_Success)  {
     cout << "No SDRPlay hardware detected" << endl;
     return 255;
   }
-    
+  cout << "SDRplay hardware wants " << samplesPerPacket << " samples/packet" << endl;
+  mir_sdr_Uninit();
   init_receivers (&cfg);
   create_listener_thread();
 
@@ -196,7 +200,7 @@ int main(int argc, char* argv[]) {
     if (ch == 'q') break;
   }
 #endif
-  rtlsdr_close(cfg.rtl);
+  stop_receiver(&receiver[0]);
   return 0;
 }
 
