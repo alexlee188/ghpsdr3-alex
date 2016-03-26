@@ -253,6 +253,10 @@ void start_receiver(RECEIVER *pRec) {
     printf("mir_sdr_Init returned %d\n", r);
     exit(1);
   }
+
+  mir_sdr_SetDcMode(4,0);
+  mir_sdr_SetDcTrackTime(63);
+
   if (samplesPerPacket != cfg->samplesPerPacket) {
     if (pRec->i_buffer != NULL) {
       free(pRec->i_buffer);

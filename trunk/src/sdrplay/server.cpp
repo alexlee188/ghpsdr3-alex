@@ -60,17 +60,24 @@ void print_help()
   // do not offer non-zero if, it returns real samples instead of complex
   // gain reduction ranges from 0 to 102 dB below 420MHz, from 0 to 85 dB above 420 MHz
   // ah, 1536000 is 8 * 192000
+  // but samplerate remains
     cerr << 
-    "    Allowed options:"                                    << endl <<
-    "      -f [ --frequency ]  initial frequency in Hertz"    << endl <<
-    "      -s [ --samplerate ] samplerate in Samples/second"  << endl <<
-    "                          200000 | 300000 | 600000 |"    << endl <<
-    "                          1536000 | 5000000 | 6000000 |" << endl <<
-    "                          7000000 | 8000000, def=1536000" << endl <<
-    "      -g [ --gain ]       gain in dB or -1 for AGC"      << endl <<
-    "      -h [ --help ]       print usage message"           << endl <<
-    "      -d [ --debug ]      debug level (default=0)"       << endl <<
-    endl;
+      "    Allowed options:"                                    << endl <<
+      "      -f [ --frequency ]  initial frequency in Hertz"    << endl <<
+      "      -s [ --samplerate ] samplerate in Samples/second"  << endl <<
+      "                          from 500000 to 12000000"       << endl <<
+      "                          def=768000"                    << endl <<
+      "      -b [ --bandwidth]   bandwith in Hertz"             << endl <<
+      "                          200000 | 300000 | 600000 |"    << endl <<
+      "                          1536000 | 5000000 | 6000000 |" << endl <<
+      "                          7000000 | 8000000"             << endl <<
+      "                          def=1536000"                   << endl <<
+      "      -i [ --if ]         if offset in kHz"              << endl <<
+      "                          0 | 450 | 1620 | 2048, def=0"  << endl <<
+      "      -g [ --gain ]       gain in dB or -1 for AGC"      << endl <<
+      "      -h [ --help ]       print usage message"           << endl <<
+      "      -d [ --debug ]      debug level (default=0)"       << endl <<
+      endl;
 }
 
 int parseOptions (int argc, char **argv, SdrPlayConfig &cfg)
@@ -79,39 +86,43 @@ int parseOptions (int argc, char **argv, SdrPlayConfig &cfg)
   int rc = 0;
 
   while (1) {
-      static struct option long_options[] =
-        {
-          /* These options set a flag. */
-          {"help",       no_argument,       0,  1 },
-          {"debug",      required_argument, 0, 'd'},
-	  {"frequency",  required_argument, 0, 'f'},
-          {"samplerate", required_argument, 0, 's'},
-          {"gain",       required_argument, 0, 'g'},
-          {0, 0, 0, 0}
-        };
-      /* getopt_long stores the option index here. */
-      int option_index = 0;
+    static struct option long_options[] =
+      {
+	/* These options set a flag. */
+	{"help",       no_argument,       0,  1 },
+	{"debug",      required_argument, 0, 'd'},
+	{"frequency",  required_argument, 0, 'f'},
+	{"samplerate", required_argument, 0, 's'},
+	{"gain",       required_argument, 0, 'g'},
+	{"bandwidth",  required_argument, 0, 'b'},
+	{"if",         required_argument, 0, 'i'},
+	{0, 0, 0, 0}
+      };
+    /* getopt_long stores the option index here. */
+    int option_index = 0;
 
-      c = getopt_long (argc, argv, "hd:f:s:g:", long_options, &option_index);
+    c = getopt_long (argc, argv, "hd:f:s:g:", long_options, &option_index);
 
-      /* Detect the end of the options. */
-      if (c == -1)
-        break;
+    /* Detect the end of the options. */
+    if (c == -1)
+      break;
 
-      switch (c) {
-        case 's': cfg.sr = atoi(optarg); break;
-        case 'g': cfg.gain = atoi(optarg); break;
-        case 'f': cfg.freq = atoi(optarg); break;
-        case 'd': debug_level = atoi(optarg); break;
+    switch (c) {
+    case 's': cfg.sr = atoi(optarg); break;
+    case 'g': cfg.gain = atoi(optarg); break;
+    case 'f': cfg.freq = atoi(optarg); break;
+    case 'd': debug_level = atoi(optarg); break;
+    case 'b': cfg.bw = atoi(optarg); break;
+    case 'i': cfg.ift = atoi(optarg); break;
 
-        case 1:
-        case '?':
-        case 'h':
-        default:
-          /* getopt_long already printed an error message. */
-          print_help();
-          return -1;
-        }
+    case 1:
+    case '?':
+    case 'h':
+    default:
+      /* getopt_long already printed an error message. */
+      print_help();
+      return -1;
+    }
   }
   return rc;
 }
@@ -125,15 +136,17 @@ int translateGain(SdrPlayConfig &cfg) {
   return 0;
 }
 int translateFreq(SdrPlayConfig &cfg) {
-  if (cfg.freq < 100000 || cfg.freq > 2000000000) {
-    // out of bounds
-    return -1;
-  }
+  if (cfg.freq < 100000 || cfg.freq > 2000000000) return -1;
   cfg.rfMHz = cfg.freq / 1.0e6;
   return 0;
 }  
 int translateSR(SdrPlayConfig &cfg) {
-  switch (cfg.sr) {
+  if (cfg.sr < 48000 || cfg.sr > 12000000) return -1;
+  cfg.fsMHz = double(cfg.sr) / 1.0e6;
+  return 0;
+}
+int translateBW(SdrPlayConfig &cfg) {
+  switch (cfg.bw) {
   case 200000:  cfg.bwType = mir_sdr_BW_0_200; break;
   case 300000:  cfg.bwType = mir_sdr_BW_0_300; break;
   case 600000:  cfg.bwType = mir_sdr_BW_0_600; break;
@@ -148,21 +161,34 @@ int translateSR(SdrPlayConfig &cfg) {
   }
   return 0;
 }
+int translateIF(SdrPlayConfig &cfg) {
+  switch (cfg.ift) {
+  case 0: cfg.ifType = mir_sdr_IF_Zero; break;
+  case 450: cfg.ifType = mir_sdr_IF_0_450; break;
+  case 1620: cfg.ifType = mir_sdr_IF_1_620; break;
+  case 2048: cfg.ifType = mir_sdr_IF_2_048; break;
+  default: return -1;
+  }
+  return 0;
+}
+
 int translateOptions (SdrPlayConfig &cfg)
 {
-  cfg.fsMHz = 2.048;
-  cfg.ifType = mir_sdr_IF_Zero;
   if (translateGain(cfg) < 0) return -1;
   if (translateFreq(cfg) < 0) return -1;
   if (translateSR(cfg) < 0) return -1;
+  if (translateBW(cfg) < 0) return -1;
+  if (translateIF(cfg) < 0) return -1;
   return 0;
 }
 
 int main(int argc, char* argv[]) {
 
-  cfg.sr = 1536000;
+  cfg.bw = 600000;
+  cfg.sr = 768000;
   cfg.gain = 40;
   cfg.freq = 14500000;
+  cfg.ift = 0;
   debug_level = 3;
 
   if (parseOptions (argc, argv, cfg) != 0 || translateOptions(cfg) != 0) {

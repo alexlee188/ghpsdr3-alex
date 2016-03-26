@@ -45,6 +45,7 @@
 
 
 
+#define SCALE_FACTOR_16B 32767.0	   // 2^16 / 2 - 1 = 32767.0
 #define SCALE_FACTOR_24B 8388607.0         // 2^24 / 2 - 1 = 8388607.0
 #define SCALE_FACTOR_32B 2147483647.0      // 2^32 / 2 - 1 = 2147483647.0
 #define SCALE_FACTOR_0   0.0
@@ -52,42 +53,66 @@
 
 #define ADC_CLIP 0x01
 
+#define SAMPLE_RATE_TIMING 1
+
+#if SAMPLE_RATE_TIMING
+static long long counter = 0;
+
+struct timespec diff(struct timespec start, struct timespec end)
+{
+        struct timespec temp;
+        if ((end.tv_nsec - start.tv_nsec) < 0) {
+                temp.tv_sec  = end.tv_sec - start.tv_sec - 1;
+                temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+        } else {
+                temp.tv_sec  = end.tv_sec  - start.tv_sec;
+                temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+        }
+        return temp;
+}
+#endif
+
 void user_data_callback(RECEIVER *pRec, short *xi, short *xq) {
 
   // The buffer received contains 16-bit signed integer IQ samples (2 bytes per sample)
   int nSamples    = pRec->cfg.samplesPerPacket;      
 
   for (int k=0; k < nSamples; k++) {
-    // for debug purpose
-    pRec->cfg.ns += nSamples;
+#if SAMPLE_RATE_TIMING
+    pRec->cfg.ns += 1;
+
+    if ((counter++ % (256*256*256)) == 0) {
+      long double diff_s ;
+
+      clock_gettime(CLOCK_REALTIME, &pRec->cfg.time_end);
+      pRec->cfg.time_diff = diff(pRec->cfg.time_start, pRec->cfg.time_end);
+      diff_s = pRec->cfg.time_diff.tv_sec + (pRec->cfg.time_diff.tv_nsec/1E9) ;
+      //fprintf(stderr, "diff: %ds::%dns %Lf seconds\n", time_diff.tv_sec, time_diff.tv_nsec, diff_s);
+      fprintf (stderr, "***>>>>>>>>>>> Samples received: %lu, %.3Lf kS/s\n", pRec->cfg.ns, ((double)pRec->cfg.ns / (diff_s)/1E3) );
+
+      // fprintf (stderr, "[%s] [%s]\n", pRec->cfg.start, pRec->cfg.stop);
+      //fprintf (stderr, "%p %p\n", pi, pq);
+      // fprintf (stderr, ">>>>>>>>>>>>>> %s: #samples: %d\n", __FUNCTION__, nSamples);  
+      //fprintf (stderr, ">>>>>>>>>>>>>> LSB first: i: %08f q: %08f\n", *pi, *pq );  
+      // fprintf (stderr, ">>>>>>>>>>>>>> i: %f q: %f\n", pRec->input_buffer[pRec->samples], pRec->input_buffer[pRec->samples+BUFFER_SIZE]);
+      fflush(stderr);
+
+      // start a new measurement cycle
+      clock_gettime (CLOCK_REALTIME, &pRec->cfg.time_start);
+      pRec->cfg.ns = 0L;
+    }
+#endif
 
     // copy into the output buffer, converting to float and scaling
-    // pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = ((float)(*psb)  - 128.0) * SCALE_FACTOR_24B;       psb++;
-    // pRec->input_buffer[pRec->samples]              = ((float)(*psb)  - 128.0) * SCALE_FACTOR_24B;       psb++;
-
-    //
-    // from http://cgit.osmocom.org/cgit/gr-osmosdr/tree/lib/rtl/rtl_source_c.cc
-    //
-    // (float(i & 0xff) - 127.5f) *(1.0f/128.0f),
-    //
-    pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = float(*xi++) * (1.0f / float(SHRT_MAX));
-    pRec->input_buffer[pRec->samples]              = float(*xq++) * (1.0f / float(SHRT_MAX));
-
-    //
-    // uncomment the following in order to disable the scaling
-    //
-    //pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = ((float)(*psb));   psb++;
-    //pRec->input_buffer[pRec->samples]              = ((float)(*psb));   psb++;
-
-    pRec->samples++; // next sample in output buffer
+    pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = float(*xi++) / SCALE_FACTOR_16B;
+    pRec->input_buffer[pRec->samples]              = float(*xq++) / SCALE_FACTOR_16B;
+    pRec->samples++;
 
     // when we have enough samples, send them to the client
     if(pRec->samples==BUFFER_SIZE) {
-      // send I/Q data to clients
       send_IQ_buffer(pRec);
       pRec->samples=0;      // signal that the output buffer is empty again
     }
-
   }
   return;
 }
@@ -97,13 +122,10 @@ void *helper_thread (void *arg) {
 
   printf(" !!!!!!!!! THREAD: [%p]\n",  pRec);
   while (1) {
-    // int r = rtlsdr_wait_async(receiver[client->receiver].cfg.rtl, user_data_callback, &(receiver[client->receiver]));
-    // int r = rtlsdr_wait_async(pRec->cfg.rtl, user_data_callback, pRec);
-    // int r = rtlsdr_read_async(pRec->cfg.rtl, user_data_callback, pRec, 1, /* buf_num */, 16384  /* uint32_t buf_len */);
     unsigned int firstSampleNumb;
     int grChanged, rfChanged, fsChanged;
     int r = mir_sdr_ReadPacket(pRec->i_buffer, pRec->q_buffer, &firstSampleNumb, &grChanged, &rfChanged, &fsChanged);
-    if ( r != 0) {
+    if ( r != 0 ) {
       printf(" !!!!!!!!! wait async input error: [%d]\n", r );
       fflush (stdout);
       break;
@@ -204,11 +226,6 @@ const char* parse_command(CLIENT* client,char* command) {
 	  printf("xxxxxxxxxxxxxxxxxxx Starting async data acquisition... CLIENT REQUESTED %d port\n", client->iq_port);
 
 	  (receiver[client->receiver]).samples = 0; // empties output buffer
-
-	  // FIX.ME rec
-	  /* Reset endpoint before we start reading from it (mandatory) */
-	  // int r = rtlsdr_reset_buffer(receiver[client->receiver].cfg.rtl);
-	  // if (r < 0) fprintf(stderr, "WARNING: Failed to reset buffers.\n");
 	  start_receiver(&receiver[client->receiver]);
 	  pthread_t thread_id;
 	  // create the thread to listen for TCP connections
@@ -294,9 +311,6 @@ const char* parse_command(CLIENT* client,char* command) {
 	  // try to terminate audio thread
 	  close ((receiver[client->receiver]).audio_socket);
 	  printf("Quitting...\n");
-	  // FIX.ME rec
-	  //rtlsdr_stop_asynch_input ();
-	  // rtlsdr_cancel_async(receiver[client->receiver].cfg.rtl);
 	  stop_receiver(&receiver[client->receiver]);
 	  return OK;
 	} else if(strcmp(token,"bandscope")==0) {

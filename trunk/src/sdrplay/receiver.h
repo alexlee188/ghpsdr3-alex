@@ -29,63 +29,65 @@
 #define BUFFER_SIZE 1024
 
 typedef struct {
-    unsigned connected;
+  unsigned connected;
 
-    int sr;			/* sample rate as in output bandwidth */
-    int gain;			/* gain above 85 dB reduction */
-    long freq;			/* initial frequency for selecting the RF front end */
+  int sr;			/* sample rate of adc, samples/second */
+  int bw;			/* bandwidth in Hertz */
+  int gain;			/* gain above 85 dB reduction */
+  int ift;			/* if type, kilohertz offset */
+  long freq;			/* initial frequency for selecting the RF front end */
 
-    int gRdB;			/* gain reduction */
-    double fsMHz;		/* adc sample rate */
-    double rfMHz;		/* center frequency */
-    mir_sdr_Bw_MHzT bwType;	/* bandwidth type */
-    mir_sdr_If_kHzT ifType;	/* if type */
+  int gRdB;			/* gain reduction */
+  double fsMHz;			/* adc sample rate */
+  double rfMHz;			/* center frequency */
+  mir_sdr_Bw_MHzT bwType;	/* bandwidth type */
+  mir_sdr_If_kHzT ifType;	/* if type */
 
-    int samplesPerPacket;
+  int samplesPerPacket;
   
-    struct timespec  time_start;
-    struct timespec  time_end;
-    struct timespec  time_diff;
-    unsigned long ns;
-    char  start [16];
-    char  stop [16];
+  struct timespec  time_start;
+  struct timespec  time_end;
+  struct timespec  time_diff;
+  unsigned long ns;
+  char  start [16];
+  char  stop [16];
 } SdrPlayConfig;
 
 
 
 typedef struct _receiver {
-    int id;
-    int audio_socket;
-    pthread_t audio_thread_id;
-    CLIENT* client;
-    int frequency_changed;
-    long frequency;
-    float input_buffer[BUFFER_SIZE*2];
-    float output_buffer[BUFFER_SIZE*2];
-    short *i_buffer;
-    short *q_buffer;
-    int samples;
+  int id;
+  int audio_socket;
+  pthread_t audio_thread_id;
+  CLIENT* client;
+  int frequency_changed;
+  long frequency;
+  float input_buffer[BUFFER_SIZE*2];
+  float output_buffer[BUFFER_SIZE*2];
+  short *i_buffer;
+  short *q_buffer;
+  int samples;
 
-    SdrPlayConfig cfg;
-    int frame_counter;
+  SdrPlayConfig cfg;
+  int frame_counter;
 
-    // Average DC component in samples  
-    float dc_average_i;
-    float dc_average_q;
-    float dc_sum_i;
-    float dc_sum_q;
-    int   dc_count;
-    int   dc_key_delay;
+  // Average DC component in samples  
+  float dc_average_i;
+  float dc_average_q;
+  float dc_sum_i;
+  float dc_sum_q;
+  int   dc_count;
+  int   dc_key_delay;
 
 } RECEIVER;
 
 extern RECEIVER receiver[MAX_RECEIVERS];
 
 typedef struct _buffer {
-    unsigned long long sequence;
-    unsigned short offset;
-    unsigned short length;
-    unsigned char data[500];
+  unsigned long long sequence;
+  unsigned short offset;
+  unsigned short length;
+  unsigned char data[500];
 } BUFFER;
 
 void init_receivers(SdrPlayConfig *);
