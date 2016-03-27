@@ -62,9 +62,10 @@ hardware_sdriq.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \
+hardware_sdrplay.moc.cpp \
 powermate.moc.cpp \
 EqualizerDialog.moc.cpp
-	
+
 nodist_QtRadio_SOURCES = \
     ui_UI.h \
     ui_Configure.h \
@@ -112,6 +113,7 @@ hardware_sdriq.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \
+hardware_sdrplay.moc.cpp \
 powermate.moc.cpp \
 EqualizerDialog.moc.cpp
 
@@ -126,7 +128,8 @@ Bandscope.cpp  BookmarksEditDialog.cpp  DIGLFilters.cpp  FMNFilters.cpp   Meter.
 ctl.cpp rigctl.cpp\
 Audioinput.cpp \
 servers.cpp\
-G711A.cpp RTP.cpp hardware.cpp hardware_hermes.cpp hardware_perseus.cpp hardware_sdriq.cpp hardware_sdr1000.cpp hardware_hiqsdr.cpp hardware_rtlsdr.cpp powermate.cpp \
+G711A.cpp RTP.cpp hardware.cpp hardware_hermes.cpp hardware_perseus.cpp hardware_sdriq.cpp hardware_sdr1000.cpp hardware_hiqsdr.cpp \
+hardware_rtlsdr.cpp hardware_sdrplay.cpp powermate.cpp \
 About.h      Bandscope.h        BookmarksEditDialog.h  Connection.h   DSBFilters.h   Frequency.h      Mode.h        vfo.h        \
 AMFilters.h  BandStackEntry.h   Bookmarks.h            CWLFilters.h   Filter.h       FrequencyInfo.h  SAMFilters.h  EqualizerDialog.h \
 Audio.h      BookmarkDialog.h   Buffer.h               CWUFilters.h   FiltersBase.h  KeypadDialog.h   Panadapter.h    XvtrEntry.h  \
@@ -144,6 +147,7 @@ hardware_sdriq.h \
 hardware_sdr1000.h \
 hardware_hiqsdr.h \
 hardware_rtlsdr.h \
+hardware_sdrplay.h \
 powermate.h \
 About.ui  Bandscope.ui  BookmarksDialog.ui  BookmarksEditDialog.ui  Bookmark.ui  Configure.ui  KeypadDialog.ui  UI.ui  vfo.ui \
 ctl.ui servers.ui EqualizerDialog.ui
@@ -198,6 +202,7 @@ hardware_sdriq.moc.cpp \
 hardware_sdr1000.moc.cpp \
 hardware_hiqsdr.moc.cpp \
 hardware_rtlsdr.moc.cpp \
+hardware_sdrplay.moc.cpp \
 powermate.moc.cpp \
 EqualizerDialog.moc.cpp
 
