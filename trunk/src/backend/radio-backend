@@ -191,11 +191,12 @@ foreach tag {ssh jack hw dsp ui} {
 	    fconfigure $fd -buffering none
 	    set glob "puts -nonewline $fd \[strip-returns \$expect_out(0,string)]; exp_continue"
 	    set death "puts $fd \"$tag died\"; exit"
-	    puts $fd "spawn \"$::args(--$tag)\" at [timestamp]"
+	    puts $fd "spawn \"$::args(--$tag)\" at [timestamp -format %Y-%m-%d-%H-%M-%S]"
 	} else {
 	    set glob exp_continue
 	    set death exit
 	}
+	# puts "spawn \"$::args(--$tag)\" at [timestamp -format %Y-%m-%d-%H-%M-%S]"
 	eval spawn $::args(--$tag)
 	lappend expects -i $spawn_id "*\n" $glob eof $death
 	# puts "poll for $tag and prior"

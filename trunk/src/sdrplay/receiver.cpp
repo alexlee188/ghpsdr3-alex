@@ -34,7 +34,6 @@
 #include <string.h>
 #include <string>
 
-#include <mirsdrapi-rsp.h>
 #include "messages.h"
 #include "client.h"
 #include "receiver.h"
@@ -50,38 +49,145 @@ static char response[80];
 
 static unsigned long sequence=0L;
 
-static int CORE_BANDWIDTH;
+char *error_string(int r) {
+  switch(r) {
+  case mir_sdr_Success: return (char *)"Success";
+  case mir_sdr_Fail: return (char *)"Fail";
+  case mir_sdr_InvalidParam: return (char *)"InvalidParam";
+  case mir_sdr_OutOfRange: return (char *)"OutOfRange";
+  case mir_sdr_GainUpdateError: return (char *)"GainUpdateError";
+  case mir_sdr_RfUpdateError: return (char *)"RfUpdateError";
+  case mir_sdr_FsUpdateError: return (char *)"FsUpdateError";
+  case mir_sdr_HwError: return (char *)"HwError";
+  case mir_sdr_AliasingError: return (char *)"AliasingError";
+  case mir_sdr_AlreadyInitialised: return (char *)"AlreadyInitialised";
+  case mir_sdr_NotInitialised: return (char *)"NotInitialised";
+  }
+  return (char *)"undefined error value";
+}
 
-void init_receivers (SdrPlayConfig *pCfg) 
+int translateGain(RECEIVER *pRec) {
+  if (pRec->cfg.gain < -1 || pRec->cfg.gain > 85) return -1;
+  pRec->gRdB = pRec->cfg.gain;
+  return 0;
+}
+
+int translateFreq(RECEIVER *pRec) {
+  if (pRec->cfg.freq < 100000 || pRec->cfg.freq > 2000000000) return -1;
+  pRec->rfMHz = pRec->cfg.freq / 1.0e6;
+  return 0;
+}  
+
+int translateSR(RECEIVER *pRec) {
+  switch (pRec->cfg.sr) {
+  case 24000:			// m = 64
+  case 48000:			// m = 32
+  case 96000:			// m = 16
+  case 192000:			// m = 8
+  case 384000:			// m = 4
+  case 768000:			// m = 2
+  case 1536000:			// m = 1
+    pRec->m = 1536000 / pRec->cfg.sr;
+    pRec->fsMHz = double(pRec->cfg.sr * pRec->m) / 1.0e6;
+    return 0;
+  case 22050:			// m = 64
+  case 44100:			// m = 32
+  case 88200:			// m = 16
+  case 176400:			// m = 8
+  case 352800:			// m = 4
+  case 705600:			// m = 2
+  case 1411200:			// m = 1
+    pRec->m = 1411200 / pRec->cfg.sr;
+    pRec->fsMHz = double(pRec->cfg.sr * pRec->m) / 1.0e6;
+    return 0;
+  }
+  return -1;
+}
+
+int translateBW(RECEIVER *pRec) {
+  switch (pRec->cfg.bw) {
+  case 200000:  pRec->bwType = mir_sdr_BW_0_200; break;
+  case 300000:  pRec->bwType = mir_sdr_BW_0_300; break;
+  case 600000:  pRec->bwType = mir_sdr_BW_0_600; break;
+  case 1536000: pRec->bwType = mir_sdr_BW_1_536; break;
+  case 5000000: pRec->bwType = mir_sdr_BW_5_000; break;
+  case 6000000: pRec->bwType = mir_sdr_BW_6_000; break;
+  case 7000000: pRec->bwType = mir_sdr_BW_7_000; break;
+  case 8000000: pRec->bwType = mir_sdr_BW_8_000; break;
+  default:
+    return -1;
+  }
+  return 0;
+}
+
+int translateIF(RECEIVER *pRec) {
+  switch (pRec->cfg.ift) {
+  case 0: pRec->ifType = mir_sdr_IF_Zero; break;
+  case 450: pRec->ifType = mir_sdr_IF_0_450; break;
+  case 1620: pRec->ifType = mir_sdr_IF_1_620; break;
+  case 2048: pRec->ifType = mir_sdr_IF_2_048; break;
+  default: return -1;
+  }
+  return 0;
+}
+
+int init_receivers (SdrPlayConfig *pCfg) 
 {
-    int i;
-    for(i=0;i<MAX_RECEIVERS;i++) {
-        receiver[i].client  = (CLIENT*)NULL;
-        receiver[i].samples = 0; 
-        receiver[i].cfg = *pCfg;
-	receiver[i].i_buffer = NULL;
-	receiver[i].q_buffer = NULL;
-    }
 
-    iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
-    if(iq_socket<0) {
-        perror("create socket failed for iq_socket\n");
-        exit(1);
-    }
+  for(int i=0;i<MAX_RECEIVERS;i++) {
+    receiver[i].client  = (CLIENT*)NULL;
+    receiver[i].samples = 0; 
+    receiver[i].cfg = *pCfg;
+    receiver[i].i_buffer = NULL;
+    receiver[i].q_buffer = NULL;
+    receiver[i].samplesPerPacket = 0;
+    receiver[i].connected = 0;
+    // validate configuration
+    if (translateGain(&receiver[i]) < 0 ||
+	translateFreq(&receiver[i]) < 0 ||
+	translateSR(&receiver[i]) < 0 ||
+	translateBW(&receiver[i]) < 0 ||
+	translateIF(&receiver[i]) < 0)
+      return -1;
+  }
 
-    iq_length=sizeof(iq_addr);
-    memset(&iq_addr,0,iq_length);
-    iq_addr.sin_family=AF_INET;
-    iq_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    iq_addr.sin_port=htons(11002);
+  // verify API version
+  float ver;
+  if (mir_sdr_ApiVersion(&ver) != mir_sdr_Success || ver != MIR_SDR_API_VERSION) {
+    fprintf(stdout, "Mirics API version mismatch\n");
+    return -1;
+  }
 
-    if(bind(iq_socket,(struct sockaddr*)&iq_addr,iq_length)<0) {
-        perror("bind socket failed for iq socket");
-        exit(1);
-    }
+  // verify hardware
+  RECEIVER *pRec = &receiver[0];	// there is only one
+  int samplesPerPacket;
+  int r = mir_sdr_Init(pRec->gRdB, pRec->fsMHz, pRec->rfMHz, pRec->bwType, pRec->ifType, &samplesPerPacket);
 
-    CORE_BANDWIDTH = pCfg->sr;
+  if ( r != mir_sdr_Success)  {
+    fprintf(stdout, "No SDRPlay hardware detected: %s\n", error_string(r));
+    return -1;
+  }
+  mir_sdr_Uninit();
 
+  // set up other resources
+  iq_socket=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP);
+  if(iq_socket<0) {
+    perror("create socket failed for iq_socket");
+    exit(1);
+  }
+
+  iq_length=sizeof(iq_addr);
+  memset(&iq_addr,0,iq_length);
+  iq_addr.sin_family=AF_INET;
+  iq_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+  iq_addr.sin_port=htons(11002);
+
+  if(bind(iq_socket,(struct sockaddr*)&iq_addr,iq_length)<0) {
+    perror("bind socket failed for iq socket");
+    exit(1);
+  }
+
+  return 0;
 }
 
 const char* attach_receiver(int rx, CLIENT* client) 
@@ -89,10 +195,6 @@ const char* attach_receiver(int rx, CLIENT* client)
     if(client->state==RECEIVER_ATTACHED) {
         return CLIENT_ATTACHED;
     }
-
-    //if(rx>=ozy_get_receivers()) {
-    //    return RECEIVER_INVALID;
-    //}
 
     if(receiver[rx].client!=(CLIENT *)NULL) {
         return RECEIVER_IN_USE;
@@ -102,15 +204,8 @@ const char* attach_receiver(int rx, CLIENT* client)
     receiver[rx].client=client;
     client->receiver=rx;
 
-    receiver[rx].frame_counter = -1 ;
-    receiver[rx].dc_average_i  = 0 ;
-    receiver[rx].dc_average_q  = 0 ; 
-    receiver[rx].dc_sum_i      = 0 ; 
-    receiver[rx].dc_sum_q      = 0 ; 
-    receiver[rx].dc_count      = 0 ; 
-    receiver[rx].dc_key_delay  = 0 ; 
-
     sprintf(response,"OK %d", receiver[rx].cfg.sr);
+    fprintf(stdout, "response to attach_receiver: %s\n", response);
 
     return response;
 }
@@ -120,17 +215,10 @@ const char* detach_receiver (int rx, CLIENT* client) {
         return CLIENT_DETACHED;
     }
 
-    //if(rx>=ozy_get_receivers()) {
-    //    return RECEIVER_INVALID;
-    //}
-
     if(receiver[rx].client!=client) {
         return RECEIVER_NOT_OWNER;
     }
     fprintf(stderr, "detach_receiver: ...");
-
-    // FIX.ME rec
-    //rtlsdr_stop_asynch_input ();
 
     client->state=RECEIVER_DETACHED;
     receiver[rx].client = (CLIENT*)NULL;
@@ -138,7 +226,27 @@ const char* detach_receiver (int rx, CLIENT* client) {
     return OK;
 }
 
+// Megahertz of band edges, init sets rf front end,
+// frequency can only move around inside the band edges
+// (but that doesn't make sense, could tune outside the edges
+//  and you'd just start dealing more with the filter skirts)
+// In any case, the band edges get set by init and you need to
+// uninit and re-init to change to a different band.
+
+double band_breaks[] = {
+  0.100, 12.0, 30.0, 60.0, 120.0, 250.0, 420.0, 1000.0, 2000.0
+};
+#define N_BAND_BREAKS ((int)(sizeof(band_breaks)/sizeof(band_breaks[0])))
+
+int find_frequency_band(double fMHz) {
+  for (int i = 0; i < N_BAND_BREAKS-1; i += 1)
+    if (fMHz >= band_breaks[i] && fMHz < band_breaks[i+1])
+      return i;
+  return -1;
+}
+
 const char* set_frequency (CLIENT* client, long frequency) {
+      
     if(client->state==RECEIVER_DETACHED) {
         return CLIENT_DETACHED;
     }
@@ -147,14 +255,35 @@ const char* set_frequency (CLIENT* client, long frequency) {
         return RECEIVER_INVALID;
     }
 
-    receiver[client->receiver].frequency=frequency;
-    receiver[client->receiver].frequency_changed=1;
+    RECEIVER *pRec = &receiver[client->receiver];
+    double fMHz = double(frequency)/1.0e6;
+    int frequency_band = find_frequency_band(fMHz);
 
-    fprintf (stderr, "%s: %ld\n", __FUNCTION__, receiver[client->receiver].frequency);
+    if (frequency_band < 0) {
+      fprintf (stderr, "%s: %ld is out of bounds\n", __FUNCTION__, pRec->frequency);
+      return OK;
+    }
 
-    // FIX.ME rec - may need to switch bands
-    mir_sdr_SetRf(frequency/1.0e6, 1, 0);
+    if (pRec->frequency_did_change == 0) {
+      fprintf(stderr, "%s: waiting on previous frequency change\n", __FUNCTION__);
+      return OK;
+    }
 
+    if (pRec->frequency != frequency) {
+      if (pRec->frequency_band != frequency_band) {
+	stop_receiver(pRec);
+	pRec->cfg.freq = frequency;
+	pRec->rfMHz = fMHz;
+	start_receiver(pRec);
+      } else {
+	mir_sdr_SetRf((frequency-pRec->frequency)/1.0e6, 0, 0);
+	pRec->frequency_did_change = 0;
+      }
+      pRec->frequency=frequency;
+      pRec->frequency_band=frequency_band;
+      pRec->frequency_changed=1;
+      fprintf (stderr, "%s: %ld\n", __FUNCTION__, receiver[client->receiver].frequency);
+    }
     return OK;
 }
 
@@ -185,9 +314,12 @@ const char* set_attenuator (CLIENT* client, int new_level_in_db)
     // FIX.ME rec - gain reduction vs gain?
     int r = mir_sdr_SetGr(new_level_in_db, 1, 0);
 
-    if (r != 0) fprintf(stderr, "WARNING: Failed to set tuner gain: %d.\n", r);
-    else
-               fprintf(stderr, "Tuner gain reduction set to %d dB.\n", new_level_in_db);
+    if (r != 0)
+      fprintf(stderr, "WARNING: Failed to set tuner gain: %d.\n", r);
+    else {
+      receiver[client->receiver].gRdB = new_level_in_db;
+      fprintf(stderr, "Tuner gain reduction set to %d dB.\n", new_level_in_db);
+    }
     return OK;
 }
 
@@ -246,34 +378,53 @@ void send_IQ_buffer (RECEIVER *pRec) {
 }
 
 void start_receiver(RECEIVER *pRec) {
-  SdrPlayConfig *cfg = &(pRec->cfg);
   int samplesPerPacket;
-  int r = mir_sdr_Init(cfg->gRdB, cfg->fsMHz, cfg->rfMHz, cfg->bwType, cfg->ifType, &samplesPerPacket);
+
+  int r = mir_sdr_Init(pRec->gRdB, pRec->fsMHz, pRec->rfMHz, pRec->bwType, pRec->ifType, &samplesPerPacket);
+
   if (r != 0) {
-    printf("mir_sdr_Init returned %d\n", r);
+    fprintf(stdout, "mir_sdr_Init returned %d: %s\n", r, error_string(r));
     exit(1);
   }
 
+  pRec->frequency = pRec->cfg.freq;
+  pRec->frequency_band = find_frequency_band(pRec->rfMHz);
+  pRec->frequency_did_change = 1;
+  
   mir_sdr_SetDcMode(4,0);
   mir_sdr_SetDcTrackTime(63);
 
-  if (samplesPerPacket != cfg->samplesPerPacket) {
+  if (samplesPerPacket != pRec->samplesPerPacket) {
     if (pRec->i_buffer != NULL) {
       free(pRec->i_buffer);
       free(pRec->q_buffer);
     }
     pRec->i_buffer = (short *)malloc(samplesPerPacket * sizeof(short));
     pRec->q_buffer = (short *)malloc(samplesPerPacket * sizeof(short));
-    cfg->samplesPerPacket = samplesPerPacket;
+    pRec->samplesPerPacket = samplesPerPacket;
+    // reset partial decimation
+    pRec->mi = 0; pRec->mxi = 0; pRec->mxq = 0;
   }
+  pRec->connected = 1;
 }
 
 void stop_receiver(RECEIVER *pRec) {
   int r = mir_sdr_Uninit();
   if (r != 0)
-    fprintf(stderr, "WARNING: Failed to stop: %d.\n", r);
+    fprintf(stderr, "WARNING: Failed to stop: %d: %s.\n", r, error_string(r));
   else
     fprintf(stderr, "SDRplay stopped\n");
+  pRec->connected = 0;
 }
 
-
+int read_IQ_buffer(RECEIVER *pRec) {
+  unsigned int firstSampleNumb;
+  int grChanged, rfChanged, fsChanged;
+  int r = mir_sdr_ReadPacket(pRec->i_buffer, pRec->q_buffer, &firstSampleNumb, &grChanged, &rfChanged, &fsChanged);
+  if (rfChanged)
+    pRec->frequency_did_change = 1;
+  if ( r != 0 ) {
+    fprintf(stderr, " !!!!!!!!! read packet error: [%d] %s\n", r, error_string(r) );
+  }
+  return r;
+}

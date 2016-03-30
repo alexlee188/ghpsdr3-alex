@@ -29,55 +29,55 @@
 #define BUFFER_SIZE 1024
 
 typedef struct {
-  unsigned connected;
-
-  int sr;			/* sample rate of adc, samples/second */
+  int sr;			/* sample rate of base band stream, samples/second */
+				/* possibly decimated from adc sample rate */
   int bw;			/* bandwidth in Hertz */
   int gain;			/* gain above 85 dB reduction */
   int ift;			/* if type, kilohertz offset */
   long freq;			/* initial frequency for selecting the RF front end */
-
-  int gRdB;			/* gain reduction */
-  double fsMHz;			/* adc sample rate */
-  double rfMHz;			/* center frequency */
-  mir_sdr_Bw_MHzT bwType;	/* bandwidth type */
-  mir_sdr_If_kHzT ifType;	/* if type */
-
-  int samplesPerPacket;
-  
-  struct timespec  time_start;
-  struct timespec  time_end;
-  struct timespec  time_diff;
-  unsigned long ns;
-  char  start [16];
-  char  stop [16];
 } SdrPlayConfig;
 
+#include <mirsdrapi-rsp.h>	/* for pointless typedefs */
 
+
+#define SAMPLE_RATE_TIMING 1
 
 typedef struct _receiver {
   int id;
   int audio_socket;
   pthread_t audio_thread_id;
   CLIENT* client;
+
+  SdrPlayConfig cfg;
+
+  int connected;
+
   int frequency_changed;
+  int frequency_did_change;	/* ack received with data packet */
   long frequency;
+  int frequency_band;
+  int m;			/* decimation factor: 1, 2, 4, 8, 16, 32, and 64 implemented */
+  int gRdB;			/* gain reduction */
+  double fsMHz;			/* adc sample rate */
+  double rfMHz;			/* center frequency */
+  mir_sdr_Bw_MHzT bwType;	/* bandwidth type */
+  mir_sdr_If_kHzT ifType;	/* if type */
+
+  int samplesPerPacket;		/* packet size received from Init */
   float input_buffer[BUFFER_SIZE*2];
   float output_buffer[BUFFER_SIZE*2];
   short *i_buffer;
   short *q_buffer;
   int samples;
 
-  SdrPlayConfig cfg;
-  int frame_counter;
+  int mi;		// decimation index
+  int mxi;		// decimation partial for I
+  int mxq;		// decimation partial for Q
 
-  // Average DC component in samples  
-  float dc_average_i;
-  float dc_average_q;
-  float dc_sum_i;
-  float dc_sum_q;
-  int   dc_count;
-  int   dc_key_delay;
+#if SAMPLE_RATE_TIMING
+  int counter;
+  struct timespec  time_start;
+#endif
 
 } RECEIVER;
 
@@ -90,7 +90,7 @@ typedef struct _buffer {
   unsigned char data[500];
 } BUFFER;
 
-void init_receivers(SdrPlayConfig *);
+int init_receivers(SdrPlayConfig *);
 const char* attach_receiver(int rx,CLIENT* client);
 const char* detach_receiver(int rx,CLIENT* client);
 void start_receiver (RECEIVER *pRec);
@@ -101,4 +101,4 @@ const char* set_dither(CLIENT* client, bool);
 const char* set_random(CLIENT* client, bool);
 const char* set_attenuator(CLIENT* client, int);
 void send_IQ_buffer (RECEIVER *pRec);
-
+int read_IQ_buffer (RECEIVER *pRec);

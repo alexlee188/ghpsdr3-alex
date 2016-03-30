@@ -78,7 +78,7 @@ HardwareSdrplay :: HardwareSdrplay (Connection *pC, QWidget *pW): DlgHardware (p
     setLayout(grid);
 
     // general features
-    setWindowTitle(tr("RTL SDR"));
+    setWindowTitle(tr("SDRplay"));
     resize(240, 200);
 
     // interconnects

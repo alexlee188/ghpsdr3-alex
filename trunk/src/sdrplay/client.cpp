@@ -38,12 +38,9 @@
 #include <unistd.h>
 #include <string>     // c++ std strings
 
-#include "mirsdrapi-rsp.h"
 #include "client.h"
 #include "receiver.h"
 #include "messages.h"
-
-
 
 #define SCALE_FACTOR_16B 32767.0	   // 2^16 / 2 - 1 = 32767.0
 #define SCALE_FACTOR_24B 8388607.0         // 2^24 / 2 - 1 = 8388607.0
@@ -51,67 +48,76 @@
 #define SCALE_FACTOR_0   0.0
 #define SCALE_FACTOR_1   1.0
 
-#define ADC_CLIP 0x01
-
-#define SAMPLE_RATE_TIMING 1
-
 #if SAMPLE_RATE_TIMING
-static long long counter = 0;
-
 struct timespec diff(struct timespec start, struct timespec end)
 {
-        struct timespec temp;
-        if ((end.tv_nsec - start.tv_nsec) < 0) {
-                temp.tv_sec  = end.tv_sec - start.tv_sec - 1;
-                temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
-        } else {
-                temp.tv_sec  = end.tv_sec  - start.tv_sec;
-                temp.tv_nsec = end.tv_nsec - start.tv_nsec;
-        }
-        return temp;
+  struct timespec temp;
+  if ((end.tv_nsec - start.tv_nsec) < 0) {
+    temp.tv_sec  = end.tv_sec - start.tv_sec - 1;
+    temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+  } else {
+    temp.tv_sec  = end.tv_sec  - start.tv_sec;
+    temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+  }
+  return temp;
 }
 #endif
 
 void user_data_callback(RECEIVER *pRec, short *xi, short *xq) {
 
   // The buffer received contains 16-bit signed integer IQ samples (2 bytes per sample)
-  int nSamples    = pRec->cfg.samplesPerPacket;      
+  for (int k = 0; k < pRec->samplesPerPacket; k += 1) {
 
-  for (int k=0; k < nSamples; k++) {
 #if SAMPLE_RATE_TIMING
-    pRec->cfg.ns += 1;
-
-    if ((counter++ % (256*256*256)) == 0) {
+    pRec->counter += 1;
+    if ((pRec->counter % (256*256*256)) == 0) {
+      struct timespec time_end, time_diff;
       long double diff_s ;
 
-      clock_gettime(CLOCK_REALTIME, &pRec->cfg.time_end);
-      pRec->cfg.time_diff = diff(pRec->cfg.time_start, pRec->cfg.time_end);
-      diff_s = pRec->cfg.time_diff.tv_sec + (pRec->cfg.time_diff.tv_nsec/1E9) ;
+      clock_gettime(CLOCK_REALTIME, &time_end);
+      time_diff = diff(pRec->time_start, time_end);
+      diff_s = time_diff.tv_sec + (time_diff.tv_nsec/1E9) ;
       //fprintf(stderr, "diff: %ds::%dns %Lf seconds\n", time_diff.tv_sec, time_diff.tv_nsec, diff_s);
-      fprintf (stderr, "***>>>>>>>>>>> Samples received: %lu, %.3Lf kS/s\n", pRec->cfg.ns, ((double)pRec->cfg.ns / (diff_s)/1E3) );
+      double osr = ((double)pRec->counter / (diff_s)/1E6);
+      double esr = abs(pRec->fsMHz-osr)/pRec->fsMHz;
+      fprintf (stderr, "***>>>>>>>>>>> Samples received: %u, %.3f MSPS, err %f\n", pRec->counter, osr, esr);
 
-      // fprintf (stderr, "[%s] [%s]\n", pRec->cfg.start, pRec->cfg.stop);
-      //fprintf (stderr, "%p %p\n", pi, pq);
-      // fprintf (stderr, ">>>>>>>>>>>>>> %s: #samples: %d\n", __FUNCTION__, nSamples);  
-      //fprintf (stderr, ">>>>>>>>>>>>>> LSB first: i: %08f q: %08f\n", *pi, *pq );  
+      // fprintf (stderr, ">>>>>>>>>>>>>> %s: #samples: %d\n", __FUNCTION__, pRec->samplesPerPacket);  
+      // fprintf (stderr, ">>>>>>>>>>>>>> LSB first: i: %08f q: %08f\n", *pi, *pq );  
       // fprintf (stderr, ">>>>>>>>>>>>>> i: %f q: %f\n", pRec->input_buffer[pRec->samples], pRec->input_buffer[pRec->samples+BUFFER_SIZE]);
-      fflush(stderr);
 
       // start a new measurement cycle
-      clock_gettime (CLOCK_REALTIME, &pRec->cfg.time_start);
-      pRec->cfg.ns = 0L;
+      pRec->time_start = time_end;
+      pRec->counter = 0;
     }
 #endif
 
-    // copy into the output buffer, converting to float and scaling
-    pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = float(*xi++) / SCALE_FACTOR_16B;
-    pRec->input_buffer[pRec->samples]              = float(*xq++) / SCALE_FACTOR_16B;
-    pRec->samples++;
+    // average together adjacent samples to low pass filter 
+    switch (pRec->m) {
+    case 1: pRec->mxi += ((int)*xi++) << 16; pRec->mxq += ((int)*xq++) << 16; pRec->mi += 1; break;
+    case 2: pRec->mxi += ((int)*xi++) << (16-1); pRec->mxq += ((int)*xq++) << (16-1); pRec->mi += 1; break;
+    case 4: pRec->mxi += ((int)*xi++) << (16-2); pRec->mxq += ((int)*xq++) << (16-2); pRec->mi += 1; break;
+    case 8: pRec->mxi += ((int)*xi++) << (16-3); pRec->mxq += ((int)*xq++) << (16-3); pRec->mi += 1; break;
+    case 16: pRec->mxi += ((int)*xi++) << (16-4); pRec->mxq += ((int)*xq++) << (16-4); pRec->mi += 1; break;
+    case 32: pRec->mxi += ((int)*xi++) << (16-5); pRec->mxq += ((int)*xq++) << (16-5); pRec->mi += 1; break;
+    case 64: pRec->mxi += ((int)*xi++) << (16-6); pRec->mxq += ((int)*xq++) << (16-6); pRec->mi += 1; break;
+    }
 
-    // when we have enough samples, send them to the client
-    if(pRec->samples==BUFFER_SIZE) {
-      send_IQ_buffer(pRec);
-      pRec->samples=0;      // signal that the output buffer is empty again
+    // accumulate next decimated sample
+    if (pRec->mi == pRec->m) {
+      // copy into the output buffer, converting to float and scaling
+      pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = float(pRec->mxi) / SCALE_FACTOR_32B;
+      pRec->input_buffer[pRec->samples]              = float(pRec->mxq) / SCALE_FACTOR_32B;
+      pRec->samples++;
+
+      // reset partial decimation
+      pRec->mi = 0; pRec->mxi = 0; pRec->mxq = 0;
+
+      // when we have enough samples, send them to the client
+      if(pRec->samples==BUFFER_SIZE) {
+	send_IQ_buffer(pRec);
+	pRec->samples=0;      // signal that the output buffer is empty again
+      }
     }
   }
   return;
@@ -122,15 +128,11 @@ void *helper_thread (void *arg) {
 
   printf(" !!!!!!!!! THREAD: [%p]\n",  pRec);
   while (1) {
-    unsigned int firstSampleNumb;
-    int grChanged, rfChanged, fsChanged;
-    int r = mir_sdr_ReadPacket(pRec->i_buffer, pRec->q_buffer, &firstSampleNumb, &grChanged, &rfChanged, &fsChanged);
-    if ( r != 0 ) {
-      printf(" !!!!!!!!! wait async input error: [%d]\n", r );
-      fflush (stdout);
-      break;
-    } 
-    user_data_callback(pRec, pRec->i_buffer, pRec->q_buffer);
+    if (pRec->connected) {
+      if (read_IQ_buffer(pRec) != 0)
+	break;
+      user_data_callback(pRec, pRec->i_buffer, pRec->q_buffer);
+    }
   }
   return 0;
 }
