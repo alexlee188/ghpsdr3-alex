@@ -42,6 +42,7 @@
 #include "receiver.h"
 #include "messages.h"
 
+#define SCALE_FACTOR(NB) double((1<<(NB-1))-1)
 #define SCALE_FACTOR_16B 32767.0	   // 2^16 / 2 - 1 = 32767.0
 #define SCALE_FACTOR_24B 8388607.0         // 2^24 / 2 - 1 = 8388607.0
 #define SCALE_FACTOR_32B 2147483647.0      // 2^32 / 2 - 1 = 2147483647.0
@@ -63,54 +64,64 @@ struct timespec diff(struct timespec start, struct timespec end)
 }
 #endif
 
-void user_data_callback(RECEIVER *pRec, short *xi, short *xq) {
-
-  // The buffer received contains 16-bit signed integer IQ samples (2 bytes per sample)
-  for (int k = 0; k < pRec->samplesPerPacket; k += 1) {
+void user_data_callback(RECEIVER *pRec) {
 
 #if SAMPLE_RATE_TIMING
-    pRec->counter += 1;
-    if ((pRec->counter % (256*256*256)) == 0) {
-      struct timespec time_end, time_diff;
-      long double diff_s ;
+  pRec->counter += SDRPLAY_NUM_PACKETS*pRec->samplesPerPacket;
+  if (pRec->counter > (256*256*256)) {
+    struct timespec time_end, time_diff;
+    long double diff_s ;
 
-      clock_gettime(CLOCK_REALTIME, &time_end);
-      time_diff = diff(pRec->time_start, time_end);
-      diff_s = time_diff.tv_sec + (time_diff.tv_nsec/1E9) ;
-      //fprintf(stderr, "diff: %ds::%dns %Lf seconds\n", time_diff.tv_sec, time_diff.tv_nsec, diff_s);
-      double osr = ((double)pRec->counter / (diff_s)/1E6);
-      double esr = abs(pRec->fsMHz-osr)/pRec->fsMHz;
-      fprintf (stderr, "***>>>>>>>>>>> Samples received: %u, %.3f MSPS, err %f\n", pRec->counter, osr, esr);
+    clock_gettime(CLOCK_REALTIME, &time_end);
+    time_diff = diff(pRec->time_start, time_end);
+    diff_s = time_diff.tv_sec + (time_diff.tv_nsec/1E9) ;
+    //fprintf(stderr, "diff: %ds::%dns %Lf seconds\n", time_diff.tv_sec, time_diff.tv_nsec, diff_s);
+    double osr = ((double)pRec->counter / (diff_s));
+    double esr = abs(pRec->fsHz-osr)/pRec->fsHz;
+    fprintf (stderr, "***>>>>>>>>>>> Samples received: %u, %.3f MSPS, err %f\n", pRec->counter, osr/1e6, esr);
 
-      // fprintf (stderr, ">>>>>>>>>>>>>> %s: #samples: %d\n", __FUNCTION__, pRec->samplesPerPacket);  
-      // fprintf (stderr, ">>>>>>>>>>>>>> LSB first: i: %08f q: %08f\n", *pi, *pq );  
-      // fprintf (stderr, ">>>>>>>>>>>>>> i: %f q: %f\n", pRec->input_buffer[pRec->samples], pRec->input_buffer[pRec->samples+BUFFER_SIZE]);
+    // fprintf (stderr, ">>>>>>>>>>>>>> %s: #samples: %d\n", __FUNCTION__, pRec->samplesPerPacket);  
+    // fprintf (stderr, ">>>>>>>>>>>>>> LSB first: i: %08f q: %08f\n", *pi, *pq );  
+    // fprintf (stderr, ">>>>>>>>>>>>>> i: %f q: %f\n", pRec->input_buffer[pRec->samples], pRec->input_buffer[pRec->samples+BUFFER_SIZE]);
 
-      // start a new measurement cycle
-      pRec->time_start = time_end;
-      pRec->counter = 0;
-    }
+    // start a new measurement cycle
+    pRec->time_start = time_end;
+    pRec->counter = 0;
+  }
 #endif
 
-    // average together adjacent samples to low pass filter 
-    switch (pRec->m) {
-    case 1: pRec->mxi += ((int)*xi++) << 16; pRec->mxq += ((int)*xq++) << 16; pRec->mi += 1; break;
-    case 2: pRec->mxi += ((int)*xi++) << (16-1); pRec->mxq += ((int)*xq++) << (16-1); pRec->mi += 1; break;
-    case 4: pRec->mxi += ((int)*xi++) << (16-2); pRec->mxq += ((int)*xq++) << (16-2); pRec->mi += 1; break;
-    case 8: pRec->mxi += ((int)*xi++) << (16-3); pRec->mxq += ((int)*xq++) << (16-3); pRec->mi += 1; break;
-    case 16: pRec->mxi += ((int)*xi++) << (16-4); pRec->mxq += ((int)*xq++) << (16-4); pRec->mi += 1; break;
-    case 32: pRec->mxi += ((int)*xi++) << (16-5); pRec->mxq += ((int)*xq++) << (16-5); pRec->mi += 1; break;
-    case 64: pRec->mxi += ((int)*xi++) << (16-6); pRec->mxq += ((int)*xq++) << (16-6); pRec->mi += 1; break;
-    }
+  // The buffer received contains 16-bit signed integer IQ samples (2 bytes per sample)
+  for (int k = 0; k < SDRPLAY_NUM_PACKETS*pRec->samplesPerPacket; k += 1) {
+
+    // accumulate p->m adjacent samples to low pass filter 
+    pRec->mxi += (int)pRec->i_buffer[k];
+    pRec->mxq += (int)pRec->q_buffer[k];
+    pRec->mi += 1;
 
     // accumulate next decimated sample
     if (pRec->mi == pRec->m) {
+      // scale to 32 bits
+      // left shift 20 to convert short to int (on most machines!)
+      // right shift log2(pRec->m) decimation factor to divide by pRec->m
+      // could be combined with SCALE_FACTOR
+      // divide by SCALE_FACTOR(16+log2(pRec->m))
+      switch (pRec->m) {
+      case   1: pRec->mxi <<= (20-0); pRec->mxq <<= (20-0); break;
+      case   2: pRec->mxi <<= (20-1); pRec->mxq <<= (20-1); break;
+      case   4: pRec->mxi <<= (20-2); pRec->mxq <<= (20-2); break;
+      case   8: pRec->mxi <<= (20-3); pRec->mxq <<= (20-3); break;
+      case  20: pRec->mxi <<= (20-4); pRec->mxq <<= (20-4); break;
+      case  32: pRec->mxi <<= (20-5); pRec->mxq <<= (20-5); break;
+      case  64: pRec->mxi <<= (20-6); pRec->mxq <<= (20-6); break;
+      case 128: pRec->mxi <<= (20-7); pRec->mxq <<= (20-7); break;
+      case 256: pRec->mxi <<= (20-8); pRec->mxq <<= (20-8); break;
+      }
       // copy into the output buffer, converting to float and scaling
       pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = float(pRec->mxi) / SCALE_FACTOR_32B;
       pRec->input_buffer[pRec->samples]              = float(pRec->mxq) / SCALE_FACTOR_32B;
       pRec->samples++;
 
-      // reset partial decimation
+      // reset decimation
       pRec->mi = 0; pRec->mxi = 0; pRec->mxq = 0;
 
       // when we have enough samples, send them to the client
@@ -120,19 +131,16 @@ void user_data_callback(RECEIVER *pRec, short *xi, short *xq) {
       }
     }
   }
-  return;
 }
 
 void *helper_thread (void *arg) {
   RECEIVER *pRec = (RECEIVER *)arg;
 
-  printf(" !!!!!!!!! THREAD: [%p]\n",  pRec);
+  printf(" !!!!!!!!! helper_thread: [%p]\n",  pRec);
   while (1) {
-    if (pRec->connected) {
-      if (read_IQ_buffer(pRec) != 0)
-	break;
-      user_data_callback(pRec, pRec->i_buffer, pRec->q_buffer);
-    }
+    if (read_IQ_buffer(pRec) != 0)
+      continue;
+    user_data_callback(pRec);
   }
   return 0;
 }

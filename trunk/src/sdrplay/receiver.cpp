@@ -33,6 +33,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <string>
+#include <math.h>
 
 #include "messages.h"
 #include "client.h"
@@ -66,20 +67,23 @@ char *error_string(int r) {
   return (char *)"undefined error value";
 }
 
-int translateGain(RECEIVER *pRec) {
-  if (pRec->cfg.gain < -1 || pRec->cfg.gain > 85) return -1;
-  pRec->gRdB = pRec->cfg.gain;
+int translateGain(int gain, RECEIVER *pRec) {
+  if (gain < 0 || gain > pRec->maxGain-pRec->minGain) return -1;
+  pRec->gRdB = gain;
+  pRec->gain_dB = pRec->maxGain - pRec->gRdB;
   return 0;
 }
 
-int translateFreq(RECEIVER *pRec) {
-  if (pRec->cfg.freq < 100000 || pRec->cfg.freq > 2000000000) return -1;
-  pRec->rfMHz = pRec->cfg.freq / 1.0e6;
+int translateFreq(long freq, RECEIVER *pRec) {
+  if (freq < 100000 || freq > 2000000000) return -1;
+  pRec->rfHz = double(freq);
   return 0;
 }  
 
-int translateSR(RECEIVER *pRec) {
-  switch (pRec->cfg.sr) {
+// all the sample rates that work with the ozy protocol
+// are decimations of hardware sample rates that SDRplay implements
+int translateSR(int sr, RECEIVER *pRec) {
+  switch (sr) {
   case 24000:			// m = 64
   case 48000:			// m = 32
   case 96000:			// m = 16
@@ -87,8 +91,8 @@ int translateSR(RECEIVER *pRec) {
   case 384000:			// m = 4
   case 768000:			// m = 2
   case 1536000:			// m = 1
-    pRec->m = 1536000 / pRec->cfg.sr;
-    pRec->fsMHz = double(pRec->cfg.sr * pRec->m) / 1.0e6;
+    pRec->m = 1536000 / sr;
+    pRec->fsHz = double(sr * pRec->m);
     return 0;
   case 22050:			// m = 64
   case 44100:			// m = 32
@@ -97,15 +101,15 @@ int translateSR(RECEIVER *pRec) {
   case 352800:			// m = 4
   case 705600:			// m = 2
   case 1411200:			// m = 1
-    pRec->m = 1411200 / pRec->cfg.sr;
-    pRec->fsMHz = double(pRec->cfg.sr * pRec->m) / 1.0e6;
+    pRec->m = 1411200 / sr;
+    pRec->fsHz = double(sr * pRec->m);
     return 0;
   }
   return -1;
 }
 
-int translateBW(RECEIVER *pRec) {
-  switch (pRec->cfg.bw) {
+int translateBW(int bw, RECEIVER *pRec) {
+  switch (bw) {
   case 200000:  pRec->bwType = mir_sdr_BW_0_200; break;
   case 300000:  pRec->bwType = mir_sdr_BW_0_300; break;
   case 600000:  pRec->bwType = mir_sdr_BW_0_600; break;
@@ -120,8 +124,8 @@ int translateBW(RECEIVER *pRec) {
   return 0;
 }
 
-int translateIF(RECEIVER *pRec) {
-  switch (pRec->cfg.ift) {
+int translateIF(int ift, RECEIVER *pRec) {
+  switch (ift) {
   case 0: pRec->ifType = mir_sdr_IF_Zero; break;
   case 450: pRec->ifType = mir_sdr_IF_0_450; break;
   case 1620: pRec->ifType = mir_sdr_IF_1_620; break;
@@ -131,23 +135,57 @@ int translateIF(RECEIVER *pRec) {
   return 0;
 }
 
+struct bands {
+  double minHz, maxHz, minGain, maxGain;
+} bands[] = {
+  {     100000,   11999999, -4,  98 },
+  {   12000000,   29999999, -4,  98 },
+  {   30000000,   59999999, -4,  98  },
+  {   60000000,  119999999,  1, 103 },
+  {  120000000,  249999999,  5, 107 },
+  {  250000000,  419999999,  9,  94 },
+  {  420000000,  999999999,  9,  94 },
+  { 1000000000, 2000000000, 24, 105 }
+};
+
+void set_gain_limits(RECEIVER *pRec) {
+  for (unsigned int i = 0; i < sizeof(bands)/sizeof(bands[0]); i += 1) {
+    if (pRec->rfHz >= bands[i].minHz && pRec->rfHz <= bands[i].maxHz) {
+      pRec->minGain = bands[i].minGain;
+      pRec->maxGain = bands[i].maxGain;
+      return;
+    }
+  }
+}
+
+int get_sample_rate(RECEIVER *pRec) {
+  return (int)(pRec->fsHz / pRec->m);
+}
+
 int init_receivers (SdrPlayConfig *pCfg) 
 {
 
   for(int i=0;i<MAX_RECEIVERS;i++) {
     receiver[i].client  = (CLIENT*)NULL;
-    receiver[i].samples = 0; 
-    receiver[i].cfg = *pCfg;
-    receiver[i].i_buffer = NULL;
-    receiver[i].q_buffer = NULL;
-    receiver[i].samplesPerPacket = 0;
     receiver[i].connected = 0;
+    receiver[i].samples = 0; 
+
+    receiver[i].fsHz = 2048e3;
+    receiver[i].rfHz = 200e6;
+    receiver[i].bwType = mir_sdr_BW_1_536;
+    receiver[i].ifType = mir_sdr_IF_Zero;
+    receiver[i].samplesPerPacket = 0;
+    receiver[i].dcMode = 0;
+    receiver[i].gRdB = 80;
+    set_gain_limits(&receiver[i]);
+    receiver[i].gain_dB = receiver[i].maxGain - receiver[i].gRdB;
+
     // validate configuration
-    if (translateGain(&receiver[i]) < 0 ||
-	translateFreq(&receiver[i]) < 0 ||
-	translateSR(&receiver[i]) < 0 ||
-	translateBW(&receiver[i]) < 0 ||
-	translateIF(&receiver[i]) < 0)
+    if (translateFreq(pCfg->freq, &receiver[i]) < 0 ||
+	translateGain(pCfg->gain, &receiver[i]) < 0 ||
+	translateSR(pCfg->sr, &receiver[i]) < 0 ||
+	translateBW(pCfg->bw, &receiver[i]) < 0 ||
+	translateIF(pCfg->ift, &receiver[i]) < 0)
       return -1;
   }
 
@@ -160,13 +198,13 @@ int init_receivers (SdrPlayConfig *pCfg)
 
   // verify hardware
   RECEIVER *pRec = &receiver[0];	// there is only one
-  int samplesPerPacket;
-  int r = mir_sdr_Init(pRec->gRdB, pRec->fsMHz, pRec->rfMHz, pRec->bwType, pRec->ifType, &samplesPerPacket);
+  int r = mir_sdr_Init(pRec->gRdB, pRec->fsHz / 1e6, pRec->rfHz / 1e6, pRec->bwType, pRec->ifType, &pRec->samplesPerPacket);
 
   if ( r != mir_sdr_Success)  {
     fprintf(stdout, "No SDRPlay hardware detected: %s\n", error_string(r));
     return -1;
   }
+
   mir_sdr_Uninit();
 
   // set up other resources
@@ -204,8 +242,7 @@ const char* attach_receiver(int rx, CLIENT* client)
     receiver[rx].client=client;
     client->receiver=rx;
 
-    sprintf(response,"OK %d", receiver[rx].cfg.sr);
-    fprintf(stdout, "response to attach_receiver: %s\n", response);
+    sprintf(response,"OK %d", get_sample_rate(&receiver[rx]));
 
     return response;
 }
@@ -226,25 +263,6 @@ const char* detach_receiver (int rx, CLIENT* client) {
     return OK;
 }
 
-// Megahertz of band edges, init sets rf front end,
-// frequency can only move around inside the band edges
-// (but that doesn't make sense, could tune outside the edges
-//  and you'd just start dealing more with the filter skirts)
-// In any case, the band edges get set by init and you need to
-// uninit and re-init to change to a different band.
-
-double band_breaks[] = {
-  0.100, 12.0, 30.0, 60.0, 120.0, 250.0, 420.0, 1000.0, 2000.0
-};
-#define N_BAND_BREAKS ((int)(sizeof(band_breaks)/sizeof(band_breaks[0])))
-
-int find_frequency_band(double fMHz) {
-  for (int i = 0; i < N_BAND_BREAKS-1; i += 1)
-    if (fMHz >= band_breaks[i] && fMHz < band_breaks[i+1])
-      return i;
-  return -1;
-}
-
 const char* set_frequency (CLIENT* client, long frequency) {
       
     if(client->state==RECEIVER_DETACHED) {
@@ -256,34 +274,23 @@ const char* set_frequency (CLIENT* client, long frequency) {
     }
 
     RECEIVER *pRec = &receiver[client->receiver];
-    double fMHz = double(frequency)/1.0e6;
-    int frequency_band = find_frequency_band(fMHz);
 
-    if (frequency_band < 0) {
-      fprintf (stderr, "%s: %ld is out of bounds\n", __FUNCTION__, pRec->frequency);
-      return OK;
-    }
+    double diff = double(frequency) - pRec->rfHz;
 
-    if (pRec->frequency_did_change == 0) {
-      fprintf(stderr, "%s: waiting on previous frequency change\n", __FUNCTION__);
-      return OK;
-    }
+    if (diff != 0) {
+      pRec->rfHz = double(frequency);
+      set_gain_limits(pRec);
 
-    if (pRec->frequency != frequency) {
-      if (pRec->frequency_band != frequency_band) {
-	stop_receiver(pRec);
-	pRec->cfg.freq = frequency;
-	pRec->rfMHz = fMHz;
-	start_receiver(pRec);
-      } else {
-	mir_sdr_SetRf((frequency-pRec->frequency)/1.0e6, 0, 0);
-	pRec->frequency_did_change = 0;
+      if (pRec->connected) {
+	if (fabs(diff) > 10000.0) {
+	  restart_receiver(pRec);
+	} else {
+	  // mir_sdr_SetRf(diff, 0, 0);
+	  mir_sdr_SetRf(pRec->rfHz, 1, 0);
+	}
       }
-      pRec->frequency=frequency;
-      pRec->frequency_band=frequency_band;
-      pRec->frequency_changed=1;
-      fprintf (stderr, "%s: %ld\n", __FUNCTION__, receiver[client->receiver].frequency);
     }
+
     return OK;
 }
 
@@ -309,18 +316,20 @@ const char* set_random (CLIENT* client, bool)
     return OK;
 }
 
-const char* set_attenuator (CLIENT* client, int new_level_in_db)
+const char* set_attenuator (CLIENT* client, int new_level_in_dB)
 {
-    // FIX.ME rec - gain reduction vs gain?
-    int r = mir_sdr_SetGr(new_level_in_db, 1, 0);
+  
+  int r = mir_sdr_SetGr(new_level_in_dB, 1, 0);
 
-    if (r != 0)
-      fprintf(stderr, "WARNING: Failed to set tuner gain: %d.\n", r);
-    else {
-      receiver[client->receiver].gRdB = new_level_in_db;
-      fprintf(stderr, "Tuner gain reduction set to %d dB.\n", new_level_in_db);
-    }
-    return OK;
+  if (r != 0)
+    fprintf(stderr, "WARNING: Failed to set tuner gain: %d.\n", r);
+  else {
+    RECEIVER *pRec = &receiver[client->receiver];
+    pRec->gRdB = new_level_in_dB;
+    pRec->gain_dB = pRec->maxGain - new_level_in_dB;
+    fprintf(stderr, "Tuner gain reduction set to %d dB.\n", new_level_in_dB);
+  }
+  return OK;
 }
 
 void send_IQ_buffer (RECEIVER *pRec) {
@@ -377,54 +386,48 @@ void send_IQ_buffer (RECEIVER *pRec) {
     }
 }
 
-void start_receiver(RECEIVER *pRec) {
-  int samplesPerPacket;
+void restart_receiver(RECEIVER *pRec) {
+  if (pRec->connected) stop_receiver(pRec);
+  start_receiver(pRec);
+}
 
-  int r = mir_sdr_Init(pRec->gRdB, pRec->fsMHz, pRec->rfMHz, pRec->bwType, pRec->ifType, &samplesPerPacket);
+void start_receiver(RECEIVER *pRec) {
+
+  int r = mir_sdr_Init(pRec->gRdB, pRec->fsHz / 1e6, pRec->rfHz / 1e6, pRec->bwType, pRec->ifType, &pRec->samplesPerPacket);
 
   if (r != 0) {
     fprintf(stdout, "mir_sdr_Init returned %d: %s\n", r, error_string(r));
     exit(1);
   }
 
-  pRec->frequency = pRec->cfg.freq;
-  pRec->frequency_band = find_frequency_band(pRec->rfMHz);
-  pRec->frequency_did_change = 1;
-  
-  mir_sdr_SetDcMode(4,0);
-  mir_sdr_SetDcTrackTime(63);
-
-  if (samplesPerPacket != pRec->samplesPerPacket) {
-    if (pRec->i_buffer != NULL) {
-      free(pRec->i_buffer);
-      free(pRec->q_buffer);
-    }
-    pRec->i_buffer = (short *)malloc(samplesPerPacket * sizeof(short));
-    pRec->q_buffer = (short *)malloc(samplesPerPacket * sizeof(short));
-    pRec->samplesPerPacket = samplesPerPacket;
-    // reset partial decimation
-    pRec->mi = 0; pRec->mxi = 0; pRec->mxq = 0;
+  if (pRec->dcMode) {
+    mir_sdr_SetDcMode(4,1);
   }
+
+  // reset decimation
+  pRec->mi = 0; pRec->mxi = 0; pRec->mxq = 0;
+
   pRec->connected = 1;
 }
 
 void stop_receiver(RECEIVER *pRec) {
   int r = mir_sdr_Uninit();
-  if (r != 0)
-    fprintf(stderr, "WARNING: Failed to stop: %d: %s.\n", r, error_string(r));
-  else
-    fprintf(stderr, "SDRplay stopped\n");
+
+  if (r != 0) fprintf(stderr, "WARNING: Failed to stop: %d: %s.\n", r, error_string(r));
+
   pRec->connected = 0;
 }
 
 int read_IQ_buffer(RECEIVER *pRec) {
   unsigned int firstSampleNumb;
-  int grChanged, rfChanged, fsChanged;
-  int r = mir_sdr_ReadPacket(pRec->i_buffer, pRec->q_buffer, &firstSampleNumb, &grChanged, &rfChanged, &fsChanged);
-  if (rfChanged)
-    pRec->frequency_did_change = 1;
-  if ( r != 0 ) {
-    fprintf(stderr, " !!!!!!!!! read packet error: [%d] %s\n", r, error_string(r) );
+  int grChanged, rfChanged, fsChanged, r;
+  for (int i = 0; i < SDRPLAY_NUM_PACKETS; i += 1) {
+    int offset = i*pRec->samplesPerPacket;
+    r = mir_sdr_ReadPacket(pRec->i_buffer+offset, pRec->q_buffer+offset, &firstSampleNumb, &grChanged, &rfChanged, &fsChanged);
+    if ( r != 0 ) {
+      fprintf(stderr, " !!!!!!!!! read packet error: [%d] %s\n", r, error_string(r) );
+      return r;
+    }
   }
   return r;
 }

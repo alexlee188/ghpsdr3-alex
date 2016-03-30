@@ -27,6 +27,8 @@
 #define MAX_RECEIVERS 1
 
 #define BUFFER_SIZE 1024
+#define SDRPLAY_NUM_PACKETS	8
+#define SDRPLAY_MAX_BUF_SIZE	504
 
 typedef struct {
   int sr;			/* sample rate of base band stream, samples/second */
@@ -39,8 +41,7 @@ typedef struct {
 
 #include <mirsdrapi-rsp.h>	/* for pointless typedefs */
 
-
-#define SAMPLE_RATE_TIMING 1
+#define SAMPLE_RATE_TIMING 1	/* check the sample rate delivered */
 
 typedef struct _receiver {
   int id;
@@ -48,28 +49,28 @@ typedef struct _receiver {
   pthread_t audio_thread_id;
   CLIENT* client;
 
-  SdrPlayConfig cfg;
-
   int connected;
 
-  int frequency_changed;
-  int frequency_did_change;	/* ack received with data packet */
-  long frequency;
-  int frequency_band;
-  int m;			/* decimation factor: 1, 2, 4, 8, 16, 32, and 64 implemented */
+  // parameters from gr-osmocom
   int gRdB;			/* gain reduction */
-  double fsMHz;			/* adc sample rate */
-  double rfMHz;			/* center frequency */
-  mir_sdr_Bw_MHzT bwType;	/* bandwidth type */
-  mir_sdr_If_kHzT ifType;	/* if type */
+  double gain_dB;		/* gain */
+  double fsHz;			/* sample rate */
+  double rfHz;			/* center frequency */
+  mir_sdr_Bw_MHzT bwType;	/* bandwidth */
+  mir_sdr_If_kHzT ifType;	/* intermediate frequency */
+  int samplesPerPacket;		/* samples per packet */
+  int maxGain;			/* max gain */
+  int minGain;			/* min gain */
+  int dcMode;			/* dcmode on */
 
-  int samplesPerPacket;		/* packet size received from Init */
+  short i_buffer[SDRPLAY_NUM_PACKETS*SDRPLAY_MAX_BUF_SIZE];
+  short q_buffer[SDRPLAY_NUM_PACKETS*SDRPLAY_MAX_BUF_SIZE];
+
   float input_buffer[BUFFER_SIZE*2];
   float output_buffer[BUFFER_SIZE*2];
-  short *i_buffer;
-  short *q_buffer;
   int samples;
 
+  int m;		/* decimation factor: 1, 2, 4, 8, 16, 32, and 64 implemented */
   int mi;		// decimation index
   int mxi;		// decimation partial for I
   int mxq;		// decimation partial for Q
@@ -93,6 +94,7 @@ typedef struct _buffer {
 int init_receivers(SdrPlayConfig *);
 const char* attach_receiver(int rx,CLIENT* client);
 const char* detach_receiver(int rx,CLIENT* client);
+void restart_receiver (RECEIVER *pRec);
 void start_receiver (RECEIVER *pRec);
 void stop_receiver (RECEIVER *pRec);
 const char* set_frequency(CLIENT* client,long f);

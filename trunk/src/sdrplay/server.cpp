@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
 
   cfg.bw = 1536000;
   cfg.sr = 192000;
-  cfg.gain = 40;
+  cfg.gain = 80;
   cfg.freq = 14500000;
   cfg.ift = 0;
   debug_level = 3;
