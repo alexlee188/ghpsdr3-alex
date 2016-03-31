@@ -19,7 +19,7 @@
 HardwareSdrplay :: HardwareSdrplay (Connection *pC, QWidget *pW): DlgHardware (pC, pW)
 {
     // Attenuator
-    QGroupBox *attGroupBox = new QGroupBox(tr("Attenuator"));
+    QGroupBox *attGroupBox = new QGroupBox(tr("Gain Reduction"));
     QVBoxLayout *vbox = new QVBoxLayout;
     attMapper = new QSignalMapper(this);
 
