@@ -138,8 +138,11 @@ void *helper_thread (void *arg) {
 
   printf(" !!!!!!!!! helper_thread: [%p]\n",  pRec);
   while (1) {
-    if (read_IQ_buffer(pRec) != 0)
+    if (read_IQ_buffer(pRec) != 0) {
+      struct timespec timeout = { 0, 1000000 };
+      nanosleep(&timeout, NULL);
       continue;
+    }
     user_data_callback(pRec);
   }
   return 0;
