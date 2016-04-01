@@ -3,7 +3,7 @@
 
 sudo sysctl -w net.core.rmem_max=26214400
 
-This file documents an attempt to write a I/Q server for the SDRplay.
+This file documents an I/Q server for the SDRplay.
 For more information on the hardware, please refer to the web site:
 
     http://sdrplay.com
@@ -19,7 +19,7 @@ Currently the sdrplay-server program is a command line program and it has few op
                           200000 | 300000 | 600000 |
                           1536000 | 5000000 | 6000000 |
                           7000000 | 8000000, def=1536000
-      -g [ --gain ]       gain in dB or -1 for AGC
+      -g [ --gain ]       gain in dB or -1 for AGC (no AGC as yet)
       -h [ --help ]       print usage message
       -d [ --debug ]      debug level (default=0)
 
@@ -31,7 +31,7 @@ The code base was derived (by Alex Lee 9V1AL et al.) from John Melton G0ORX/N6LY
 The code specific for rtlsdr was written by Andrea Montefusco, IW0HDV (andrew att montefusco dott com).
 
 The code specific for SDRplay was written by Roger E Critchlow Jr, AD5DZ (rec att elf dott org), with much help
-from code examples provided by the SDRplay manufacturer
+from code examples provided by the SDRplay manufacturer, the gr-osmocom source, and the SoapySDRPlay sources.
 
 
 0.2 Caveats
@@ -57,4 +57,6 @@ At the moment you need to run them in three separate terminal windows, strictly 
 That is if you are running the three pieces altogether in the same machine.
 Otherwise use the IP address of the machine where the dspserver is running.
 
-
+The sdrplay-server must decimate the incoming sample stream to 192000 SPS from hardware sample rates or it floods
+the network interface and samples are lost.  The current decimation algorithm appears to introduce some crackling
+artefacts as the hardware gain is increased.

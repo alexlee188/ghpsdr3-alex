@@ -35,5 +35,9 @@ The --key option to build the ssl/tls keys requires openssl:
 The configure for this directory simply checks if expect can be found,
 the Makefile is configured to install the script in the expected bindir.
 
+------------------------------------------------------------------------
 
-
+[ ] add --background
+[ ] use dbus-launch to launch a dbus session when running jackd on
+  a headless server without an XDISPLAY rooted dbus session.
+  

@@ -7,6 +7,8 @@
 # to elicit the crash bug
 #
 
+package require snack
+
 # from dspserver/buffer.h
 # // g0orx binary header
 # #define BUFFER_HEADER_SIZE 15
@@ -85,19 +87,19 @@ proc ::chan::decoder {id} {
 	switch $type {
 	    0 {
 		# spectrum buffer
-		puts $::chan::incoming($id);
+		puts "spectrum: $::chan::incoming($id)";
 	    }
 	    1 {
 		# audio buffer
-		puts $::chan::incoming($id);
+		puts "audio: $::chan::incoming($id)";
 	    }
 	    2 {
 		# bandscope buffer
-		puts $::chan::incoming($id);
+		puts "bandscope: $::chan::incoming($id)";
 	    }
 	    3 {
 		# rtp reply buffer
-		puts $::chan::incoming($id);
+		puts "rtp-reply: $::chan::incoming($id)";
 	    }
 	    4 {
 		# answer buffer
@@ -111,7 +113,7 @@ proc ::chan::decoder {id} {
 		puts "invalid buffer type: $type"
 	    }
 	}
-	if {	    0} {
+	if {0} {
 	    if {[binary scan $::chan::incoming($id) aaaSSSIS type version subversion samples main sub sr lo] != 8} {
 		puts "failed to scan header"
 		return
@@ -171,6 +173,7 @@ proc start {id} {
     command-send $id {q-info}
     command-send $id {q-server}
     command-send $id {q-cantx# xxxx xxxx}
+    command-send $id {startaudiostream}
 }
 
 proc stop {id} {
@@ -263,6 +266,9 @@ foreach i {1 2 3 4 5 6 7 8} {
 # "setEncoding " << audio->get_audio_encoding()
 # "startRTPStream " << local_port << " " << audio->get_audio_encoding() << " " << audio_sample_rate << " " << " " << audio_channels
 # "startAudioStream " << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " " << audio_sample_rate << " " << audio_channels << " " << audioinput->getMicEncoding()
+#	samplerate = 8000 | 48000
+#	channels = 1 | 2
+#
 # "SetPan 0.5"
 # "SetAGC " << agc
 # "setpwsmode " << pwsmode

@@ -41,7 +41,11 @@ typedef struct {
 
 #include <mirsdrapi-rsp.h>	/* for pointless typedefs */
 
-#define SAMPLE_RATE_TIMING 1	/* check the sample rate delivered */
+#define SAMPLE_RATE_TIMING 0	/* check the sample rate delivered */
+
+#define DECIMATE_BY_DROP 0	/* decimate by dropping samples */
+#define DECIMATE_BY_AVERAGE 1	/* decimate by averaging samples */
+#define DECIMATE_BY_CIC 0	/* decimate by CIC filter */
 
 typedef struct _receiver {
   int id;
@@ -70,7 +74,7 @@ typedef struct _receiver {
   float output_buffer[BUFFER_SIZE*2];
   int samples;
 
-  int m;		/* decimation factor: 1, 2, 4, 8, 16, 32, and 64 implemented */
+  int m;		/* decimation factor */
   int mi;		// decimation index
   int mxi;		// decimation partial for I
   int mxq;		// decimation partial for Q

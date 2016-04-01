@@ -106,6 +106,7 @@ getopts {
     {--hw -h cmd {hardware server command}}
     {--dsp -d cmd {dsp server command}}
     {--ui -u cmd {user interface command}}
+    {--dbus {} {} {launch dbus for jackd}}
     {--jack -j cmd {jackd server command}}
     {--foreground -f {} {foreground process [default]}}
     {--background -b {} {background radio server}}
@@ -144,7 +145,7 @@ if {[info exists args(--at)]} {
 	}
     }
     # copy to ssh and remove locally
-    foreach opt {--jack --hw --dsp} {
+    foreach opt {--dbus --jack --hw --dsp} {
 	if {[info exists args($opt)]} {
 	    lappend args(--ssh) $opt [quote-for-ssh $args($opt)]
 	    unset args($opt)
@@ -182,6 +183,17 @@ if {[info exists args(--key)]} {
 	
 log_user 0
 set expects {}
+if {[info exists args(--dbus)] && ! [info exists ::env(DBUS_SESSION_BUS_ADDRESS)]} {
+    foreach line [split [string trim [exec dbus-launch --csh-syntax]]] {
+	switch $line {
+	    {^DBUS_SESSION_BUS_ADDRESS=.*$} {
+		foreach {name value} [split $line {=}] break
+		puts "set ::env(DBUS_SESSION_BUS_ADDRESS) $value"
+		set ::env(DBUS_SESSION_BUS_ADDRESS) $value
+	    }
+	}
+    }
+}
 foreach tag {ssh jack hw dsp ui} {
     # puts "start loop $tag [info exists args(--$tag)]"
     if {[info exists args(--$tag)]} { 

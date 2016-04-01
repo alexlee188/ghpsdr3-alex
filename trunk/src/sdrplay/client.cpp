@@ -93,6 +93,12 @@ void user_data_callback(RECEIVER *pRec) {
   // The buffer received contains 16-bit signed integer IQ samples (2 bytes per sample)
   for (int k = 0; k < SDRPLAY_NUM_PACKETS*pRec->samplesPerPacket; k += 1) {
 
+#if DECIMATE_BY_DROP
+      // count samples
+      pRec->mi += 1;
+#endif
+
+#if DECIMATE_BY_AVERAGE
     // accumulate p->m adjacent samples to low pass filter 
     pRec->mxi += (int)pRec->i_buffer[k];
     pRec->mxq += (int)pRec->q_buffer[k];
@@ -102,6 +108,7 @@ void user_data_callback(RECEIVER *pRec) {
     if (pRec->mi == pRec->m) {
       // scale to 32 bits
       // left shift 20 to convert short to int (on most machines!)
+      // (actually we're converting 12 bit sample to 32 bit int)
       // right shift log2(pRec->m) decimation factor to divide by pRec->m
       // could be combined with SCALE_FACTOR
       // divide by SCALE_FACTOR(16+log2(pRec->m))
@@ -116,6 +123,20 @@ void user_data_callback(RECEIVER *pRec) {
       case 128: pRec->mxi <<= (20-7); pRec->mxq <<= (20-7); break;
       case 256: pRec->mxi <<= (20-8); pRec->mxq <<= (20-8); break;
       }
+    }
+#endif
+
+#if DECIMATE_BY_CIC
+#error "DECIMATE_BY_CIC not implemented"
+#endif
+
+    if (pRec->mi == pRec->m) {
+#if DECIMATE_BY_DROP
+      // copy last sample
+      pRec->mxi = (int)pRec->i_buffer[k];
+      pRec->mxq = (int)pRec->q_buffer[k];
+      pRec->mi += 1;
+#endif
       // copy into the output buffer, converting to float and scaling
       pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = float(pRec->mxi) / SCALE_FACTOR_32B;
       pRec->input_buffer[pRec->samples]              = float(pRec->mxq) / SCALE_FACTOR_32B;
