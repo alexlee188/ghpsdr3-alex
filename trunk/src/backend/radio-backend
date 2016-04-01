@@ -9,6 +9,11 @@
 array set id {}
 array set args {}
 array set logs {}
+set verbose 0
+
+proc verbose-puts {string} {
+    if {$::verbose} { puts $string }
+}
 
 proc getopts {opts argv} {
     if {[catch {
@@ -19,7 +24,7 @@ proc getopts {opts argv} {
 	    foreach opt $opts {
 		if {$done} break
 		foreach {longopt shortopt arg gloss} $opt break
-		if {[string equal $longopt $arg0]} {
+		if {[string length $longopt] > 0 && [string equal $longopt $arg0]} {
 		    # matched longopt
 		    if {$arg != {}} {
 			# requires an argument
@@ -35,7 +40,7 @@ proc getopts {opts argv} {
 		    set done 1
 		    continue
 		}
-		if {[string equal $shortopt $arg0]} {
+		if {[string length $shortopt] > 0 && [string equal $shortopt $arg0]} {
 		    # matched shortopt
 		    if {$arg != {}} {
 			# requires an argument
@@ -112,10 +117,13 @@ getopts {
     {--background -b {} {background radio server}}
     {--log -l path {log session to files at path}}
     {--key -k {} {create ssl/tls key and cert}}
+    {--verbose {} {} {natter about what's up}}
 } $argv
     
+set ::verbose if {[info exists args(--verbose)]
+
 if {[info exists args(--in)]} {
-    # puts "chdir server to $args(--in)"
+    verbose-puts "chdir server to $args(--in)"
     file mkdir $args(--in)
     cd $args(--in)
 }
@@ -154,12 +162,15 @@ if {[info exists args(--at)]} {
 }
 
 if {[info exists args(--key)]} {
+    verbose-puts "checking for pkey and cert"
     if { ! [file exists pkey]} {
+	verbose-puts "making pkey"
 	spawn openssl genrsa -out pkey 2048
 	expect {*\n} exp_continue eof {}
 	close $spawn_id
     }
     if { ! [file exists cert.req]} {
+	verbose-puts "making cert.req"
 	spawn openssl req -new -key pkey -out cert.req
 	expect {
 	    {\nCountry*:} { send AQ\n; exp_continue }
@@ -172,13 +183,12 @@ if {[info exists args(--key)]} {
 	close $spawn_id
     }
     if { ! [file exists cert]} {
+	verbose-puts "making cert"
 	spawn openssl x509 -req -days 365 -in cert.req -signkey pkey -out cert
-	expect {
-	    {*\n} exp_continue
-	    eof {}
-	}
+	expect {*\n} exp_continue eof {}
 	close $spawn_id
     }
+    verbose-puts "pkey and cert made"
 }
 	
 log_user 0
@@ -188,14 +198,14 @@ if {[info exists args(--dbus)] && ! [info exists ::env(DBUS_SESSION_BUS_ADDRESS)
 	switch $line {
 	    {^DBUS_SESSION_BUS_ADDRESS=.*$} {
 		foreach {name value} [split $line {=}] break
-		puts "set ::env(DBUS_SESSION_BUS_ADDRESS) $value"
+		verbose-puts "set ::env(DBUS_SESSION_BUS_ADDRESS) $value"
 		set ::env(DBUS_SESSION_BUS_ADDRESS) $value
 	    }
 	}
     }
 }
 foreach tag {ssh jack hw dsp ui} {
-    # puts "start loop $tag [info exists args(--$tag)]"
+    verbose-puts "start loop $tag [info exists args(--$tag)]"
     if {[info exists args(--$tag)]} { 
 	if {[info exists ::args(--log)]} {
 	    set ::logs($tag) $::logpfx-$tag.log
@@ -208,12 +218,12 @@ foreach tag {ssh jack hw dsp ui} {
 	    set glob exp_continue
 	    set death exit
 	}
-	# puts "spawn \"$::args(--$tag)\" at [timestamp -format %Y-%m-%d-%H-%M-%S]"
+	verbose-puts "spawn \"$::args(--$tag)\" at [timestamp -format %Y-%m-%d-%H-%M-%S]"
 	eval spawn $::args(--$tag)
 	lappend expects -i $spawn_id "*\n" $glob eof $death
-	# puts "poll for $tag and prior"
+	verbose-puts "poll for $tag and prior"
 	expect {*}$expects -i $any_spawn_id -timeout 2 timeout {}
-	# puts "finished poll for $tag and prior"
+	verbose-puts "finished poll for $tag and prior"
     }
 }
 
