@@ -5,7 +5,6 @@
 ## optionally backgrounding the dspserver and hardware handler
 ## optionally starting a frontend ui locally
 
-
 array set id {}
 array set args {}
 array set logs {}
@@ -20,6 +19,7 @@ proc getopts {opts argv} {
 	while {[llength $argv] > 0} {
 	    # match the first option
 	    set arg0 [lindex $argv 0]
+	    # puts "matching {$arg0}"
 	    set done 0
 	    foreach opt $opts {
 		if {$done} break
@@ -58,7 +58,7 @@ proc getopts {opts argv} {
 		}
 	    }
 	    if { ! $done} {
-		error "no match for option: $arg0"
+		error "no match for option: {$arg0}"
 	    }
 	}
     } error]} {
@@ -120,7 +120,7 @@ getopts {
     {--verbose {} {} {natter about what's up}}
 } $argv
     
-set ::verbose if {[info exists args(--verbose)]
+set verbose [info exists args(--verbose)]
 
 if {[info exists args(--in)]} {
     verbose-puts "chdir server to $args(--in)"
