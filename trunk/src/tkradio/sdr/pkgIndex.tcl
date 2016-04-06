@@ -11,4 +11,6 @@
 package ifneeded sdr::band-data 1.0 [list source [file join $dir band-data.tcl]]
 package ifneeded sdr::command 1.0 [list source [file join $dir command.tcl]]
 package ifneeded sdr::filter 1.0 [list source [file join $dir filter.tcl]]
+package ifneeded sdr::memory 1.0 [list source [file join $dir memory.tcl]]
+package ifneeded sdr::servers 1.0 [list source [file join $dir servers.tcl]]
 package ifneeded sdr::util 1.0 [list source [file join $dir util.tcl]]

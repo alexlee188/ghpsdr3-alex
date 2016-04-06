@@ -1,3 +1,23 @@
+# -*- mode: Tcl; tab-width: 8; -*-
+#
+# Copyright (C) 2016 by Roger E Critchlow Jr, Cambridge, MA, USA.
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+# 
+#
+# the commands used to control dspserver in ghpsdr3-alex
 #
 # commands are all converted to lower case in dspserver/client.c
 # commands that begin with * are directed to the hardware module
@@ -11,8 +31,6 @@ namespace eval ::sdr {}
 
 namespace eval ::sdr::command {
 
-    variable channel -1
-    
     # modes of demodulation available
     variable modes-dict [dict create LSB 0 USB 1 DSB 2 CWL 3 CWU 4 FM 5 AM 6 DIGU 7 SPEC 8 DIGL 9 SAM 10 DRM 11 ]
     dict unset modes-dict SPEC;	# not implemented
@@ -20,9 +38,9 @@ namespace eval ::sdr::command {
     proc get-modes {} { return [dict keys ${::sdr::command::modes-dict}] }
     proc fix-mode {m} {
 	if {$m in [get-modes]} { 
-	    return [dict key get ${::sdr::command::modes} $m]
+	    return [dict get ${::sdr::command::modes-dict} $m]
 	} else {
-	    return $m
+	    error "unrecognized mode token $m"
 	}
     }
 
@@ -38,9 +56,6 @@ namespace eval ::sdr::command {
 
     # audiostream defaults
     variable audiostream-defaults [dict create buffer_size 2000 samplerate 8000 channels 1 encoding 0 mic-encoding 0]
-
-    # channel for commands communication
-    proc set-channel {c} { set channel $c }
 
     # commands which slaves are permitted to run
     proc slave-permitted {cmd} {
@@ -82,19 +97,19 @@ namespace eval ::sdr::command {
     }
     # send a command
     proc send-command {command} {
-	if {$::sdr::command::channel != -1} {
+	if {$::channel != -1} {
 	    puts stderr "send>> $command"
-	    puts -nonewline $::sdr::command::channel [fill-command 64 $command]
-	    flush $::sdr::command::channel
+	    puts -nonewline $::channel [fill-command 64 $command]
+	    flush $::channel
 	}
     }
 
     # send mic audio data
     proc mic {audio} { 
 	if {$::verbose > 1} { puts stderr "send>> mic ..." }
-	puts -nonewline $channel {mic }
-	puts -nonewline $channel $audio
-	flush $channel
+	puts -nonewline $::channel {mic }
+	puts -nonewline $::channel $audio
+	flush $::channel
     }	      
 
     # queries - these are the only real dspserver commands with hyphens

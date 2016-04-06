@@ -1,11 +1,28 @@
 #!/usr/bin/wish
+# -*- mode: Tcl; tab-width: 8; -*-
+#
+# Copyright (C) 2016 by Roger E Critchlow Jr, Cambridge, MA, USA.
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+# 
 
 ##
 ## external packages
 ##
 package require Tk
 package require snit
-package require http
 package require snack
 
 ##
@@ -14,6 +31,14 @@ package require snack
 package require sdr::band-data
 package require sdr::command
 package require sdr::filter
+package require sdr::memory
+package require sdr::servers
+
+##
+## globals, at least those admitted
+##
+set radio {};			# radio ui widget
+set channel -1;			# socket to dspserver
 
 ##
 ## constants
@@ -24,52 +49,6 @@ snit::enum ::modes-type -values [get-modes]
 # spectrum modes
 proc get-pwsmodes {} { return [::sdr::command::get-pwsmodes] }
 snit::enum ::pwsmodes-type -values [get-pwsmodes]
-# the units of frequency
-set frequency-units [dict create Hz 1 kHz 1000 MHz 1000000 GHz 1000000000]
-snit::enum ::frequency-units-type -values [dict keys ${::frequency-units}]
-
-##
-## servers from napan.ca and locally
-## status call loc band rig ant time addr port ? ?
-##
-## the problem here is that the menus may need updating, how to notify?
-## and what do I mean by lservers?
-##
-set rservers [dict create];	# remote servers
-set lservers [dict create];	# local servers
-set listeners {}
-proc servers-names-update {callback} {
-    lappend ::listeners $callback
-}
-proc servers-request-complete {token} {
-    if {[http::status $token] eq {ok}} {
-	set ::rservers [dict create]
-	foreach line [split [string trim [http::data $token]] \n] {
-	    foreach {status call loc band rig ant time addr port x y} [split $line ~] break
-	    dict set ::rservers $call [dict create addr $addr port $port loc $loc band $band rig $rig ant $ant time $time status $status]
-	}
-	foreach cb $::listeners {
-	    {*}$cb [servers-names]
-	}
-    }
-    http::cleanup $token
-}
-proc servers-request {} {
-    http::geturl "http://napan.com/qtradio/qtradiolist.pl" -command servers-request-complete -timeout 1000
-    after 30000 servers-request
-}
-proc servers-names {} {
-    return [concat [dict keys $::rservers] [dict keys $::lservers]]
-}
-proc server-address-port {name} {
-    if {[dict exists $::rservers $name]} {
-	return [list [dict get $::rservers $name addr] [dict get $::rservers $name port]]
-    }
-    if {[dict exists $::lservers $name]} {
-	return [list [dict get $::lservers $name addr] [dict get $::lservers $name port]]
-    }
-    return {}
-}
 
 ##
 ## channel handlers
@@ -110,7 +89,7 @@ proc ::ch::reader {id chan} {
 		}
 		set data [string range $buffer 15 $end]
 		set buffer [string range $buffer $end+1 end]
-		process-spectrum $main $sub $sr $lo $data
+		$::radio process-spectrum $main $sub $sr $lo $data
 		# puts stderr "spectrum $samples bytes, main $main, sub $sub, sr $sr, lo $lo"
 		continue
 	    }
@@ -126,7 +105,7 @@ proc ::ch::reader {id chan} {
 		}
 		set data [string range $buffer 5 $end]
 		set buffer [string range $buffer $end+1 end]
-		process-audio $data
+		$::radio process-audio $data
 		# puts stderr "audio $samples bytes"
 		continue
 	    }
@@ -147,7 +126,7 @@ proc ::ch::reader {id chan} {
 		}
 		set data [string range $buffer 3 $end-1]
 		set buffer [string range $buffer $end end]
-		process-answer $data
+		$::radio process-answer $data
 		# puts stderr "answer $samples bytes -> {$data}"
 		continue
 	    }
@@ -167,17 +146,6 @@ proc ::ch::writer {id chan} {
     puts stderr "::ch::writer $id $chan"
 }
 
-proc ::ch::spectrum {main sub sr lo spectrum} {
-    puts stderr "spectrum $main $sub [string length $spectrum]"
-}
-
-proc ::ch::audio {audio} {
-    puts stderr "audio [string length $audio]"
-}
-
-proc ::ch::answer {answer} {
-    puts stderr "answer = {$answer}"
-}
 
 ##
 ## user interface elements
@@ -185,7 +153,7 @@ proc ::ch::answer {answer} {
 namespace eval ::ui {}
 proc maxwidth {list} {
     set widths [lmap s $list {string length $s}]
-    return [expr {2+[tcl::mathfunc::max {*}$widths]}]
+    return [tcl::mathfunc::max {*}$widths]
 }
 
 # an option menu
@@ -209,6 +177,7 @@ snit::widgetadaptor ui::optionmenu {
 	foreach v $val {
 	    $win.m add radiobutton -label $v -value $v -variable [$self cget -textvar]
 	}
+	# $self configure -value $options(-value)
     }
     method {Configure -value} {val} {
 	set [$self cget -textvar] $val
@@ -221,40 +190,38 @@ snit::widgetadaptor ui::optionmenu {
 snit::widgetadaptor ui::frequency-display {
     variable data -array {
 	formatted {}
+	width 16
     }
-    option -unit -default Hz -type ::frequency-units-type -configuremethod Configure
     option -frequency -default 14010000 -type snit::integer -configuremethod Configure
+    option -min -default 100000 -configuremethod Configure
+    option -max -default 2000000000 -configuremethod Configure
     delegate method * to hull
     delegate option * to hull
     constructor args {
 	installhull using ttk::label
-	$self configure -font {courier 50 bold} -width 17 \
-	    -foreground green -background black \
-	    -textvar [myvar data(formatted)] {*}$args
+	$self configure -width 16 -textvar [myvar data(formatted)] -font {courier 50 bold} -foreground red -background black {*}$args
 	$self redraw
 	bind $win <ButtonPress> [mymethod button press %x %y %b]
 	bind $win <ButtonRelease> [mymethod button release %x %y %b]
 	bind $win <MouseWheel> [mymethod button wheel %x %y %D]
     }
-    method {Configure -frequency} {val} {
-	set options(-frequency) $val
-	$self redraw
+    method clamp-frequency {val} {
+	return [expr {max($options(-min),min($val,$options(-max)))}]
     }
-    method {Configure -unit} {val} {
-	set options(-unit) $val
+    method {Configure -frequency} {val} {
+	set options(-frequency) [$self clamp-frequency $val]
 	$self redraw
     }
     # if the top or bottom of a digit is tapped, increase or lower the value of the digit.
     # but if the release is outside the window then cancel the change.
     # if the blank between digits is tapped, zero the digits to the right.
-    # if the unit marker is tapped, cycle through the units.
     method button {t x y etc} {
 	switch $t-$etc {
 	    press-1 {}
 	    release-1 {
 		set cy [expr {$y/([winfo height $win]/2)}]
 		if {$cy != 0 && $cy != 1} return
-		set cx [expr {$x/([winfo width $win]/17)}]
+		set cx [expr {$x/([winfo width $win]/$data(width))}]
 		switch $cx {
 		    0 { $self delta 1000000000 $cy }
 		    1 { $self zero  1000000000 $cy }
@@ -269,10 +236,6 @@ snit::widgetadaptor ui::frequency-display {
 		    10 { $self delta       100 $cy }
 		    11 { $self delta        10 $cy }
 		    12 { $self delta         1 $cy }
-		    13 return
-		    14 { $self unit          1 $cy }
-		    15 { $self unit          1 $cy }
-		    16 { $self unit          1 $cy }
 		    default return
 		}
 	    }
@@ -288,25 +251,13 @@ snit::widgetadaptor ui::frequency-display {
 	set f $options(-frequency)
 	if {$cy == 1} { set delta [expr {-$delta}] }
 	incr f $delta
-	set options(-frequency) $f
-	$self redraw
+	$self configure -frequency $f
     }
     # change frequency by zeroing remainder by $zero
     method zero {zero cy} {
 	set f $options(-frequency)
 	set f [expr {$f - ($f % $zero)}]
-	set options(-frequency) $f
-	$self redraw
-    }
-    # change units up or down
-    method unit {unit cy} {
-	if {$cy == 1} { set unit [expr {-$unit}] }
-	set u [::frequency-units-type cget -values]
-	set i [lsearch $u $options(-unit)]
-	set n [llength $u]
-	set i [expr {($i+$unit+$n)%$n}]
-	set options(-unit) [lindex $u $i]
-	$self redraw
+	$self configure -frequency $f
     }
     method redraw {} {
 	set f $options(-frequency)
@@ -316,12 +267,7 @@ snit::widgetadaptor ui::frequency-display {
 	set f [expr {$f % 1000000}]
 	set k [expr {$f / 1000}]
 	set H [expr {$f % 1000}]
-	switch $options(-unit) {
-	    GHz { set data(formatted) [format {%1d.%03d %03d %03d GHz} $G $M $k $H] }
-	    MHz { set data(formatted) [format {%1d %03d.%03d %03d MHz} $G $M $k $H] }
-	    kHz { set data(formatted) [format {%1d %03d %03d.%03d kHz} $G $M $k $H] }
-	    Hz  { set data(formatted) [format {%1d %03d %03d %03d  Hz} $G $M $k $H] }
-	}
+	set data(formatted) [format {%1d %03d %03d %03d Hz} $G $M $k $H]
 	for {set i 0} {$i < [string length $data(formatted)]} {incr i} {
 	    switch [string index $data(formatted) $i] {
 		0 {
@@ -347,12 +293,9 @@ snit::widgetadaptor ui::frequency-display {
 #  5) ...
 snit::widgetadaptor ::ui::radio {
     variable data -array {
-	connectbutton 0
-	connection {}
+	connect {connect}
     }
-    # the parent notebook element so we can change our label
-    option -parent -default {} -configuremethod Configure
-    # the text label used in the parent notebook tab
+    # the text for window title
     option -text -default {} -configuremethod Configure
     # the radio service selected
     option -service -default Amateur -configuremethod Configure
@@ -366,10 +309,10 @@ snit::widgetadaptor ::ui::radio {
     option -filter -default {} -configuremethod Configure
     # the cw pitch
     option -cw-pitch -default {600} -configuremethod Configure
-    # the dspserver host
-    option -host -default {} -configuremethod Configure
-    # the incoming hamlib rig control port
-    option -rigctl -default {} -configuremethod Configure
+    # the dspserver name
+    option -name -default {AD5DZ}
+    # define a local server
+    option -local -configuremethod Configure
     # delegates
     delegate method * to hull
     delegate option * to hull
@@ -379,35 +322,27 @@ snit::widgetadaptor ::ui::radio {
 	$self configure {*}$args
 	if {$::verbose > 1} { puts "ui::radio $win $args" }
 
-	grid [ui::frequency-display $win.freq -frequency $options(-frequency) -unit MHz] -row 0 -column 1 -columnspan 6
+	grid [ui::frequency-display $win.freq -frequency $options(-frequency)] -row 0 -column 1 -columnspan 6
 	grid [ui::optionmenu $win.service -textvar [myvar options(-service)]] -row 1 -column 1
 	grid [ui::optionmenu $win.band -textvar [myvar options(-band)]] -row 1 -column 2
 	grid [ui::optionmenu $win.mode -textvar [myvar options(-mode)]] -row 1 -column 3
 	grid [ui::optionmenu $win.filter -textvar [myvar options(-filter)]] -row 1 -column 4
-	grid [ui::optionmenu $win.host -textvar [myvar option(-host)]] -row 1 -column 5
-	grid [ttk::checkbutton $win.conn -width 10 -variable [myvar data(connectbutton)] -textvar [myvar data(connectbuttonlabel)]] -row 1 -column 6
-	if {$data(connectbutton)} {
-	    set data(connectbuttonlabel) {disconnect}
-	} else {
-	    set data(connectbuttonlabel) {connect}
-	}
+	grid [ui::optionmenu $win.name -textvar [myvar option(-name)]] -row 1 -column 5
+	grid [ttk::checkbutton $win.conn -width 10 \
+		  -command [mymethod connecttoggle] \
+		  -variable [myvar data(connect)] \
+		  -onvalue {disconnect} -offvalue {connect} \
+		  -textvar [myvar data(connect)]] -row 1 -column 6
 	$win.service configure -values [sdr::band-data-services] -width [maxwidth [sdr::band-data-services]]
 	$win.band configure -values [sdr::band-data-bands $options(-service)] -width [maxwidth [sdr::band-data-all-bands]]
-	$win.mode configure -values [modes-type cget -values]
-	$win.filter configure -values [sdr::filters-get $options(-mode)]
-	$win.host configure -values [servers-names]
-	servers-names-update [list {*}[mymethod update-hosts]]
-    }
-    method update-hosts {servers} {
-	puts "update-hosts $servers"
-	$win.host configure -values $servers
-    }
-    method {Configure -parent} {val} { 
-	set options(-parent) $val
+	$win.mode configure -values [modes-type cget -values] -width [maxwidth [modes-type cget -values]]
+	$win.filter configure -values [sdr::filters-get $options(-mode)] -width [maxwidth [sdr::filters-get-all]]
+	$win.name configure -values [servers-names] -width 8
+	servers-names-update [mymethod update-names]
     }
     method {Configure -text} {val} {
 	set options(-text) $val
-	catch {$options(-parent) tab $win -text $val}
+	wm title . $val
     }
     method {Configure -service} {val} { 
 	set options(-service) $val
@@ -425,7 +360,7 @@ snit::widgetadaptor ::ui::radio {
     method {Configure -frequency} {val} {
 	if {$options(-frequency) != $val} {
 	    set options(-frequency) $val
-	    ::sdr::command::setfrequency [$self mode-offset-frequency $val]
+	    ::sdr::command::setfrequency [$self mode-offset-frequency]
 	}
     }
     method {Configure -mode} {val} {
@@ -453,29 +388,45 @@ snit::widgetadaptor ::ui::radio {
 	    ::sdr::command::setfilter {*}[$self mode-offset-filter]
 	}
     }
-    method {Configure -host} {val} {
+    method {Configure -name} {val} {
 	if {[$self is-connected]} {
 	    $self disconnect
 	}
-	set options(-host) $val
+	puts "$self configure -name $val, with $win.name -values {[$win.name cget -values]}"
+	set options(-name) $val
     }
-    method {Configure -rigctl} {val} {
-	set options(-rigctl) $val
+    method {Configure -local} {val} {
+	server-local-install {*}$val; # {name addr port}
     }
-
+    method update-names {names} {
+	# puts "update-names with $names"
+	$win.name configure -values $names
+	# puts "updated"
+    }
+    method connecttoggle {} {
+	# the button label is already looking forward
+	if {$::channel == -1} {
+	    if {[catch {$self connect} error]} {
+		set data(connect) {connect}
+	    }
+	} else {
+	    if {[catch {$self disconnect} error]} {
+		set data(connect) {disconnect}
+	    }
+	}
+    }
     method connect {} {
-	# ignore ssl/tls for now
-	puts "using ui::radio self = $self as id in connect"
-	set data(connection) [::ch::connect $self $options(-host) 8000]
+	set ::channel [::ch::connect $self {*}[server-address-port $options(-name)]]
 	::sdr::command::setclient tkradio
 	::sdr::command::q-server
 	# most of this should be done elsewhere
 	# it resembles a band change
 	::sdr::command::setfrequency [$self mode-offset-frequency]; # spectrum view follows
 	::sdr::command::setmode $options(-mode)
-	::sdr::command::setfilter [$self mode-offset-filter $options(-frequency)]; # spectrum view follows
+	::sdr::command::setfilter {*}[$self mode-offset-filter]; # spectrum view follows
 	# ui disable connect action
 	# ui enable disconnect action
+	# no, no, no $self connecttoggle, already done
 	# ui enable subrx select
 	# ui enable mute subrx 
 	# ??? ::sdr::command::setpws $options(-pwsmode)
@@ -522,23 +473,23 @@ snit::widgetadaptor ::ui::radio {
 	    }
 	}
 	# enable notch filter false
+	return 1
     }
     method disconnect {} { 
 	if {[$self is-connected]} {
 	    puts "disconnecting self = $self"
-	    ::ch::disconnect $self $data(connection)
-	    set data(connection)  {}
-	    # stop spectrum timer
+	    ::ch::disconnect $self $::channel
+	    set ::channel -1
+	    # stop spectrum timer (what spectrum timer?)
 	    # set user none
 	    # set passwrod none
 	    # set host {}
 	}
     }
-    method is-connected {} { return [expr {$data(connection) != {}}] }
-
+    method is-connected {} { return [expr {$::channel != -1}] }
     method mode-offset-frequency {} {
 	set f $options(-frequency)
-	switch $options(-mode) {
+	switch $options(-mode) {r
 	    CWU { return [expr {$f - $options(-cw-pitch)}]}
 	    CWL { return [expr {$f + $options(-cw-pitch)}]}
 	    default { return $f }
@@ -553,113 +504,49 @@ snit::widgetadaptor ::ui::radio {
 	}
 	return [list $lo $hi]
     }
+    method process-aspectrum {main sub sr lo spectrum} {
+	puts stderr "spectrum $main $sub [string length $spectrum]"
+    }
+    method process-audio {audio} {
+	puts stderr "audio [string length $audio]"
+    }
+    method process-answer {answer} {
+	puts stderr "answer = {$answer}"
+    }
 }
 
-set nradio 0
-set radio {}
-set radios {}
 set verbose 0
 
-# create a new radio tab with the options specified in args
-# insert it into the lists and make it the current tab
-proc new-radio {args} {
-    incr ::nradio
-    set ::radio [ui::radio .n.r$::nradio -parent .n -text "radio $::nradio" {*}$args]
-    .n add $::radio -text [$::radio cget -text]
-    lappend ::radios $::radio
-    .n select $::radio
-}
-# delete the radio in the current tab
-# remove it from the lists 
-proc delete-radio {} {
-    .n forget $::radio
-    set x [lsearch $::radios $::radio]
-    if {$x >= 0} {
-	set ::radios [lreplace $::radios $x $x {}]
-    }
-    if {[$::radio is-connected]} {
-	$::radio disconnect
-    }
-    destroy $::radio
-}
-# save a representation of the current setup
-proc save-setup {} {
-}
-# load a saved set
-proc load-setup {} {
-}
-# exit the program
-proc quit {} {
-    destroy .
-}
+# start listing servers
+servers-request
 
-# make the program menu(es)
-proc radio-menu {w} {
-    ttk::frame $w
-    pack [ttk::menubutton $w.f -text app -menu $w.f.m] -side left -anchor w
-    menu $w.f.m -tearoff no
-    $w.f.m add command -label {new radio} -command new-radio
-    $w.f.m add separator
-    $w.f.m add command -label {delete radio} -command delete-radio
-    $w.f.m add separator
-    $w.f.m add command -label {save setup} -command save-setup
-    $w.f.m add command -label {load setup} -command load-setup
-    $w.f.m add separator
-    $w.f.m add command -label {quit} -command quit
-    return $w
-}
-
-# make the tabbed notebook of radios
-proc radio-notebook {w args} {
-    ttk::notebook $w {*}$args
-    return $w
-}
-
-# build the user interface
-proc ui-build {} {
-    pack [radio-menu .m] -side top -fill x -expand true
-    pack [radio-notebook .n] -side top -fill both -expand true
-}
-
-# process arguments, most options just get copied into 
-# a new-radio argument list
-proc optarg {opt} {
-    upvar argc argc argv argv args args i i
-    if {$i == $argc-1} { uplevel error "missing arg for $opt option" }
-    lappend args $opt [lindex $argv [incr i]]
-    if {$::verbose > 2} { puts "optarg $opt found [lindex $argv $i] resultin in $args" }
-}
+# build the radio
+pack [set ::radio [ui::radio .r -text "tkradio"]] -fill both -expand true
 
 # load configuration
 
+# process arguments
+proc optarg {opt} {
+    upvar argc argc argv argv i i
+    if {$i == $argc-1} { uplevel error "missing arg for $opt option" }
+    $::radio configure $opt [lindex $argv [incr i]]
+    if {$::verbose > 2} { puts "optarg $opt found [lindex $argv $i]" }
+}
 # specify options and create radios
-set args {}
 for {set i 0} {$i < $argc} {incr i} {
     # accumulate arguments
     set opt [lindex $argv $i]
     switch -- $opt {
-	-a - --address - --address-of-server { optarg -address }
 	-b - --band { optarg -band }
 	-e - --filter { optarg -filter }
 	-f - --frequency { optarg -frequency }
+	-l - --local - --local-server { optarg -local }
 	-m - --mode { optarg -mode }
-	-r - --rigctl - --rigctl-port { optarg -rigctl }
+	-n - --name - --name-of-server { optarg -name }
 	-s - --service { optarg -service }
 	-t - --text { optarg -text }
-	-n - --new {
-	    if { ! [winfo exists .n]} { ui-build }
-	    if {$::verbose > 1} { puts stderr "new-radio $args" }
-	    new-radio {*}$args
-	    set args {}
-	}
 	-v - --verbose { incr ::verbose }
-	-c - --connect {
-	    $::radio connect
-	}
-	default {
-	    error "unrecognized option [lindex $argv $i]"
-	}
+	-c - --connect { $::radio connect }
+	default { error "unrecognized option [lindex $argv $i]" }
     }
 }
-# start listing servers
-servers-request
