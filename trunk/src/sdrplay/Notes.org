@@ -1,0 +1,64 @@
+* Implementing a CIC (Cascaded Integrator Comb) filter in C
+** An integrator or accumulator over an input stream x[] looks like y[n] = y[n-1] + x[n]
+   clearly y[] gets bigger than x[] by integrating.
+** A comb over an input stream x[] with delay R looks like y[n] = x[n]-x[n-R*M]
+   where M is the differential delay and usually chosen as 1 or 2.
+** A cascaded integrator comb computes a windowed average, the integrator accumulates the
+   sum of the input samples and the comb subtracts a delayed value of the accumulated sum
+   leaving the sum of the samples in the delay window.
+** The tricks come in
+*** cascading together multiple integrator-comb pairs, I-C-I-C-I-C % R
+*** rearranging the components, I-I-I-C-C-C % R
+*** and pushing the rate change into the middle, I-I-I % R C-C-C
+*** the number of IC stages is N
+** With B[in] bits incoming, a CIC decimator
+*** requires B[out] = ceil(N log2(RM) + B[in])
+*** and the gain is G = (RM)^N
+** For a CIC with M = 1   
+|   |     | N |    |    |    |    |    |   |   |
+|---+-----+---+----+----+----+----+----+---+---|
+|   |     | 1 |  2 |  3 |  4 |  5 |  6 | 7 | 8 |
+|---+-----+---+----+----+----+----+----+---+---|
+| R |   2 | 1 |  2 |  3 |  4 |  5 |  6 | 7 | 8 |
+|   |   4 | 2 |  4 |  6 |  8 | 10 | 12 |   |   |
+|   |   8 | 3 |  6 |  9 | 12 | 15 | 18 |   |   |
+|   |  16 | 4 |  8 | 12 | 16 | 20 | 24 |   |   |
+|   |  32 | 5 | 10 | 15 | 20 | 25 | 30 |   |   |
+|   |  64 | 6 | 12 | 18 | 24 | 30 | 36 |   |   |
+|   | 128 | 7 | 14 | 21 | 28 | 35 | 42 |   |   |
+|   | 256 | 8 | 16 | 24 | 32 | 40 | 48 |   |   |
+------------------------------------------------------------------------
+#!/usr/bin/tclsh
+
+#
+# cic.tcl N M
+# write a cic decimation filter in C with N stages and M decimation
+#
+
+if {[llength $argv] != 2} { error "usage: cic.tcl N M" }
+foreach {N M} $argv break
+
+append struct "struct cic${N}x${M} {\n"
+append struct "  int mi;\n"
+append init "int cic${N}x${M}init(struct cic${N}x${M} *d) {\n"
+append init " d->mi = 0;\n"
+append eval "int cic${N}x${M}eval(struct cic${N}x${M} *d, short x) {\n"
+for {set i 0} {$i < $N} {incr i} {
+    append struct "  accum_t int$i;\n"
+    append init "  d->int$i = 0;\n"
+    if {$i == 0} {
+	append eval  "  d->int$i += x;\n"
+    } else {
+	append eval  "  d->int$i += d->int[expr {$i-1}];\n"
+    }
+}
+append eval "  if (++d->mi == $M) {\n"
+append eval "    d->mi = 0;\n"
+append eval "  }\n"
+append struct "};\n"
+append init "}\n"
+append eval "}\n"
+puts $struct
+puts $init
+puts $eval
+------------------------------------------------------------------------

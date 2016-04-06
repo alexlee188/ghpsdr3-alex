@@ -1,363 +1,665 @@
 #!/usr/bin/wish
 
-#
-# implement an alternative to QtRado
-# a user interface to dspserver which doesn't require Qt
-# which allows multiple connections rapidly opening and closing
-# to elicit the crash bug
-#
-
+##
+## external packages
+##
+package require Tk
+package require snit
+package require http
 package require snack
 
-# from dspserver/buffer.h
-# // g0orx binary header
-# #define BUFFER_HEADER_SIZE 15
-# 
-# // 0     buffer type
-# // 1     header version
-# // 2     header subversion
-# // 3-4   samples length
-# // 5-6   main rx meter
-# // 7-8   sub rx meter
-# // 9-12  sample rate
-# // 13-14 IF         (added in version 2.1)
-# 
-# #define AUDIO_BUFFER_HEADER_SIZE 5
-# 
-# // 0     buffer type
-# // 1     header version
-# // 2     header subversion
-# // 3-4   samples length
-# 
-# #define SPECTRUM_BUFFER     0
-# #define AUDIO_BUFFER        1
-# #define BANDSCOPE_BUFFER    2
-# #define RTP_REPLY_BUFFER    3
-# #define ANSWER_BUFFER    	4
-# 
-# // g0orx binary header
-# #define HEADER_VERSION  2
-# #define HEADER_SUBVERSION  1
-#
+##
+## our own sdr libraries
+##
+package require sdr::band-data
+package require sdr::command
+package require sdr::filter
 
-# from dspserver/audiostream.h
+##
+## constants
+##
+# operating modes
+proc get-modes {} { return [::sdr::command::get-modes] }
+snit::enum ::modes-type -values [get-modes]
+# spectrum modes
+proc get-pwsmodes {} { return [::sdr::command::get-pwsmodes] }
+snit::enum ::pwsmodes-type -values [get-pwsmodes]
+# the units of frequency
+set frequency-units [dict create Hz 1 kHz 1000 MHz 1000000 GHz 1000000000]
+snit::enum ::frequency-units-type -values [dict keys ${::frequency-units}]
 
-namespace eval ::audiostream {
-
-    array set encoding { ALAW 0 PCM 1 CODEC2 2 ALAW2 3 }
-
-    array set mic_encoding { ALAW 0 CODEC2 1 }
-
-    set buffer_size 2000
-
-    set config_bufsize 2000;    # Size of the current buffer in samples
-    set config_samplerate 8000;	# Sample rate of the current buffer in samples per second
-    set config_channels 1;	# Channels in the current buffer 1 = mono, 2 = stereo
-    set config_encoding 0;	# Wire encoding for the current buffer
-    set config_mic 0;		# Wire encoding for the mic channel
-
+##
+## servers from napan.ca and locally
+## status call loc band rig ant time addr port ? ?
+##
+## the problem here is that the menus may need updating, how to notify?
+## and what do I mean by lservers?
+##
+set rservers [dict create];	# remote servers
+set lservers [dict create];	# local servers
+set listeners {}
+proc servers-names-update {callback} {
+    lappend ::listeners $callback
+}
+proc servers-request-complete {token} {
+    if {[http::status $token] eq {ok}} {
+	set ::rservers [dict create]
+	foreach line [split [string trim [http::data $token]] \n] {
+	    foreach {status call loc band rig ant time addr port x y} [split $line ~] break
+	    dict set ::rservers $call [dict create addr $addr port $port loc $loc band $band rig $rig ant $ant time $time status $status]
+	}
+	foreach cb $::listeners {
+	    {*}$cb [servers-names]
+	}
+    }
+    http::cleanup $token
+}
+proc servers-request {} {
+    http::geturl "http://napan.com/qtradio/qtradiolist.pl" -command servers-request-complete -timeout 1000
+    after 30000 servers-request
+}
+proc servers-names {} {
+    return [concat [dict keys $::rservers] [dict keys $::lservers]]
+}
+proc server-address-port {name} {
+    if {[dict exists $::rservers $name]} {
+	return [list [dict get $::rservers $name addr] [dict get $::rservers $name port]]
+    }
+    if {[dict exists $::lservers $name]} {
+	return [list [dict get $::lservers $name addr] [dict get $::lservers $name port]]
+    }
+    return {}
 }
 
-# 
-namespace eval ::chan {}
+##
+## channel handlers
+##
+namespace eval ::ch {}
 
-proc ::chan::connect {id host port} {
+proc ::ch::connect {id host port} {
     set chan [socket $host $port]
-    chan configure $chan -blocking 0
-    fileevent $chan readable [list ::chan::reader $id $chan]
-    # fileevent $chan writable [list ::chan::writer $id $chan]
+    chan configure $chan -blocking 0 -encoding binary -translation binary
+    fileevent $chan readable [list ::ch::reader $id $chan]
+    # fileevent $chan writable [list ::ch::writer $id $chan]
     return $chan
 }
 
-proc ::chan::disconnect {id chan} {
+proc ::ch::disconnect {id chan} {
+    fileevent $chan readable {}
+    # fileevent $chan writable {}
     close $chan
 }
 
-proc ::chan::reader {id chan} {
+proc ::ch::reader {id chan} {
+    set buffer [read $chan]
     if {[eof $chan]} {
-	puts "::chan::reader $id $chan -> eof is true"
-    } else {
-	append ::chan::incoming($id) [read $chan]
-	after idle [list ::chan::decoder $id]
+	if {$::verbose > 1} { puts "::ch::reader $id $chan -> eof is true" }
+	::ch::disconnect $id $chan
+	return
     }
-}
-proc ::chan::decoder {id} {
-    while {[string length $::chan::incoming($id)] > 0} {
-	set type [string index $::chan::incoming($id) 0]
-	switch $type {
-	    0 {
-		# spectrum buffer
-		puts "spectrum: $::chan::incoming($id)";
-	    }
-	    1 {
-		# audio buffer
-		puts "audio: $::chan::incoming($id)";
-	    }
-	    2 {
-		# bandscope buffer
-		puts "bandscope: $::chan::incoming($id)";
-	    }
-	    3 {
-		# rtp reply buffer
-		puts "rtp-reply: $::chan::incoming($id)";
-	    }
-	    4 {
-		# answer buffer
-		set samples [scan [string range $::chan::incoming($id) 1 2] %d]
-		set n [expr {3+$samples}]
-		set answer [string range $::chan::incoming($id) 3 [expr {$n-1}]]
-		set ::chan::incoming($id) [string range $::chan::incoming($id) $n end]
-		puts "answer $samples bytes -> {$answer}"
-	    }
-	    * {
-		puts "invalid buffer type: $type"
-	    }
-	}
-	if {0} {
-	    if {[binary scan $::chan::incoming($id) aaaSSSIS type version subversion samples main sub sr lo] != 8} {
-		puts "failed to scan header"
-		return
-	    }
-	    if {$type == 1} {
-		puts "buffer type $type version $version subversion $subversion samples $samples"
-		# audio buffer
-		set n [expr {5+$samples}]
-		if {[string length $::chan::incoming($id)] < $n} {
-		    puts "short audio buffer"
-		    return
+    while {[set len [string length $buffer]] > 0} {
+	switch [string index $buffer 0] {
+	    \0 {		# spectrum buffer
+		if {[binary scan $buffer cccSSSIS type version subversion samples main sub sr lo] != 8} {
+		    error "misread spectrum header"
 		}
-		set samples [string range $::chan::incoming($id) 5 $n]
-		set ::chan::incoming($id) [string range $::chan::incoming($id) $n end]
-		return;
+		# puts stderr "spectrum header type $type, version $version, subversion $subversion, samples $samples, main $main, sub $sub, sr $sr, lo $lo"
+		set end [expr {15+$samples-1}]
+		if {$len < $end} {
+		    error "need longer spectrum buffer: $len < $end"
+		}
+		set data [string range $buffer 15 $end]
+		set buffer [string range $buffer $end+1 end]
+		process-spectrum $main $sub $sr $lo $data
+		# puts stderr "spectrum $samples bytes, main $main, sub $sub, sr $sr, lo $lo"
+		continue
 	    }
-	    puts "buffer type $type version $version subversion $subversion samples $samples main $main sub $sub sr $sr lo $lo"
-	    set n [expr {15+$samples}]
-	    if {[string length $::chan::incoming($id)] < $n} {
-		puts "short buffer"
-		return
+	    \1 {		# audio
+		if {[binary scan $buffer cccS type version subversion samples] != 4} {
+		    error "misread audio header"
+		}
+		# puts "audio buffer type $type, version $version, subversion $subversion, samples $samples"
+		set end [expr {5+$samples-1}]
+		if {$len < $end} {
+		    puts stderr "audio buffer type $type, version $version, subversion $subversion, samples $samples"
+		    puts stderr "need a longer audio string: $len < $end"
+		}
+		set data [string range $buffer 5 $end]
+		set buffer [string range $buffer $end+1 end]
+		process-audio $data
+		# puts stderr "audio $samples bytes"
+		continue
 	    }
-	    set samples [string range $::chan::incoming($id) 15 $n]
-	    set ::chan::incoming($id) [string range $::chan::incoming($id) $n end]
+	    \2 {			# bandscope
+		error "bandscope buffer"
+	    }
+	    \3 {			# rtp reply buffer
+		error "rtp-reply buffer"
+	    }
+	    4 {		# answer buffer
+		if {$len < 3} {
+		    error "need a longer answer string: $len < 3"
+		}
+		set samples [scan [string range $buffer 1 2] %d]
+		set end [expr {3+$samples}]
+		if {$len < $end} {
+		    error "need a longer answer string: $len < $end"
+		}
+		set data [string range $buffer 3 $end-1]
+		set buffer [string range $buffer $end end]
+		process-answer $data
+		# puts stderr "answer $samples bytes -> {$data}"
+		continue
+	    }
+	    default {
+		binary scan $buffer c type
+		error "unknown buffer type $type"
+	    }
 	}
     }
-}		
-		
-proc ::chan::writer {id chan} {
-    puts "::chan::writer $id $chan"
-}
-
-set ::host rradio
-set ::port 8000
-array set ::chans {}
-
-proc command-fill {n command} {
-    binary scan $command c* b
-    while {[llength $b] < $n} { lappend b 0 }
-    return [binary format c* $b]
-}
-
-proc command-send {id command} {
-    puts -nonewline $::chans($id) [command-fill 64 $command]
-    flush $::chans($id)
-}
-
-proc start {id} {
-    if {[info exists ::chans($id)]} {
-	error "channel for id $id is already open, $::chans($id)"
+    if {[fblocked $chan]} {
+	# puts "::ch::reader $id $chan -> fblocked is true"
+	return;
     }
-    set ::chans($id) [::chan::connect $id $::host $::port]
-    command-send $id {q-version}
-    command-send $id {q-loffset}
-    command-send $id {q-protocol3}
-    command-send $id {q-master}
-    command-send $id {q-info}
-    command-send $id {q-server}
-    command-send $id {q-cantx# xxxx xxxx}
-    command-send $id {startaudiostream}
 }
 
-proc stop {id} {
-    if { ! [info exists ::chans($id)]} {
-	error "channel for id $id is already closed"
+proc ::ch::writer {id chan} {
+    puts stderr "::ch::writer $id $chan"
+}
+
+proc ::ch::spectrum {main sub sr lo spectrum} {
+    puts stderr "spectrum $main $sub [string length $spectrum]"
+}
+
+proc ::ch::audio {audio} {
+    puts stderr "audio [string length $audio]"
+}
+
+proc ::ch::answer {answer} {
+    puts stderr "answer = {$answer}"
+}
+
+##
+## user interface elements
+##
+namespace eval ::ui {}
+proc maxwidth {list} {
+    set widths [lmap s $list {string length $s}]
+    return [expr {2+[tcl::mathfunc::max {*}$widths]}]
+}
+
+# an option menu
+snit::widgetadaptor ui::optionmenu {
+    option -values -default {} -configuremethod Configure
+    option -value -default {} -configuremethod Configure
+    delegate method * to hull
+    delegate option * to hull
+    constructor args {
+	installhull using ttk::menubutton
+	# puts [$self configure]
+	# -font {courier 50 bold} 
+	# -foreground green -background black 
+	$self configure {*}$args
     }
-    ::chan::disconnect $id $::chans($id)
-    unset ::chans($id)
+    method {Configure -values} {val} {
+	set options(-values) $val
+	catch {destroy $win.m}
+	$win configure -menu $win.m
+	menu $win.m -tearoff no
+	foreach v $val {
+	    $win.m add radiobutton -label $v -value $v -variable [$self cget -textvar]
+	}
+    }
+    method {Configure -value} {val} {
+	set [$self cget -textvar] $val
+    }
 }
 
-    
-pack [ttk::frame .host] -side top -fill x -expand true
-pack [ttk::label .host.l -text host] -side left
-pack [ttk::entry .host.e -textvar ::host -width 20] -side left
-pack [ttk::frame .port] -side top -fill x -expand true
-pack [ttk::label .port.l -text port] -side left
-pack [ttk::entry .port.e -textvar ::port -width 20] -side left
-
-foreach i {1 2 3 4 5 6 7 8} {
-    pack [ttk::frame .f$i] -side top -fill x -expand true
-    pack [ttk::button .f$i.start -text "start $i" -command [list start $i]] -side left
-    pack [ttk::button .f$i.stop -text "stop $i" -command [list stop $i]] -side left
+# define a frequency display widget
+# G MMM kkk HHH UUU radix point replacing space
+# depending on the Unit displayed
+snit::widgetadaptor ui::frequency-display {
+    variable data -array {
+	formatted {}
+    }
+    option -unit -default Hz -type ::frequency-units-type -configuremethod Configure
+    option -frequency -default 14010000 -type snit::integer -configuremethod Configure
+    delegate method * to hull
+    delegate option * to hull
+    constructor args {
+	installhull using ttk::label
+	$self configure -font {courier 50 bold} -width 17 \
+	    -foreground green -background black \
+	    -textvar [myvar data(formatted)] {*}$args
+	$self redraw
+	bind $win <ButtonPress> [mymethod button press %x %y %b]
+	bind $win <ButtonRelease> [mymethod button release %x %y %b]
+	bind $win <MouseWheel> [mymethod button wheel %x %y %D]
+    }
+    method {Configure -frequency} {val} {
+	set options(-frequency) $val
+	$self redraw
+    }
+    method {Configure -unit} {val} {
+	set options(-unit) $val
+	$self redraw
+    }
+    # if the top or bottom of a digit is tapped, increase or lower the value of the digit.
+    # but if the release is outside the window then cancel the change.
+    # if the blank between digits is tapped, zero the digits to the right.
+    # if the unit marker is tapped, cycle through the units.
+    method button {t x y etc} {
+	switch $t-$etc {
+	    press-1 {}
+	    release-1 {
+		set cy [expr {$y/([winfo height $win]/2)}]
+		if {$cy != 0 && $cy != 1} return
+		set cx [expr {$x/([winfo width $win]/17)}]
+		switch $cx {
+		    0 { $self delta 1000000000 $cy }
+		    1 { $self zero  1000000000 $cy }
+		    2 { $self delta  100000000 $cy }
+		    3 { $self delta   10000000 $cy }
+		    4 { $self delta    1000000 $cy }
+		    5 { $self zero     1000000 $cy }
+		    6 { $self delta     100000 $cy }
+		    7 { $self delta      10000 $cy }
+		    8 { $self delta       1000 $cy }
+		    9 { $self zero        1000 $cy }
+		    10 { $self delta       100 $cy }
+		    11 { $self delta        10 $cy }
+		    12 { $self delta         1 $cy }
+		    13 return
+		    14 { $self unit          1 $cy }
+		    15 { $self unit          1 $cy }
+		    16 { $self unit          1 $cy }
+		    default return
+		}
+	    }
+	    default {
+		set cx [expr {$x/([winfo width $win]/17)}]
+		set cy [expr {$y/([winfo height $win]/2)}]
+		puts "button $t $cx $cy $etc"
+	    }
+	}
+    }
+    # change frequency by incrementing or decrementing by $delta
+    method delta {delta cy} {
+	set f $options(-frequency)
+	if {$cy == 1} { set delta [expr {-$delta}] }
+	incr f $delta
+	set options(-frequency) $f
+	$self redraw
+    }
+    # change frequency by zeroing remainder by $zero
+    method zero {zero cy} {
+	set f $options(-frequency)
+	set f [expr {$f - ($f % $zero)}]
+	set options(-frequency) $f
+	$self redraw
+    }
+    # change units up or down
+    method unit {unit cy} {
+	if {$cy == 1} { set unit [expr {-$unit}] }
+	set u [::frequency-units-type cget -values]
+	set i [lsearch $u $options(-unit)]
+	set n [llength $u]
+	set i [expr {($i+$unit+$n)%$n}]
+	set options(-unit) [lindex $u $i]
+	$self redraw
+    }
+    method redraw {} {
+	set f $options(-frequency)
+	set G [expr {$f / 1000000000}]
+	set f [expr {$f % 1000000000}]
+	set M [expr {$f / 1000000}]
+	set f [expr {$f % 1000000}]
+	set k [expr {$f / 1000}]
+	set H [expr {$f % 1000}]
+	switch $options(-unit) {
+	    GHz { set data(formatted) [format {%1d.%03d %03d %03d GHz} $G $M $k $H] }
+	    MHz { set data(formatted) [format {%1d %03d.%03d %03d MHz} $G $M $k $H] }
+	    kHz { set data(formatted) [format {%1d %03d %03d.%03d kHz} $G $M $k $H] }
+	    Hz  { set data(formatted) [format {%1d %03d %03d %03d  Hz} $G $M $k $H] }
+	}
+	for {set i 0} {$i < [string length $data(formatted)]} {incr i} {
+	    switch [string index $data(formatted) $i] {
+		0 {
+		    # replace leading zeroes with spaces
+		    set data(formatted) [string replace $data(formatted) $i $i { }]
+		    continue
+		}
+		{ } continue
+		default break
+	    }
+	}
+    }
 }
 
+# define the radio widget
+# this one needs to be megawidget
+# with configuration options for all the radio stuff
+# so it needs to expose ui elements for:
+#  1) frequency readout & tuning
+#  2) mode selector option menu
+#  3) filter selector option menu
+#  4) host / service selection dialog
+#  5) ...
+snit::widgetadaptor ::ui::radio {
+    variable data -array {
+	connectbutton 0
+	connection {}
+    }
+    # the parent notebook element so we can change our label
+    option -parent -default {} -configuremethod Configure
+    # the text label used in the parent notebook tab
+    option -text -default {} -configuremethod Configure
+    # the radio service selected
+    option -service -default Amateur -configuremethod Configure
+    # the band selected
+    option -band -default 20m -configuremethod Configure
+    # the frequency tuned
+    option -frequency -default 14010000 -configuremethod Configure
+    # the modulation
+    option -mode -default CWU -type ::modes-type -configuremethod Configure
+    # the filter shape
+    option -filter -default {} -configuremethod Configure
+    # the cw pitch
+    option -cw-pitch -default {600} -configuremethod Configure
+    # the dspserver host
+    option -host -default {} -configuremethod Configure
+    # the incoming hamlib rig control port
+    option -rigctl -default {} -configuremethod Configure
+    # delegates
+    delegate method * to hull
+    delegate option * to hull
 
-#
-# commands are all converted to lower case in dspserver/client.c
-# commands that begin with * are directed to the hardware module
-# only a subset of commands are available to the slave clients
-# if command starts with q it's a question
-# 
-#
-# commands sent:
-# Bandscope
-# 'getbandscope %width'
-# Connection
-# 'mic ' followed by microphone samples
-# 'q-master'
-# 'q-version'
-# 'q-loffset'
-# 'q-protocol3'
-# EqualizerDialog
-# "setrx10bdgreq %d %d %d %d %d %d %d %d %d %d %d"
-# "setrx3bdgreq %d %d %d %d"
-# hardware_hermes
-# "*getserial?"
-# "*setattenuator " << state
-# "*alextxrelay " << state
-# "*hermesmicboost " << state
-# "*settxdrive " << state
-# "*settxlineingain " << state
-# "*dither " << ((state==Qt::Checked) ? "on" : "off")
-# "*preamp " << ((state==Qt::Checked) ? "on" : "off")
-# "*random " << ((state==Qt::Checked) ? "on" : "off")
-# hardware_hiqsdr
-# "*getserial?"
-# "*getpreselector? " << n
-# "*getpreampstatus?"
-# "*setattenuator " << state
-# "*selectantenna " << n
-# "*selectpresel " << n
-# "*activatepreamp " << ((state==Qt::Checked) ? 1 : 0)
-# hardware_perseus
-# "*getserial?"
-# "*setattenuator " << state
-# "*dither " << ((state==Qt::Checked) ? "on" : "off")
-# "*preamp " << ((state==Qt::Checked) ? "on" : "off")
-# hardware_rtlsdr
-# "*getserial?"
-# "*setattenuator " << newVal
-# hardware_sdr1000
-# "*setattenuator " << newVal
-# "*setspurreduction " << newVal
-# "*getpaadc? " << channel
-# hardware_sdriq
-# "*getserial?"
-# "*setattenuator " << state
-# Panadaptor
-# "setnotchfilter " << 0 << " " << index << " " << notchFilterBW[notchFilterIndex] << " " << audio_freq
-# "setnotchfilter " << 1 << " " << index << " " << notchFilterBW[notchFilterIndex] << " " << audio_freq
-# "enablenotchfilter " << 0 << " " << index << " " << enable
-# "enablenotchfilter " << 1 << " " << index << " " << enable
-# UI
-# "setFPS " << widget.spectrumView->width() << " " << fps
-# "setClient QtRadio"
-# "q-server"
-# "setFrequency " << frequency
-# "setMode " << band.getMode()
-# "setFilter " << low << " " << high
-# "setEncoding " << audio->get_audio_encoding()
-# "startRTPStream " << local_port << " " << audio->get_audio_encoding() << " " << audio_sample_rate << " " << " " << audio_channels
-# "startAudioStream " << (AUDIO_BUFFER_SIZE*(audio_sample_rate/8000)) << " " << audio_sample_rate << " " << audio_channels << " " << audioinput->getMicEncoding()
-#	samplerate = 8000 | 48000
-#	channels = 1 | 2
-#
-# "SetPan 0.5"
-# "SetAGC " << agc
-# "setpwsmode " << pwsmode
-# "SetANFVals " << configure.getAnfTaps() << " " << configure.getAnfDelay() << " " << configure.getAnfGain() << " " << configure.getAnfLeak()
-# "SetNRVals " << configure.getNrTaps() << " " << configure.getNrDelay() << " " << configure.getNrGain() << " " << configure.getNrLeak()
-# "SetNBVals " << configure.getNbThreshold()
-# "SetSquelchVal " << squelchValue
-# "SetSquelchState " << (widget.actionSquelchEnable->isChecked()?"on":"off")
-# "SetANF " << (widget.actionANF->isChecked()?"true":"false")
-# "SetNR " << (widget.actionNR->isChecked()?"true":"false")
-# "SetNB " << (widget.actionNB->isChecked()?"true":"false")
-#
-# "setrxdcblock " << configure.getRxDCBlockValue()
-# "settxdcblock " << configure.getTxDCBlockValue()
-# "setrxagcslope " << configure.getRxAGCSlopeValue()
-# "setrxagcmaxgain " << configure.getRxAGCMaxGainValue()
-# "setrxagcattack " << configure.getRxAGCAttackValue()
-# "setrxagcdecay " << configure.getRxAGCDecayValue()
-# "setrxagchang " << configure.getRxAGCHangValue()
-# "setfixedagc " << configure.getRxAGCFixedGainValue()
-# "setrxagchangthreshold " << configure.getRxAGCHangThreshValue()
-# "settxlevelerstate " << configure.getLevelerEnabledValue()
-# "settxlevelermaxgain " << configure.getLevelerMaxGainValue()
-# "settxlevelerattack " << configure.getLevelerAttackValue()
-# "settxlevelerdecay " << configure.getLevelerDecayValue()
-# "settxlevelerhang " << configure.getLevelerHangValue()
-# "setalcstate " << configure.getALCEnabledValue()
-# "settxalcattack " << configure.getALCAttackValue()
-# "settxalcdecay " << configure.getALCDecayValue()
-# "settxalchang " << configure.getALCHangValue()
-#
-# "*hardware?"
-# "getSpectrum " << widget.spectrumView->width()
-# "q-master"
-# "q-info"
-# "q-cantx#" + configure.thisuser
-# "SetSubRXFrequency " << frequency - subRxFrequency
-# "SetSubRX " << subRx
-# "SetSubRXOutputGain " << subRxGain
-# "SetSDROMVals " << threshold
-# "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100 <<" "<< configure.thisuser <<" " << configure.thispass
-# "setTXAMCarrierLevel " << (double)widget.ctlFrame->getTxPwr()/100
-# "Mox " << "on " << configure.thisuser <<" " << configure.thispass
-# "Mox " << "on"
-# "Mox " << "off " << configure.thisuser <<" " << configure.thispass
-# "Mox " << "off"
-# "SetIQEnable " << (state ? "true":"false")
-# "SetIQmethod " << (state ? "true":"false")
-# "SetTXIQEnable " << (state ? "true":"false")
-# "RxIQmuVal " << num
-# "rxiqphasecorrectval " << value
-# "rxiqgaincorrectval " << value
-# "txiqphasecorrectval " << value
-# "txiqgaincorrectval " << value
-# "testSlider " << value
-# "testbutton " << (state ? "true":"false")
-# "zoom " << position
-# "setrxdcblock " << state
-# "setrxdcblockgain " << value
-# "settxdcblock " << state
-# "setwindow " << type
-# "setpwsmode " << mode
-# "setfixedagc " << level
-# "setrxgreqcmd " << enable
-# "settxgreqcmd " << enable
-# "setMaster " + configure.thisuser + " " + configure.thispass
-# "setrxagcslope " << value
-# "setrxagcmaxgain " << value
-# "setrxagcattack " << value
-# "setrxagcdecay " << value
-# "setrxagchang " << value
-# "setrxagchangthreshold " << value
-# "setfixedagc " << value
-# "settxlevelerstate " << value
-# "settxlevelermaxgain " << value
-# "settxlevelerattack " << value
-# "settxlevelerdecay " << value
-# "settxlevelerhang " << value
-# "settxalcstate " << value
-# "settxalcdecay " << value
-# "settxalcattack " << value
-# "settxalchang " << value
-##
-##
-##
-# commands allowed to slaves
-#    "getspectrum",
-#    "setclient",
-#    "startaudiostream",
-#    "startrtpstream",
-#    "setfps",
-#    "setmaster",
+    constructor args {
+	installhull using ttk::frame
+	$self configure {*}$args
+	if {$::verbose > 1} { puts "ui::radio $win $args" }
+
+	grid [ui::frequency-display $win.freq -frequency $options(-frequency) -unit MHz] -row 0 -column 1 -columnspan 6
+	grid [ui::optionmenu $win.service -textvar [myvar options(-service)]] -row 1 -column 1
+	grid [ui::optionmenu $win.band -textvar [myvar options(-band)]] -row 1 -column 2
+	grid [ui::optionmenu $win.mode -textvar [myvar options(-mode)]] -row 1 -column 3
+	grid [ui::optionmenu $win.filter -textvar [myvar options(-filter)]] -row 1 -column 4
+	grid [ui::optionmenu $win.host -textvar [myvar option(-host)]] -row 1 -column 5
+	grid [ttk::checkbutton $win.conn -width 10 -variable [myvar data(connectbutton)] -textvar [myvar data(connectbuttonlabel)]] -row 1 -column 6
+	if {$data(connectbutton)} {
+	    set data(connectbuttonlabel) {disconnect}
+	} else {
+	    set data(connectbuttonlabel) {connect}
+	}
+	$win.service configure -values [sdr::band-data-services] -width [maxwidth [sdr::band-data-services]]
+	$win.band configure -values [sdr::band-data-bands $options(-service)] -width [maxwidth [sdr::band-data-all-bands]]
+	$win.mode configure -values [modes-type cget -values]
+	$win.filter configure -values [sdr::filters-get $options(-mode)]
+	$win.host configure -values [servers-names]
+	servers-names-update [list {*}[mymethod update-hosts]]
+    }
+    method update-hosts {servers} {
+	puts "update-hosts $servers"
+	$win.host configure -values $servers
+    }
+    method {Configure -parent} {val} { 
+	set options(-parent) $val
+    }
+    method {Configure -text} {val} {
+	set options(-text) $val
+	catch {$options(-parent) tab $win -text $val}
+    }
+    method {Configure -service} {val} { 
+	set options(-service) $val
+    }
+    method {Configure -band} {val} { 
+	if {$options(-band) eq $val} {
+	    # to next memory in this band
+	} else {
+	    # band-save
+	    set options(-band) $val
+	    # band-restore
+	}
+	# $self configure -frequency xxx -mode xxx -filter xxx -agc xxx
+    }
+    method {Configure -frequency} {val} {
+	if {$options(-frequency) != $val} {
+	    set options(-frequency) $val
+	    ::sdr::command::setfrequency [$self mode-offset-frequency $val]
+	}
+    }
+    method {Configure -mode} {val} {
+	if {$options(-mode) ne $val} {
+	    set options(-mode) $val
+	    ::sdr::command::setmode $val
+	}
+    }
+    method {Configure -filter} {val} { 
+	if {$options(-filter) ne $val} {
+	    set options(-filter) $val
+	    ::sdr::command::setfilter {*}[$self mode-offset-filter]
+	}
+    }
+    method {Configure -agc} {val} {
+	if {$options(-agc) ne $val} {
+	    set options(-agc) $val
+	    ::sdr::command::setagc $val
+	}
+    }
+    method {Configure -cw-pitch} {val} {
+	if {$options(-cw-pitch) != $val} {
+	    set options(-cw-pitch) $val
+	    ::sdr::command::setfrequency [$self mode-offset-frequency]
+	    ::sdr::command::setfilter {*}[$self mode-offset-filter]
+	}
+    }
+    method {Configure -host} {val} {
+	if {[$self is-connected]} {
+	    $self disconnect
+	}
+	set options(-host) $val
+    }
+    method {Configure -rigctl} {val} {
+	set options(-rigctl) $val
+    }
+
+    method connect {} {
+	# ignore ssl/tls for now
+	puts "using ui::radio self = $self as id in connect"
+	set data(connection) [::ch::connect $self $options(-host) 8000]
+	::sdr::command::setclient tkradio
+	::sdr::command::q-server
+	# most of this should be done elsewhere
+	# it resembles a band change
+	::sdr::command::setfrequency [$self mode-offset-frequency]; # spectrum view follows
+	::sdr::command::setmode $options(-mode)
+	::sdr::command::setfilter [$self mode-offset-filter $options(-frequency)]; # spectrum view follows
+	# ui disable connect action
+	# ui enable disconnect action
+	# ui enable subrx select
+	# ui enable mute subrx 
+	# ??? ::sdr::command::setpws $options(-pwsmode)
+	## do we want to do audio on this channel?
+	::sdr::command::setencoding 0
+	# select local audio device
+	::sdr::command::startaudiostream 2000 8000 1 0
+	::sdr::command::setpan 0.5
+	::sdr::command::setagc $options(-agc)
+	# if we're going to muck with different spectra, ...
+	# ::sdr::command::setpws $options(-pwsmode)
+	# set these when the ANF, NR, or NB is enabled
+	# ::sdr::command::setanfvals
+	# ::sdr::command::setnrvals
+	# ::sdr::command::setnbvals
+	# ::sdr::command::setsquelchval
+	# ::sdr::command::setsquelchstate
+	# ::sdr::command::setanf
+	# ::sdr::command::setnr
+	# ::sdr::command::setnb
+	# remote connected
+	# ::sdr::command::setrxdcblock
+	# ::sdr::command::settxdcblock
+	# ::sdr::command::setrxagcslope # this one was disabled
+	# ::sdr::command::setrxagcattack
+	# ::sdr::command::setrxagcdecay
+	# ::sdr::command::setrxagchang
+	# ::sdr::command::setfixedagc
+	# ::sdr::command::setrxagchangthreshold
+	# ::sdr::command::settxlevelerstate
+	# ::sdr::command::settxlevelermaxgain
+	# ::sdr::command::settxlevelerattack
+	# ::sdr::command::settxlevelerdecay
+	# ::sdr::command::settxlevelerhang
+	# ::sdr::command::setalcstate
+	# ::sdr::command::settxalcattack
+	# ::sdr::command::settxalcdecay
+	# ::sdr::command::settxalchang
+	# ::sdr::command::*hardware?
+	# start spectrum
+	switch $options(-mode) {
+	    CWU - CWL {
+		frequencyChanged $options(-frequency); # hack cw pitch offset into tuning
+	    }
+	}
+	# enable notch filter false
+    }
+    method disconnect {} { 
+	if {[$self is-connected]} {
+	    puts "disconnecting self = $self"
+	    ::ch::disconnect $self $data(connection)
+	    set data(connection)  {}
+	    # stop spectrum timer
+	    # set user none
+	    # set passwrod none
+	    # set host {}
+	}
+    }
+    method is-connected {} { return [expr {$data(connection) != {}}] }
+
+    method mode-offset-frequency {} {
+	set f $options(-frequency)
+	switch $options(-mode) {
+	    CWU { return [expr {$f - $options(-cw-pitch)}]}
+	    CWL { return [expr {$f + $options(-cw-pitch)}]}
+	    default { return $f }
+	}
+    }
+    method mode-offset-filter {} {
+	foreach {lo hi} [::sdr::filter-parse $options(-filter)] break
+	set cw $options(-cw-pitch)
+	switch $options(-mode) {
+	    CWU { set lo [expr {$cw+$lo}]; set hi [expr {$cw+$hi}] }
+	    CWL { set lo [expr {-$cw+$lo}]; set hi [expr {-$cw+$hi}] }
+	}
+	return [list $lo $hi]
+    }
+}
+
+set nradio 0
+set radio {}
+set radios {}
+set verbose 0
+
+# create a new radio tab with the options specified in args
+# insert it into the lists and make it the current tab
+proc new-radio {args} {
+    incr ::nradio
+    set ::radio [ui::radio .n.r$::nradio -parent .n -text "radio $::nradio" {*}$args]
+    .n add $::radio -text [$::radio cget -text]
+    lappend ::radios $::radio
+    .n select $::radio
+}
+# delete the radio in the current tab
+# remove it from the lists 
+proc delete-radio {} {
+    .n forget $::radio
+    set x [lsearch $::radios $::radio]
+    if {$x >= 0} {
+	set ::radios [lreplace $::radios $x $x {}]
+    }
+    if {[$::radio is-connected]} {
+	$::radio disconnect
+    }
+    destroy $::radio
+}
+# save a representation of the current setup
+proc save-setup {} {
+}
+# load a saved set
+proc load-setup {} {
+}
+# exit the program
+proc quit {} {
+    destroy .
+}
+
+# make the program menu(es)
+proc radio-menu {w} {
+    ttk::frame $w
+    pack [ttk::menubutton $w.f -text app -menu $w.f.m] -side left -anchor w
+    menu $w.f.m -tearoff no
+    $w.f.m add command -label {new radio} -command new-radio
+    $w.f.m add separator
+    $w.f.m add command -label {delete radio} -command delete-radio
+    $w.f.m add separator
+    $w.f.m add command -label {save setup} -command save-setup
+    $w.f.m add command -label {load setup} -command load-setup
+    $w.f.m add separator
+    $w.f.m add command -label {quit} -command quit
+    return $w
+}
+
+# make the tabbed notebook of radios
+proc radio-notebook {w args} {
+    ttk::notebook $w {*}$args
+    return $w
+}
+
+# build the user interface
+proc ui-build {} {
+    pack [radio-menu .m] -side top -fill x -expand true
+    pack [radio-notebook .n] -side top -fill both -expand true
+}
+
+# process arguments, most options just get copied into 
+# a new-radio argument list
+proc optarg {opt} {
+    upvar argc argc argv argv args args i i
+    if {$i == $argc-1} { uplevel error "missing arg for $opt option" }
+    lappend args $opt [lindex $argv [incr i]]
+    if {$::verbose > 2} { puts "optarg $opt found [lindex $argv $i] resultin in $args" }
+}
+
+# load configuration
+
+# specify options and create radios
+set args {}
+for {set i 0} {$i < $argc} {incr i} {
+    # accumulate arguments
+    set opt [lindex $argv $i]
+    switch -- $opt {
+	-a - --address - --address-of-server { optarg -address }
+	-b - --band { optarg -band }
+	-e - --filter { optarg -filter }
+	-f - --frequency { optarg -frequency }
+	-m - --mode { optarg -mode }
+	-r - --rigctl - --rigctl-port { optarg -rigctl }
+	-s - --service { optarg -service }
+	-t - --text { optarg -text }
+	-n - --new {
+	    if { ! [winfo exists .n]} { ui-build }
+	    if {$::verbose > 1} { puts stderr "new-radio $args" }
+	    new-radio {*}$args
+	    set args {}
+	}
+	-v - --verbose { incr ::verbose }
+	-c - --connect {
+	    $::radio connect
+	}
+	default {
+	    error "unrecognized option [lindex $argv $i]"
+	}
+    }
+}
+# start listing servers
+servers-request

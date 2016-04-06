@@ -1,0 +1,9 @@
+#!/bin/sh
+# add  --debug to dspserver to get full trace of packets received
+radio-backend \
+    --key \
+    --hw "sdrplay-server --samplerate 192000" \
+    --dsp "dspserver --lo 10000" \
+    --in ~/sdrplay-backend \
+    --log logs/
+	      

@@ -1,0 +1,6 @@
+[ ] on tab switch tell sdr/commands::set-channel
+[ ] on connection/disconnection tell sdr/commands::set-channel
+[ ] move dspserver enumeration definitions into sdr/commands.tcl
+[ ] teach automake to rebuild sdr/pkgIndex.tcl
+[ ] teach automake to install sdr/* into $(prefix)/share/tcltk/sdr
+[ ] teach automake to clean up *~

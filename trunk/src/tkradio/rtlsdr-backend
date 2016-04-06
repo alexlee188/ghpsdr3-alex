@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# example radio-backend invocation
+# runs the rtlsdr-server with default parameters
+# runs the server in ~/rtlsdr-backend with a logs directory
+# creates the dspserver pkey/cert files
+# runs dspserver with no local oscillator offset
+radio-backend \
+    --at rradio \
+    --key \
+    --hw "rtlsdr-server" \
+    --dsp "dspserver --lo 0" \
+    --ui "~/Projects/ghpsdr3-alex/trunk/src/tkradio/tkradio -s rradio" \
+    --in ~/rtlsdr-backend \
+    --log logs/
+	      

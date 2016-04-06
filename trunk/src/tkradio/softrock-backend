@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# example radio-backend invocation
+# runs the softrock server with jack running the griffin imic
+# runs the server in ~/softrock-backend with a logs directory
+# creates the dspserver pkey/cert files
+# runs dspserver with 10k local oscillator offset
+
+# this doesn't work, because I got a jackd started and now it won't stop
+# --jack "dbus-run-session jackd -T -s -dalsa -Chw:1 -Phw:1 -r48000 -p1024 -i2 -o2 -n3 -X raw" \
+#     --ui "~/Projects/ghpsdr3-alex/trunk/src/tkradio/tkradio -s rradio" \
+#
+
+radio-backend \
+    --at rradio \
+    --key \
+    --hw "softrock --jack --si570 --qi --samplerate 48000" \
+    --dsp "dspserver --lo 10000" \
+    --ui "QtRadio -s rradio" \
+    --in ~/softrock-backend \
+    --log logs/
+	      
