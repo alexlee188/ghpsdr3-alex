@@ -1,6 +1,21 @@
-[ ] on tab switch tell sdr/commands::set-channel
-[ ] on connection/disconnection tell sdr/commands::set-channel
-[ ] move dspserver enumeration definitions into sdr/commands.tcl
+[x] no tabs
+[x] single globals ::channel ::radio ::verbose
+[x] move dspserver enumeration definitions into sdr/commands.tcl
 [ ] teach automake to rebuild sdr/pkgIndex.tcl
 [ ] teach automake to install sdr/* into $(prefix)/share/tcltk/sdr
 [ ] teach automake to clean up *~
+[ ] add agc option menu
+[ ] add detailed configuration panel
+[ ] incorporate tool tips
+[ ] start audio playback
+[ ] incorporate spectrum and waterfall 
+[ ] add gain control panel
+[ ] add s-meter
+[ ] add dial
+[ ] figure out how to theme interface all in black and grey background,
+	red or green or orange or white foreground
+[ ] set up night vision
+[ ] wire up service -> band -> channels -> frequency / mode / filter
+	cascade
+[ ] why reduced noise from subrx?
+[ ] why audio stalls without spectrum?
