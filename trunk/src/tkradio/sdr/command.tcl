@@ -58,11 +58,11 @@ namespace eval ::sdr::command {
     variable audiostream-defaults [dict create buffer_size 2000 samplerate 8000 channels 1 encoding 0 mic-encoding 0]
 
     # agc values
-    variable agcs-dict [dict create FIXED 0 LONG 1 SLOW 2 MEDIUM 3 FAST 4]
-    proc get-agcs {} { return [dict keys ${::sdr::command::agcs-dict}] }
-    proc fix-agc {agc} {
-	if {[key exists ${::sdr::command::agcs-dict} $agc]} {
-	    return [key get ${::sdr::command::agcs-dict} $agc]
+    variable agcmodes-dict [dict create FIXED 0 LONG 1 SLOW 2 MEDIUM 3 FAST 4]
+    proc get-agcmodes {} { return [dict keys ${::sdr::command::agcmodes-dict}] }
+    proc fix-agcmode {agc} {
+	if {[dict exists ${::sdr::command::agcmodes-dict} $agc]} {
+	    return [dict get ${::sdr::command::agcmodes-dict} $agc]
 	} else {
 	    error "unrecognized agc token $agc"
 	}
@@ -143,7 +143,7 @@ namespace eval ::sdr::command {
     proc setpreamp {s} { send-command "setpreamp $s" }
     proc setmode {imode} { send-command "setmode [fix-mode $imode]" }
     proc setfilter {ilo ihi} { send-command "setfilter $ilo $ihi" }
-    proc setagc {iagc} { send-command "setagc [fix-agc $iagc]" }
+    proc setagc {iagc} { send-command "setagc [fix-agcmode $iagc]" }
     proc setfixedagc {iagc} { send-command "setfixedagc $iagc" }
     proc enablenotchfilter {ivfo iindex ienabled} { send-command "enablenotchfilter $ivfo $iindex $ienabled" }
     proc setnotchfilter {ivfo iindex fbandwidth ffrequency} { send-command "setnotchfilter $ivfo $iindex $fbandwidth $ffrequency" }

@@ -39,6 +39,9 @@ package require sdr::servers
 ##
 set radio {};			# radio ui widget
 set channel -1;			# socket to dspserver
+set verbose 0
+
+proc verbose-puts {msg} { if {$::verbose} { puts stderr $msg } }
 
 ##
 ## constants
@@ -49,6 +52,9 @@ snit::enum ::modes-type -values [get-modes]
 # spectrum modes
 proc get-pwsmodes {} { return [::sdr::command::get-pwsmodes] }
 snit::enum ::pwsmodes-type -values [get-pwsmodes]
+# agc modes
+proc get-agcmodes {} { return [::sdr::command::get-agcmodes] }
+snit::enum ::agcmodes-type -values [get-agcmodes]
 
 ##
 ## channel handlers
@@ -72,7 +78,7 @@ proc ::ch::disconnect {id chan} {
 proc ::ch::reader {id chan} {
     set buffer [read $chan]
     if {[eof $chan]} {
-	if {$::verbose > 1} { puts "::ch::reader $id $chan -> eof is true" }
+	verbose-puts "::ch::reader $id $chan -> eof is true"
 	::ch::disconnect $id $chan
 	return
     }
@@ -91,6 +97,7 @@ proc ::ch::reader {id chan} {
 		set buffer [string range $buffer $end+1 end]
 		$::radio process-spectrum $main $sub $sr $lo $data
 		# puts stderr "spectrum $samples bytes, main $main, sub $sub, sr $sr, lo $lo"
+		# puts stderr "spectrum buffer remains [string length $buffer]"
 		continue
 	    }
 	    \1 {		# audio
@@ -107,6 +114,7 @@ proc ::ch::reader {id chan} {
 		set buffer [string range $buffer $end+1 end]
 		$::radio process-audio $data
 		# puts stderr "audio $samples bytes"
+		# puts stderr "audio buffer remains [string length $buffer]"
 		continue
 	    }
 	    \2 {			# bandscope
@@ -128,6 +136,7 @@ proc ::ch::reader {id chan} {
 		set buffer [string range $buffer $end end]
 		$::radio process-answer $data
 		# puts stderr "answer $samples bytes -> {$data}"
+		# puts stderr "answer buffer remains [string length $buffer]"
 		continue
 	    }
 	    default {
@@ -242,7 +251,7 @@ snit::widgetadaptor ui::frequency-display {
 	    default {
 		set cx [expr {$x/([winfo width $win]/17)}]
 		set cy [expr {$y/([winfo height $win]/2)}]
-		puts "button $t $cx $cy $etc"
+		verbose-puts "button $t $cx $cy $etc"
 	    }
 	}
     }
@@ -295,39 +304,31 @@ snit::widgetadaptor ::ui::radio {
     variable data -array {
 	connect {connect}
     }
-    # the text for window title
     option -text -default {} -configuremethod Configure
-    # the radio service selected
     option -service -default Amateur -configuremethod Configure
-    # the band selected
     option -band -default 20m -configuremethod Configure
-    # the frequency tuned
     option -frequency -default 14010000 -configuremethod Configure
-    # the modulation
     option -mode -default CWU -type ::modes-type -configuremethod Configure
-    # the filter shape
     option -filter -default {} -configuremethod Configure
-    # the cw pitch
     option -cw-pitch -default {600} -configuremethod Configure
-    # the dspserver name
+    option -agc -default {SLOW} -type ::agcmodes-type -configuremethod Configure
     option -name -configuremethod Configure
-    # define a local server
     option -local -configuremethod Configure
-    # delegates
+
     delegate method * to hull
     delegate option * to hull
 
     constructor args {
 	installhull using ttk::frame
 	$self configure {*}$args
-	if {$::verbose > 1} { puts "ui::radio $win $args" }
+	verbose-puts "ui::radio $win $args"
 
 	grid [ui::frequency-display $win.freq -frequency $options(-frequency)] -row 0 -column 1 -columnspan 6
 	grid [ui::optionmenu $win.service -textvar [myvar options(-service)]] -row 1 -column 1
 	grid [ui::optionmenu $win.band -textvar [myvar options(-band)]] -row 1 -column 2
 	grid [ui::optionmenu $win.mode -textvar [myvar options(-mode)]] -row 1 -column 3
 	grid [ui::optionmenu $win.filter -textvar [myvar options(-filter)]] -row 1 -column 4
-	grid [ui::optionmenu $win.name -textvar [myvar option(-name)]] -row 1 -column 5
+	grid [ui::optionmenu $win.name -textvar [myvar options(-name)]] -row 1 -column 5
 	grid [ttk::checkbutton $win.conn -width 10 \
 		  -command [mymethod connecttoggle] \
 		  -variable [myvar data(connect)] \
@@ -392,10 +393,10 @@ snit::widgetadaptor ::ui::radio {
 	}
     }
     method {Configure -name} {val} {
-	puts "Configure -name $val and options(-name) is $options(-name)"
+	# puts "Configure -name $val and options(-name) is $options(-name)"
 	if {$options(-name) ne $val} {
 	    if {[$self is-connected]} { $self disconnect }
-	    puts "$self configure -name $val, with $win.name -values {[$win.name cget -values]}"
+	    # puts "$self configure -name $val, with $win.name -values {[$win.name cget -values]}"
 	    set options(-name) $val
 	}
     }
@@ -403,18 +404,22 @@ snit::widgetadaptor ::ui::radio {
 	server-local-install {*}$val; # {name addr port}
     }
     method update-names {names} {
-	# puts "update-names with $names"
-	$win.name configure -values $names
-	# puts "updated"
+	if {$names ne [$win.name cget -values]} {
+	    # puts "update-names $options(-name) and $names"
+	    $win.name configure -values $names
+	    # set options(-name) $options(-name)
+	}
     }
     method connecttoggle {} {
 	# the button label is already looking forward
 	if {$::channel == -1} {
 	    if {[catch {$self connect} error]} {
+		puts $error\n$::errorInfo
 		set data(connect) {connect}
 	    }
 	} else {
 	    if {[catch {$self disconnect} error]} {
+		puts $error\n$::errorInfo
 		set data(connect) {disconnect}
 	    }
 	}
@@ -471,17 +476,13 @@ snit::widgetadaptor ::ui::radio {
 	# ::sdr::command::settxalchang
 	# ::sdr::command::*hardware?
 	# start spectrum
-	switch $options(-mode) {
-	    CWU - CWL {
-		frequencyChanged $options(-frequency); # hack cw pitch offset into tuning
-	    }
-	}
+	sdr::command::setfps 512 8
 	# enable notch filter false
 	return 1
     }
     method disconnect {} { 
 	if {[$self is-connected]} {
-	    puts "disconnecting self = $self"
+	    verbose-puts "disconnecting self = $self"
 	    ::ch::disconnect $self $::channel
 	    set ::channel -1
 	    # stop spectrum timer (what spectrum timer?)
@@ -493,7 +494,7 @@ snit::widgetadaptor ::ui::radio {
     method is-connected {} { return [expr {$::channel != -1}] }
     method mode-offset-frequency {} {
 	set f $options(-frequency)
-	switch $options(-mode) {r
+	switch $options(-mode) {
 	    CWU { return [expr {$f - $options(-cw-pitch)}]}
 	    CWL { return [expr {$f + $options(-cw-pitch)}]}
 	    default { return $f }
@@ -508,7 +509,7 @@ snit::widgetadaptor ::ui::radio {
 	}
 	return [list $lo $hi]
     }
-    method process-aspectrum {main sub sr lo spectrum} {
+    method process-spectrum {main sub sr lo spectrum} {
 	puts stderr "spectrum $main $sub [string length $spectrum]"
     }
     method process-audio {audio} {
@@ -518,8 +519,6 @@ snit::widgetadaptor ::ui::radio {
 	puts stderr "answer = {$answer}"
     }
 }
-
-set verbose 0
 
 # start listing servers
 servers-request
@@ -534,7 +533,7 @@ proc optarg {opt} {
     upvar argc argc argv argv i i
     if {$i == $argc-1} { uplevel error "missing arg for $opt option" }
     $::radio configure $opt [lindex $argv [incr i]]
-    if {$::verbose > 2} { puts "optarg $opt found [lindex $argv $i]" }
+    verbose-puts "optarg $opt found [lindex $argv $i]"
 }
 # specify options and create radios
 for {set i 0} {$i < $argc} {incr i} {
