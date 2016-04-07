@@ -310,7 +310,7 @@ snit::widgetadaptor ::ui::radio {
     # the cw pitch
     option -cw-pitch -default {600} -configuremethod Configure
     # the dspserver name
-    option -name -default {AD5DZ}
+    option -name -configuremethod Configure
     # define a local server
     option -local -configuremethod Configure
     # delegates
@@ -341,11 +341,14 @@ snit::widgetadaptor ::ui::radio {
 	servers-names-update [mymethod update-names]
     }
     method {Configure -text} {val} {
-	set options(-text) $val
-	wm title . $val
+	if {$options(-text) ne $val} {
+	    wm title . [set options(-text) $val]
+	}
     }
     method {Configure -service} {val} { 
-	set options(-service) $val
+	if {$options(-service) ne $val} {
+	    set options(-service) $val
+	}
     }
     method {Configure -band} {val} { 
 	if {$options(-band) eq $val} {
@@ -365,8 +368,7 @@ snit::widgetadaptor ::ui::radio {
     }
     method {Configure -mode} {val} {
 	if {$options(-mode) ne $val} {
-	    set options(-mode) $val
-	    ::sdr::command::setmode $val
+	    ::sdr::command::setmode [set options(-mode) $val]
 	}
     }
     method {Configure -filter} {val} { 
@@ -377,23 +379,25 @@ snit::widgetadaptor ::ui::radio {
     }
     method {Configure -agc} {val} {
 	if {$options(-agc) ne $val} {
-	    set options(-agc) $val
-	    ::sdr::command::setagc $val
+	    ::sdr::command::setagc [set options(-agc) $val]
 	}
     }
     method {Configure -cw-pitch} {val} {
 	if {$options(-cw-pitch) != $val} {
 	    set options(-cw-pitch) $val
-	    ::sdr::command::setfrequency [$self mode-offset-frequency]
-	    ::sdr::command::setfilter {*}[$self mode-offset-filter]
+	    if {$options(-mode) in {CWU CWL}} {
+		::sdr::command::setfrequency [$self mode-offset-frequency]
+		::sdr::command::setfilter {*}[$self mode-offset-filter]
+	    }
 	}
     }
     method {Configure -name} {val} {
-	if {[$self is-connected]} {
-	    $self disconnect
+	puts "Configure -name $val and options(-name) is $options(-name)"
+	if {$options(-name) ne $val} {
+	    if {[$self is-connected]} { $self disconnect }
+	    puts "$self configure -name $val, with $win.name -values {[$win.name cget -values]}"
+	    set options(-name) $val
 	}
-	puts "$self configure -name $val, with $win.name -values {[$win.name cget -values]}"
-	set options(-name) $val
     }
     method {Configure -local} {val} {
 	server-local-install {*}$val; # {name addr port}
