@@ -21,13 +21,14 @@
 ##
 ## external packages
 ##
+package require Tcl
 package require Tk
 package require snit
-package require snack
 
 ##
 ## our own sdr libraries
 ##
+package require sdr::audio
 package require sdr::band-data
 package require sdr::command
 package require sdr::filter
@@ -35,7 +36,7 @@ package require sdr::memory
 package require sdr::servers
 
 ##
-## globals, at least those admitted
+## globals, at least those admitted to
 ##
 set radio {};			# radio ui widget
 set channel -1;			# socket to dspserver
@@ -443,6 +444,7 @@ snit::widgetadaptor ::ui::radio {
 	::sdr::command::setencoding 0
 	# select local audio device
 	::sdr::command::startaudiostream 2000 8000 1 0
+	audio-out-start ALAW 8000
 	::sdr::command::setpan 0.5
 	::sdr::command::setagc $options(-agc)
 	# if we're going to muck with different spectra, ...
@@ -457,8 +459,8 @@ snit::widgetadaptor ::ui::radio {
 	# ::sdr::command::setnr
 	# ::sdr::command::setnb
 	# remote connected
-	# ::sdr::command::setrxdcblock
-	# ::sdr::command::settxdcblock
+	::sdr::command::setrxdcblock 0
+	::sdr::command::settxdcblock 0
 	# ::sdr::command::setrxagcslope # this one was disabled
 	# ::sdr::command::setrxagcattack
 	# ::sdr::command::setrxagcdecay
@@ -470,13 +472,13 @@ snit::widgetadaptor ::ui::radio {
 	# ::sdr::command::settxlevelerattack
 	# ::sdr::command::settxlevelerdecay
 	# ::sdr::command::settxlevelerhang
-	# ::sdr::command::setalcstate
+	# ::sdr::command::settxalcstate # this one was misspelled
 	# ::sdr::command::settxalcattack
 	# ::sdr::command::settxalcdecay
 	# ::sdr::command::settxalchang
 	# ::sdr::command::*hardware?
 	# start spectrum
-	sdr::command::setfps 512 8
+	# sdr::command::setfps 512 8
 	# enable notch filter false
 	return 1
     }
@@ -489,6 +491,7 @@ snit::widgetadaptor ::ui::radio {
 	    # set user none
 	    # set passwrod none
 	    # set host {}
+	    audio-out-stop
 	}
     }
     method is-connected {} { return [expr {$::channel != -1}] }
@@ -514,6 +517,7 @@ snit::widgetadaptor ::ui::radio {
     }
     method process-audio {audio} {
 	puts stderr "audio [string length $audio]"
+	audio-out-data $audio
     }
     method process-answer {answer} {
 	puts stderr "answer = {$answer}"

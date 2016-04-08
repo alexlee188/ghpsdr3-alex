@@ -886,7 +886,7 @@ void UI::connected() {
         command.clear(); QTextStream(&command) << "settxlevelerhang " << configure.getLevelerHangValue();
         connection.sendCommand(command);
 
-        command.clear(); QTextStream(&command) << "setalcstate " << configure.getALCEnabledValue();
+        command.clear(); QTextStream(&command) << "settxalcstate " << configure.getALCEnabledValue();
         connection.sendCommand(command);
         command.clear(); QTextStream(&command) << "settxalcattack " << configure.getALCAttackValue();
         connection.sendCommand(command);

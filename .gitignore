@@ -2,6 +2,7 @@
 *.a
 *.moc.cpp
 *~
+*.so
 .deps
 Makefile
 Makefile.in

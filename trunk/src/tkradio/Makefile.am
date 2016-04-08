@@ -8,3 +8,8 @@ bin_SCRIPTS = tkradio
 # ./install-sh -d /usr/local/share/tcltk/sdr
 # ./install-sh sdr/* /usr/local/share/tcltk/sdr
 # otherwise we need to find the right place some other way
+#
+# CFLAGS=
+# LIBS=
+# pa_simple.so: pa_simple.c
+#	gcc -fPIC -shared -o $@ $(CFLAGS) $< $(LIBS)

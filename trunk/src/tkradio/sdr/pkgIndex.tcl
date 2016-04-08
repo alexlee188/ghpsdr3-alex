@@ -8,9 +8,17 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
+package ifneeded pa::simple 0.0.1 [list load [file join $dir pa_simple.so]]
+package ifneeded sdr::audio 1.0 [list source [file join $dir audio.tcl]]
 package ifneeded sdr::band-data 1.0 [list source [file join $dir band-data.tcl]]
 package ifneeded sdr::command 1.0 [list source [file join $dir command.tcl]]
 package ifneeded sdr::filter 1.0 [list source [file join $dir filter.tcl]]
 package ifneeded sdr::memory 1.0 [list source [file join $dir memory.tcl]]
 package ifneeded sdr::servers 1.0 [list source [file join $dir servers.tcl]]
 package ifneeded sdr::util 1.0 [list source [file join $dir util.tcl]]
+package ifneeded sdrtk::clabelframe 1.0.0 [list source [file join $dir clabelframe.tcl]]
+package ifneeded sdrtk::dial 1.0 [list source [file join $dir dial.tcl]]
+package ifneeded sdrtk::spectrum 1.0.0 [list source [file join $dir spectrum.tcl]]
+package ifneeded sdrtk::spectrum-waterfall 1.0.0 [list source [file join $dir spectrum-waterfall.tcl]]
+package ifneeded sdrtk::waterfall 1.0.0 [list source [file join $dir waterfall.tcl]]
+package ifneeded sdrtype::types 1.0.0 [list source [file join $dir sdrtype.tcl]]
