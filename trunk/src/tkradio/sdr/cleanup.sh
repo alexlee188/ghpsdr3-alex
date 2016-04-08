@@ -1,7 +1,6 @@
 #
 # cleanup
 #
-(cd sdr && ./cleanup.sh)
 # after autoreconf -i
 rm -f -r aclocal.m4
 rm -f -r autom4te.cache/

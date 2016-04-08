@@ -1,5 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
+SUBDIRS = sdr
+
 bin_SCRIPTS = tkradio
 
 # echo 'puts $auto_path' | tclsh | grep -s /usr/local/share/tcltk > /dev/null

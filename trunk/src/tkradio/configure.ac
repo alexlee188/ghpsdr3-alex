@@ -1,5 +1,5 @@
-AC_INIT([tkradio], [1.0], [rec@elf.org], [tkradio])
-
+AC_INIT([tkradio], [1.0])
+AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([foreign -Wall])
 
 ## -------------------- ##
@@ -7,29 +7,18 @@ AM_INIT_AUTOMAKE([foreign -Wall])
 ## -------------------- ##
 
 # Look for an wish interpreter.
-AC_CHECK_FILE([/usr/bin/wish],[have_wish=yes],[have_wish=no])
+AC_CHECK_FILE([/usr/bin/wish8.6],[have_wish=yes],[have_wish=no])
+AC_CHECK_FILE([/usr/bin/tclsh8.6],[have_tclsh=yes],[have_tclsh=no])
 
-if test "x$have_wish" = xno; then
+if test "x$have_wish" = xno -o "x$have_tclsh" = xno; then
 	AC_MSG_ERROR([
 -----------------------------------
-  The wish interpreter required to run tkradio.
+  The wish and tclsh interpreters are required to run tkradio.
 -----------------------------------])
 fi
 
-# check for required tcl packages
-# neither tcl-snack nor tcl-tls are required, they'll be used
-# if they are available, otherwise ignored
+# need snit from tcllib, but cannot check
 
 AC_CONFIG_FILES([Makefile])
+AC_CONFIG_SUBDIRS([sdr])
 AC_OUTPUT
-
-echo \
-"-----------------------------------------------------
-
-${PACKAGE_NAME} Version ${PACKAGE_VERSION}
-
-Prefix: '${prefix}'.
-Now type 'make install' to install the tkradio script.
-
------------------------------------------------------"
-
