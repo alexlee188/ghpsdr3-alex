@@ -20,21 +20,26 @@ CPPFLAGS= -g -O3 -DUSE_TCL_STUBS
 LIBS=-ltclstub8.6 -lpulse-simple
 
 tcltkdir = $(libdir)/tcltk/sdr
-tcltk_DATA = pa_simple.so
-tcltk_DATA += audio.tcl
+tcltk_DATA = audio.tcl
 tcltk_DATA += band-data.tcl
 tcltk_DATA += clabelframe.tcl
 tcltk_DATA += command.tcl
+tcltk_DATA += dialbook.tcl
 tcltk_DATA += dial.tcl
 tcltk_DATA += filter.tcl
+tcltk_DATA += hotiron.tcl
 tcltk_DATA += memory.tcl
-tcltk_DATA += pkgIndex.tcl
+tcltk_DATA += meter.tcl
 tcltk_DATA += sdrtype.tcl
 tcltk_DATA += servers.tcl
 tcltk_DATA += spectrum.tcl
 tcltk_DATA += spectrum-waterfall.tcl
 tcltk_DATA += util.tcl
 tcltk_DATA += waterfall.tcl
+
+tcltk_DATA += pa_simple.so
+tcltk_DATA += pkgIndex.tcl
+
 CLEANFILES=pa_simple.so pkgIndex.tcl
 
 pkgIndex.tcl: $(wildcard *.so) $(filter-out pkgIndex.tcl, $(wildcard *.tcl))

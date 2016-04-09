@@ -35,6 +35,9 @@ package require sdr::filter
 package require sdr::memory
 package require sdr::servers
 
+package require sdrtk::meter
+package require sdrtk::spectrum-waterfall
+
 ##
 ## globals, at least those admitted to
 ##
@@ -293,48 +296,61 @@ snit::widgetadaptor ui::frequency-display {
 }
 
 # define the radio widget
-# this one needs to be megawidget
-# with configuration options for all the radio stuff
-# so it needs to expose ui elements for:
-#  1) frequency readout & tuning
-#  2) mode selector option menu
-#  3) filter selector option menu
-#  4) host / service selection dialog
-#  5) ...
+# ah, mistake, there should be a radio widget which handles
+# the basic logic of maintaining state and talking to dspserver,
+# and then there should be one or more ui widgets which allow
+# user control of the radio model
+#
 snit::widgetadaptor ::ui::radio {
     variable data -array {
 	connect {connect}
+	sample-rate 0
+	spectrum-width 0
+	xs {}
+	miny 1000
+	maxy -1000
+	sumy 0.0
+	ny 0
     }
     option -text -default {} -configuremethod Configure
-    option -service -default Amateur -configuremethod Configure
-    option -band -default 20m -configuremethod Configure
-    option -frequency -default 14010000 -configuremethod Configure
-    option -mode -default CWU -type ::modes-type -configuremethod Configure
+    option -service -default {} -configuremethod Configure
+    option -band -default {} -configuremethod Configure
+    option -frequency -default {} -configuremethod Configure
+    option -mode -default {} -type ::modes-type -configuremethod Configure
     option -filter -default {} -configuremethod Configure
     option -cw-pitch -default {600} -configuremethod Configure
     option -agc -default {SLOW} -type ::agcmodes-type -configuremethod Configure
-    option -name -configuremethod Configure
-    option -local -configuremethod Configure
+    option -name -default {} -configuremethod Configure
+    option -local -default {} -configuremethod Configure
+    option -sample-rate -default 0 -configuremethod Configure
+    option -local-oscillator -default 0 -configuremethod Configure
 
     delegate method * to hull
     delegate option * to hull
 
     constructor args {
 	installhull using ttk::frame
-	$self configure {*}$args
-	verbose-puts "ui::radio $win $args"
+	$self configure -service [sdr::get-last service] {*}$args
+	verbose-puts "ui::radio $win $args "
 
-	grid [ui::frequency-display $win.freq -frequency $options(-frequency)] -row 0 -column 1 -columnspan 6
-	grid [ui::optionmenu $win.service -textvar [myvar options(-service)]] -row 1 -column 1
-	grid [ui::optionmenu $win.band -textvar [myvar options(-band)]] -row 1 -column 2
-	grid [ui::optionmenu $win.mode -textvar [myvar options(-mode)]] -row 1 -column 3
-	grid [ui::optionmenu $win.filter -textvar [myvar options(-filter)]] -row 1 -column 4
-	grid [ui::optionmenu $win.name -textvar [myvar options(-name)]] -row 1 -column 5
+	grid [sdrtk::meter $win.meter] -row 0 -column 0 -sticky nsew
+	foreach opt {-frequency -service -band -mode -filter -name} {
+	    set data($opt) $options($opt)
+	    trace variable [myvar data($opt)] w [mymethod Set]
+	}
+	grid [ui::frequency-display $win.freq -frequency $data(-frequency)] -row 0 -column 1 -columnspan 6
+	grid [ui::optionmenu $win.service -textvar [myvar data(-service)]] -row 1 -column 1
+	grid [ui::optionmenu $win.band -textvar [myvar data(-band)]] -row 1 -column 2
+	grid [ui::optionmenu $win.mode -textvar [myvar data(-mode)]] -row 1 -column 3
+	grid [ui::optionmenu $win.filter -textvar [myvar data(-filter)]] -row 1 -column 4
+	grid [ui::optionmenu $win.name -textvar [myvar data(-name)]] -row 1 -column 5
 	grid [ttk::checkbutton $win.conn -width 10 \
 		  -command [mymethod connecttoggle] \
 		  -variable [myvar data(connect)] \
 		  -onvalue {disconnect} -offvalue {connect} \
 		  -textvar [myvar data(connect)]] -row 1 -column 6
+	grid [sdrtk::spectrum-waterfall $win.sw] -row 2 -column 1 -columnspan 6
+
 	$win.service configure -values [sdr::band-data-services] -width [maxwidth [sdr::band-data-services]]
 	$win.band configure -values [sdr::band-data-bands $options(-service)] -width [maxwidth [sdr::band-data-all-bands]]
 	$win.mode configure -values [modes-type cget -values] -width [maxwidth [modes-type cget -values]]
@@ -342,51 +358,105 @@ snit::widgetadaptor ::ui::radio {
 	$win.name configure -values [servers-names] -width 8
 	servers-names-update [mymethod update-names]
     }
-    method {Configure -text} {val} {
-	if {$options(-text) ne $val} {
-	    wm title . [set options(-text) $val]
+    method get-settings {args} {
+	set settings {}
+	foreach option $args {
+	    lappend settings $option [$self cget $option]
+	}
+	return $settings
+    }
+    method set-settings {settings} {
+	foreach {option value} $settings {
+	    $self configure $option $value
+	}
+    }
+    method save-last-settings {args} {
+	switch [llength $args] {
+	    1 { sdr::set-last [list {*}$args settings] [$self get-settings -band] }
+	    2 { sdr::set-last [list {*}$args settings] [$self get-settings -frequency -mode -filter] }
+	    default { error "wrong number of prefixes" }
+	}
+    }
+    method restore-last-settings {args} {
+	puts "restore-last-settings {$args} => [sdr::get-last [list {*}$args settings]]"
+	$self set-settings [sdr::get-last [list {*}$args settings]]
+    }
+    # called from a variable trace when an option menu alters a value
+    method Set {name1 name2 op} {
+	$self configure $name2 $data($name2)
+	# update idletasks
+    }
+    # called from Configure to write a new option value everywhere
+    method Syncdata {option value} {
+	set options($option) $value
+	if {[info exists data($option)] && $data($option) ne $value} {
+	    set data($option) $value
 	}
     }
     method {Configure -service} {val} { 
+	# if the new service is different than the current service
 	if {$options(-service) ne $val} {
-	    set options(-service) $val
+	    # if the old service was not blank
+	    if {$options(-service) ne {}} {
+		# save the settings for the old service
+		$self save-last-settings $options(-service)
+	    }
+	    # set the new service
+	    $self Syncdata -service $val
+	    # remember the new service as the "last used" service
+	    sdr::set-last service $val
+	    # restore the settings for the new service
+	    $self restore-last-settings $options(-service)
+	    # set the bands for the new service
+	    if {[winfo exists $win.band]} {
+		$win.band configure -values [sdr::band-data-bands $options(-service)]
+	    }
+	    # FIX.ME set the channels for the new service
 	}
     }
     method {Configure -band} {val} { 
-	if {$options(-band) eq $val} {
-	    # to next memory in this band
-	} else {
-	    # band-save
-	    set options(-band) $val
-	    # band-restore
+	# if the new band is different than the current service
+	if {$options(-band) ne $val} {
+	    # if the old service was not blank
+	    if {$options(-band) ne {}} {
+		$self save-last-settings $options(-service) $options(-band)
+	    }
+	    $self Syncdata -band $val
+	    $self save-last-settings $options(-service)
+	    $self restore-last-settings $options(-service) $options(-band)
 	}
-	# $self configure -frequency xxx -mode xxx -filter xxx -agc xxx
     }
     method {Configure -frequency} {val} {
+	# puts "Configure -frequency $val"
 	if {$options(-frequency) != $val} {
-	    set options(-frequency) $val
+	    $self Syncdata -frequency $val
+	    if {[winfo exists $win.freq]} {
+		$win.freq configure -frequency $val
+	    }
 	    ::sdr::command::setfrequency [$self mode-offset-frequency]
 	}
     }
     method {Configure -mode} {val} {
 	if {$options(-mode) ne $val} {
+	    $self Syncdata -mode $val
 	    ::sdr::command::setmode [set options(-mode) $val]
 	}
     }
     method {Configure -filter} {val} { 
 	if {$options(-filter) ne $val} {
-	    set options(-filter) $val
+	    $self Syncdata -filter $val
 	    ::sdr::command::setfilter {*}[$self mode-offset-filter]
 	}
     }
     method {Configure -agc} {val} {
 	if {$options(-agc) ne $val} {
+	    $self Syncdata -agc $val
 	    ::sdr::command::setagc [set options(-agc) $val]
 	}
     }
     method {Configure -cw-pitch} {val} {
 	if {$options(-cw-pitch) != $val} {
-	    set options(-cw-pitch) $val
+	    $self Syncdata -cw-pitch $val
 	    if {$options(-mode) in {CWU CWL}} {
 		::sdr::command::setfrequency [$self mode-offset-frequency]
 		::sdr::command::setfilter {*}[$self mode-offset-filter]
@@ -398,15 +468,31 @@ snit::widgetadaptor ::ui::radio {
 	if {$options(-name) ne $val} {
 	    if {[$self is-connected]} { $self disconnect }
 	    # puts "$self configure -name $val, with $win.name -values {[$win.name cget -values]}"
-	    set options(-name) $val
+	    $self Syncdata -name $val
 	}
     }
+    # this shouldn't be a Configure
     method {Configure -local} {val} {
 	server-local-install {*}$val; # {name addr port}
     }
+    method {Configure -local-oscillator} {val} {
+	set options(-local-oscillator) $val
+	# this gets to be -center-freq -tuned-freq
+	# $win.sw configure -local-oscillator $val
+    }
+    method {Configure -sample-rate} {val} {
+	set options(-sample-rate) $val
+	$win.sw configure -sample-rate $val
+    }
+    method {Configure -text} {val} {
+	if {$options(-text) ne $val} {
+	    $self Syncdata -text $val
+	    wm title . [set options(-text) $val]
+	}
+    }
     method update-names {names} {
 	if {$names ne [$win.name cget -values]} {
-	    # puts "update-names $options(-name) and $names"
+	    # verbose-puts "update-names $options(-name) and $names"
 	    $win.name configure -values $names
 	    # set options(-name) $options(-name)
 	}
@@ -478,7 +564,7 @@ snit::widgetadaptor ::ui::radio {
 	# ::sdr::command::settxalchang
 	# ::sdr::command::*hardware?
 	# start spectrum
-	# sdr::command::setfps 512 8
+	sdr::command::setfps 1024 4
 	# enable notch filter false
 	return 1
     }
@@ -513,10 +599,59 @@ snit::widgetadaptor ::ui::radio {
 	return [list $lo $hi]
     }
     method process-spectrum {main sub sr lo spectrum} {
-	puts stderr "spectrum $main $sub [string length $spectrum]"
+	# spectrum record
+	# coming at the frame rate specified by setfps
+	# with the number of samples specified by setfps
+	# each sample is an unsigned byte which is the bin level
+	# measured as the dB's below zero
+	if {$options(-sample-rate) != $sr} {
+	    $self configure -sample-rate $sr
+	}
+	if {$options(-local-oscillator) != $lo} {
+	    $self configure -local-oscillator $lo
+	}
+	set xy [$self xy $spectrum]
+	$win.sw update $xy
+	$win.meter update $main
+	# $win.meter update $sub
+	# puts stderr "spectrum $main $sub $sr $lo [string length $spectrum] min .. max is $data(miny) .. $data(maxy) avgy is [expr {$data(sumy)/$data(ny)}]"
+	# bring the display up to date
+	after 1 {update idletasks}
+    }
+    # minimum y value in spectra
+    method miny {} { return $data(miny) }
+    # maximum y value in spectra
+    method maxy {} { return $data(maxy) }
+    # convert incoming spectrum string unsigned -dB
+    method xy {ystr} {
+	binary scan $ystr {c*} ys
+	set ys [lrange $ys 0 end-1]
+	# must be a dspserver bug sending a garbage byte
+	# puts "last byte [lindex $ys end]"
+	set n [llength $ys]
+	set sr $options(-sample-rate)
+	if {$data(sample-rate) != $sr || $data(spectrum-width) != $n} {
+	    set data(sample-rate) $sr
+	    set data(spectrum-width) $n
+	    set data(xs) {}
+	    set maxf [expr {$sr/2.0}]
+	    set minf [expr {-$maxf}]
+	    set df [expr {double($sr)/$n}]
+	    for {set i 0} {$i < $n} {incr i} {
+		lappend data(xs) [expr {$minf+$i*$df}]
+	    }
+	}
+	set ys [lmap y $ys {expr {-($y&0xfff)}}]
+	set data(miny) [tcl::mathfunc::min $data(miny) {*}$ys]
+	set data(maxy) [tcl::mathfunc::max $data(maxy) {*}$ys]
+	set data(sumy) [tcl::mathop::+ $data(sumy) {*}$ys]
+	incr data(ny) $n
+	# puts "min .. max is $data(miny) .. $data(maxy) avgy is [expr {$data(sumy)/$data(ny)}]"
+	foreach x $data(xs) y $ys { lappend xy $x $y }
+	return $xy
     }
     method process-audio {audio} {
-	puts stderr "audio [string length $audio]"
+	# puts stderr "audio [string length $audio]"
 	audio-out-data $audio
     }
     method process-answer {answer} {

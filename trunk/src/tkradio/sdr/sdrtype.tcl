@@ -81,7 +81,8 @@ snit::enum	sdrtype::spec-result	-values {coeff mag mag2 dB short char}
 snit::enum	sdrtype::spec-palette	-values {0 1 2 3 4 5}
 snit::double	sdrtype::zoom		-min 0.5 -max 64
 snit::double	sdrtype::pan		-min -200000 -max 200000
-snit::boolean	sdrtype::smooth	
+snit::enum	sdrtype::smooth		-values {true false raw bezier}
+snit::integer	sdrtype::splinesteps
 snit::integer	sdrtype::multi		-min 1 -max 64
 snit::integer	sdrtype::sample-rate	-min 3000 -max 6144000
 snit::integer	sdrtype::milliseconds	-min 0 -max 30000

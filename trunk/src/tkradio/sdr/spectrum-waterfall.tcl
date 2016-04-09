@@ -113,7 +113,6 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
     method update {xy} {
 	$spectrum update $xy
 	$waterfall update $xy
-	
     }
 }
 

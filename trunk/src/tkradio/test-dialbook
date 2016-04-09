@@ -1,0 +1,6 @@
+#!/usr/bin/wish
+
+package require sdrtk::dialbook
+
+grid [sdrtk::dialbook .dial] -row 1 -column 1 -sticky nsew
+

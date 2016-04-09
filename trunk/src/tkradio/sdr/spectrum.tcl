@@ -19,6 +19,27 @@
 ##
 ## spectrum
 ##
+## thoughts since making this 
+##  the spectrum display should just center itself in the available window.
+##  scrolling off the top or bottom because the user specified unrealistic
+##  max and min is silly. showing decibel calibrations is silly because they
+##  are almost never calibrated.  and they don't respond to arbitrary 
+##  amplification and attenuation.
+##  on the other hand, showing the exact frequency and level under the cursor
+##  can be helpful, as would making a temporary magnification when the user
+##  is trying to pick a frequency.
+##  most of the decorations, band limits, filters, carriers, etc should move
+##  somewhere where there isn't so much data being displayed, a separate info
+##  window on the same x scale.
+##
+## implementation details from 5 years into the future
+##  the spectrum widget is built on a tk canvas
+##  the bandwidth of spectrum is configured with the -sample-rate option
+##  the width of the window as given by window management
+##  spectra are drawn as poly line objects in the tk canvas
+##  spectra lines are smoothed using the -smooth and -splinesteps options
+##  multiple spectra can be drawn with the -multi option
+##  
 
 package provide sdrtk::spectrum 1.0.0
 
@@ -27,14 +48,21 @@ package require snit
 package require sdrtype::types
 
 snit::widgetadaptor sdrtk::spectrum {
+    # -pal is not used
     option -pal -default 0 -type sdrtype::spec-palette
+    # -max and -min specify the upper and lower limits in dB
     option -max -default 0 -type sdrtype::decibel -configuremethod Revertical
     option -min -default -160 -type sdrtype::decibel -configuremethod Revertical
 
-    option -smooth -default true -type sdrtype::smooth -configuremethod Resmooth
+    # smooth the spectrum display using the canvas smoothed line drawing
+    option -smooth -default false -type sdrtype::smooth -configuremethod Resmooth
+    option -splinesteps -default 12 -type sdrtype::splinesteps -configuremethod Resmooth
 
+    # show multiple spectra with decaying intensity
     option -multi -default 1 -type sdrtype::multi -configuremethod Remulti
 
+    # the -sample-rate is used to determine the spectrum width
+    # and the frequency units of the xscale of the spectrum window
     option -sample-rate -default 48000 -type sdrtype::sample-rate
     option -zoom -default 1 -type sdrtype::zoom
     option -pan -default 0 -type sdrtype::pan
@@ -47,11 +75,19 @@ snit::widgetadaptor sdrtk::spectrum {
     option -band-high -default 0 -configuremethod Retune
     option -tuned-freq -default 0 -configuremethod Retune
 
+    option -band -default 0;	# do draw band edges
+    option -carrier -default 0;	# do draw tuned carrier
+    option -filter -default 0;	# do draw filter envelope
+    option -hgrid -default 0;	# do draw hgrid lines
+    option -vgrid -default 0;	# do draw vgrid lines
+    
     option -command -default {}
 
     delegate option * to hull
     delegate method * to hull
 
+    # multi - the number of consecutive spectra to display
+    # darkest
     variable data -array {
 	multi 0
 	darkest \#333
@@ -70,7 +106,7 @@ snit::widgetadaptor sdrtk::spectrum {
     
     constructor {args} {
 	installhull using canvas
-	$self configure {*}$args
+	$self configure -multi 1 {*}$args
 	$hull configure -bg black
 	bind $win <Configure> [mymethod DrawAll]
 	bind $win <ButtonPress-1> [mymethod Press %W %x %y]
@@ -103,6 +139,7 @@ snit::widgetadaptor sdrtk::spectrum {
 	set data(multi) [expr {($data(multi)-1+$options(-multi))%$options(-multi)}]
     }
 
+    # vertical scale the spectrum traces
     method VerticalScale {tag} {
 	set data(yscale) [expr {-[winfo height $win]/double($options(-max)-$options(-min))}]
 	set data(yoffset) [expr {-$options(-max)*$data(yscale)}]
@@ -110,6 +147,7 @@ snit::widgetadaptor sdrtk::spectrum {
 	$hull move $tag 0 $data(yoffset)
     }
 
+    # horizontal scale the spectrum traces
     method HorizontalScale {tag} {
 	set data(xscale) [expr {[winfo width $win]/double($options(-sample-rate))}]
 	set data(xoffset) [expr {[winfo width $win]/2.0}]
@@ -128,7 +166,7 @@ snit::widgetadaptor sdrtk::spectrum {
 
     # band limits
     method DrawBand {} {
-	if {$options(-band-low) ne {} && $options(-band-high) ne {}} {
+	if {$options(-band)} {
 	    set low [expr {$options(-band-low)-$options(-center-freq)}]
 	    set high [expr {$options(-band-high)-$options(-center-freq)}]
 	    $hull create rectangle [expr {$low-$data(band-width)}] $options(-min) $low $options(-max) -fill $data(band-fill) -outline {} -tags {band band-low}
@@ -138,7 +176,7 @@ snit::widgetadaptor sdrtk::spectrum {
 	}
     }
     method AdjustBand {} {
-	if {$options(-band-low) ne {} && $options(-band-high) ne {}} {
+	if {$options(-band)} {
 	    if {[$hull find withtag band] eq {}} {
 		$self DrawBand
 	    } else {
@@ -151,7 +189,7 @@ snit::widgetadaptor sdrtk::spectrum {
 	}
     }
     method ScrollBand {dx} {
-	if {$options(-band-low) ne {} && $options(-band-high) ne {}} {
+	if {$options(-band)} {
 	    if {[$hull find withtag band] eq {}} {
 		$self DrawBand
 	    } else {
@@ -162,84 +200,100 @@ snit::widgetadaptor sdrtk::spectrum {
 	
     # filter rectangle
     method DrawFilter {} {
-	$hull create rectangle $options(-filter-low) $options(-min) $options(-filter-high) $options(-max) -fill $data(darkest) -outline $data(darkest) -tags filter
-	$self Scale filter
+	if {$options(-filter)} {
+	    $hull create rectangle $options(-filter-low) $options(-min) $options(-filter-high) $options(-max) -fill $data(darkest) -outline $data(darkest) -tags filter
+	    $self Scale filter
+	}
     }
     method AdjustFilter {} {
-	$hull coords filter $options(-filter-low) $options(-min) $options(-filter-high) $options(-max)
-	$self Scale filter
+	if {$options(-filter)} {
+	    $hull coords filter $options(-filter-low) $options(-min) $options(-filter-high) $options(-max)
+	    $self Scale filter
+	}
     }
 
     # carrier tuning line
     method DrawCarrier {} {
-	$hull create line $options(-tuned-freq) $options(-min) $options(-tuned-freq) $options(-max) -fill $data(carrier) -tags carrier
-	$self Scale carrier
+	if {$options(-carrier)} {
+	    $hull create line $options(-tuned-freq) $options(-min) $options(-tuned-freq) $options(-max) -fill $data(carrier) -tags carrier
+	    $self Scale carrier
+	}
     }
 
     method AdjustCarrier {} {
-	$hull coords carrier $options(-tuned-freq) $options(-min) $options(-tuned-freq) $options(-max)
-	$self Scale carrier
+	if {$options(-carrier)} {
+	    $hull coords carrier $options(-tuned-freq) $options(-min) $options(-tuned-freq) $options(-max)
+	    $self Scale carrier
+	}
     }
 
     # vertical grid, horizontal dBFS markings and labels
     method DrawVgrid {} {
-	set lo [expr {-$options(-sample-rate)/2.0}]
-	set hi [expr {$options(-sample-rate)/2.0}]
-	set xy {}
-	for {set l $options(-min)} {$l <= $options(-max)} {incr l 20} {
-	    # main db grid
-	    lappend xy $lo $l $hi $l $lo $l
-	    $hull create text 0 $l -text " $l" -font {Helvetica 8} -anchor nw -fill $data(light) -tags {vlabel label}
-	    # sub grid
-	    if {0} {
-		for {set ll [expr {$l-10}]} {$ll > $l-20} {incr ll -10} {
-		    if {$ll >= $options(-min) && $ll <= $options(-max)} {
-			$hull create line $lo $ll $hi $ll -fill $data(med) -tags {vgrid grid}
+	if {$options(-vgrid)} {
+	    set lo [expr {-$options(-sample-rate)/2.0}]
+	    set hi [expr {$options(-sample-rate)/2.0}]
+	    set xy {}
+	    for {set l $options(-min)} {$l <= $options(-max)} {incr l 20} {
+		# main db grid
+		lappend xy $lo $l $hi $l $lo $l
+		$hull create text 0 $l -text " $l" -font {Helvetica 8} -anchor nw -fill $data(light) -tags {vlabel label}
+		# sub grid
+		if {0} {
+		    for {set ll [expr {$l-10}]} {$ll > $l-20} {incr ll -10} {
+			if {$ll >= $options(-min) && $ll <= $options(-max)} {
+			    $hull create line $lo $ll $hi $ll -fill $data(med) -tags {vgrid grid}
+			}
 		    }
 		}
 	    }
+	    $hull create line $xy -fill $data(darker) -tags {vgrid grid}
+	    $self Scale vgrid
+	    $self VerticalScale vlabel
 	}
-	$hull create line $xy -fill $data(darker) -tags {vgrid grid}
-	$self Scale vgrid
-	$self VerticalScale vlabel
     }
     method AdjustVgrid {} {
-	$hull delete vgrid
-	$hull delete vlabel
-	$self DrawVgrid
-	$hull lower vgrid carrier
+	if {$options(-vgrid)} {
+	    $hull delete vgrid
+	    $hull delete vlabel
+	    $self DrawVgrid
+	    $hull lower vgrid carrier
+	}
     }
     
     # horizontal grid, vertical frequency markings and labels
     method DrawHgrid {} {
-	# offset of tuning from grid
-	set frnd [expr {int($options(-center-freq)/10000)*10000}]
-	set foff [expr {$options(-center-freq)-$frnd}]
-	set fmax [expr {int(5*$options(-sample-rate)/20000+1)*10000}]
-	set fmin [expr {-$fmax}]
-	set xy {}
-	for {set f $fmin} {$f <= $fmax} {incr f 10000} {
-	    set label [format { %.2f} [expr {($f+$frnd)*1e-6}]]
-	    set fo [expr {$f-$foff}]
-	    lappend xy $fo $options(-min) $fo $options(-max) $fo $options(-min)
-	    $hull create text $fo $options(-min) -text $label -font {Helvetica 8} -anchor sw -fill $data(light) -tags {hlabel label}
+	if {$options(-hgrid)} {
+	    # offset of tuning from grid
+	    set frnd [expr {int($options(-center-freq)/10000)*10000}]
+	    set foff [expr {$options(-center-freq)-$frnd}]
+	    set fmax [expr {int(5*$options(-sample-rate)/20000+1)*10000}]
+	    set fmin [expr {-$fmax}]
+	    set xy {}
+	    for {set f $fmin} {$f <= $fmax} {incr f 10000} {
+		set label [format { %.2f} [expr {($f+$frnd)*1e-6}]]
+		set fo [expr {$f-$foff}]
+		lappend xy $fo $options(-min) $fo $options(-max) $fo $options(-min)
+		$hull create text $fo $options(-min) -text $label -font {Helvetica 8} -anchor sw -fill $data(light) -tags {hlabel label}
+	    }
+	    $hull create line $xy -fill $data(darker) -tags {hgrid grid}
+	    $self Scale hgrid
+	    $self Scale hlabel
+	    $hull lower hgrid
+	    set data(hgrid-scroll) 0
 	}
-	$hull create line $xy -fill $data(darker) -tags {hgrid grid}
-	$self Scale hgrid
-	$self Scale hlabel
-	$hull lower hgrid
-	set data(hgrid-scroll) 0
     }
 
     method ScrollHgrid {dx} {
-	if {abs($data(hgrid-scroll)+$dx) < 2*$options(-sample-rate)} {
-	    $self HorizontalScroll hgrid $dx
-	    $self HorizontalScroll hlabel $dx
-	    set data(hgrid-scroll) [expr {$data(hgrid-scroll)+$dx}]
-	} else {
-	    $hull delete hgrid
-	    $hull delete hlabel
-	    $self DrawHgrid
+	if {$options(-hgrid)} {
+	    if {abs($data(hgrid-scroll)+$dx) < 2*$options(-sample-rate)} {
+		$self HorizontalScroll hgrid $dx
+		$self HorizontalScroll hlabel $dx
+		set data(hgrid-scroll) [expr {$data(hgrid-scroll)+$dx}]
+	    } else {
+		$hull delete hgrid
+		$hull delete hlabel
+		$self DrawHgrid
+	    }
 	}
     }
 
@@ -295,9 +349,12 @@ snit::widgetadaptor sdrtk::spectrum {
 	$self AdjustCarrier
     }
 
+    # change the spectrum smoothing, 
+    # cf. the tk canvas line item -smooth and -splinesteps options
+    # 
     method Resmooth {opt value} {
 	set options($opt) $value
-	catch {$hull itemconfigure spectrum -smooth $value}
+	catch {$hull itemconfigure spectrum -smooth $options(-smooth) -splinesteps $options(-splinesteps)}
     }
 
     proc gray-scale {n} {

@@ -25,76 +25,64 @@ package provide sdr::memory 1.0
 namespace eval ::sdr {}
 
 namespace eval ::sdr::memory {
-    ## these are the default memories for QtRadio, reformatted
-    ## freq mode filter
-    ## spectrumLow spectrumHigh waterfallLow waterfallHigh were omitted
-    ## because they're too hard and too confusing to change
-    set data [dict create \
-		  160m [dict create \
-			    0 {1810000 CWL {-250 .. 250}} \
-			    1 {1835000 LSB {-3050 .. -150}} \
-			    2 {1845000 AM  {-3300 .. 3300}} \
-			    3 {1845000 AM  {-3300 .. 3300}} ] \
-		  80m  [dict create \
-			    0 {3501000 CWL {-250 .. 250}} \
-			    1 {3751000 LSB {-2900 .. -200}} \
-			    2 {3850000 LSB {-2900 .. -200}} \
-			    3 {3850000 LSB {-2900 .. -200}} ] \
-		  60m  [dict create \
-			    0 {5330500 CWL {-300 .. 300}} \
-			    1 {5346500 LSB {-3450 .. -150}} \
-			    2 {5366500 LSB {-3450 .. -150}} \
-			    3 {5371500 LSB {-3450 .. -150}} \
-			    4 {5403500 LSB {-3450 .. -150}} ]\
-		  40m [dict create \
-			   0 {7001000 CWL {-250 .. 250}} \
-			   1 {7060000 LSB {-3450 .. -150}} \
-			   2 {7100000 LSB {-3450 .. -150}} \
-			   3 {7100000 LSB {-3450 .. -150}} ] \
-		  30m [dict create \
-			   0 {10120000 CWU {-250 .. 250}} \
-			   1 {10130000 CWU {-250 .. 250}} \
-			   2 {10140000 CWU {-250 .. 250}} \
-			   3 {10140000 CWU {-250 .. 250}} ] \
-		  20m [dict create \
-			   0 {14010000 CWU {-250 .. 250}} \
-			   1 {14230000 USB {150 .. 3450}} \
-			   2 {14336000 USB {150 .. 3450}} \
-			   3 {14336000 USB {150 .. 3450}} ] \
-		  17m [dict create \
-			   0 {18068600 CWU {-250 .. 250}} \
-			   1 {18125000 USB {150 .. 3450}} \
-			   2 {18140000 USB {150 .. 3450}} \
-			   3 {18140000 USB {150 .. 3450}} ] \
-		  15m [dict create \
-			   0 {21001000 CWU {-250 .. 250}} \
-			   1 {21255000 USB {150 .. 3450}} \
-			   2 {21300000 USB {150 .. 3450}} \
-			   3 {21300000 USB {150 .. 3450}} ] \
-		  12m [dict create \
-			   0 {24895000 CWU {-250 .. 250}} \
-			   1 {24900000 USB {150 .. 3450}} \
-			   2 {24910000 USB {150 .. 3450}} \
-			   3 {24910000 USB {150 .. 3450}} ] \
-		  10m [dict create \
-			   0 {28010000 CWU {-250 .. 250}} \
-			   1 {28300000 USB {150 .. 3450}} \
-			   2 {28400000 USB {150 .. 3450}} \
-			   3 {28400000 USB {150 .. 3450}} ] \
-		  6m [dict create \
-			  0 {50010000 CWU {-250 .. 250}} \
-			  1 {50125000 USB {150 .. 3450}} \
-			  2 {50200000 USB {150 .. 3450}} \
-			  3 {50200000 USB {150 .. 3450}} ] \
-		  ]
+    # memories, none
+    variable data [dict create]
+    # last settings in 
+    variable last [dict create \
+		       service Amateur \
+		       {Amateur settings} {-band 20m} \
+		       {Amateur 160m settings} {-frequency 1810000 -mode CWL -filter {-250 .. 250} -agc SLOW} \
+		       {Amateur 80m settings} {-frequency  3501000 -mode CWL -filter {-250 .. 250} -agc SLOW} \
+		       {Amateur 60m settings} {-frequency  5330500 -mode CWL -filter {-300 .. 300} -agc SLOW} \
+		       {Amateur 40m settings} {-frequency  7001000 -mode CWL -filter {-250 .. 250} -agc SLOW} \
+		       {Amateur 30m settings} {-frequency 10120000 -mode CWU -filter {-250 .. 250} -agc SLOW} \
+		       {Amateur 20m settings} {-frequency 14010000 -mode CWU -filter {-250 .. 250} -agc SLOW} \
+		       {Amateur 17m settings} {-frequency 18068600 -mode CWU -filter {-250 .. 250} -agc SLOW} \
+		       {Amateur 15m settings} {-frequency 21001000 -mode CWU -filter {-250 .. 250} -agc SLOW} \
+		       {Amateur 12m settings} {-frequency 24895000 -mode CWU -filter {-250 .. 250} -agc SLOW} \
+		       {Amateur 10m settings} {-frequency 28010000 -mode CWU -filter {-250 .. 250} -agc SLOW} \
+		       {Amateur 6m settings}  {-frequency 50010000 -mode CWU -filter {-250 .. 250} -agc SLOW} \
+		      ]
 }
 
-proc sdr::memory-save {band mem freq mode filter} {
-    dict set ::sdr::memory::data $band $mem [list $freq $mode $filter]
+proc sdr::set-mem {service band mem freq mode filter} {
+    if { ! [dict exists ::sdr::memory::data $service]} {
+	dict set ::sdr::memory::data $service [dict create]
+    }
+    set servdict [dict get ::sdr::memory::data $service]
+    if { ! [dict exists $sdict $band]} {
+	dict set servdict $band [dict create]
+    }
+    set banddict [dict get $servdict $band]
+    dict set banddict $mem [list $freq $mode $filter]
+    dict set servdict $band $banddict
+    dict set ::sdr::memory::data $service $servdict
 }
+proc sdr::is-mem {service band mem} {
+    return [dict exists $::sdr::memory::data $service $band $mem]
+}
+proc sdr::get-mem {service band mem} {
+    if {[dict exists $::sdr::memory::data $service $band $mem]} {
+	return [dict get $::sdr::memory::data $service $band $mem]
+    } else {
+	return {}
+    }
+}
+proc sdr::get-mem-freq {service band mem} { return [lindex [get-mem $band $mem] 0] }
+proc sdr::get-mem-mode {service band mem} { return [lindex [get-mem $band $mem] 1] }
+proc sdr::get-mem-filter {service band mem} { return [lindex [get-mem $band $mem] 2] }
 
-proc sdr::memory-get {band mem} { return [dict get $::sdr::memory::data $band $mem] }
-proc sdr::memory-freq {band mem} { return [lindex [memory-get $band $mem] 0] }
-proc sdr::memory-mode {band mem} { return [lindex [memory-get $band $mem] 1] }
-proc sdr::memory-filter {band mem} { return [lindex [memory-get $band $mem] 2] }
-
+proc sdr::set-last {type value} { 
+    # puts "sdr::set-last {$type} {$value}"
+    dict set ::sdr::memory::last $type $value 
+}
+proc sdr::get-last {type} { 
+    # puts "sdr::get-last {$type}"
+    if {[dict exists $::sdr::memory::last $type]} {
+	# puts "sdr::get-last {$type} exists"
+	return [dict get $::sdr::memory::last $type] 
+    } else {
+	# puts "no sdr::get-last {$type} found"
+	return {}
+    }
+}
