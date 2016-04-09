@@ -95,3 +95,4 @@ trunk/src/usrp/build-aux/lt~obsolete.m4
 trunk/src/usrp/ltmain.sh
 trunk/src/sdr1000/sdr1000
 trunk/src/sdrplay/sdrplay-server
+trunk/src/tkradio/sdr/pkgIndex.tcl
