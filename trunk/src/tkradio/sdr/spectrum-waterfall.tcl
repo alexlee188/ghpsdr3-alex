@@ -36,12 +36,12 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
     # options to spectrum
     delegate option -smooth to spectrum
     delegate option -multi to spectrum
-    option -center-freq -default 0 -configuremethod Retune
+    option -frequency -default 0 -configuremethod Retune
     delegate option -filter-low to spectrum
     delegate option -filter-high to spectrum
     delegate option -band-low to spectrum
     delegate option -band-high to spectrum
-    option -tuned-freq -default 0 -configuremethod Retune
+    option -local-oscillator -default 0 -configuremethod Retune
 
     # options to both
     option -sample-rate -default 48000 -type sdrtype::sample-rate -configuremethod Dispatch
@@ -77,17 +77,16 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
 	    }
 	    Release {
 		if { ! $data(drag)} {
-		    if {$options(-command) ne {}} {
-			{*}$options(-command) -freq [expr {$options(-center-freq)+$options(-tuned-freq)+($f-$options(-tuned-freq))}]
-		    }
+		    $self Command -frequency [expr {$options(-frequency)+($f-$options(-local-oscillator))}]
 		}
 	    }
 	    Motion {
 		lassign $data(start) x0 y0 f0 df0
 		if {abs($x-$x0) > 1} {
 		    incr data(drag)
+		    $self Command -frequency [expr {$options(-frequency)-($f-$f0)}]
 		    if {$options(-command) ne {}} {
-			{*}$options(-command) -freq [expr {$options(-center-freq)+$options(-tuned-freq)-($f-$f0)}]
+			{*}$options(-command)
 		    }
 		    set data(start) [list $x $y $f $df]
 		}
@@ -98,6 +97,12 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
 	}
     }
 
+    method Command {args} {
+	if {$options(-command) ne {}} {
+	    {*}$options(-command) {*}$args
+	}
+    }
+    
     method Dispatch {opt val} {
 	set options($opt) $val
 	$spectrum configure $opt $val
@@ -110,9 +115,10 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
 	$waterfall configure $opt $val
     }
 
-    method update {xy} {
+    method update {xy miny maxy avgy} {
 	$spectrum update $xy
 	$waterfall update $xy
     }
+    
 }
 

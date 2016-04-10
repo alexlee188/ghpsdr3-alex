@@ -21,7 +21,7 @@
 # radio ui widget
 #
 
-package provide sdr::ui-one 1.0
+package provide sdr::radio-ui-one 1.0
 
 package require Tk
 package require snit
@@ -46,13 +46,30 @@ snit::enum sdr::pwsmodes-type -values [sdr::get-pwsmodes]
 proc sdr::get-agcmodes {} { return [::sdr::command::get-agcmodes] }
 snit::enum sdr::agcmodes-type -values [sdr::get-agcmodes]
 
-# define the radio widget
-# ah, mistake, there should be a radio widget which handles
-# the basic logic of maintaining state and talking to dspserver,
-# and then there should be one or more ui widgets which allow
-# user control of the radio model
 #
-snit::widgetadaptor sdr::ui-one {
+# a radio ui widget
+#
+# the ui widgets receive their values from the radio model
+# via monitors placed on configuration options.
+# so the digital frequency display and the spectrum-waterfall
+# display listen to the radio's -frequency option.
+# the monitors are defined with the rmonitor method.
+#
+# changes effected in the widgets are reported to the model
+# with the rreport method. so the digital frequency display 
+# and the spectrum-waterfall display reconfigure the radio's
+# -frequency option to signal tuning events.
+#
+# high frequency data streams, like meter and spectrum data, are
+# directly subscribed to avoid configuration option overhead.
+# these call the radio model *-subscribe methods.
+#
+# the ui widgets do not update their primary values directly,
+# they send updates to the radio model and receive the results
+# back from the radio model.
+#
+
+snit::widgetadaptor sdr::radio-ui-one {
     option -text -default {} -configuremethod Configure
     option -radio -readonly true;	# must be set at creation
 
@@ -62,11 +79,12 @@ snit::widgetadaptor sdr::ui-one {
     constructor args {
 	installhull using ttk::frame
 	$self configure {*}$args
+
 	verbose-puts "sdr::ui-one $win $args "
 
 	# s-meter
 	grid [sdrtk::meter $win.meter] -row 0 -column 0 -sticky nsew
-	$self rmonitor -main-meter -subrx-meter
+	$options(-radio) meter-subscribe [list $win.meter update]
 
 	# frequency display
 	grid [ui::frequency-display $win.freq \
@@ -135,8 +153,8 @@ snit::widgetadaptor sdr::ui-one {
 	grid [sdrtk::spectrum-waterfall $win.sw \
 		  -command [list {*}[mymethod rreport] -frequency] \
 		 ] -row 2 -column 1 -columnspan 6
-	$self rmonitor -spectrum -sample-rate -local-oscillator
-
+	$self rmonitor -sample-rate -local-oscillator
+	$options(-radio) spectrum-subscribe [list $win.sw update]
     }
     method {Configure -text} {val} {
 	if {$options(-text) ne $val} {

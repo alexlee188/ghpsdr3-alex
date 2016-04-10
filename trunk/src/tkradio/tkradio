@@ -22,29 +22,22 @@
 ## external packages
 ##
 package require Tcl
-package require snit
 
 ##
 ## our own sdr libraries
 ##
-
-package require sdr::dspserver
-package require sdr::ui-one
+package require sdr::radio-model
 
 ##
-## the global, at least those admitted to
-##
-set ::radio {};			# radio widget
-
-proc verbose-puts {msg} { if {[::dspserver cget -verbose]} { puts stderr $msg } }
+## 
+proc verbose-puts {msg} { if {[::radio cget -verbose]} { puts stderr $msg } }
 
 ##
 ## constants
 ##
 
 # build the radio
-sdr::dspserver ::dspserver -service [sdr::get-last service]
-set ::radio ::dspserver
+sdr::radio-model ::radio -service [sdr::get-last service]
 
 # load configuration
 # current options
@@ -57,9 +50,9 @@ proc optarg {opt} {
     if {$i == $argc-1} { uplevel error "missing arg for $opt option" }
     if {$opt eq {-local}} {
 	# puts "optarg found -local"
-	$::radio add-local [lindex $argv [incr i]]
+	::radio add-local [lindex $argv [incr i]]
     } else {
-	$::radio configure $opt [lindex $argv [incr i]]
+	::radio configure $opt [lindex $argv [incr i]]
     }
     verbose-puts "optarg $opt found [lindex $argv $i]"
 }
@@ -70,7 +63,7 @@ for {set i 0} {$i < $argc} {incr i} {
     set opt [lindex $argv $i]
     switch -- $opt {
 	-b - --band { optarg -band }
-	-c - --connect { $::radio connect }
+	-c - --connect { ::radio connect }
 	-e - --filter { optarg -filter }
 	-f - --frequency { optarg -frequency }
 	-l - --local - --local-server { optarg -local }
@@ -83,5 +76,3 @@ for {set i 0} {$i < $argc} {incr i} {
 	default { error "unrecognized option [lindex $argv $i]" }
     }
 }
-
-vwait forever

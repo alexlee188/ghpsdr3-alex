@@ -19,22 +19,40 @@
 
 #
 # a dspserver connection widget
+# handle the connection to dspserver
+# manage the state of the dspserver controls
 #
 
-package provide sdr::dspserver 1.0
+package provide sdr::radio-model 1.0
 
 package require snit
 
-package require sdr::channel
-package require sdr::audio
-package require sdr::band-data
-package require sdr::command
-package require sdr::filter
-package require sdr::memory
-package require sdr::servers
+package require sdr::servers;	# the napan.com servers listing
+package require sdr::channel;	# the tcp connection to dspserver
+package require sdr::audio;	# audio playback (no mike as yet)
+package require sdr::command;	# the commands sent to dspserver
+package require sdr::filter;	# our filter syntax
+
+package require sdr::band-data;	# service and band information
+package require sdr::memory;	# memories for the radio
 
 # define the radio widget
-snit::type sdr::dspserver {
+snit::type sdr::radio-model {
+
+    # options
+    # -service is the radio service
+    # -service-values lists the valid radio services
+    # -band defines the band withing the radio service
+    # -band-values lists the bands
+    # -frequency is the tuned frequency
+    # -mode is the modulation mode
+    # -mode-values lists the modes
+    # -filter is the filter applied
+    # -filter-values lists the filters available
+    # -cw-pitch defines the offset from cw carrier frequency
+    # -agc is the automatic gain control mode
+    # -agc-values lists the agc modes available
+    # tbc ...
 
     # options
     option -service -default {} -configuremethod Configure
@@ -53,12 +71,6 @@ snit::type sdr::dspserver {
     option -name-values -default {} -configuremethod Configure
     option -sample-rate -default 0 -configuremethod Configure
     option -local-oscillator -default 0 -configuremethod Configure
-    option -main-meter -default 0 -configuremethod Configure
-    option -subrx-meter -default 0 -configuremethod Configure
-    option -min-level -default 0 -configuremethod Configure
-    option -max-level -default 0 -configuremethod Configure
-    option -avg-level -default 0 -configuremethod Configure
-    option -spectrum -default 0 -configuremethod Configure
     option -spectrum-freq -default 0 -configuremethod Configure
     option -channel -default 0 -configuremethod Configure
     option -channel-status -default 0 -configuremethod Configure2
@@ -66,6 +78,15 @@ snit::type sdr::dspserver {
     option -ui -default {} -configuremethod Configure
     option -verbose -default 0 -configuremethod Configure2
 
+    # local data that is not options
+    variable data -array {
+	meter-listeners {}
+	spectrum-listeners {}
+	spectrum-xs {}
+	spectrum-sr 0
+	spectrum-w 0
+    }
+    
     # constructor
     constructor args {
 	verbose-puts "sdr::dspserver $args "
@@ -78,19 +99,21 @@ snit::type sdr::dspserver {
 	servers-request
     }
 
-    # saving and restoring settings
+    ##
+    ## one thing QtRadio did nicely was remember what you had done and
+    ## bring it back
+    ##
+    # given a list of -option name, get the list of -option value pairs
+    # needed to restore the options
+    # the [concat {*}...] idiom is called lolcat on the tcl wiki
     method get-settings {args} {
-	set settings {}
-	foreach option $args {
-	    lappend settings $option [$self cget $option]
-	}
-	return $settings
+	return [concat {*}[lmap option $args {list $option [$self cget $option]}]]
     }
+    # given a list of -option value pairs restore the option values
     method set-settings {settings} {
-	foreach {option value} $settings {
-	    $self configure $option $value
-	}
+	$self configure {*}$settings
     }
+    # save the last settings for a service or a band in a service
     method save-last-settings {args} {
 	switch [llength $args] {
 	    1 { sdr::set-last [list {*}$args settings] [$self get-settings -band] }
@@ -98,13 +121,31 @@ snit::type sdr::dspserver {
 	    default { error "wrong number of prefixes" }
 	}
     }
+    # restore the last settings for a service
     method restore-last-settings {args} {
 	$self set-settings [sdr::get-last [list {*}$args settings]]
     }
 
+    ##
+    ## configuration handlers
+    ##
+    ## the basic pattern is to ignore settings with no effect
+    ## some values get compared as strings with ne
+    ## and others get compared as numbers with !=
+    ##
+    ## some settings, eg -service and -band, trigger changes in
+    ## other settings and save/restore of settings.
+    ##
+    ## other settings trigger sdr::command's to control dspserver
+    ##
+    ## this could be seriously simplified by hanging sdr::command's
+    ## off monitors on the responsible options.
+    ##
+    
     # configure methods
     method {Configure -ui} {val} {
 	set options(-ui) $val
+	package require $val
 	pack [$val .radio -text tkradio -radio $self] -fill both -expand true
     }
     method {Configure -service} {val} { 
@@ -176,14 +217,19 @@ snit::type sdr::dspserver {
     method {Configure -channel} {value} {
 	if {$options(-channel) ne $value} {
 	    set options(-channel) $value
-	    set ::sdr::command::channel $value
+	    set ::sdr::command::channel $value;	# hacky
 	}
     }
+    # this is the base configuration option
     method Configure2 {option value} {
 	if {$options($option) ne $value} {
 	    set options($option) $value
 	}
     }
+
+    ##
+    ## maintain the list of dspservers
+    ##
     method update-names {names} {
 	if {$names ne [$win.name cget -values]} {
 	    # verbose-puts "update-names $options(-name) and $names"
@@ -195,6 +241,11 @@ snit::type sdr::dspserver {
     method add-local {val} {
 	server-local-install {*}$val; # {name addr port}
     }
+
+    ##
+    ## making, breaking, and testing a server connection
+    ##
+    
     # connect to a server
     method connect {} {
 	set options(-channel) [::sdr::connect $self {*}[server-address-port $options(-name)]]
@@ -268,7 +319,15 @@ snit::type sdr::dspserver {
     }
     # is the radio connected to a server
     method is-connected {} { return [expr {$options(-channel) != -1}] }
-    # offset the tuned frequency to accommodate the cw pitch
+
+    ##
+    ## the -frequency specifies the carrier frequency tuned
+    ## in the case of CW we want to tune offset from the 
+    ## carrier by -cw-pitch Hertz.  the cw filters need to
+    ## be offset by the same amount.
+    ##
+    
+    # offset the tuned -frequency to accommodate the -cw-pitch
     method mode-offset-frequency {} {
 	set f $options(-frequency)
 	switch $options(-mode) {
@@ -277,7 +336,7 @@ snit::type sdr::dspserver {
 	    default { return $f }
 	}
     }
-    # offset the filter to the center of the cw pitch
+    # offset the -filter to be centered at the -cw-pitch
     method mode-offset-filter {} {
 	foreach {lo hi} [::sdr::filter-parse $options(-filter)] break
 	set cw $options(-cw-pitch)
@@ -287,6 +346,11 @@ snit::type sdr::dspserver {
 	}
 	return [list $lo $hi]
     }
+    
+    ##
+    ## incoming packets from dspserver
+    ##
+
     # process spectrum records received from the server
     method process-spectrum {main sub sr lo spectrum} {
 	# spectrum record
@@ -294,60 +358,71 @@ snit::type sdr::dspserver {
 	# with the number of samples specified by setfps
 	# each sample is an unsigned byte which is the bin level
 	# measured as the dB's below zero
-	$self configure \
-	    -meter $main \
-	    -subrx-meter $sub \
-	    -sample-rate $sr \
-	    -local-oscillator $lo \
-	    -spectrum [$self xy $spectrum]
-	# $win.sw update $xy
-	# $win.meter update $main
-	# $win.meter update $sub
+	
+	# store some values as configuration options because
+	# they rarely change
+	$self configure -sample-rate $sr -local-oscillator $lo
+	# pass the rest into update methods that can be subscribed
+	$self update-meter $main $sub
+	$self update-spectrum {*}[$self xy $spectrum]
     }
-    # convert incoming spectrum string unsigned -dB in bytes
-    # into freq dB coordinates
+    # convert incoming spectrum string from unsigned -dB in bytes
+    # into freq dB coordinates as floats
     method xy {ystr} {
 	binary scan $spectrum {c*} ys
 	# last byte is always 0
 	set ys [lrange $ys 0 end-1]
 	set n [llength $ys]
 	# recompute the x coordinates for the spectrum
-	if {$n != [llength $options(-spectrum-freq)]} {
-	    set sr $options(-sample-rate)
-	    set xs {}
+	if {$n != $data(spectrum-n) || $options(-sample-rate) != $data(spectrum-sr)} {
+	    set data(spectrum-n) $n
+	    set sr [set data(spectrum-sr) $options(-sample-rate)]
+	    set data(spectrum-xs) {}
 	    set maxf [expr {$sr/2.0}]
 	    set minf [expr {-$maxf}]
 	    set df [expr {double($sr)/$n}]
 	    for {set i 0} {$i < $n} {incr i} {
-		lappend xs [expr {$minf+$i*$df}]
+		lappend data(xs) [expr {$minf+$i*$df}]
 	    }
-	    $self configure -spectrum-freq $xs
 	}
-	set xs $options(-spectrum-freq)
-	# this is what QtRadio does with the spectrum bytes
+	set xs $data(spectrum-xs)
+	# this is how QtRadio extracts the spectrum bytes
 	set ys [lmap y $ys {expr {-($y&0xfff)}}]
 	# keep min, max, and average levels
-	$self configure -min-level [tcl::mathfunc::min {*}$ys]
-	$self configure -max-level [tcl::mathfunc::max {*}$ys]
-	$self configure -avg-level [expr {[tcl::mathop::+ {*}$ys]/double($n)}]
-	# tried to do this with lmap, but it needs lolcat
-	# what it actually needs is canvas arg
-	set xy {}
-	foreach x $xs y $ys { lappend xy $x $y }
-	return $xy
+	set miny [tcl::mathfunc::min {*}$ys]
+	set maxy [tcl::mathfunc::max {*}$ys]
+	set avgy [expr {[tcl::mathop::+ {*}$ys]/double($n)}]
+	
+	return [list [concat {*}[lmap x $xs y $ys {list $x $h}]] $miny $maxy $avgy]
     }
+    # process audio stream from the dspserver
     method process-audio {audio} {
 	# puts stderr "audio [string length $audio]"
 	audio-out-data $audio
     }
+    # process answers to queries to the dspserver
     method process-answer {answer} {
 	puts stderr "answer = {$answer}"
     }
-	
+    # monitor configuration options
     method monitor {option prefix} {
 	trace variable options($option) w [list {*}[mymethod monitor-fired] $prefix]
     }
     method monitor-fired {prefix name1 name2 op} {
 	{*}$prefix $name2 $options($name2)
+    }
+    # listen for meter updates
+    method meter-subscribe {callback} {
+	lappend data(meter-listeners) $callback
+    }
+    method meter-update {main subrx} {
+	foreach callback $data(meter-listeners) { {*}$callback $main $subrx }
+    }
+    # listen for spectrum updates
+    method spectrum-subscribe {callback} {
+	lappend data(spectrum-listeners) $callback
+    }
+    method spectrum-update {xy miny maxy avgy} {
+	foreach callback $data(subscribe-listeners) { {*}$callback $xy $miny $maxy $avgy }
     }
 }

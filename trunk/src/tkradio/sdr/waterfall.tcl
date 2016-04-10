@@ -71,23 +71,26 @@ snit::widgetadaptor sdrtk::waterfall {
 	foreach img [array names data img-*] { rename $data($img) {} }
 	array unset data
     }
-
     method DrawAll {} {
     }
     method Press {w x y} {
 	set data(freq) [expr {int(($x-double($data(xoffset)))/$data(xscale))}]
-	if {$options(-command) ne {}} { {*}$options(-command) $w Press $x $y $data(freq) 0 }
+	$self Command  $w Press $x $y $data(freq) 0
     }
     method Release {w x y} {
 	set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
-	if {$options(-command) ne {}} { {*}$options(-command) $w Release $x $y $data(freq) $df }
+	$self Command $w Release $x $y $data(freq) $df
     }
     method Motion {w x y} {
 	set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
 	incr data(freq) $df
-	if {$options(-command) ne {}} { {*}$options(-command) $w Motion $x $y $data(freq) $df }
+	$self Command $w Motion $x $y $data(freq) $df
     }
-
+    method Command {args} {
+	if {$options(-command) ne {}} { 
+	    {*}$options(-command) {*}$args
+	}
+    }
     ##
     ## compute a pixel value for the specified level using the configured palette
     ##
@@ -164,7 +167,7 @@ snit::widgetadaptor sdrtk::waterfall {
     ##
     ## draw a new scan line
     ##
-    method update {xy} {
+    method update {xy miny maxy avgy} {
 	# compute the scan line of pixels
 	# this needs to scale x to window width
 	lassign [$self scan $xy] freq scan
