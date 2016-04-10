@@ -28,6 +28,13 @@ namespace eval ::sdr::util {}
 proc ::sdr::map {command items} { set map {}; foreach i $items { lappend map [{*}$command $i] }; return $map }
 
 ##
+## get the maximum string length in a list of items
+##
+proc sdr::maxwidth {list} {
+    return [tcl::mathfunc::max {*}[lmap s $list {string length $s}]]
+}
+
+##
 ## convert variously formatted frequencies to Hertz
 ##
 proc ::sdr::hertz {string} {

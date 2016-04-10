@@ -32,7 +32,7 @@ snit::enum	sdrtype::type		-values {none ctl dsp jack ui hw physical}
 
 snit::enum	sdrtype::mode		-values {USB LSB DSB CWU CWL AM SAM FMN DIGU DIGL}
 
-snit::enum	sdrtype::agc-mode	-values {off long slow medium fast}
+snit::enum	sdrtype::agc-mode	-values {OFF LONG SLOW MEDIUM FAST}
 snit::double	sdrtype::agc-target	-min 0.1 -max 10;	# target level, linear gain
 snit::double	sdrtype::agc-attack	-min 1 -max 4;		# attack time in ms
 snit::double	sdrtype::agc-decay	-min 100 -max 2000;	# decay time in ms
@@ -47,7 +47,6 @@ snit::double	sdrtype::constant-real
 snit::double	sdrtype::constant-imag
 
 # filter-overlap-save - 
-
 
 snit::enum	sdrtype::leveler-mode	-values {off leveler}
 
@@ -66,10 +65,8 @@ snit::double	sdrtype::linear-gain	-min 0.125 -max 8.0;	#
 snit::double	sdrtype::gain		-min -200.0 -max 200.0; # gain in decibels
 snit::double	sdrtype::hertz
 
-
 snit::boolean	sdrtype::mute
 snit::boolean	sdrtype::spot
-
 
 snit::integer	sdrtype::instance	-min 1 -max 10
 snit::double	sdrtype::decibel	-min -200.0 -max 200.0

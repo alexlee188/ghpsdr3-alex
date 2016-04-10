@@ -30,7 +30,9 @@ package provide sdr::command 1.0
 namespace eval ::sdr {}
 
 namespace eval ::sdr::command {
-
+    # the current channel
+    variable channel -1
+    
     # modes of demodulation available
     variable modes-dict [dict create LSB 0 USB 1 DSB 2 CWL 3 CWU 4 FM 5 AM 6 DIGU 7 SPEC 8 DIGL 9 SAM 10 DRM 11 ]
     dict unset modes-dict SPEC;	# not implemented
@@ -108,19 +110,23 @@ namespace eval ::sdr::command {
     }
     # send a command
     proc send-command {command} {
-	if {$::channel != -1} {
-	    puts stderr "send>> $command"
-	    puts -nonewline $::channel [fill-command 64 $command]
-	    flush $::channel
+	variable channel
+	if {$channel != -1} {
+	    verbose-puts "send>> $command"
+	    puts -nonewline $channel [fill-command 64 $command]
+	    flush $channel
 	}
     }
 
     # send mic audio data
     proc mic {audio} { 
-	if {$::verbose > 1} { puts stderr "send>> mic ..." }
-	puts -nonewline $::channel {mic }
-	puts -nonewline $::channel $audio
-	flush $::channel
+	variable channel
+	if {$channel != -1} {
+	    verbose-puts "send>> mic ..."
+	    puts -nonewline $channel {mic }
+	    puts -nonewline $channel $audio
+	    flush $channel
+	}
     }	      
 
     # queries - these are the only real dspserver commands with hyphens
