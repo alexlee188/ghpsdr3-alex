@@ -62,6 +62,7 @@ for {set i 0} {$i < $argc} {incr i} {
     # accumulate arguments
     set opt [lindex $argv $i]
     switch -- $opt {
+	-- { continue }
 	-b - --band { optarg -band }
 	-c - --connect { ::radio connect }
 	-e - --filter { optarg -filter }

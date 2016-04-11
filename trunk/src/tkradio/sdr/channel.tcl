@@ -24,97 +24,109 @@ package provide sdr::channel 1.0
 ##
 namespace eval ::sdr {}
 
-proc ::sdr::connect {id host port} {
+proc ::sdr::connect {radio host port} {
     set chan [socket $host $port]
     chan configure $chan -blocking 0 -encoding binary -translation binary
-    fileevent $chan readable [list ::sdr::reader $id $chan]
-    # fileevent $chan writable [list ::sdr::writer $id $chan]
+    fileevent $chan readable [list ::sdr::reader $radio $chan]
+    # fileevent $chan writable [list ::sdr::writer $radio $chan]
     return $chan
 }
 
-proc ::sdr::disconnect {id chan} {
+proc ::sdr::disconnect {radio chan} {
     fileevent $chan readable {}
     # fileevent $chan writable {}
     close $chan
 }
 
-proc ::sdr::reader {id chan} {
-    set buffer [read $chan]
-    if {[eof $chan]} {
-	verbose-puts "::sdr::reader $id $chan -> eof is true"
-	::sdr::disconnect $id $chan
-	return
-    }
-    while {[set len [string length $buffer]] > 0} {
-	switch [string index $buffer 0] {
-	    \0 {		# spectrum buffer
-		if {[binary scan $buffer cccSSSIS type version subversion samples main sub sr lo] != 8} {
-		    error "misread spectrum header"
+proc ::sdr::reader {radio chan} {
+    if {[catch {
+	if {[catch {read $chan} buffer]} {
+	    $radio channel-status "error on read $chan, $error, $::errorInfo"
+	    return
+	}
+	if {[eof $chan]} {
+	    $radio channel-status "eof on read $chan"
+	    return
+	}
+	while {[set len [string length $buffer]] > 0} {
+	    switch [string index $buffer 0] {
+		\0 {		# spectrum buffer
+		    if {[binary scan $buffer cccSSSIS type version subversion samples main sub sr lo] != 8} {
+			$radio channel-status "misread spectrum header"
+			return
+		    }
+		    # puts stderr "spectrum header type $type, version $version, subversion $subversion, samples $samples, main $main, sub $sub, sr $sr, lo $lo"
+		    set end [expr {15+$samples-1}]
+		    if {$len < $end} {
+			$radio channel-status "need longer spectrum buffer: $len < $end"
+			return
+		    }
+		    set data [string range $buffer 15 $end]
+		    set buffer [string range $buffer $end+1 end]
+		    $radio process-spectrum $main $sub $sr $lo $data
+		    continue
 		}
-		# puts stderr "spectrum header type $type, version $version, subversion $subversion, samples $samples, main $main, sub $sub, sr $sr, lo $lo"
-		set end [expr {15+$samples-1}]
-		if {$len < $end} {
-		    error "need longer spectrum buffer: $len < $end"
+		\1 {		# audio
+		    if {[binary scan $buffer cccS type version subversion samples] != 4} {
+			$radio channel-status "misread audio header"
+			return
+		    }
+		    # puts "audio buffer type $type, version $version, subversion $subversion, samples $samples"
+		    set end [expr {5+$samples-1}]
+		    if {$len < $end} {
+			# puts stderr "audio buffer type $type, version $version, subversion $subversion, samples $samples"
+			$radio channel-status "need a longer audio string: $len < $end"
+			return
+		    }
+		    set data [string range $buffer 5 $end]
+		    set buffer [string range $buffer $end+1 end]
+		    $radio process-audio $data
+		    continue
 		}
-		set data [string range $buffer 15 $end]
-		set buffer [string range $buffer $end+1 end]
-		$::radio process-spectrum $main $sub $sr $lo $data
-		# puts stderr "spectrum $samples bytes, main $main, sub $sub, sr $sr, lo $lo"
-		# puts stderr "spectrum buffer remains [string length $buffer]"
-		continue
-	    }
-	    \1 {		# audio
-		if {[binary scan $buffer cccS type version subversion samples] != 4} {
-		    error "misread audio header"
+		\2 {			# bandscope
+		    $radio channel-status "unhandled bandscope buffer"
+		    return
 		}
-		# puts "audio buffer type $type, version $version, subversion $subversion, samples $samples"
-		set end [expr {5+$samples-1}]
-		if {$len < $end} {
-		    puts stderr "audio buffer type $type, version $version, subversion $subversion, samples $samples"
-		    puts stderr "need a longer audio string: $len < $end"
+		\3 {			# rtp reply buffer
+		    $radio channel-status "unhandled rtp-reply buffer"
+		    return
 		}
-		set data [string range $buffer 5 $end]
-		set buffer [string range $buffer $end+1 end]
-		$::radio process-audio $data
-		# puts stderr "audio $samples bytes"
-		# puts stderr "audio buffer remains [string length $buffer]"
-		continue
-	    }
-	    \2 {			# bandscope
-		error "bandscope buffer"
-	    }
-	    \3 {			# rtp reply buffer
-		error "rtp-reply buffer"
-	    }
-	    4 {		# answer buffer
-		if {$len < 3} {
-		    error "need a longer answer string: $len < 3"
+		4 {		# answer buffer
+		    if {$len < 3} {
+			$radio channel-status "need a longer answer string: $len < 3"
+			return
+		    }
+		    set samples [scan [string range $buffer 1 2] %d]
+		    set end [expr {3+$samples}]
+		    if {$len < $end} {
+			$radio channel-status "need a longer answer string: $len < $end"
+			return
+		    }
+		    set data [string range $buffer 3 $end-1]
+		    set buffer [string range $buffer $end end]
+		    $radio process-answer $data
+		    continue
 		}
-		set samples [scan [string range $buffer 1 2] %d]
-		set end [expr {3+$samples}]
-		if {$len < $end} {
-		    error "need a longer answer string: $len < $end"
+		default {
+		    binary scan $buffer c type
+		    $radio channel-status "unknown buffer type $type"
+		    return
 		}
-		set data [string range $buffer 3 $end-1]
-		set buffer [string range $buffer $end end]
-		$::radio process-answer $data
-		# puts stderr "answer $samples bytes -> {$data}"
-		# puts stderr "answer buffer remains [string length $buffer]"
-		continue
-	    }
-	    default {
-		binary scan $buffer c type
-		error "unknown buffer type $type"
 	    }
 	}
-    }
-    if {[fblocked $chan]} {
-	# puts "::sdr::reader $id $chan -> fblocked is true"
+	if {[fblocked $chan]} {
+	    # puts "::sdr::reader $radio $chan -> fblocked is true"
+	    return;
+	}
+    } error]} {
+	puts stderr "in ::sdr::reader error:$error\n$::errorInfo"
+	$radio disconnect
+	$radio configure -channel-status $error
 	return;
     }
 }
 
-proc ::sdr::writer {id chan} {
-    puts stderr "::sdr::writer $id $chan"
+proc ::sdr::writer {radio chan} {
+    puts stderr "::sdr::writer $radio $chan"
 }
 

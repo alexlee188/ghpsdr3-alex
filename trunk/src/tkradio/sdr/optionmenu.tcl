@@ -57,7 +57,7 @@ snit::widgetadaptor ui::optionmenu {
     }
     method command {} {
 	if {$options(-command) ne {}} {
-	    puts "calling $options(-command) $value"
+	    # puts "calling $options(-command) $value"
 	    {*}$options(-command) $value
 	}
     }

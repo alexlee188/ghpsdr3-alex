@@ -108,19 +108,27 @@ snit::widgetadaptor sdrtk::spectrum {
     method DrawAll {} {
     }
     method Press {w x y} {
-	set data(freq) [expr {int(($x-double($data(xoffset)))/$data(xscale))}]
-	if {$options(-command) ne {}} { {*}$options(-command) $w Press $x $y $data(freq) 0 }
+	catch {
+	    set data(freq) [expr {int(($x-double($data(xoffset)))/$data(xscale))}]
+	    $self Command $w Press $x $y $data(freq) 0
+	}
     }
     method Release {w x y} {
-	set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
-	if {$options(-command) ne {}} { {*}$options(-command) $w Release $x $y $data(freq) $df }
+	catch {
+	    set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
+	    $self Command $w Release $x $y $data(freq) $df
+	}
     }
     method Motion {w x y} {
-	set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
-	incr data(freq) $df
-	if {$options(-command) ne {}} { {*}$options(-command) $w Motion $x $y $data(freq) $df }
+	catch {
+	    set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
+	    incr data(freq) $df
+	    $self Command $w Motion $x $y $data(freq) $df
+	}
     }
-
+    method Command args {
+	if {$options(-command) ne {}} { {*}$options(-command) {*}$args }
+    }
     method update {xy minx miny avgy} {
 	$hull coords spectrum-$data(multi) $xy
 	$hull raise spectrum-$data(multi)

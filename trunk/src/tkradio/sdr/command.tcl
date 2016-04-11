@@ -31,7 +31,7 @@ namespace eval ::sdr {}
 
 namespace eval ::sdr::command {
     # the current channel
-    variable channel -1
+    variable radio {}
     
     # modes of demodulation available
     variable modes-dict [dict create LSB 0 USB 1 DSB 2 CWL 3 CWU 4 FM 5 AM 6 DIGU 7 SPEC 8 DIGL 9 SAM 10 DRM 11 ]
@@ -110,22 +110,24 @@ namespace eval ::sdr::command {
     }
     # send a command
     proc send-command {command} {
-	variable channel
-	if {$channel != -1} {
+	variable radio
+	if {[$radio is-connected]} {
+	    set c [$radio cget -channel]
 	    verbose-puts "send>> $command"
-	    puts -nonewline $channel [fill-command 64 $command]
-	    flush $channel
+	    puts -nonewline $c [fill-command 64 $command]
+	    flush $c
 	}
     }
 
     # send mic audio data
     proc mic {audio} { 
-	variable channel
-	if {$channel != -1} {
+	variable radio
+	if {[$radio is-connected]} {
+	    set c [$radio cget -channel]
 	    verbose-puts "send>> mic ..."
-	    puts -nonewline $channel {mic }
-	    puts -nonewline $channel $audio
-	    flush $channel
+	    puts -nonewline $c {mic }
+	    puts -nonewline $c $audio
+	    flush $c
 	}
     }	      
 

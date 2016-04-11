@@ -37,8 +37,8 @@ snit::widgetadaptor sdrtk::waterfall {
     option -pan -default 0 -type sdrtype::pan
     option -scale -default 1.0 -configuremethod Configure
     option -offset -default  0.0 -configuremethod Configure
-    option -center-freq -default 0 -configuremethod Configure
-    option -tuned-freq -default 0 -configuremethod Configure
+    option -frequency -default 0 -configuremethod Configure
+    option -local-oscillator -default 0 -configuremethod Configure
     option -sample-rate -default 48000 -configuremethod Configure
 
     option -reverse 0
@@ -74,17 +74,23 @@ snit::widgetadaptor sdrtk::waterfall {
     method DrawAll {} {
     }
     method Press {w x y} {
-	set data(freq) [expr {int(($x-double($data(xoffset)))/$data(xscale))}]
-	$self Command  $w Press $x $y $data(freq) 0
+	catch {
+	    set data(freq) [expr {int(($x-double($data(xoffset)))/$data(xscale))}]
+	    $self Command  $w Press $x $y $data(freq) 0
+	}
     }
     method Release {w x y} {
-	set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
-	$self Command $w Release $x $y $data(freq) $df
+	catch {
+	    set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
+	    $self Command $w Release $x $y $data(freq) $df
+	}
     }
     method Motion {w x y} {
-	set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
-	incr data(freq) $df
-	$self Command $w Motion $x $y $data(freq) $df
+	catch {
+	    set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
+	    incr data(freq) $df
+	    $self Command $w Motion $x $y $data(freq) $df
+	}
     }
     method Command {args} {
 	if {$options(-command) ne {}} { 

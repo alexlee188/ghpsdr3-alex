@@ -81,7 +81,7 @@ snit::double	sdrtype::pan		-min -200000 -max 200000
 snit::enum	sdrtype::smooth		-values {true false raw bezier}
 snit::integer	sdrtype::splinesteps
 snit::integer	sdrtype::multi		-min 1 -max 64
-snit::integer	sdrtype::sample-rate	-min 3000 -max 6144000
+snit::integer	sdrtype::sample-rate	-min 3000 -max 6144000;	# SDRplay goes higher!!!
 snit::integer	sdrtype::milliseconds	-min 0 -max 30000
 snit::integer	sdrtype::samples	-min 1 -max 32000
 snit::double	sdrtype::decay		-min 0.0001 -max 0.9999

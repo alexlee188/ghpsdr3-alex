@@ -18,16 +18,18 @@
 # 
 
 #
-# a dspserver connection widget
+# a dspserver radio model
 # handle the connection to dspserver
 # manage the state of the dspserver controls
+# provide hooks for the ui
 #
 
 package provide sdr::radio-model 1.0
 
 package require snit
 
-package require sdr::servers;	# the napan.com servers listing
+package require sdrtype::types;	# snit types for option checking
+package require sdr::server;	# the napan.com servers listing
 package require sdr::channel;	# the tcp connection to dspserver
 package require sdr::audio;	# audio playback (no mike as yet)
 package require sdr::command;	# the commands sent to dspserver
@@ -68,12 +70,12 @@ snit::type sdr::radio-model {
     option -agc -default {SLOW} -type sdrtype::agc-mode -configuremethod Configure
     option -agc-values -default {} -configuremethod Configure
     option -name -default {} -configuremethod Configure2
-    option -name-values -default {} -configuremethod Configure
+    option -name-values -default {} -configuremethod Configure2
     option -sample-rate -default 0 -configuremethod Configure
     option -local-oscillator -default 0 -configuremethod Configure
     option -spectrum-freq -default 0 -configuremethod Configure
-    option -channel -default 0 -configuremethod Configure
-    option -channel-status -default 0 -configuremethod Configure2
+    option -channel -default {} -configuremethod Configure
+    option -channel-status -default {} -configuremethod Configure2
     option -text -default {tkradio} -configuremethod Configure
     option -ui -default {} -configuremethod Configure
     option -verbose -default 0 -configuremethod Configure2
@@ -88,15 +90,17 @@ snit::type sdr::radio-model {
     }
     
     # constructor
-    constructor args {
+    constructor {args} {
 	verbose-puts "sdr::dspserver $args "
+	# give the command dictionary our self
+	# hacky because how do we manage two or more?
+	set ::sdr::command::radio $self;	# hacky
 	$self configure \
 	    -service-values [::sdr::band-data-services] \
-	    -mode-values [sdr::get-modes] \
+	    -mode-values [sdrtype::mode cget -values] \
 	    {*}$args
-	servers-names-update [list {*}[mymethod configure] -name-values]
 	# start listing servers
-	servers-request
+	server-request [list {*}[mymethod configure] -name-values]
     }
 
     ##
@@ -217,7 +221,6 @@ snit::type sdr::radio-model {
     method {Configure -channel} {value} {
 	if {$options(-channel) ne $value} {
 	    set options(-channel) $value
-	    set ::sdr::command::channel $value;	# hacky
 	}
     }
     # this is the base configuration option
@@ -248,6 +251,7 @@ snit::type sdr::radio-model {
     
     # connect to a server
     method connect {} {
+	if {[$self is-connected]} { error "socket is already connected" }
 	set options(-channel) [::sdr::connect $self {*}[server-address-port $options(-name)]]
 	::sdr::command::setclient tkradio
 	::sdr::command::q-server
@@ -306,19 +310,60 @@ snit::type sdr::radio-model {
     }
     # disconnect from a server
     method disconnect {} { 
-	if {[$self is-connected]} {
-	    verbose-puts "disconnecting self = $self"
-	    ::sdr::disconnect $self $options(-channel)
-	    $self configure -channel -1
-	    # stop spectrum timer (what spectrum timer?)
-	    # set user none
-	    # set passwrod none
-	    # set host {}
-	    audio-out-stop
-	}
+	if { ! [$self is-connected]} { error "socket is not connected" }
+	verbose-puts "disconnecting self = $self"
+	::sdr::disconnect $self $options(-channel)
+	$self configure -channel {}
+	# stop spectrum timer (what spectrum timer?)
+	# set user none
+	# set passwrod none
+	# set host {}
+	audio-out-stop
     }
     # is the radio connected to a server
-    method is-connected {} { return [expr {$options(-channel) != -1}] }
+    method is-connected {} { return [expr {$options(-channel) ne {}}] }
+    # toggle the connection state
+    method connecttoggle {} {
+	if { ! [$self is-connected]} {
+	    if {[catch {$self connect} error]} {
+		set options(-channel) {}
+		puts stderr $error\n$::errorInfo
+		switch $error {
+		    {*connection refused*} { 
+			$self configure -channel-status {connection refused}
+		    }
+		    * {
+			$self configure -channel-status {unknown connect error}
+		    }
+		}
+	    } else {
+		set data(connect) {disconnect}
+		$self configure -channel-status {connected}
+	    }
+	} else {
+	    set data(connect) {disconnect}
+	    if {[catch {$self disconnect} error]} {
+		puts $error\n$::errorInfo
+		switch $error {
+		    * {
+			$self configure -channel-status {unknown disconnect error}
+		    }
+		}
+	    } else {
+		set options(-channel) {}
+		$self configure -channel-status {disconnected}
+	    }
+	}
+    }
+    method channel-status {status} {
+	switch $status {
+	    * {
+		puts stderr $status
+		$self configure -channel-status {unknown error}
+		$self disconnect $self $options(-channel)
+	    }
+	}
+    }
 
     ##
     ## the -frequency specifies the carrier frequency tuned
@@ -425,4 +470,5 @@ snit::type sdr::radio-model {
     method spectrum-update {xy miny maxy avgy} {
 	foreach callback $data(subscribe-listeners) { {*}$callback $xy $miny $maxy $avgy }
     }
+
 }

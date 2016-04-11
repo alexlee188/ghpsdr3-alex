@@ -23,6 +23,7 @@
 
 package provide sdr::radio-ui-one 1.0
 
+package require Tcl
 package require Tk
 package require snit
 
@@ -35,16 +36,6 @@ package require sdrtk::meter
 package require sdrtk::spectrum-waterfall
 
 namespace eval ::sdr {}
-
-# operating modes
-proc sdr::get-modes {} { return [::sdr::command::get-modes] }
-snit::enum sdr::modes-type -values [sdr::get-modes]
-# spectrum modes
-proc sdr::get-pwsmodes {} { return [::sdr::command::get-pwsmodes] }
-snit::enum sdr::pwsmodes-type -values [sdr::get-pwsmodes]
-# agc modes
-proc sdr::get-agcmodes {} { return [::sdr::command::get-agcmodes] }
-snit::enum sdr::agcmodes-type -values [sdr::get-agcmodes]
 
 #
 # a radio ui widget
@@ -70,11 +61,17 @@ snit::enum sdr::agcmodes-type -values [sdr::get-agcmodes]
 #
 
 snit::widgetadaptor sdr::radio-ui-one {
-    option -text -default {} -configuremethod Configure
     option -radio -readonly true;	# must be set at creation
+    option -text -default {}
+    option -name -default {}
+    option -channel-status -default {}
 
     delegate method * to hull
     delegate option * to hull
+
+    variable data -array {
+	connect {connect}
+    }
 
     constructor args {
 	installhull using ttk::frame
@@ -115,7 +112,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 	grid [ui::optionmenu $win.mode \
 		  -value [$self rget -mode] \
 		  -values [$self rget -mode-values] \
-		  -width [sdr::maxwidth [sdr::modes-type cget -values]] \
+		  -width [sdr::maxwidth [sdrtype::mode cget -values]] \
 		  -command [list {*}[mymethod rreport] -mode] \
 		 ] -row 1 -column 3
 	$self rmonitor -mode -mode-values
@@ -140,14 +137,18 @@ snit::widgetadaptor sdr::radio-ui-one {
 
 	# connect to server
 	grid [ttk::checkbutton $win.conn \
+		  -textvar [myvar data(connect)] \
 		  -width 10 \
-		  -command [mymethod connecttoggle] \
 		  -variable [myvar data(connect)] \
 		  -onvalue {disconnect} \
 		  -offvalue {connect} \
-		  -textvar [myvar data(connect)] \
+		  -command [mymethod connecttoggle] \
 		 ] -row 1 -column 6
-	$self rmonitor -channel -channel-status
+	$self rmonitor -channel-status
+
+	# puts "after $win.conn built, data(connect) => $data(connect)"
+	# puts "$win.conn cget -textvar => [$win.conn cget -textvar]"
+	# puts "$win.conn cget -variable => [$win.conn cget -variable]"
 	
 	# spectrum and waterfall
 	grid [sdrtk::spectrum-waterfall $win.sw \
@@ -155,19 +156,34 @@ snit::widgetadaptor sdr::radio-ui-one {
 		 ] -row 2 -column 1 -columnspan 6
 	$self rmonitor -sample-rate -local-oscillator
 	$options(-radio) spectrum-subscribe [list $win.sw update]
-    }
-    method {Configure -text} {val} {
-	if {$options(-text) ne $val} {
-	    set options(-text) $val
-	    wm title . $val
+	foreach option {-text -channel-status -name} {
+	    $self monitor $option [mymethod window-title]
 	}
     }
+    # rewrite the window title to reflect statusa
+    method window-title {args} {
+	puts "managing window title"
+	wm title . "$options(-text) -- $options(-name) $options(-channel-status)"
+    }
+
+    # monitor configuration options
+    method monitor {option prefix} {
+	trace variable options($option) w [list {*}[mymethod monitor-fired] $prefix]
+    }
+    method monitor-fired {prefix name1 name2 op} {
+	{*}$prefix $name2 $options($name2)
+    }
+    
+    ##
+    ## manipulations on the radio model
+    ##
     method rget {opt} {
 	return [$options(-radio) cget $opt]
     }
     method rmonitor {args} {
-	foreach opt $args {
-	    $options(-radio) monitor $opt [mymethod rmonitor-fire]
+	foreach option $args {
+	    #set options($option) [$options(-radio) cget $option]
+	    $options(-radio) monitor $option [mymethod rmonitor-fire]
 	}
     }
     method rmonitor-fire {option value} {
@@ -185,10 +201,12 @@ snit::widgetadaptor sdr::radio-ui-one {
 	    -mode-values { $win.mode configure -values $value }
 	    -filter { $win.filter configure -value $value }
 	    -filter-values { $win.filter configure -values $value }
-	    -name { $win.name configure -value $value }
+	    -name { 
+		$win.name configure -value $value
+		$win configure $option $value
+	    }
 	    -name-values { $win.name configure -values $value }
-	    -channel -
-	    -channel-status { $win.connecttoggle configure $option $value }
+	    -channel-status { $win configure $option $value }
 	    -spectrum -
 	    -sample-rate -
 	    -local-oscillator { $win.sw configure $option $value }
@@ -200,18 +218,16 @@ snit::widgetadaptor sdr::radio-ui-one {
     method rreport {option value} {
 	{*}$options(-radio) configure $option $value
     }
+
+    ##
+    ## delegate the connection to the radio model
+    ##
     method connecttoggle {} {
-	# the button label is already looking forward
-	if {$::channel == -1} {
-	    if {[catch {$self connect} error]} {
-		puts $error\n$::errorInfo
-		set data(connect) {connect}
-	    }
+	$options(-radio) connecttoggle
+	if {[$options(-radio) is-connected]} {
+	    set data(connect) {disconnect}
 	} else {
-	    if {[catch {$self disconnect} error]} {
-		puts $error\n$::errorInfo
-		set data(connect) {disconnect}
-	    }
+	    set data(connect) {connect}
 	}
     }
 }

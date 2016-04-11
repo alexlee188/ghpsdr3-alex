@@ -1,21 +1,22 @@
 [x] no tabs
 [x] single globals ::channel ::radio ::verbose
 [x] move dspserver enumeration definitions into sdr/commands.tcl
-[ ] teach automake to rebuild sdr/pkgIndex.tcl
-[ ] teach automake to install sdr/* into $(prefix)/share/tcltk/sdr
+[x] teach automake to rebuild sdr/pkgIndex.tcl
+[x] teach automake to install sdr/* into $(prefix)/share/tcltk/sdr
 [ ] teach automake to clean up *~
 [ ] add agc option menu
 [ ] add detailed configuration panel
 [ ] incorporate tool tips
-[ ] start audio playback
-[ ] incorporate spectrum and waterfall 
+[x] start audio playback
+[x] incorporate spectrum and waterfall 
 [ ] add gain control panel
 [ ] add s-meter
 [ ] add dial
 [ ] figure out how to theme interface all in black and grey background,
 	red or green or orange or white foreground
-[ ] set up night vision
+[ ] set up night vision theme
 [ ] wire up service -> band -> channels -> frequency / mode / filter
 	cascade
 [ ] why reduced noise from subrx?
 [ ] why audio stalls without spectrum?
+[ ] wire up mode -> filter  cascade
