@@ -14,14 +14,24 @@
 [ ] add dial
 [x] figure out how to theme interface all in black and grey background,
 	red or green or orange or white foreground
-[ ] theme, just in red, needs more work
+[x] theme, just in red, needs more work
 [x] set up night vision theme
+[ ] theme tk menues?
 [ ] wire up service -> band -> channels -> frequency / mode / filter
 	cascade
-[ ] why reduced noise from subrx?
-[ ] why audio stalls without spectrum?
 [ ] wire up mode -> filter  cascade
+[ ] why reduced noise from subrx?  in QtRadio?
+[ ] why audio stalls without spectrum?
 [x] socket can get closed while socket reader is running?
-[ ] crash when disconnecting, thought it was due to tcl-threads, turns
+[x] crash when disconnecting, thought it was due to tcl-threads, turns
 	out that even without tcl-threads there are threads, but did
-	not crash under debugger.
+	not crash under debugger.  Did crash in the debugger, finally,
+	and downloaded debugging symbols.  It crashes in the pulse
+	audio simple library, claiming a mutex that's been freed or
+	something.
+[x] Try to minimize exposure to pulse thread bugs.  Don't close and
+	reopen?  What's a zero sample in aLaw format?
+[x] Seems that my pa_simple.c didn't null its connection pointer when
+	it closed it, runs much better when it doesn't access freed
+	memory.  Still testing, but it fails much less often if it
+	isn't fixed.

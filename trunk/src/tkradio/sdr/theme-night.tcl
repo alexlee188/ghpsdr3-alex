@@ -11,11 +11,11 @@ namespace eval ttk::theme::night {
     variable colors
     array set colors {
 	    -foreground "#ff0000"
-	    -border	"#be0000"
-	    -disabledfg	"#6c0000"
-	    -darker 	"#4c0000"
-	    -frame	"#360000"
-	    -activebg 	"#230000"
+	    -border	"#bebebe"
+	    -disabledfg	"#6c6c6c"
+	    -darker 	"#4c4c4c"
+	    -frame	"#363636"
+	    -activebg 	"#232323"
 	    -window	"#000000"
 	    -selectfg	"#000000"
 	    -selectbg	"#4a6984"

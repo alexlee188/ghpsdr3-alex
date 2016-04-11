@@ -35,14 +35,14 @@ proc audio-out-start {format rate} {
 	PCM { set format s16le }
 	default { error "unknown audio format: $format" }
     }
-    puts "pa::simple::new sdr playback sdr $format 1 $rate"
+    puts "pa::simple::new tkradio playback sdr $format 1 $rate"
     if {[catch {pa::simple::new sdr playback sdr $format 1 $rate} error]} {
 	puts "error starting audio: $error"
     }
     # set ::sdr::audio::trace [open audio.trace wb]
 }
 proc audio-out-stop {} {
-    if {[catch {::pa::simple::drain} error]} { puts "error draining: $error" }
+    # if {[catch {::pa::simple::drain} error]} { puts "error draining: $error" }
     if {[catch {::pa::simple::flush} error]} { puts "error flushing: $error" }
     if {[catch {::pa::simple::free} error]} { puts "error freeing: $error" }
 }

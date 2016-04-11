@@ -35,11 +35,20 @@
 ** technically, only a single stream interface
 */
 
-static pa_simple *s;
-static pa_sample_spec ss;
-#define NBYTES 8*1024
-static char samples[NBYTES];
-
+static struct pa_simple_struct {
+  pa_simple *s;
+  char *appname;
+  char *desc;
+  pa_stream_direction_t d;
+  pa_sample_spec ss;
+} pa = {
+  NULL,
+  "tkradio",
+  "sdr",
+  PA_STREAM_PLAYBACK,
+  { PA_SAMPLE_ALAW, 8000, 1 }
+};
+  
 /* return an TCL_ERROR with the msg in the interpreter error slot */
 static int _error(Tcl_Interp *interp, char *msg) {
   Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s", msg));
@@ -67,48 +76,49 @@ static int _sample_formats(ClientData clientData, Tcl_Interp *interp, int argc, 
 }
 static int _new(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* const *objv) {
   if (argc != 7) return _error(interp, "usage: pa::simple::new name playback|record description sample-format channels rate");
-  char *appname = Tcl_GetString(objv[1]);
-  char *playrec = Tcl_GetString(objv[2]);
-  int iplayrec;
-  if (strcmp(playrec, "playback") == 0) iplayrec = PA_STREAM_PLAYBACK;
-  else if (strcmp(playrec, "record") == 0) iplayrec = PA_STREAM_RECORD;
+  pa.appname = Tcl_GetString(objv[1]);
+  char *ptmp = Tcl_GetString(objv[2]);
+  if (strcmp(ptmp, "playback") == 0) pa.d = PA_STREAM_PLAYBACK;
+  else if (strcmp(ptmp, "record") == 0) pa.d = PA_STREAM_RECORD;
   else return _error(interp, "invalid stream direction, must be playback or record");
-  char *desc = Tcl_GetString(objv[3]);
-  char *format = Tcl_GetString(objv[4]);
-  if ((ss.format = pa_parse_sample_format(format)) == PA_SAMPLE_INVALID)
+  pa.desc = Tcl_GetString(objv[3]);
+  ptmp = Tcl_GetString(objv[4]);
+  if ((pa.ss.format = pa_parse_sample_format(ptmp)) == PA_SAMPLE_INVALID)
     return _error(interp, "invalid sample format");
-  int ichannels;
-  if (Tcl_GetIntFromObj(interp, objv[5], &ichannels) != TCL_OK)
+  int itmp;
+  if (Tcl_GetIntFromObj(interp, objv[5], &itmp) != TCL_OK)
     return _error(interp, "invalid channels, must be an integer");
-  ss.channels = ichannels;
-  int irate;
-  if (Tcl_GetIntFromObj(interp, objv[6], &irate) != TCL_OK)
+  pa.ss.channels = itmp;
+  if (Tcl_GetIntFromObj(interp, objv[6], &itmp) != TCL_OK)
     return _error(interp, "invalid rate, must be an integer");
-  ss.rate = irate;
+  pa.ss.rate = itmp;
   int error;
-  s = pa_simple_new(NULL,	/* default server */
-		    appname,	/* Our application's name. */
-		    iplayrec,	/* Open this stream for recording or playback? */
-		    NULL,	/* Use the default device. */
-		    desc,	/* Description of our stream. */
-		    &ss,	/* Our sample format. */
-		    NULL,	/* Use default channel map */
-		    NULL,	/* Use default buffering attributes. */
-		    &error	/* error code. */
+  pa.s = pa_simple_new(NULL,		/* default server */
+		       pa.appname,	/* Our application's name. */
+		       pa.d,		/* Open this stream for recording or playback? */
+		       NULL,		/* Use the default device. */
+		       pa.desc,		/* Description of our stream. */
+		       &pa.ss,		/* Our sample format. */
+		       NULL,	/* Use default channel map */
+		       NULL,	/* Use default buffering attributes. */
+		       &error	/* error code. */
 		    );
-  if (s == NULL)
+  if (pa.s == NULL)
     return _error(interp, (char *)pa_strerror(error));
   return TCL_OK;
 }
 
 static int _get_latency(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* const *objv) {
   if (argc != 1) return _error(interp, "usage pa::simple::get-latency");
-  Tcl_SetObjResult(interp, Tcl_ObjPrintf("%u", (unsigned)pa_simple_get_latency(s, NULL)));
+  if (pa.s == NULL) return _error(interp, "pa::simple::get-latency stream is not open");
+  Tcl_SetObjResult(interp, Tcl_ObjPrintf("%u", (unsigned)pa_simple_get_latency(pa.s, NULL)));
   return TCL_OK;
 }
 static int _read(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* const *objv) {
   int error;
   if (argc != 2) return _error(interp, "usage: pa::simple::read nbytes");
+  if (pa.s == NULL) return _error(interp, "pa::simple::read stream is not open");
+  if (pa.d != PA_STREAM_RECORD) return _error(interp, "pa::simple::read stream is not open for reading");
   int nbytes;
   if (Tcl_GetIntFromObj(interp, objv[1], &nbytes) != TCL_OK)
     return _error(interp, "invalid nbytes, must be an integer");
@@ -116,7 +126,7 @@ static int _read(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* c
   if (result == NULL) return _error(interp, "urk");
   char *data = Tcl_GetByteArrayFromObj(result, NULL);
   if (data == NULL) return _error(interp, "urk2");
-  int nread = pa_simple_read(s, data, nbytes, &error);
+  int nread = pa_simple_read(pa.s, data, nbytes, &error);
   if (nread < 0) return _error(interp, "read error");
   Tcl_SetObjResult(interp, result);
   return TCL_OK;
@@ -124,25 +134,33 @@ static int _read(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* c
 static int _write(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* const *objv) {
   int error;
   if (argc != 2) return _error(interp, "usage: pa::simple::write data");
+  if (pa.s == NULL) return _error(interp, "pa::simple::write stream is not open");
+  if (pa.d != PA_STREAM_PLAYBACK) return _error(interp, "pa::simple::write stream is not open for writing");
   int ninput;
   char *data = Tcl_GetByteArrayFromObj(objv[1], &ninput);
-  if (pa_simple_write(s, data, ninput, &error) < 0)
+  if (pa_simple_write(pa.s, data, ninput, &error) < 0)
     return _error(interp, (char *)pa_strerror(error));
   return TCL_OK;
 }
 static int _flush(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* const *objv) {
   if (argc != 1) return _error(interp, "usage pa::simple::flush");
-  pa_simple_flush(s, NULL);
+  if (pa.s == NULL) return _error(interp, "pa::simple::flush stream is not open");
+  if (pa.d != PA_STREAM_PLAYBACK) return _error(interp, "pa::simple::flush stream is not open for writing");
+  pa_simple_flush(pa.s, NULL);
   return TCL_OK;
 }
 static int _drain(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* const *objv) {
   if (argc != 1) return _error(interp, "usage pa::simple::drain");
-  pa_simple_drain(s, NULL);
+  if (pa.s == NULL) return _error(interp, "pa::simple::drain stream is not open");
+  if (pa.d != PA_STREAM_PLAYBACK) return _error(interp, "pa::simple::drain stream is not open for writing");
+  pa_simple_drain(pa.s, NULL);
   return TCL_OK;
 }
 static int _free(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* const *objv) {
   if (argc != 1) return _error(interp, "usage pa::simple::free");
-  pa_simple_free(s);
+  if (pa.s == NULL) return _error(interp, "pa::simple::free stream is not open");
+  pa_simple_free(pa.s);
+  pa.s = NULL;
   return TCL_OK;
 }
 

@@ -154,8 +154,8 @@ snit::type sdr::radio-model {
 	# source sdr/theme-alt.tcl
 	ttk::style theme create night
 	package require ttk::theme::night
-	puts [ttk::style theme names]
 	ttk::style theme use night
+
 	pack [$val .radio -text tkradio -radio $self] -fill both -expand true
     }
     method {Configure -service} {val} { 
