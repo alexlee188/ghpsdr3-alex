@@ -12,11 +12,16 @@
 [ ] add gain control panel
 [ ] add s-meter
 [ ] add dial
-[ ] figure out how to theme interface all in black and grey background,
+[x] figure out how to theme interface all in black and grey background,
 	red or green or orange or white foreground
-[ ] set up night vision theme
+[ ] theme, just in red, needs more work
+[x] set up night vision theme
 [ ] wire up service -> band -> channels -> frequency / mode / filter
 	cascade
 [ ] why reduced noise from subrx?
 [ ] why audio stalls without spectrum?
 [ ] wire up mode -> filter  cascade
+[x] socket can get closed while socket reader is running?
+[ ] crash when disconnecting, thought it was due to tcl-threads, turns
+	out that even without tcl-threads there are threads, but did
+	not crash under debugger.

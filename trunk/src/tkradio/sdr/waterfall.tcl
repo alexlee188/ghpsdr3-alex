@@ -114,32 +114,22 @@ snit::widgetadaptor sdrtk::waterfall {
     ##
     ## make a scan line row or column of pixel values
     ##
-    method scan {xy} {
+    method scan {xy miny maxy avgy} {
+	set miny [expr {$miny+$options(-atten)}]
+	set maxy [expr {$maxy+$options(-atten)}]
+	set avgy [expr {$avgy+$options(-atten)}]
 	set data(xscale) [expr {[winfo width $win]/double($options(-sample-rate))}]
 	set data(xoffset) [expr {[winfo width $win]/2.0}]
-	set ymin 1e6
-	set ymax -1e6
-	set ysum 0
-	set xmin 1e6
-	set xmax -1e6
-	set n 0
 	foreach {x y} $xy {
 	    set x [expr {$x*$data(xscale)+$data(xoffset)}]
-	    set xmin [expr {min($xmin,$x)}]
-	    set xmax [expr {max($xmax,$x)}]
 	    set y [expr {$y+$options(-atten)}]
-	    set ysum [expr {$ysum+$y}]
-	    set ymin [expr {min($ymin,$y)}]
-	    set ymax [expr {max($ymax,$y)}]
 	    lappend f([expr {round($x)}]) $y
-	    incr n
 	}
-	set yavg [expr {double($ysum)/$n}]
 
 	# automatic palette bounds assignment
 	if {$options(-automatic)} {
-	    set data(min) [expr {$yavg-5}]
-	    set data(max) [expr {$yavg+30}]
+	    set data(min) [expr {0.98*$avgy}]
+	    set data(max) [expr {0.60*$avgy}]
 	} else {
 	    set data(min) $options(-min)
 	    set data(max) $options(-max)
@@ -150,7 +140,7 @@ snit::widgetadaptor sdrtk::waterfall {
 	    if {[info exists f($x)]} {
 		set y [expr {[tcl::mathop::+ {*}$f($x)]/double([llength $f($x)])}]
 	    } else {
-		set y $ymin
+		set y $miny
 	    }
 	    lappend freq $x
 	    if {$options(-direction) in {n s}} {
@@ -176,7 +166,7 @@ snit::widgetadaptor sdrtk::waterfall {
     method update {xy miny maxy avgy} {
 	# compute the scan line of pixels
 	# this needs to scale x to window width
-	lassign [$self scan $xy] freq scan
+	lassign [$self scan $xy $miny $maxy $avgy] freq scan
 	set x0 [lindex $freq 0]
 
 	# scroll all the canvas images up/down/left/right by 1

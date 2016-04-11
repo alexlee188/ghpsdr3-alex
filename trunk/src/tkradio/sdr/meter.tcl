@@ -83,7 +83,7 @@ snit::widgetadaptor sdrtk::meter {
 	}
     }
 
-    method update {dB} {
+    method update {dB dB2} {
 	$hull coords meter 0 $data(y) [$self xfordB $dB] $data(y)
     }
 

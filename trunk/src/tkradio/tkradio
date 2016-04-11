@@ -48,13 +48,14 @@ sdr::radio-model ::radio -service [sdr::get-last service]
 proc optarg {opt} {
     upvar argc argc argv argv i i
     if {$i == $argc-1} { uplevel error "missing arg for $opt option" }
+    set val [lindex $argv [incr i]]
+    verbose-puts "optarg $opt found $val"
     if {$opt eq {-local}} {
 	# puts "optarg found -local"
-	::radio add-local [lindex $argv [incr i]]
+	::radio add-local $val
     } else {
-	::radio configure $opt [lindex $argv [incr i]]
+	::radio configure $opt $val
     }
-    verbose-puts "optarg $opt found [lindex $argv $i]"
 }
 
 # specify options and create radios

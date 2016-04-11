@@ -153,16 +153,23 @@ snit::widgetadaptor sdr::radio-ui-one {
 	# spectrum and waterfall
 	grid [sdrtk::spectrum-waterfall $win.sw \
 		  -command [list {*}[mymethod rreport] -frequency] \
-		 ] -row 2 -column 1 -columnspan 6
+		 ] -row 2 -column 0 -columnspan 7 -sticky nsew
 	$self rmonitor -sample-rate -local-oscillator
 	$options(-radio) spectrum-subscribe [list $win.sw update]
 	foreach option {-text -channel-status -name} {
 	    $self monitor $option [mymethod window-title]
 	}
+	
+	foreach c {0 1 2 3 4 5 6}  {
+	    grid columnconfigure $win $c -weight 1
+	}
+	grid rowconfigure $win 0 -weight 0
+	grid rowconfigure $win 1 -weight 0
+	grid rowconfigure $win 2 -weight 1
     }
     # rewrite the window title to reflect statusa
     method window-title {args} {
-	puts "managing window title"
+	#puts "managing window title"
 	wm title . "$options(-text) -- $options(-name) $options(-channel-status)"
     }
 
@@ -206,7 +213,9 @@ snit::widgetadaptor sdr::radio-ui-one {
 		$win configure $option $value
 	    }
 	    -name-values { $win.name configure -values $value }
-	    -channel-status { $win configure $option $value }
+	    -channel-status { 
+		$win configure $option $value
+	    }
 	    -spectrum -
 	    -sample-rate -
 	    -local-oscillator { $win.sw configure $option $value }

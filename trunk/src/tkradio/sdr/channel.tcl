@@ -39,13 +39,9 @@ proc ::sdr::disconnect {radio chan} {
 }
 
 proc ::sdr::reader {radio chan} {
-    if {[catch {
+    while {1} {
 	if {[catch {read $chan} buffer]} {
 	    $radio channel-status "error on read $chan, $error, $::errorInfo"
-	    return
-	}
-	if {[eof $chan]} {
-	    $radio channel-status "eof on read $chan"
 	    return
 	}
 	while {[set len [string length $buffer]] > 0} {
@@ -114,15 +110,24 @@ proc ::sdr::reader {radio chan} {
 		}
 	    }
 	}
-	if {[fblocked $chan]} {
-	    # puts "::sdr::reader $radio $chan -> fblocked is true"
-	    return;
+	if {[catch {
+	    if {[eof $chan]} {
+		$radio channel-status "eof on read $chan"
+		return
+	    }
+	} error]} {
+	    $radio channel-status "error testing eof $chan"
+	    return
 	}
-    } error]} {
-	puts stderr "in ::sdr::reader error:$error\n$::errorInfo"
-	$radio disconnect
-	$radio configure -channel-status $error
-	return;
+	if {[catch {
+	    if {[fblocked $chan]} {
+		# puts "::sdr::reader $radio $chan -> fblocked is true"
+		return;
+	    }
+	} error]} {
+	    $radio channel-status "error testing fblocked $chan"
+	    return
+	}
     }
 }
 

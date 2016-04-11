@@ -71,8 +71,8 @@ snit::type sdr::radio-model {
     option -agc-values -default {} -configuremethod Configure
     option -name -default {} -configuremethod Configure2
     option -name-values -default {} -configuremethod Configure2
-    option -sample-rate -default 0 -configuremethod Configure
-    option -local-oscillator -default 0 -configuremethod Configure
+    option -sample-rate -default 0 -configuremethod Configure2
+    option -local-oscillator -default 0 -configuremethod Configure2
     option -spectrum-freq -default 0 -configuremethod Configure
     option -channel -default {} -configuremethod Configure
     option -channel-status -default {} -configuremethod Configure2
@@ -86,7 +86,7 @@ snit::type sdr::radio-model {
 	spectrum-listeners {}
 	spectrum-xs {}
 	spectrum-sr 0
-	spectrum-w 0
+	spectrum-n 0
     }
     
     # constructor
@@ -150,6 +150,12 @@ snit::type sdr::radio-model {
     method {Configure -ui} {val} {
 	set options(-ui) $val
 	package require $val
+
+	# source sdr/theme-alt.tcl
+	ttk::style theme create night
+	package require ttk::theme::night
+	puts [ttk::style theme names]
+	ttk::style theme use night
 	pack [$val .radio -text tkradio -radio $self] -fill both -expand true
     }
     method {Configure -service} {val} { 
@@ -408,13 +414,14 @@ snit::type sdr::radio-model {
 	# they rarely change
 	$self configure -sample-rate $sr -local-oscillator $lo
 	# pass the rest into update methods that can be subscribed
-	$self update-meter $main $sub
-	$self update-spectrum {*}[$self xy $spectrum]
+	$self meter-update $main $sub
+	$self spectrum-update {*}[$self xy $spectrum]
+	update
     }
     # convert incoming spectrum string from unsigned -dB in bytes
     # into freq dB coordinates as floats
     method xy {ystr} {
-	binary scan $spectrum {c*} ys
+	binary scan $ystr {c*} ys
 	# last byte is always 0
 	set ys [lrange $ys 0 end-1]
 	set n [llength $ys]
@@ -426,8 +433,9 @@ snit::type sdr::radio-model {
 	    set maxf [expr {$sr/2.0}]
 	    set minf [expr {-$maxf}]
 	    set df [expr {double($sr)/$n}]
+	    set data(spectrum-xs)
 	    for {set i 0} {$i < $n} {incr i} {
-		lappend data(xs) [expr {$minf+$i*$df}]
+		lappend data(spectrum-xs) [expr {$minf+$i*$df}]
 	    }
 	}
 	set xs $data(spectrum-xs)
@@ -438,7 +446,11 @@ snit::type sdr::radio-model {
 	set maxy [tcl::mathfunc::max {*}$ys]
 	set avgy [expr {[tcl::mathop::+ {*}$ys]/double($n)}]
 	
-	return [list [concat {*}[lmap x $xs y $ys {list $x $h}]] $miny $maxy $avgy]
+	set xy {}
+	foreach x $xs y $ys {
+	    lappend xy $x $y
+	}
+	return [list $xy $miny $maxy $avgy]
     }
     # process audio stream from the dspserver
     method process-audio {audio} {
@@ -468,7 +480,7 @@ snit::type sdr::radio-model {
 	lappend data(spectrum-listeners) $callback
     }
     method spectrum-update {xy miny maxy avgy} {
-	foreach callback $data(subscribe-listeners) { {*}$callback $xy $miny $maxy $avgy }
+	foreach callback $data(spectrum-listeners) { {*}$callback $xy $miny $maxy $avgy }
     }
 
 }

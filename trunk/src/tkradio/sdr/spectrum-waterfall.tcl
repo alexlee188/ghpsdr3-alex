@@ -54,7 +54,11 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
     # options to here
     option -command {}
 
-    variable data -array {}
+    variable data -array {
+	miny 0
+	maxy 0
+	avgy 0
+    }
 
     delegate option * to hull
     delegate method * to hull
@@ -63,8 +67,8 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
 	installhull using ttk::panedwindow -orient vertical
 	install spectrum using sdrtk::spectrum $win.s -command [mymethod Tune]
 	install waterfall using sdrtk::waterfall $win.w -command [mymethod Tune]
-	$hull add $spectrum
-	$hull add $waterfall
+	$hull add $spectrum -weight 0
+	$hull add $waterfall -weight 1
 	$self configure {*}$args
     }
 
@@ -116,8 +120,12 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
     }
 
     method update {xy miny maxy avgy} {
-	$spectrum update $xy
-	$waterfall update $xy
+	set data(miny) [expr {($data(miny)+$miny)/2.0}]
+	set data(maxy) [expr {($data(maxy)+$maxy)/2.0}]
+	set data(avgy) [expr {($data(avgy)+$avgy)/2.0}]
+	# puts "avg $data(avgy) min $data(miny) max $data(maxy)"
+	$spectrum update $xy $data(miny) $data(maxy) $data(avgy)
+	$waterfall update $xy $data(miny) $data(maxy) $data(avgy)
     }
     
 }

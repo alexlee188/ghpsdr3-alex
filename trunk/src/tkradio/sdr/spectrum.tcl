@@ -78,7 +78,6 @@ snit::widgetadaptor sdrtk::spectrum {
     delegate method * to hull
 
     # multi - the number of consecutive spectra to display
-    # darkest
     variable data -array {
 	multi 0
 	darkest \#333
@@ -98,7 +97,7 @@ snit::widgetadaptor sdrtk::spectrum {
     constructor {args} {
 	installhull using canvas
 	$self configure -multi 1 {*}$args
-	$hull configure -bg black
+	$hull configure -bg black -height 100
 	bind $win <Configure> [mymethod DrawAll]
 	bind $win <ButtonPress-1> [mymethod Press %W %x %y]
 	bind $win <ButtonRelease-1> [mymethod Release %W %x %y]
@@ -189,7 +188,7 @@ snit::widgetadaptor sdrtk::spectrum {
 	set scale {}
 	set intensity 0xFF
 	for {set i 0} {$i <= $n} {incr i} {
-	    lappend scale [string range [format {\#%02x%02x%02x} $intensity $intensity $intensity] 1 end]
+	    lappend scale [string range [format {\#%02x%02x%02x} $intensity 0 0] 1 end]
 	    incr intensity [expr {-(0xFF/($n+1))}]
 	}
 	return $scale

@@ -39,6 +39,8 @@ tcltk_DATA += sdrtype.tcl
 tcltk_DATA += server.tcl
 tcltk_DATA += spectrum.tcl
 tcltk_DATA += spectrum-waterfall.tcl
+tcltk_DATA += theme-alt.tcl
+tcltk_DATA += theme-night.tcl
 tcltk_DATA += util.tcl
 tcltk_DATA += waterfall.tcl
 
