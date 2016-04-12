@@ -28,6 +28,7 @@
 package provide sdr::band-data 1.0
 
 package require sdr::util
+package require sdr::filter
 
 namespace eval ::sdr {}
 namespace eval ::sdr::band-data {
@@ -85,7 +86,8 @@ namespace eval ::sdr::band-data {
 	}
 	foreach {name value} $args {
 	    switch $name {
-		filter - channel-step - low - high { sdr::hertz $value }
+		freq - channel-step - low - high { sdr::hertz $value }
+		filter { sdr::filter-parse $value }
 		note - name - mode {}
 		default {
 		    error "unknown band $name = {$value}"
@@ -107,7 +109,8 @@ namespace eval ::sdr::band-data {
 	foreach {name value} $args {
 	    switch $name {
 		note - name - mode - codec {}
-		filter - freq { sdr::hertz $value }
+		freq { sdr::hertz $value }
+		filter { sdr::filter-parse $value }
 		default {
 		    error "unknown channel $name = {$value}"
 		}
@@ -136,7 +139,7 @@ namespace eval ::sdr::band-data {
 	21.924 22.000
 	23.200 23.350
     } {
-	add-band Aviation $low low ${low}MHz high ${high}MHz mode SSB channel-step 3kHz
+	add-band Aviation $low low ${low}MHz high ${high}MHz mode USB channel-step 3kHz
     }
     add-band Aviation VHF-Nav low 108MHz high 117.975MHz mode AM
     add-band Aviation VHF-AM low 118MHz high 137MHz mode AM
@@ -145,7 +148,8 @@ namespace eval ::sdr::band-data {
     ##
     ## Marine mobile bands
     ##
-    add-service Marine color blue row 1
+    add-service Marine color blue row 1 \
+	band VHF-A
     foreach {low high} {
 	2.045 2.160
 	2.170 2.194
@@ -177,11 +181,12 @@ namespace eval ::sdr::band-data {
     } {
 	add-channel Marine "Simplex $freq" freq ${freq}MHz mode USB
     }
-    add-band Marine VHF-A low 156.000MHz high 157.425MHz mode NFM channel-step 25000
-    add-band Marine VHF-B low 160.600MHz high 162.025MHz mode NFM channel-step 25000
-    add-channel Marine 9A freq 156.450MHz mode NFM
-    add-channel Marine 13A freq 156.650MHz mode NFM
-    add-channel Marine 16A freq 156.800MHz mode NFM
+    add-band Marine VHF-A low 156.000MHz high 157.425MHz mode FM channel-step 25000 \
+	freq 156.800MHz mode FM filter {-12500 .. 12500}
+    add-band Marine VHF-B low 160.600MHz high 162.025MHz mode FM channel-step 25000
+    add-channel Marine 9A freq 156.450MHz mode FM
+    add-channel Marine 13A freq 156.650MHz mode FM
+    add-channel Marine 16A freq 156.800MHz mode FM
     add-channel Marine 70A freq 156.525MHz note {Digital Selective Calling}
     add-channel Marine 87B freq 161.975MHz mode GMSK note {Automatic Identification System}
     add-channel Marine 88B freq 162.025MHz mode GMSK note {Automatic Identification System}
@@ -189,9 +194,11 @@ namespace eval ::sdr::band-data {
     ##
     ## Broadcast radio bands
     ##
-    add-service Broadcast color green row 2
-    add-band Broadcast {LW} low 148.5kHz high 283.5kHz mode AM channel-step 10000
-    add-band Broadcast {MW} low 520kHz high 1710kHz mode AM channel-step 10000
+    add-service Broadcast color green row 2 \
+	band MW
+    add-band Broadcast {LW} low 148.5kHz high 283.5kHz mode AM channel-step 10000 
+    add-band Broadcast {MW} low 520kHz high 1710kHz mode AM channel-step 10000 \
+	freq 520kHz mode AM filter {-2500 .. 2500}
     add-band Broadcast {120m} low 2300kHz high 2495kHz mode AM channel-step 5000
     add-band Broadcast {90m} low 3200kHz high 3400kHz mode AM channel-step 5000
     add-band Broadcast {75m} low 3900kHz high 4000kHz mode AM channel-step 5000
@@ -207,15 +214,16 @@ namespace eval ::sdr::band-data {
     add-band Broadcast {13m} low 21450kHz high 21850kHz mode AM channel-step 5000
     add-band Broadcast {11m} low 25600kHz high 26100kHz mode AM channel-step 5000
     add-band Broadcast {TV VHF low} low 54MHz high 88MHz mode TV channel-step 6MHz
-    add-band Broadcast {FM} low 87.5MHz high 108.0MHz mode WFM
+    add-band Broadcast {FM} low 87.5MHz high 108.0MHz mode FM
     add-band Broadcast {TV VHF high} low 174MHz high 216MHz mode TV channel-step 6MHz
     add-band Broadcast {TV UHF} low 470MHz high 698MHz mode TV channel-step 6MHz
 
     ##
     ## Weather channels
     ##
-    add-service Weather color grey row 3
-    add-band Weather NOAA name {NOAA Weather} low 162.400MHz high 162.550MHz mode NFM channel-step 25000
+    add-service Weather color grey row 3 band {NOAA Weather}
+    add-band Weather NOAA name {NOAA Weather} low 162.400MHz high 162.550MHz mode FM channel-step 25000 \
+	freq 162.550MHz mode FM filter {-12500 .. 12500}
     add-channel Weather WX1 freq 162.550MHz
     add-channel Weather WX2 freq 162.400MHz
     add-channel Weather WX3 freq 162.475MHz
@@ -234,7 +242,7 @@ namespace eval ::sdr::band-data {
     ##
     ## Amateur bands
     ##
-    add-service Amateur color gold row 4
+    add-service Amateur color gold row 4 band 20m
     add-band Amateur 136kHz low 1357kHz high 1378kHz
     add-band Amateur {160m} low 1.8MHz high 2MHz
     add-band Amateur {80m} low 3.5MHz high 3.6MHz
@@ -248,24 +256,24 @@ namespace eval ::sdr::band-data {
     add-band Amateur {12m} low 24.89MHz high 25.99MHz
     add-band Amateur {11m} low 26MHz high 27MHz
     add-band Amateur {10m} low 28MHz high 29.7MHz
-    add-band Amateur {6m} low 50MHz high 54MHz mode NFM
-    add-band Amateur {4m} low 70MHz high 70.5MHz mode NFM
-    add-band Amateur {2m} low 144MHz high 148MHz mode NFM
-    # add-band Amateur {1.25m} low 219MHz high 220MHz mode NFM
-    add-band Amateur {1.25m} low 222MHz high 225MHz mode NFM
-    add-band Amateur {70cm} low 420MHz high 450MHz mode NFM
-    add-band Amateur {33cm} low 902MHz high 928MHz mode NFM
-    add-band Amateur {23cm} low 1.24GHz high 1.3GHz mode NFM
-    add-band Amateur {13cm} low 2.3GHz high 2.31GHz mode NFM
-    add-band Amateur {9cm} low 3.3GHz high 3.5GHz mode NFM
-    add-band Amateur {5cm} low 5.65GHz high 5.925GHz mode NFM
-    add-band Amateur {3cm} low 10GHz high 10.5GHz mode NFM
-    add-band Amateur {1.2cm} low 24GHz high 24.25GHz mode NFM
-    add-band Amateur {6mm} low 47GHz high 47.2GHz mode NFM
-    add-band Amateur {4mm} low 75.5GHz high 81.0GHz mode NFM
-    add-band Amateur {2.5mm} low 119.98GHz high 120.02GHz mode NFM
-    add-band Amateur {2mm} low 142GHz high 149GHz mode NFM
-    add-band Amateur {1mm} low 241GHz high 250GHz mode NFM
+    add-band Amateur {6m} low 50MHz high 54MHz mode FM
+    add-band Amateur {4m} low 70MHz high 70.5MHz mode FM
+    add-band Amateur {2m} low 144MHz high 148MHz mode FM
+    # add-band Amateur {1.25m} low 219MHz high 220MHz mode FM
+    add-band Amateur {1.25m} low 222MHz high 225MHz mode FM
+    add-band Amateur {70cm} low 420MHz high 450MHz mode FM
+    add-band Amateur {33cm} low 902MHz high 928MHz mode FM
+    add-band Amateur {23cm} low 1.24GHz high 1.3GHz mode FM
+    add-band Amateur {13cm} low 2.3GHz high 2.31GHz mode FM
+    add-band Amateur {9cm} low 3.3GHz high 3.5GHz mode FM
+    add-band Amateur {5cm} low 5.65GHz high 5.925GHz mode FM
+    add-band Amateur {3cm} low 10GHz high 10.5GHz mode FM
+    add-band Amateur {1.2cm} low 24GHz high 24.25GHz mode FM
+    add-band Amateur {6mm} low 47GHz high 47.2GHz mode FM
+    add-band Amateur {4mm} low 75.5GHz high 81.0GHz mode FM
+    add-band Amateur {2.5mm} low 119.98GHz high 120.02GHz mode FM
+    add-band Amateur {2mm} low 142GHz high 149GHz mode FM
+    add-band Amateur {1mm} low 241GHz high 250GHz mode FM
     
     # wspr channels, dial frequency usb
     add-channel Amateur wspr600m freq 0.5024MHz mode DIGU codec WSPR

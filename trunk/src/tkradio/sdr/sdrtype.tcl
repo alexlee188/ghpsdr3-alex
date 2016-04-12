@@ -30,7 +30,7 @@ package require snit
 
 snit::enum	sdrtype::type		-values {none ctl dsp jack ui hw physical}
 
-snit::enum	sdrtype::mode		-values {USB LSB DSB CWU CWL AM SAM FMN DIGU DIGL}
+snit::enum	sdrtype::mode		-values {USB LSB DSB CWU CWL AM SAM FM DIGU DIGL}
 
 snit::enum	sdrtype::agc-mode	-values {OFF LONG SLOW MEDIUM FAST}
 snit::double	sdrtype::agc-target	-min 0.1 -max 10;	# target level, linear gain

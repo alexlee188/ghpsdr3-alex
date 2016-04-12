@@ -127,7 +127,45 @@ snit::type sdr::radio-model {
     }
     # restore the last settings for a service
     method restore-last-settings {args} {
-	$self set-settings [sdr::get-last [list {*}$args settings]]
+	set last [sdr::get-last [list {*}$args settings]]
+	if {$last eq {}} {
+	    switch [llength $args] {
+		1 {
+		    set service [sdr::band-data-service {*}$args]
+		    if {[catch {dict get $service band} band]} {
+			# pick a random band
+			set bands [dict get $service bands]
+			set band [lindex $bands [expr {int(floor(rand()*[llength $bands]))}]]
+		    }
+		    set last [list -band $band]
+		}
+		2 {
+		    set service [sdr::band-data-service [lindex $args 0]]
+		    set band [sdr::band-data-band {*}$args]
+		    if {[catch {dict get $band freq} freq]} {
+			if {[catch {dict get $service freq} freq]} {
+			    set freq "[dict get $band low]"
+			}
+		    }
+		    if {[catch {dict get $band mode} mode]} {
+			if {[catch {dict get $service mode} mode]} {
+			    set mode AM
+			}
+		    }
+		    if {[catch {dict get $band filter} filter]} {
+			if {[catch {dict get $service filter} filter]} {
+			    set filter {-5000 .. 5000}
+			}
+		    }
+		    set last [list -frequency [sdr::hertz $freq] -mode $mode -filter $filter]
+		}
+		default {
+		    error "invalid last setting key: $arg"
+		}
+	    }
+
+	}
+	$self set-settings $last
     }
 
     ##

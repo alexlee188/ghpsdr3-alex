@@ -67,7 +67,7 @@ snit::widgetadaptor sdrtk::meter {
 	#puts "sdrtk::meter $win $args"
 	installhull using canvas -height $data(height) -width $data(width)
 	$self configure {*}$args
-	$hull configure -bg white
+	$hull configure -bg black
 	bind $win <Configure> [mymethod rescale %w %h]
 	#$self rescale [winfo width $win] [winfo height $hull]
     }
@@ -79,7 +79,7 @@ snit::widgetadaptor sdrtk::meter {
 	$hull create line 0 $data(y) 0 $data(y) -width $data(y) -fill red -tag meter
 	foreach dB $data(s-meter-points) {
 	    set x [$self xfordB $dB]
-	    $hull create line $x 0 $x $data(height) -fill black -width 1
+	    $hull create line $x 0 $x $data(height) -fill red -width 1
 	}
     }
 

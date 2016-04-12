@@ -44,10 +44,10 @@ proc ::sdr::hertz {string} {
     if {[regexp -nocase {^\s*(\d+|\d+\.\d+|\.\d+|\d+\.)([eE][-+]\d+)?\s*([kMG]?Hz)?\s*$} $string all number exponent unit]} {
 	set f $number$exponent
 	switch -nocase $unit {
-	    {} - Hz  { return [expr {$f*1.0}] }
-	    kHz { return [expr {$f*1000.0}] }
-	    MHz { return [expr {$f*1000.0*1000.0}] }
-	    GHz { return [expr {$f*1000.0*1000.0*1000.0}] }
+	    {} - Hz  { return [expr {int($f*1.0)}] }
+	    kHz { return [expr {int($f*1000.0)}] }
+	    MHz { return [expr {int($f*1000.0*1000.0)}] }
+	    GHz { return [expr {int($f*1000.0*1000.0*1000.0)}] }
 	}
     }
     error "badly formatted frequency: $string"

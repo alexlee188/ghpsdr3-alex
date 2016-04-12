@@ -102,5 +102,9 @@ namespace eval ttk::theme::night {
 	    -sliderwidth raised -borderwidth 2
 	ttk::style configure TProgressbar \
 	    -background $colors(-selectbg) -borderwidth 0
+
+	# Meter
+	# ttk::style configure Meter -relief groove -borderwidth 10
+
     }
 }

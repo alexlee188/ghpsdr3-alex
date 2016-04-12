@@ -79,16 +79,16 @@ snit::widgetadaptor sdr::radio-ui-one {
 
 	verbose-puts "sdr::ui-one $win $args "
 
-	# s-meter
-	grid [sdrtk::meter $win.meter] -row 0 -column 0 -sticky nsew
-	$options(-radio) meter-subscribe [list $win.meter update]
-
 	# frequency display
 	grid [ui::frequency-display $win.freq \
 		  -value [$self rget -frequency] \
 		  -command [list {*}[mymethod rreport] -frequency] \
-		 ] -row 0 -column 1 -columnspan 6
+		 ] -row 0 -column 0 -rowspan 3
 	$self rmonitor -frequency
+
+	# s-meter
+	grid [sdrtk::meter $win.meter] -row 3 -column 0 -sticky nsew
+	$options(-radio) meter-subscribe [list $win.meter update]
 
 	# radio service selector
 	grid [ui::optionmenu $win.service \
@@ -96,7 +96,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 		  -values [$self rget -service-values] \
 		  -width [sdr::maxwidth [sdr::band-data-services]] \
 		  -command [list {*}[mymethod rreport] -service] \
-		 ] -row 1 -column 1
+		 ] -row 0 -column 1 -sticky nsew
 	$self rmonitor -service -service-values
 
 	# band selector
@@ -105,7 +105,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 		  -values [$self rget -band-values] \
 		  -width [sdr::maxwidth [sdr::band-data-all-bands]] \
 		  -command [list {*}[mymethod rreport] -band] \
-		 ] -row 1 -column 2
+		 ] -row 0 -column 2 -sticky nsew
 	$self rmonitor -band -band-values
 
 	# mode selector
@@ -114,7 +114,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 		  -values [$self rget -mode-values] \
 		  -width [sdr::maxwidth [sdrtype::mode cget -values]] \
 		  -command [list {*}[mymethod rreport] -mode] \
-		 ] -row 1 -column 3
+		 ] -row 1 -column 1 -sticky nsew
 	$self rmonitor -mode -mode-values
 
 	# filter selector
@@ -123,7 +123,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 		  -values [sdr::filters-get [$self rget -mode]] \
 		  -width [sdr::maxwidth [sdr::filters-get-all]] \
 		  -command [list {*}[mymethod rreport] -filter] \
-		 ] -row 1 -column 4
+		 ] -row 1 -column 2 -sticky nsew
 	$self rmonitor -filter -filter-values
 
 	# server selector
@@ -132,7 +132,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 		  -values [$self rget -name-values] \
 		  -width 8 \
 		  -command [list {*}[mymethod rreport] -name] \
-		 ] -row 1 -column 5
+		 ] -row 2 -column 1 -sticky nsew
 	$self rmonitor -name -name-values
 
 	# connect to server
@@ -143,7 +143,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 		  -onvalue {disconnect} \
 		  -offvalue {connect} \
 		  -command [mymethod connecttoggle] \
-		 ] -row 1 -column 6
+		 ] -row 2 -column 2 -sticky nsew
 	$self rmonitor -channel-status
 
 	# puts "after $win.conn built, data(connect) => $data(connect)"
@@ -153,7 +153,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 	# spectrum and waterfall
 	grid [sdrtk::spectrum-waterfall $win.sw \
 		  -command [list {*}[mymethod rreport] -frequency] \
-		 ] -row 2 -column 0 -columnspan 7 -sticky nsew
+		 ] -row 4 -column 0 -columnspan 3 -sticky nsew
 	$self rmonitor -sample-rate -local-oscillator
 	$options(-radio) spectrum-subscribe [list $win.sw update]
 	foreach option {-text -channel-status -name} {
