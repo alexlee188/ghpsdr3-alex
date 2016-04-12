@@ -53,3 +53,4 @@ proc ::sdr::hertz {string} {
     error "badly formatted frequency: $string"
 }
 
+proc random-item {list} { return [lindex $list [expr {int(rand()*[llength $list])}]] }

@@ -34,9 +34,11 @@ package require sdr::channel;	# the tcp connection to dspserver
 package require sdr::audio;	# audio playback (no mike as yet)
 package require sdr::command;	# the commands sent to dspserver
 package require sdr::filter;	# our filter syntax
+package require sdr::util
 
 package require sdr::band-data;	# service and band information
 package require sdr::memory;	# memories for the radio
+
 
 # define the radio widget
 snit::type sdr::radio-model {
@@ -65,7 +67,7 @@ snit::type sdr::radio-model {
     option -mode -default {} -type sdrtype::mode -configuremethod Configure
     option -mode-values -default {} -configuremethod Configure2
     option -filter -default {} -configuremethod Configure
-    option -filter-values -default {} -configuremethod Configure
+    option -filter-values -default {} -configuremethod Configure2
     option -cw-pitch -default {600} -configuremethod Configure
     option -agc -default {SLOW} -type sdrtype::agc-mode -configuremethod Configure
     option -agc-values -default {} -configuremethod Configure
@@ -135,7 +137,7 @@ snit::type sdr::radio-model {
 		    if {[catch {dict get $service band} band]} {
 			# pick a random band
 			set bands [dict get $service bands]
-			set band [lindex $bands [expr {int(floor(rand()*[llength $bands]))}]]
+			set band [random-item $bands]
 		    }
 		    set last [list -band $band]
 		}
@@ -228,16 +230,18 @@ snit::type sdr::radio-model {
 	}
     }
     method {Configure -frequency} {val} {
-	# puts "Configure -frequency $val"
 	if {$options(-frequency) != $val} {
 	    set options(-frequency) $val
-	    # if {[winfo exists $win.freq]} { $win.freq configure -frequency $val }
 	    ::sdr::command::setfrequency [$self mode-offset-frequency]
 	}
     }
     method {Configure -mode} {val} {
 	if {$options(-mode) ne $val} {
 	    set options(-mode) $val
+	    $self configure -filter-values [sdr::filters-get $val]
+	    if {[lsearch $options(-filter-values) $options(-filter)] < 0} {
+		$self configure -filter [random-item $options(-filter-values)]
+	    }
 	    ::sdr::command::setmode $options(-mode)
 	}
     }

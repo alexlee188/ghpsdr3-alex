@@ -10,16 +10,17 @@
 [x] start audio playback
 [x] incorporate spectrum and waterfall 
 [ ] add gain control panel
-[ ] add s-meter
+[x] add s-meter
+[ ] add dB to s-meter display
 [ ] add dial
 [x] figure out how to theme interface all in black and grey background,
 	red or green or orange or white foreground
 [x] theme, just in red, needs more work
 [x] set up night vision theme
 [ ] theme tk menues?
-[ ] wire up service -> band -> channels -> frequency / mode / filter
+[x] wire up service -> band -> channels -> frequency / mode / filter
 	cascade
-[ ] wire up mode -> filter  cascade
+[x] wire up mode -> filter  cascade
 [ ] why reduced noise from subrx?  in QtRadio?
 [ ] why audio stalls without spectrum?
 [x] socket can get closed while socket reader is running?
