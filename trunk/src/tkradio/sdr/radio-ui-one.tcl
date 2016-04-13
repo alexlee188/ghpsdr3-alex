@@ -154,8 +154,9 @@ snit::widgetadaptor sdr::radio-ui-one {
 	grid [sdrtk::spectrum-waterfall $win.sw \
 		  -command [list {*}[mymethod rreport] -frequency] \
 		 ] -row 4 -column 0 -columnspan 3 -sticky nsew
-	$self rmonitor -sample-rate -local-oscillator
+	$self rmonitor -frequency -local-oscillator -sample-rate
 	$options(-radio) spectrum-subscribe [list $win.sw update]
+
 	foreach option {-text -channel-status -name} {
 	    $self monitor $option [mymethod window-title]
 	}
@@ -191,6 +192,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 	foreach option $args {
 	    #set options($option) [$options(-radio) cget $option]
 	    $options(-radio) monitor $option [mymethod rmonitor-fire]
+	    $self rmonitor-fire $option [$options(-radio) cget $option]
 	}
     }
     method rmonitor-fire {option value} {
@@ -199,9 +201,10 @@ snit::widgetadaptor sdr::radio-ui-one {
 	    -subrx-meter { $win.meter configure $option $value }
 	    -frequency {
 		$win.freq configure -value $value
-		$win.sw configure $option $value
+		if {[winfo exists $win.sw]} {$win.sw configure $option $value}
 	    }
 	    -service { $win.service configure -value $value }
+	    -service-values { $win.service configure -values $value }
 	    -band { $win.band configure -value $value }
 	    -band-values { $win.band configure -values $value }
 	    -mode { $win.mode configure -value $value }
@@ -209,13 +212,11 @@ snit::widgetadaptor sdr::radio-ui-one {
 	    -filter { $win.filter configure -value $value }
 	    -filter-values { $win.filter configure -values $value }
 	    -name { 
-		$win.name configure -value $value
 		$win configure $option $value
+		catch {$win.name configure -value $value}
 	    }
 	    -name-values { $win.name configure -values $value }
-	    -channel-status { 
-		$win configure $option $value
-	    }
+	    -channel-status { $win configure $option $value }
 	    -spectrum -
 	    -sample-rate -
 	    -local-oscillator { $win.sw configure $option $value }

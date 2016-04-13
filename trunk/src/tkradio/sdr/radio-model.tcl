@@ -73,7 +73,7 @@ snit::type sdr::radio-model {
     option -agc-values -default {} -configuremethod Configure
     option -name -default {} -configuremethod Configure2
     option -name-values -default {} -configuremethod Configure2
-    option -sample-rate -default 0 -configuremethod Configure2
+    option -sample-rate -default 3000 -configuremethod Configure2
     option -local-oscillator -default 0 -configuremethod Configure2
     option -spectrum-freq -default 0 -configuremethod Configure
     option -channel -default {} -configuremethod Configure
@@ -81,6 +81,7 @@ snit::type sdr::radio-model {
     option -text -default {tkradio} -configuremethod Configure
     option -ui -default {} -configuremethod Configure
     option -verbose -default 0 -configuremethod Configure2
+    option -hardware -configuremethod Configure
 
     # local data that is not options
     variable data -array {
@@ -271,6 +272,29 @@ snit::type sdr::radio-model {
 	    set options(-channel) $value
 	}
     }
+    method {Configure -hardware} {value} {
+	if {$options(-hardware) eq {} && $value ne {}} {
+	    # load hardware component
+	    if {[catch {package require sdr::hardware-$value} error]} {
+		# no such hardware module
+		puts stderr "package require sdr::hardware-$value failed: $error"
+		return
+	    }
+	    # initialize hardware component
+	    if {[catch {sdr::hardware-$value ::hardware -radio $self} error]} {
+		# failed to create hardware handler
+		puts stderr "sdr::hardware-$value -radio $self failed: $error"
+		catch {rename ::hardware {}}
+		return
+	    }
+	    set options(-hardware) $value
+	} elseif {$options(-hardware) ne {} && value eq {}} {
+	    catch {rename ::hardware {}}
+	    set options(-hardware) $value
+	} else {
+	    puts stderr "Configure -hardware {$value} when options(-hardware) is {$options(-hardware)}???"
+	}
+    }
     # this is the base configuration option
     method Configure2 {option value} {
 	if {$options($option) ne $value} {
@@ -301,6 +325,7 @@ snit::type sdr::radio-model {
     method connect {} {
 	if {[$self is-connected]} { error "socket is already connected" }
 	set options(-channel) [::sdr::connect $self {*}[server-address-port $options(-name)]]
+	# following along with QtRadio/UI.cpp/UI::connected()
 	::sdr::command::setclient tkradio
 	::sdr::command::q-server
 	# most of this should be done elsewhere
@@ -317,7 +342,7 @@ snit::type sdr::radio-model {
 	## do we want to do audio on this channel?
 	::sdr::command::setencoding 0
 	# select local audio device
-	::sdr::command::startaudiostream 2000 8000 1 0
+	::sdr::command::startaudiostream 2000 8000 1 0;	# get parameters from somewhere
 	audio-out-start ALAW 8000
 	::sdr::command::setpan 0.5
 	::sdr::command::setagc $options(-agc)
@@ -335,7 +360,7 @@ snit::type sdr::radio-model {
 	# remote connected
 	::sdr::command::setrxdcblock 0
 	::sdr::command::settxdcblock 0
-	# ::sdr::command::setrxagcslope # this one was disabled
+	# ::sdr::command::setrxagcslope # this one was commented out
 	# ::sdr::command::setrxagcattack
 	# ::sdr::command::setrxagcdecay
 	# ::sdr::command::setrxagchang
@@ -346,11 +371,11 @@ snit::type sdr::radio-model {
 	# ::sdr::command::settxlevelerattack
 	# ::sdr::command::settxlevelerdecay
 	# ::sdr::command::settxlevelerhang
-	# ::sdr::command::settxalcstate # this one was misspelled
+	# ::sdr::command::settxalcstate
 	# ::sdr::command::settxalcattack
 	# ::sdr::command::settxalcdecay
 	# ::sdr::command::settxalchang
-	# ::sdr::command::*hardware?
+	::sdr::command::*hardware?
 	# start spectrum
 	sdr::command::setfps 1024 4
 	# enable notch filter false
@@ -367,6 +392,7 @@ snit::type sdr::radio-model {
 	# set passwrod none
 	# set host {}
 	audio-out-stop
+	$self configure -hardware {}
     }
     # is the radio connected to a server
     method is-connected {} { return [expr {$options(-channel) ne {}}] }
@@ -501,7 +527,18 @@ snit::type sdr::radio-model {
     }
     # process answers to queries to the dspserver
     method process-answer {answer} {
-	puts stderr "answer = {$answer}"
+	switch -glob $answer {
+	    {q-server:*} {
+		# parse out server name and can-tx?
+	    }
+	    {\*hardware\? OK sdrplay} {
+		# set up hardware specific model and ui
+		$self configure -hardware [lindex $answer end]
+	    }
+	    default {
+		puts stderr "answer = {$answer}"
+	    }
+	}
     }
     # monitor configuration options
     method monitor {option prefix} {

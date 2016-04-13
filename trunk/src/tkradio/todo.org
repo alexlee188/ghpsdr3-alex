@@ -36,3 +36,9 @@
 	it closed it, runs much better when it doesn't access freed
 	memory.  Still testing, but it fails much less often if it
 	isn't fixed.
+[ ] Scroll waterfall pixels when tuning, so they stay aligned with
+	their previous traces.
+[ ] Implement hardware functions.
+[ ] Implement filters on input events to lessen the demands made on
+	the hardware.  Some requests are easily done in dspserver with
+	no impact on the hardware.

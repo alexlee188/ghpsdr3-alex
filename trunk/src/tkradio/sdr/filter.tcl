@@ -22,15 +22,13 @@
 #
 package provide sdr::filter 1.0
 
+package require sdr::util
+
 namespace eval ::sdr {}
 
 # the filters for the modes
 proc ::sdr::filter-parse {filter} {
-    set result [regexp -inline -- {^(-?\d+) \.\. (-?\d+)$} $filter]
-    if {[llength $result] != 3} {
-	error "unmatched filter string: $filter"
-    }
-    return [lrange $result 1 2]
+    return [sdr::parse-range $filter]
 }
 
 proc ::sdr::filter-negate {filter} {

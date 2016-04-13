@@ -73,7 +73,7 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
     }
 
     method Tune {w how x y f df} {
-	# puts "$how $x $y $f $df at c=$options(-center-freq) t=$options(-tuned-freq)"
+	# verbose-puts "$how x=$x y=$y f=$f df=$df at f=$options(-frequency) lo=$options(-local-oscillator)"
 	switch $how {
 	    Press {
 		set data(start) [list $x $y $f $df] 
@@ -81,17 +81,14 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
 	    }
 	    Release {
 		if { ! $data(drag)} {
-		    $self Command -frequency [expr {$options(-frequency)+($f-$options(-local-oscillator))}]
+		    $self Command [expr {$options(-frequency)+($f-$options(-local-oscillator))}]
 		}
 	    }
 	    Motion {
 		lassign $data(start) x0 y0 f0 df0
 		if {abs($x-$x0) > 1} {
 		    incr data(drag)
-		    $self Command -frequency [expr {$options(-frequency)-($f-$f0)}]
-		    if {$options(-command) ne {}} {
-			{*}$options(-command)
-		    }
+		    $self Command [expr {$options(-frequency)-($f-$f0)}]
 		    set data(start) [list $x $y $f $df]
 		}
 	    }

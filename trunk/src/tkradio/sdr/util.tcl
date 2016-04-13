@@ -41,6 +41,7 @@ proc ::sdr::hertz {string} {
     # match a number followed by an optional frequency unit
     # allow any case spellings of frequency units
     # allow spaces before, after, or between
+    # allow exponent specification
     if {[regexp -nocase {^\s*(\d+|\d+\.\d+|\.\d+|\d+\.)([eE][-+]\d+)?\s*([kMG]?Hz)?\s*$} $string all number exponent unit]} {
 	set f $number$exponent
 	switch -nocase $unit {
@@ -53,4 +54,20 @@ proc ::sdr::hertz {string} {
     error "badly formatted frequency: $string"
 }
 
+##
+## choose a random item from a list
+##
 proc random-item {list} { return [lindex $list [expr {int(rand()*[llength $list])}]] }
+
+##
+## parse a {<low> .. <high>} range string into a list
+## apply hertz conversions
+##
+proc ::sdr::parse-range {string} {
+    set sep [string first $string { .. }]
+    if {$sep < 0} { error "unmatched range string: $string" }
+    if {[catch {sdr::hertz [string range $string 0 $sep-1]} f0]} { error $f0 }
+    if {[catch {sdr::hertz [string range $string $sep+4 end]} fn]} { error $fn }
+    return [list $f0 $fn]
+}
+

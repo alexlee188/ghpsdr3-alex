@@ -92,6 +92,8 @@ snit::widgetadaptor sdrtk::spectrum {
 	freq 0
 	band-fill darkred
 	band-width 1000
+	xoffset 0
+	xscale 1
     }
     
     constructor {args} {
@@ -107,23 +109,20 @@ snit::widgetadaptor sdrtk::spectrum {
     method DrawAll {} {
     }
     method Press {w x y} {
-	catch {
-	    set data(freq) [expr {int(($x-double($data(xoffset)))/$data(xscale))}]
-	    $self Command $w Press $x $y $data(freq) 0
-	}
+	set f [expr {int(($x-double($data(xoffset)))/$data(xscale))}]
+	set data(freq) $f
+	$self Command $w Press $x $y $data(freq) 0
     }
     method Release {w x y} {
-	catch {
-	    set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
-	    $self Command $w Release $x $y $data(freq) $df
-	}
+	set f [expr {int(($x-double($data(xoffset)))/$data(xscale))}]
+	set df [expr {$f - $data(freq)}]
+	$self Command $w Release $x $y $data(freq) $df
     }
     method Motion {w x y} {
-	catch {
-	    set df [expr {int(($x-double($data(xoffset)))/$data(xscale) - $data(freq))}]
-	    incr data(freq) $df
-	    $self Command $w Motion $x $y $data(freq) $df
-	}
+	set f [expr {int(($x-double($data(xoffset)))/$data(xscale))}]
+	set df [expr {$f - $data(freq)}]
+	incr data(freq) $df
+	$self Command $w Motion $x $y $data(freq) $df
     }
     method Command args {
 	if {$options(-command) ne {}} { {*}$options(-command) {*}$args }

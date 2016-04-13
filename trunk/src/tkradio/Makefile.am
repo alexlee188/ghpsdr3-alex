@@ -15,3 +15,6 @@ bin_SCRIPTS = tkradio
 # LIBS=
 # pa_simple.so: pa_simple.c
 #	gcc -fPIC -shared -o $@ $(CFLAGS) $< $(LIBS)
+
+word-count:
+	wc tkradio sdr/*.tcl

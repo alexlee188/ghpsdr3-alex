@@ -29,6 +29,7 @@ tcltk_DATA += dialbook.tcl
 tcltk_DATA += dial.tcl
 tcltk_DATA += filter.tcl
 tcltk_DATA += frequency-display.tcl
+tcltk_DATA += hardware-sdrplay.tcl
 tcltk_DATA += hotiron.tcl
 tcltk_DATA += memory.tcl
 tcltk_DATA += meter.tcl
