@@ -34,6 +34,7 @@ namespace eval ::sdr::command {
     variable radio {}
     
     # modes of demodulation available
+    # should be part of sdrtypes
     variable modes-dict [dict create LSB 0 USB 1 DSB 2 CWL 3 CWU 4 FM 5 AM 6 DIGU 7 SPEC 8 DIGL 9 SAM 10 DRM 11 ]
     dict unset modes-dict SPEC;	# not implemented
     dict unset modes-dict DRM;	# not implemented

@@ -20,7 +20,7 @@
 #
 # a hardware module for the SDRplay
 #
-package provide sdr::hardware-sdrplay 1.0
+package provide sdr::radio-sdrplay 1.0
 
 package require Tcl
 package require snit
@@ -30,13 +30,13 @@ package require sdr::command
 
 namespace eval ::sdr {}
 
-snit::type sdr::hardware-sdrplay {
-    option -radio -readonly
-    option -gain-reduction -readonly
-    option -gain-distribution -readonly
+snit::type sdr::radio-sdrplay {
+    option -parent -readonly true -configuremethod Configure
     option -gain -default 51 -configuremethod Configure
-    option -gain-min -readonly
-    option -gain-max -readonly
+    option -gain-reduction -default 51 -readonly true
+    option -gain-distribution -readonly true
+    option -gain-min -default 0 -readonly true
+    option -gain-max -default 102 -readonly true
     
     # the low and high frequencies tuned
     # foreach band of frequencies
@@ -77,6 +77,8 @@ snit::type sdr::hardware-sdrplay {
 	}
     }
 
+    component parent
+
     constructor {args} {
 	set caps [dict create {*}$caps]
 	dict set caps bands [dict create {*}[dict get $caps bands]]
@@ -84,6 +86,10 @@ snit::type sdr::hardware-sdrplay {
 	    dict set caps bands $band [dict create band $band band-range [sdr::parse-range-hertz $band] {*}[dict get $caps bands $band]]
 	}
 	$self configure {*}$args
+    }
+    method {Configure -parent} {value} { 
+	set options(-parent) $value
+	set parent $value
     }
     method {Configure -gain-reduction} {dB} {
 	set options(-gain-reduction) $dB
@@ -106,7 +112,8 @@ snit::type sdr::hardware-sdrplay {
 	}
     }
     method compute-from {option} {
-	set params [$self find-band [$options(-radio) cget -frequency]]
+	# verbose-puts "sdrplay compute-from $option calls $parent.radio cget -frequency"
+	set params [$self find-band [$parent.radio cget -frequency]]
 	foreach {lo hi} [sdr::parse-range [dict get $params reduction]] break
 	set options(-max) [dict get $params dB-max]
 	set options(-min) [expr {$options(-max)-($hi-$lo)}]

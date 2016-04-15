@@ -19,62 +19,152 @@
 # 
 
 ##
-## external packages
+## required external packages
 ##
-package require Tcl
+package require Tcl;		# sudo apt-get install tcl
+package require snit;		# sudo apt-get install tcllib
 
 ##
-## our own sdr libraries
+## required internal packages
 ##
-package require sdr::radio-model
+package require sdrtype::types;	# snit types for option checking
+package require sdr::radio;	# the dspserver radio model
+#package require sdr::server;	# the napan.com servers listing
+#package require sdr::channel;	# the tcp connection to dspserver
+#package require sdr::command;	# the commands sent to dspserver
+#package require sdr::audio;	# audio playback (no mike as yet)
+#package require sdr::filter;	# our filter syntax
+#package require sdr::util;	# various utilities
 
-##
-## 
-proc verbose-puts {msg} { if {[::radio cget -verbose]} { puts stderr $msg } }
+package require sdr::band-data;	# service and band information
+package require sdr::memory;	# memories for the radio
 
-##
-## constants
-##
+snit::type tkradio {
+    option -id -default {tkradio}
+    option -ui -configuremethod Configure			
+    option -hw -configuremethod Configure
+    option -verbose -default 0 -configuremethod Configure2
+    
+    component radio
+    component hw
+    component ui
+    component hwui
+    
+    constructor {args} {
+	install radio using sdr::radio $self.radio -parent $self -service [sdr::get-last service]
+    }
+    method {Configure -ui} {val} {
+	if {$options(-ui) ne {}} {
+	    # destroy the old ui
+	}
+	set options(-ui) $val
+	if {[catch {package require sdrui::$val-radio} error]} {
+	    puts stderr "cannot require package sdrui::$val-radio"
+	    return
+	}
 
-# build the radio
-sdr::radio-model ::radio -service [sdr::get-last service]
-
-# load configuration
-# current options
-# memories
-# last tuned points
-
-# process arguments
-proc optarg {opt} {
-    upvar argc argc argv argv i i
-    if {$i == $argc-1} { uplevel error "missing arg for $opt option" }
-    set val [lindex $argv [incr i]]
-    verbose-puts "optarg $opt found $val"
-    if {$opt eq {-local}} {
-	# puts "optarg found -local"
-	::radio add-local $val
-    } else {
-	::radio configure $opt $val
+	# source sdr/theme-alt.tcl
+	ttk::style theme create night
+	if {[catch {package require ttk::theme::night} error]} {
+	    puts stderr "cannot require package ttk::theme::night"
+	} else {
+	    ttk::style theme use night
+	}
+	pack [sdrui::$val-radio .radio -parent $self] -fill both -expand true
+	set ui .radio
+    }
+    method {Configure -hw} {value} {
+	if {$options(-hw) ne $value} {
+	    if {$options(-hw) eq {} && $value ne {}} {
+		# load hardware component
+		if {[catch {package require sdr::radio-$value} error]} {
+		    # no such hardware module
+		    puts stderr "package require sdr::radio-$value failed: $error"
+		    return
+		}
+		# initialize hardware component, 
+		if {[catch {sdr::radio-$value $self.hw -parent $self} error]} {
+		    # failed to create hardware handler
+		    puts stderr "sdr::hardware-$value -radio $self failed: $error"
+		    return
+		}
+		# mark it as installed
+		set options(-hw) $value
+		set hw $self.hw
+		# now do the matching ui component
+		# ...
+	    } elseif {$options(-hw) ne {} && $value eq {}} {
+		set options(-hw) $value
+		catch {rename $hw {}}
+		set hw {}
+	    } else {
+		puts stderr "Configure -hw {$value} when options(-hw) is {$options(-hw)}???"
+	    }
+	}
+	
+    }
+    method Configure2 {option value} {
+	if {$options($option) ne $value} {
+	    set options($option) $value
+	}
+    }
+    method verbose-puts {msg} {
+	if {$options(-verbose)} { puts stderr $msg }
+    }
+    # monitor configuration options
+    method monitor {option prefix} {
+	verbose-puts "monitor $option $prefix"
+	trace variable options($option) w [list {*}[mymethod monitor-fired] $prefix]
+    }
+    method monitor-fired {prefix name1 name2 op} {
+	verbose-puts "monitor-fired $prefix $name1 $name2 $op"
+	verbose-puts "calling $prefix $name2 $options($name2)"
+	{*}$prefix $name2 $options($name2)
+	verbose-puts "call returned"
+    }
+    # process an argument
+    method optarg {opt} {
+	upvar argc argc argv argv i i
+	if {$i == $argc-1} { uplevel error "missing arg for $opt option" }
+	set val [lindex $argv [incr i]]
+	$self verbose-puts "optarg $opt found $val"
+	switch -- $opt {
+	    -local { $self.radio add-local $val }
+	    -name { $self.radio configure $opt $val }
+	    default { $self configure $opt $val }
+	}
+    }
+    # process arguments
+    method process-argv {argv} {
+	set argc [llength $argv]
+	# load configuration
+	# current options
+	# memories
+	# last tuned points
+	
+	# specify options
+	for {set i 0} {$i < $argc} {incr i} {
+	    # accumulate arguments
+	    set opt [lindex $argv $i]
+	    switch -- $opt {
+		--				{ continue }
+		-b - --band			{ $self optarg -band }
+		-c - --connect			{ $self.radio connect }
+		-e - --filter			{ $self optarg -filter }
+		-f - --frequency		{ $self optarg -frequency }
+		-l - --local - --local-server	{ $self optarg -local }
+		-m - --mode			{ $self optarg -mode }
+		-n - --name - --name-of-server	{ $self optarg -name }
+		-s - --service			{ $self optarg -service }
+		-t - --text			{ $self optarg -text }
+		-u - --ui			{ $self optarg -ui }
+		-v - --verbose			{ $self optarg -verbose }
+		default { error "unrecognized option [lindex $argv $i]" }
+	    }
+	}
     }
 }
 
-# specify options and create radios
-for {set i 0} {$i < $argc} {incr i} {
-    # accumulate arguments
-    set opt [lindex $argv $i]
-    switch -- $opt {
-	-- { continue }
-	-b - --band { optarg -band }
-	-c - --connect { ::radio connect }
-	-e - --filter { optarg -filter }
-	-f - --frequency { optarg -frequency }
-	-l - --local - --local-server { optarg -local }
-	-m - --mode { optarg -mode }
-	-n - --name - --name-of-server { optarg -name }
-	-s - --service { optarg -service }
-	-t - --text { optarg -text }
-	-u - --ui { optarg -ui }
-	-v - --verbose { optarg -verbose }
-	default { error "unrecognized option [lindex $argv $i]" }
-    }
-}
+set tkr [tkradio %AUTO%]
+proc verbose-puts {msg} "$tkr verbose-puts \$msg"
+$tkr process-argv $argv

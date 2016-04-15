@@ -20,28 +20,30 @@
 #
 # a hardware ui module for the SDRplay
 #
-package provide sdrtk::hardware-sdrplay-ui 1.0
+package provide sdrui::pw-radio-sdrplay 1.0
 
 package require Tcl
 package require Tk
 package require snit
 
-namespace eval ::sdrtk {}
+namespace eval ::sdrui {}
 
-snit::widgetadaptor sdrtk::hardware-sdrplay-ui {
-    option -radio -readonly
-    option -min -default 0 -type snit::integer -configuremethod Configure
-    option -max -default 102 -type snit::integer -configuremethod Configure
-    option -lna -default 0 -type snit::integer -configuremethod Configure
-    option -mixer -default 0 -type snit::integer -configuremethod Configure
-    option -baseband -default 0 -type snit::integer -configuremethod Configure
+snit::widgetadaptor sdrui::pw-radio-sdrplay {
+    option -parent -readonly true -configuremethod Configure
     
+    component parent
+    component spinbox
+    
+    delegate option -min to spinbox as -from
+    delegate option -max to spinbox as -to
+
     delegate option * to hull
     delegate method * to hull
     
     constructor {args} {
 	installhull using ttk::labelframe -text {Hardware Gain}
-	grid [ttk::spinbox $win.l01 -width 4] -row 0 -column 1
+	install spinbox using ttk::spinbox $win.l01 -width 4
+	grid $spinbox -row 0 -column 1
 	grid [ttk::label $win.l02 -text dB] -row 0 -column 2
 	#don't know that I need all this
 	#grid [ttk::label $win.l10 -text LNA] -row 1 -column 0
@@ -53,11 +55,22 @@ snit::widgetadaptor sdrtk::hardware-sdrplay-ui {
 	#grid [ttk::label $win.l30 -text Baseband] -row 1 -column 0
 	#grid [ttk::label $win.l31 -textvar [myvar options(-baseband)]] -row 3 -column 1
 	#grid [ttk::label $win.l32 -text dB] -row 0 -column 2
-	$win.l01 configure -from $options(-min) -to $options(-max) -increment 1 -command [mymethod spinboxcommand]
-	$win.l01 set [$options(-radio) cget -hardware-gain]
-	$self configure {*}$args
+	$win.l01 configure -increment 1 -command [mymethod spinboxcommand]
+	if {[catch {$parent.hw cget -gain} gain]} { set gain 0 }
+	if {[catch {$parent.hw cget -gain-min} min]} { set min 0 }
+	if {[catch {$parent.hw cget -gain-max} max]} { set max 102 }
+	$win.l01 set $gain
+	$self configure -min $min -max $max {*}$args
     }
+    # need to listen to hardware -gain -gain-min and -gain-max
+    # as they change due to frequency tuning
+    # need to fix the theme colors for entry spinbox selected
     method spinboxcommand {args} {
-	puts "spinboxcommand {$args} and value [$win.l01 get]"
+	# verbose-puts "spinboxcommand {$args} and value [$win.l01 get]"
+	$parent.hw configure -gain [$win.l01 get]
+    }
+    method {Configure -parent} {value} {
+	set options(-parent) $value
+	set parent $value
     }
 }

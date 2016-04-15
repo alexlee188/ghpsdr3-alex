@@ -18,10 +18,10 @@
 # 
 
 #
-# radio ui widget
+# plain window radio ui widget
 #
 
-package provide sdr::radio-ui-one 1.0
+package provide sdrui::pw-radio 1.0
 
 package require Tcl
 package require Tk
@@ -35,7 +35,7 @@ package require ui::optionmenu
 package require sdrtk::meter
 package require sdrtk::spectrum-waterfall
 
-namespace eval ::sdr {}
+namespace eval ::sdrui {}
 
 #
 # a radio ui widget
@@ -60,12 +60,13 @@ namespace eval ::sdr {}
 # back from the radio model.
 #
 
-snit::widgetadaptor sdr::radio-ui-one {
-    option -radio -readonly true;	# must be set at creation
+snit::widgetadaptor sdrui::pw-radio {
+    option -parent -readonly true -configuremethod Configure
+    option -radio -readonly true
     option -text -default {}
     option -name -default {}
     option -channel-status -default {}
-    option -hardware -default {}
+    option -hw -default {}
 
     delegate method * to hull
     delegate option * to hull
@@ -75,29 +76,31 @@ snit::widgetadaptor sdr::radio-ui-one {
 	hardware {}
     }
 
+    component parent
+    
     constructor args {
 	installhull using ttk::frame
 	$self configure {*}$args
 
-	verbose-puts "sdr::ui-one $win $args "
+	verbose-puts "sdrui::pw-radio $win $args "
 
 	# frequency display
 	grid [ui::frequency-display $win.freq \
 		  -value [$self rget -frequency] \
-		  -command [list {*}[mymethod rreport] -frequency] \
+		  -command [list {*}[mymethod rconfigure] -frequency] \
 		 ] -row 0 -column 0 -rowspan 3
 	$self rmonitor -frequency
 
 	# s-meter
 	grid [sdrtk::meter $win.meter] -row 3 -column 0 -sticky nsew
-	$options(-radio) meter-subscribe [list $win.meter update]
+	$parent.radio meter-subscribe [list $win.meter update]
 
 	# radio service selector
 	grid [ui::optionmenu $win.service \
 		  -value [$self rget -service] \
 		  -values [$self rget -service-values] \
 		  -width [sdr::maxwidth [sdr::band-data-services]] \
-		  -command [list {*}[mymethod rreport] -service] \
+		  -command [list {*}[mymethod rconfigure] -service] \
 		 ] -row 0 -column 1 -sticky nsew
 	$self rmonitor -service -service-values
 
@@ -106,7 +109,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 		  -value [$self rget -band] \
 		  -values [$self rget -band-values] \
 		  -width [sdr::maxwidth [sdr::band-data-all-bands]] \
-		  -command [list {*}[mymethod rreport] -band] \
+		  -command [list {*}[mymethod rconfigure] -band] \
 		 ] -row 0 -column 2 -sticky nsew
 	$self rmonitor -band -band-values
 
@@ -115,7 +118,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 		  -value [$self rget -mode] \
 		  -values [$self rget -mode-values] \
 		  -width [sdr::maxwidth [sdrtype::mode cget -values]] \
-		  -command [list {*}[mymethod rreport] -mode] \
+		  -command [list {*}[mymethod rconfigure] -mode] \
 		 ] -row 1 -column 1 -sticky nsew
 	$self rmonitor -mode -mode-values
 
@@ -124,7 +127,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 		  -value [$self rget -filter] \
 		  -values [sdr::filters-get [$self rget -mode]] \
 		  -width [sdr::maxwidth [sdr::filters-get-all]] \
-		  -command [list {*}[mymethod rreport] -filter] \
+		  -command [list {*}[mymethod rconfigure] -filter] \
 		 ] -row 1 -column 2 -sticky nsew
 	$self rmonitor -filter -filter-values
 
@@ -133,7 +136,7 @@ snit::widgetadaptor sdr::radio-ui-one {
 		  -value [$self rget -name] \
 		  -values [$self rget -name-values] \
 		  -width 8 \
-		  -command [list {*}[mymethod rreport] -name] \
+		  -command [list {*}[mymethod rconfigure] -name] \
 		 ] -row 2 -column 1 -sticky nsew
 	$self rmonitor -name -name-values
 
@@ -150,10 +153,10 @@ snit::widgetadaptor sdr::radio-ui-one {
 
 	# spectrum and waterfall
 	grid [sdrtk::spectrum-waterfall $win.sw \
-		  -command [list {*}[mymethod rreport] -frequency] \
+		  -command [list {*}[mymethod rconfigure] -frequency] \
 		 ] -row 4 -column 0 -columnspan 3 -sticky nsew
 	$self rmonitor -frequency -local-oscillator -sample-rate
-	$options(-radio) spectrum-subscribe [list $win.sw update]
+	$parent.radio spectrum-subscribe [list $win.sw update]
 
 	foreach option {-text -channel-status -name} {
 	    $self monitor $option [mymethod window-title]
@@ -167,10 +170,14 @@ snit::widgetadaptor sdr::radio-ui-one {
 	grid rowconfigure $win 1 -weight 0
 	grid rowconfigure $win 2 -weight 1
 		
-	# monitor the radio -hardware option for activity
-	$self rmonitor -hardware
+	# monitor the radio -hw option for activity
+	$self cmonitor $parent -hw
     }
 
+    method {Configure -parent} {val} {
+	set options(-parent) $val
+	set parent $val
+    }
     # rewrite the window title to reflect statusa
     method window-title {args} {
 	#puts "managing window title"
@@ -186,19 +193,16 @@ snit::widgetadaptor sdr::radio-ui-one {
     }
     
     ##
-    ## manipulations on the radio model
+    ## manipulations on components of the radio
     ##
-    method rget {opt} {
-	return [$options(-radio) cget $opt]
-    }
-    method rmonitor {args} {
+    method cmonitor {c args} {
 	foreach option $args {
-	    #set options($option) [$options(-radio) cget $option]
-	    $options(-radio) monitor $option [mymethod rmonitor-fired]
-	    $self rmonitor-fired $option [$options(-radio) cget $option]
+	    $c monitor $option [list {*}[mymethod cmonitor-fired] $c]
+	    $self cmonitor-fired $c $option [$c cget $option]
 	}
     }
-    method rmonitor-fired {option value} {
+    method cmonitor-fired {c option value} {
+	# verbose-puts "cmonitor-fired in .radio $c $option $value"
 	switch -- $option {
 	    -main-meter -
 	    -subrx-meter { $win.meter configure $option $value }
@@ -223,50 +227,65 @@ snit::widgetadaptor sdr::radio-ui-one {
 	    -spectrum -
 	    -sample-rate -
 	    -local-oscillator { $win.sw configure $option $value }
-	    -hardware {
+	    -hw {
 		# $win configure $option $value
-		puts stderr "rmonitor -hardware fired value={$value}"
-		set hdw [{*}$options(-radio) cget -hardware];
-		puts stderr "cget -hardware is {$hdw}"
-		if {$hdw ne $options(-hardware)} {
-		    if {$options(-hardware) eq {}} {
+		# puts stderr "cmonitor $c -hw fired value={$value}"
+		# interesting problem here, need to create and display
+		# but need to undisplay and destroy, so the functions
+		# happen in opposite orders
+		# and the parent only knows to create when the ui triggers
+		set hw [$parent cget -hw]
+		set ui [$parent cget -ui]
+		puts stderr "parent $parent -hw is {$hw} -ui is {$ui}"
+		if {$hw ne $options(-hw)} {
+		    if {$options(-hw) eq {}} {
 			# load new hardware
-			if {[catch {package require sdrtk::hardware-$hdw-ui} error]} {
+			if {[catch {package require sdrui::$ui-radio-$hw} error]} {
 			    # no such hardware ui module
-			    puts stderr "package require sdrtk::hardware-$value-ui failed: $error"
+			    puts stderr "package require sdrui::$ui-radio-$hw failed: $error"
 			    return
 			}
-			if {[catch {sdrtk::hardware-$hdw-ui $win.hdw -radio $options(-radio)} error]} {
-			    puts stderr "sdrtk::hardware-$value-ui  $win.hdw -radio $options(-radio) failed: $error"
+			if {[catch {sdrui::$ui-radio-$hw $win.hw -parent $parent} error]} {
+			    puts stderr "sdrui::$ui-radio-$hw $win.hw -parent $parent failed: $error"
 			    return
 			}
 			# choices, upper right
 			# grid $win.hdw -row 0 -column 7
 			# lower left
-			grid $win.hdw -row 5 -column 0
-			set options(-hardware) $hdw
+			grid $win.hw -row 5 -column 0
+			set options(-hw) $hw
 		    } else {
-			grid forget $win.hdw
-			destroy $win.hdw
-			set options(-hardware) {}
+			grid forget $win.hw
+			destroy $win.hw
+			set options(-hw) {}
 		    }
 		}
 	    }
 	    default {
-		error "unknown rmonitor-fired for option {$option}"
+		error "unknown cmonitor-fired $c for option {$option}"
 	    }
 	}
     }
-    method rreport {option value} {
-	{*}$options(-radio) configure $option $value
+    ##
+    ## manipulations on the radio model
+    ##
+    method rget {opt} { return [$parent.radio cget $opt] }
+    method rmonitor {args} {
+	$self cmonitor $parent.radio {*}$args
+    }
+    method rmonitor-fired {option value} {
+	verbose-puts "rmonitor-fired in .radio $option $value"
+    }
+    method rconfigure {option value} {
+ 	$parent.radio configure $option $value
     }
     
     ##
     ## delegate the connection to the radio model
     ## 
     method connecttoggle {} {
-	$options(-radio) connecttoggle
-	if {[$options(-radio) is-connected]} {
+	$parent.radio connecttoggle
+	if {[$parent.radio is-connected]} {
 	    set data(connect) {disconnect}
 	} else {
 	    set data(connect) {connect}

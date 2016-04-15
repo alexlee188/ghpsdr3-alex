@@ -63,7 +63,7 @@ snit::double	sdrtype::sine-phase	-min -1.0 -max 1.0;	#
 snit::double	sdrtype::linear-gain	-min 0.125 -max 8.0;	# 
 
 snit::double	sdrtype::gain		-min -200.0 -max 200.0; # gain in decibels
-snit::double	sdrtype::hertz
+snit::integer	sdrtype::hertz
 
 snit::boolean	sdrtype::mute
 snit::boolean	sdrtype::spot

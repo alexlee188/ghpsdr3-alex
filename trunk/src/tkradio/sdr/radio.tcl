@@ -24,8 +24,9 @@
 # provide hooks for the ui
 #
 
-package provide sdr::radio-model 1.0
+package provide sdr::radio 1.0
 
+package require Tcl
 package require snit
 
 package require sdrtype::types;	# snit types for option checking
@@ -41,7 +42,7 @@ package require sdr::memory;	# memories for the radio
 
 
 # define the radio widget
-snit::type sdr::radio-model {
+snit::type sdr::radio {
 
     # options
     # -service is the radio service
@@ -59,32 +60,28 @@ snit::type sdr::radio-model {
     # tbc ...
 
     # options
-    option -service -default {} -configuremethod Configure
-    option -service-values -default {} -configuremethod Configure2
-    option -band -default {} -configuremethod Configure
-    option -band-values -default {} -configuremethod Configure2
-    option -frequency -default {} -configuremethod Configure
-    option -mode -default {} -type sdrtype::mode -configuremethod Configure
-    option -mode-values -default {} -configuremethod Configure2
-    option -filter -default {} -configuremethod Configure
-    option -filter-values -default {} -configuremethod Configure2
+    option -parent -configuremethod Configure
+    option -service -configuremethod Configure
+    option -service-values -configuremethod Configure2
+    option -band -configuremethod Configure
+    option -band-values -configuremethod Configure2
+    option -frequency -default 14010000 -type sdrtype::hertz -configuremethod Configure
+    option -mode -default {CWU} -type sdrtype::mode -configuremethod Configure
+    option -mode-values -configuremethod Configure2
+    option -filter -configuremethod Configure
+    option -filter-values -configuremethod Configure2
     option -cw-pitch -default {600} -configuremethod Configure
     option -agc -default {SLOW} -type sdrtype::agc-mode -configuremethod Configure
-    option -agc-values -default {} -configuremethod Configure
-    option -name -default {} -configuremethod Configure2
-    option -name-values -default {} -configuremethod Configure2
+    option -agc-values -configuremethod Configure
+    option -name -configuremethod Configure2
+    option -name-values -configuremethod Configure2
     option -sample-rate -default 3000 -configuremethod Configure2
     option -local-oscillator -default 0 -configuremethod Configure2
     option -spectrum-freq -default 0 -configuremethod Configure
-    option -channel -default {} -configuremethod Configure
-    option -channel-status -default {} -configuremethod Configure2
-    option -text -default {tkradio} -configuremethod Configure
-    option -ui -default {} -configuremethod Configure
-    option -verbose -default 0 -configuremethod Configure2
-    option -hardware -configuremethod Configure
-    option -hardware-gain -default 0 -configuremethod Configure
-    option -hardware-gain-min -default 0 -readonly
-    option -hardware-gain-max -default 0 -readonly
+    option -channel -configuremethod Configure
+    option -channel-status -configuremethod Configure2
+
+    component parent;		# parent
 
     # local data that is not options
     variable data -array {
@@ -98,7 +95,7 @@ snit::type sdr::radio-model {
     
     # constructor
     constructor {args} {
-	verbose-puts "sdr::dspserver $args "
+	puts stderr "sdr::radio {$args}"
 	# give the command dictionary our self
 	# hacky because how do we manage two or more?
 	set ::sdr::command::radio $self;	# hacky
@@ -192,16 +189,9 @@ snit::type sdr::radio-model {
     ##
     
     # configure methods
-    method {Configure -ui} {val} {
-	set options(-ui) $val
-	package require $val
-
-	# source sdr/theme-alt.tcl
-	ttk::style theme create night
-	package require ttk::theme::night
-	ttk::style theme use night
-
-	pack [$val .radio -text tkradio -radio $self] -fill both -expand true
+    method {Configure -parent} {val} {
+	set options(-parent) $val
+	set parent $val
     }
     method {Configure -service} {val} { 
 	# if the new service is different than the current service
@@ -282,38 +272,9 @@ snit::type sdr::radio-model {
 	    set options(-channel) $value
 	}
     }
-    method {Configure -hardware} {value} {
-	if {$options(-hardware) ne $value} {
-	    if {$options(-hardware) eq {} && $value ne {}} {
-		# load hardware component
-		if {[catch {package require sdr::hardware-$value} error]} {
-		    # no such hardware module
-		    puts stderr "package require sdr::hardware-$value failed: $error"
-		    return
-		}
-		# initialize hardware component, 
-		# should not use global name -- FIX.ME
-		if {[catch {sdr::hardware-$value %AUTO% -radio $self} hardware]} {
-		    # failed to create hardware handler
-		    puts stderr "sdr::hardware-$value -radio $self failed: $hardware"
-		    return
-		}
-		set data(hardware) $hardware
-		set options(-hardware) $value
-	    } elseif {$options(-hardware) ne {} && $value eq {}} {
-		catch {rename $data(hardware) {}}
-		set options(-hardware) $value
-	    } else {
-		puts stderr "Configure -hardware {$value} when options(-hardware) is {$options(-hardware)}???"
-	    }
-	}
-    }
-    method {Configure -hardware-gain} {value} {
-	if {$options(-hardware) ne {}} {
-	    $data(hardware) configure -gain $value
-	}
-    }
     # this is the base configuration option
+    # we just filter idempotent changes to avoid triggering
+    # unnecessary activity on the wire
     method Configure2 {option value} {
 	if {$options($option) ne $value} {
 	    set options($option) $value
@@ -410,7 +371,7 @@ snit::type sdr::radio-model {
 	# set passwrod none
 	# set host {}
 	audio-out-stop
-	$self configure -hardware {}
+	$parent configure -hw {}
     }
     # is the radio connected to a server
     method is-connected {} { return [expr {$options(-channel) ne {}}] }
@@ -551,7 +512,7 @@ snit::type sdr::radio-model {
 	    }
 	    {\*hardware\? OK sdrplay} {
 		# set up hardware specific model and ui
-		$self configure -hardware [lindex $answer end]
+		$parent configure -hw [lindex $answer end]
 	    }
 	    default {
 		puts stderr "answer = {$answer}"
