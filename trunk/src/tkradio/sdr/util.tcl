@@ -42,7 +42,7 @@ proc ::sdr::hertz {string} {
     # allow any case spellings of frequency units
     # allow spaces before, after, or between
     # allow exponent specification
-    if {[regexp -nocase {^\s*(\d+|\d+\.\d+|\.\d+|\d+\.)([eE][-+]\d+)?\s*([kMG]?Hz)?\s*$} $string all number exponent unit]} {
+    if {[regexp -nocase {^\s*(-?\d+|\d+\.\d+|\.\d+|\d+\.)([eE][-+]\d+)?\s*([kMG]?Hz)?\s*$} $string all number exponent unit]} {
 	set f $number$exponent
 	switch -nocase $unit {
 	    {} - Hz  { return [expr {int($f*1.0)}] }
@@ -61,13 +61,24 @@ proc random-item {list} { return [lindex $list [expr {int(rand()*[llength $list]
 
 ##
 ## parse a {<low> .. <high>} range string into a list
-## apply hertz conversions
 ##
 proc ::sdr::parse-range {string} {
-    set sep [string first $string { .. }]
-    if {$sep < 0} { error "unmatched range string: $string" }
-    if {[catch {sdr::hertz [string range $string 0 $sep-1]} f0]} { error $f0 }
-    if {[catch {sdr::hertz [string range $string $sep+4 end]} fn]} { error $fn }
-    return [list $f0 $fn]
+    if {[set sep [string first { .. } $string]] < 0} { error "unmatched range string: $string" }
+    return [list [string range $string 0 $sep-1] [string range $string $sep+4 end]]
+}
+##
+## ditto, and apply hertz conversions to low and high
+##
+proc ::sdr::parse-range-hertz {string} {
+    return [lmap {f} [sdr::parse-range $string] {sdr::hertz $f}]
 }
 
+proc ::sdr::in-range {range value} {
+    return [::sdr::in-range-list {*}[sdr::parse-range $range] $value]
+}
+
+proc ::sdr::in-range-list {lo hi value} {
+    return [expr {$lo <= $value && $value < $hi}]
+}
+
+	

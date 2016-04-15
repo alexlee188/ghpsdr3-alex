@@ -54,9 +54,10 @@ snit::widgetadaptor sdrtk::meter {
 
     variable data -array {
 	width 1
-	height 10
+	height 20
 	y 5
-	s-meter-points {-121 -115 -109 -103 -97 -91 -85 -79 -73 -53 -33}
+	s-meter-points { -121 -115 -109 -103 -97 -91 -85 -79 -73 -63 -53 -43}
+	s-meter-labels {  S1   S2   S3   S4   S5  S6  S7  S8  S9 +10 +20 +30}
     }
     
     method xfordB {dB} {

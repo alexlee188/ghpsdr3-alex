@@ -65,12 +65,14 @@ snit::widgetadaptor sdr::radio-ui-one {
     option -text -default {}
     option -name -default {}
     option -channel-status -default {}
+    option -hardware -default {}
 
     delegate method * to hull
     delegate option * to hull
 
     variable data -array {
 	connect {connect}
+	hardware {}
     }
 
     constructor args {
@@ -146,10 +148,6 @@ snit::widgetadaptor sdr::radio-ui-one {
 		 ] -row 2 -column 2 -sticky nsew
 	$self rmonitor -channel-status
 
-	# puts "after $win.conn built, data(connect) => $data(connect)"
-	# puts "$win.conn cget -textvar => [$win.conn cget -textvar]"
-	# puts "$win.conn cget -variable => [$win.conn cget -variable]"
-	
 	# spectrum and waterfall
 	grid [sdrtk::spectrum-waterfall $win.sw \
 		  -command [list {*}[mymethod rreport] -frequency] \
@@ -164,10 +162,15 @@ snit::widgetadaptor sdr::radio-ui-one {
 	foreach c {0 1 2 3 4 5 6}  {
 	    grid columnconfigure $win $c -weight 1
 	}
+
 	grid rowconfigure $win 0 -weight 0
 	grid rowconfigure $win 1 -weight 0
 	grid rowconfigure $win 2 -weight 1
+		
+	# monitor the radio -hardware option for activity
+	$self rmonitor -hardware
     }
+
     # rewrite the window title to reflect statusa
     method window-title {args} {
 	#puts "managing window title"
@@ -191,11 +194,11 @@ snit::widgetadaptor sdr::radio-ui-one {
     method rmonitor {args} {
 	foreach option $args {
 	    #set options($option) [$options(-radio) cget $option]
-	    $options(-radio) monitor $option [mymethod rmonitor-fire]
-	    $self rmonitor-fire $option [$options(-radio) cget $option]
+	    $options(-radio) monitor $option [mymethod rmonitor-fired]
+	    $self rmonitor-fired $option [$options(-radio) cget $option]
 	}
     }
-    method rmonitor-fire {option value} {
+    method rmonitor-fired {option value} {
 	switch -- $option {
 	    -main-meter -
 	    -subrx-meter { $win.meter configure $option $value }
@@ -220,6 +223,35 @@ snit::widgetadaptor sdr::radio-ui-one {
 	    -spectrum -
 	    -sample-rate -
 	    -local-oscillator { $win.sw configure $option $value }
+	    -hardware {
+		# $win configure $option $value
+		puts stderr "rmonitor -hardware fired value={$value}"
+		set hdw [{*}$options(-radio) cget -hardware];
+		puts stderr "cget -hardware is {$hdw}"
+		if {$hdw ne $options(-hardware)} {
+		    if {$options(-hardware) eq {}} {
+			# load new hardware
+			if {[catch {package require sdrtk::hardware-$hdw-ui} error]} {
+			    # no such hardware ui module
+			    puts stderr "package require sdrtk::hardware-$value-ui failed: $error"
+			    return
+			}
+			if {[catch {sdrtk::hardware-$hdw-ui $win.hdw -radio $options(-radio)} error]} {
+			    puts stderr "sdrtk::hardware-$value-ui  $win.hdw -radio $options(-radio) failed: $error"
+			    return
+			}
+			# choices, upper right
+			# grid $win.hdw -row 0 -column 7
+			# lower left
+			grid $win.hdw -row 5 -column 0
+			set options(-hardware) $hdw
+		    } else {
+			grid forget $win.hdw
+			destroy $win.hdw
+			set options(-hardware) {}
+		    }
+		}
+	    }
 	    default {
 		error "unknown rmonitor-fired for option {$option}"
 	    }
@@ -228,10 +260,10 @@ snit::widgetadaptor sdr::radio-ui-one {
     method rreport {option value} {
 	{*}$options(-radio) configure $option $value
     }
-
+    
     ##
     ## delegate the connection to the radio model
-    ##
+    ## 
     method connecttoggle {} {
 	$options(-radio) connecttoggle
 	if {[$options(-radio) is-connected]} {

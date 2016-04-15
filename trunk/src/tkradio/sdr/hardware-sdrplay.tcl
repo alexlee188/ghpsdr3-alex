@@ -20,7 +20,7 @@
 #
 # a hardware module for the SDRplay
 #
-package provide sdr::hardware::sdrplay 1.0
+package provide sdr::hardware-sdrplay 1.0
 
 package require Tcl
 package require snit
@@ -32,10 +32,11 @@ namespace eval ::sdr {}
 
 snit::type sdr::hardware-sdrplay {
     option -radio -readonly
-    option -gain-reduction -configuremethod Configure
-    option -frequency -configuremethod Configure
-    option -gain -configuremethod Configure
-    option -gain-distribution
+    option -gain-reduction -readonly
+    option -gain-distribution -readonly
+    option -gain -default 51 -configuremethod Configure
+    option -gain-min -readonly
+    option -gain-max -readonly
     
     # the low and high frequencies tuned
     # foreach band of frequencies
@@ -43,53 +44,90 @@ snit::type sdr::hardware-sdrplay {
     #	the overall range of gain reduction available
     #	the ranges of baseband, lna, and mixer gain
     #		in the standard 
+    #
+    # Okay, the only variable in the gain distribution
+    # is when the LNA gets turned off.
+    # We start at 0 gain reduction and reduce the baseband gain
+    # by steps of one until the LNA turns off, at which point
+    # the baseband reduction jumps up to compensate for the
+    # missing LNA gain.  Then the the mixer gets
+    # turned off when the baseband reduction reaches
+    # its limit
     variable caps {
 	range {100000 .. 2000000000} 
 	bands {
-	    {100000 .. 59999999} {
+	    {100kHz .. 60MHz} {
 		dB-max 98 reduction {0 .. 102} baseband {0 .. 59 by 1} lna {0 .. 24 by 24 at 35} mixer {0 .. 19 by 19 at 83} 
 	    }
-	    {60000000 .. 119999999} {
+	    {60MHz .. 120MHz} {
 		dB-max 103 reduction {0 .. 102} baseband {0 .. 59 by 1} lna {0 .. 24 by 24 at 29} mixer {0 .. 19 by 19 at 83}
 	    }
-	    {120000000 .. 249999999} {
+	    {120MHz .. 250MHz} {
 		dB-max 107 reduction {0 .. 102} baseband {0 .. 59 by 1} lna {0 .. 24 by 24 at 29} mixer {0 .. 19 by 19 at 83}
 	    }
-	    {250000000 .. 419999999} {
+	    {250MHz .. 420MHz} {
 		dB-max 94 reduction {0 .. 102} baseband {0 .. 59 by 1} lna {0 .. 24 by 24 at 35} mixer {0 .. 19 by 19 at 83}
 	    }
-	    {420000000 .. 999999999} {
+	    {420MHz .. 1GHz} {
 		dB-max 94 reduction {0 .. 85} baseband {0 .. 59 by 1} lna {0 .. 7 by 7 at 12} mixer {0 .. 19 by 19 at 66}
 	    }
-	    {1000000000 .. 1999999999} {
+	    {1GHz .. 2GHz} {
 		dB-max 105 reduction {0 .. 85} baseband {0 .. 59 by 1} lna {0 .. 7 by 7 at 10} mixer {0 .. 19 by 19 at 66}
 	    }
 	}
     }
+
     constructor {args} {
 	set caps [dict create {*}$caps]
 	dict set caps bands [dict create {*}[dict get $caps bands]]
+	dict for {band params} [dict get $caps bands] {
+	    dict set caps bands $band [dict create band $band band-range [sdr::parse-range-hertz $band] {*}[dict get $caps bands $band]]
+	}
 	$self configure {*}$args
     }
     method {Configure -gain-reduction} {dB} {
 	set options(-gain-reduction) $dB
-	set options(-gain) [$self compute-from -gain-reduction]
-	sdr::command::hardware::*setattenuator $dB
+	$self compute-from -gain-reduction
+	sdr::command::sdrplay::*setattenuator $options(-gain-reduction)
     }
     method {Configure -gain} {dB} {
 	set options(-gain) $dB
-	set options(-gain-reduction) [$self compute-from -gain]
-	sdr::command::hardware::*setattenuator $dB
+	$self compute-from -gain
+	sdr::command::sdrplay::*setattenuator $options(-gain-reduction)
+    }
+    method get-caps {} {
+	return $caps
     }
     method find-band {f} {
-	dict foreach {band params} [dict get $caps bands] {
-	    if {[sdr::in-range $band $f]} {
-		return $band $params
+	dict for {band params} [dict get $caps bands] {
+	    if {[sdr::in-range-list {*}[dict get $params band-range] $f]} {
+		return $params
 	    }
+	}
     }
-    method get-range {} {
-	return [sdr::parse-range [dict get caps range]]
+    method compute-from {option} {
+	set params [$self find-band [$options(-radio) cget -frequency]]
+	foreach {lo hi} [sdr::parse-range [dict get $params reduction]] break
+	set options(-max) [dict get $params dB-max]
+	set options(-min) [expr {$options(-max)-($hi-$lo)}]
+	switch -- $option {
+	    -gain {
+		set options(-gain-reduction) [expr {$options(-max)-$options(-gain)}]
+	    }
+	    -gain-reduction {
+		set options(-gain) [expr {$options(-max)-$options(-gain-reduction)}]
+	    }
+	}
+	## compute gain distribution from gain reduction
+	## technically a gain reduction distribution
+	set tlna [lindex [dict get $params lna] end]
+	set vlna [lindex [dict get $params lna] end-2]
+	set tmix [lindex [dict get $params mixer] end]
+	set vmix [lindex [dict get $params mixer] end-2]
+	# if less than threshold, gain reduction is 0 else value
+	if {$options(-gain-reduction) < $tlna} { set grlna 0 } else { set grlna $vlna }
+	if {$options(-gain-reduction) < $tmix} { set grmix 0 } else { set grmix $vmix }
+	set grbas [expr {$options(-gain-reduction)-$grlna-$grmix}]
+	set options(-gain-distribution) [format {%3d %3d %3d} $grbas $grlna $grmix]
     }
 }
-
-

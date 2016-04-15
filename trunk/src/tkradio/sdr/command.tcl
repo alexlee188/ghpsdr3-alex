@@ -256,46 +256,46 @@ namespace eval ::sdr::command {
 
     # from hardware_hermes
     namespace eval hermes {
-	proc *getserial? {} { send-command "*getserial?" }
-	proc *setattenuator {i} { send-command "*setattenuator $i" }
-	proc *alextxrelay {i}  { send-command "*alextxrelay $i" }
-	proc *hermesmicboost {i} { send-command "*hermesmicboost $i" }
-	proc *settxdrive {i} { send-command "*settxdrive $i" }
-	proc *settxlineingain {i} { send-command "*settxlineingain $i" }
-	proc *dither {onoff} { send-command "*dither [on-or-off $onoff]" }
-	proc *preamp {onoff} { send-command "*preamp [on-or-off $onoff]" }
-	proc *random {onoff} { send-command "*random [on-or-off $onoff]" }
+	proc *getserial? {} { sdr::command::send-command "*getserial?" }
+	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
+	proc *alextxrelay {i}  { sdr::command::send-command "*alextxrelay $i" }
+	proc *hermesmicboost {i} { sdr::command::send-command "*hermesmicboost $i" }
+	proc *settxdrive {i} { sdr::command::send-command "*settxdrive $i" }
+	proc *settxlineingain {i} { sdr::command::send-command "*settxlineingain $i" }
+	proc *dither {onoff} { sdr::command::send-command "*dither [on-or-off $onoff]" }
+	proc *preamp {onoff} { sdr::command::send-command "*preamp [on-or-off $onoff]" }
+	proc *random {onoff} { sdr::command::send-command "*random [on-or-off $onoff]" }
     }
     # from hardware_hiqsdr
     namespace eval hiqsdr {
-	proc *getserial? {} { send-command "*getserial?" }
-	proc *getpreselector? {i} { send-command "*getpreselector? $i" }
-	proc *getpreampstatus? {} { send-command "*getpreampstatus?" }
-	proc *setattenuator {i} { send-command "*setattenuator $i" }
-	proc *selectantenna {i} { send-command "*selectantenna $i" }
-	proc *selectpresel {i} { send-command "*selectpresel $i" }
-	proc *activatepreamp {i} { send-command "*activatepreamp $i" }
+	proc *getserial? {} { sdr::command::send-command "*getserial?" }
+	proc *getpreselector? {i} { sdr::command::send-command "*getpreselector? $i" }
+	proc *getpreampstatus? {} { sdr::command::send-command "*getpreampstatus?" }
+	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
+	proc *selectantenna {i} { sdr::command::send-command "*selectantenna $i" }
+	proc *selectpresel {i} { sdr::command::send-command "*selectpresel $i" }
+	proc *activatepreamp {i} { sdr::command::send-command "*activatepreamp $i" }
     }
     namespace eval perseus {
-	proc *getserial? {} { send-command "*getserial?" }
-	proc *setattenuator {i} { send-command "*setattenuator $i" }
-	proc *dither {i} { send-command "*dither $i" }
-	proc *preamp {i} { send-command "*preamp $i" }
+	proc *getserial? {} { sdr::command::send-command "*getserial?" }
+	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
+	proc *dither {i} { sdr::command::send-command "*dither $i" }
+	proc *preamp {i} { sdr::command::send-command "*preamp $i" }
     }
     namespace eval rtlsdr {
-	proc *getserial? {} { send-command "*getserial?" }
-	proc *setattenuator {i} { send-command "*setattenuator $i" }
+	proc *getserial? {} { sdr::command::send-command "*getserial?" }
+	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
     }
     namespace eval sdr1000 {
-	proc *setattenuator {i} { send-command "*setattenuator $i" }
-	proc *setspurreduction {i} { send-command "*setspurreduction $i" }
-	proc *getpaadc? {i} { send-command "*getpaadc? $i" }
+	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
+	proc *setspurreduction {i} { sdr::command::send-command "*setspurreduction $i" }
+	proc *getpaadc? {i} { sdr::command::send-command "*getpaadc? $i" }
     }
     namespace eval sdriq {
-	proc *getserial? {} { send-command "*getserial?" }
-	proc *setattenuator {i} { send-command "*setattenuator $i" }
+	proc *getserial? {} { sdr::command::send-command "*getserial?" }
+	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
     }
     namespace eval sdrplay {
-	proc *setattenuator {i} { send-command "*setattenuator $i" }
+	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
     }
 }

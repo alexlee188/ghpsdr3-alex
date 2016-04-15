@@ -77,3 +77,75 @@ filter settings, and prepares the other memorized channels for the
 band for scanning.  The fixed channels are probably displayed on the
 frequency display with some kind of marker as are the memoized
 channels.
+------------------------------------------------------------------------
+Okay, I'm bogged down in the hardware aspect of this, and I think I
+need to regroup.  What I have now is sort of like this:
+
+   radio-model
+     hardware
+     ui
+       hardware-ui
+
+But I'm having trouble routing from the hardware-ui to/from the
+hardware module.  And I forgot that I wanted different kinds of ui's
+to be possible when I simply loaded up the hardware-ui layer, it
+should be distinguished by a prefix that is shared with the main layer
+of the ui.  And I only started cleaning up the random global variable
+usages and I immediately find myself without a handle to call the
+hardware from the hardware-ui.
+
+So let's think about the issues:
+
+1) There should be no distinguished globals, so that more than one
+radio can run in an app.
+2) Though there are some issues involved in the audio with multiple
+radios playing together or trading off the use of audio devices.
+3) There should be multiple possible user interface implementations,
+starting with:
+3a) The script user interface in a terminal.
+3b) The script user interface in a Tk console window.
+3c) The plain old graphical user interface that I'm building.
+3d) The dialbook graphical user interface that I never finished.
+4) So the selection of one of these user interfaces should cascade to
+select optional interfaces, as for hardware, maintaining a consistent
+user interface.
+5) The hardware interface, on the other hand, has no special
+
+So I'm thinking I should read through the snit documentation again and
+work out how multiple snit::type components can live inside a single
+snit::type parent and talk with each other.
+
+snit::type tkradio {
+    option -hardware
+    option -ui
+    option -name
+    option -host
+    option -port
+    component snit::type connection
+    component snit::type radio
+    component snit::type hardware
+    component snit::widget ui-radio
+    component snit::widget ui-hardware
+}
+
+Alternatively, just name the instances
+
+    sdr::radio $self.radio
+    sdr::hardware $self.hardware
+    sdrtk::uix $self.ui
+    sdrtk::uix-hardware $self.ui-hw
+
+but names cannot be targets of delegation, so name the instances and
+install them as components, and use the component names as instance
+suffixes on $self, and pass the parent name into the components.
+------------------------------------------------------------------------
+Another issue that just surfaced, if the memories are based on last
+usages, then they become a form of history, and history gets very
+confused when more than one thread is generating it at once.  So if
+there are multiple radios or multiple channels on a single radio and
+they are attempting to keep track of the most recently set
+band/channel/mode/filter, then there will be confusion.
+
+So multiple channels and radios need to be identified.  There can only be
+one anonymous radio.  They can be named according to usage
+------------------------------------------------------------------------

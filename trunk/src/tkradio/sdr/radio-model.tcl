@@ -82,6 +82,9 @@ snit::type sdr::radio-model {
     option -ui -default {} -configuremethod Configure
     option -verbose -default 0 -configuremethod Configure2
     option -hardware -configuremethod Configure
+    option -hardware-gain -default 0 -configuremethod Configure
+    option -hardware-gain-min -default 0 -readonly
+    option -hardware-gain-max -default 0 -readonly
 
     # local data that is not options
     variable data -array {
@@ -90,6 +93,7 @@ snit::type sdr::radio-model {
 	spectrum-xs {}
 	spectrum-sr 0
 	spectrum-n 0
+	hardware {}
     }
     
     # constructor
@@ -238,12 +242,18 @@ snit::type sdr::radio-model {
     }
     method {Configure -mode} {val} {
 	if {$options(-mode) ne $val} {
+	    if {$options(-mode) in {CWU CWL} || $val in {CWU CWL}} { set hasCW 1 } else { set hasCW 0 }
 	    set options(-mode) $val
 	    $self configure -filter-values [sdr::filters-get $val]
 	    if {[lsearch $options(-filter-values) $options(-filter)] < 0} {
 		$self configure -filter [random-item $options(-filter-values)]
 	    }
 	    ::sdr::command::setmode $options(-mode)
+	    # these are only necessary when changing into or out of CW modes
+	    if {$hasCW} {
+		::sdr::command::setfrequency [$self mode-offset-frequency]
+		::sdr::command::setfilter {*}[$self mode-offset-filter]
+	    }
 	}
     }
     method {Configure -filter} {val} { 
@@ -273,26 +283,34 @@ snit::type sdr::radio-model {
 	}
     }
     method {Configure -hardware} {value} {
-	if {$options(-hardware) eq {} && $value ne {}} {
-	    # load hardware component
-	    if {[catch {package require sdr::hardware-$value} error]} {
-		# no such hardware module
-		puts stderr "package require sdr::hardware-$value failed: $error"
-		return
+	if {$options(-hardware) ne $value} {
+	    if {$options(-hardware) eq {} && $value ne {}} {
+		# load hardware component
+		if {[catch {package require sdr::hardware-$value} error]} {
+		    # no such hardware module
+		    puts stderr "package require sdr::hardware-$value failed: $error"
+		    return
+		}
+		# initialize hardware component, 
+		# should not use global name -- FIX.ME
+		if {[catch {sdr::hardware-$value %AUTO% -radio $self} hardware]} {
+		    # failed to create hardware handler
+		    puts stderr "sdr::hardware-$value -radio $self failed: $hardware"
+		    return
+		}
+		set data(hardware) $hardware
+		set options(-hardware) $value
+	    } elseif {$options(-hardware) ne {} && $value eq {}} {
+		catch {rename $data(hardware) {}}
+		set options(-hardware) $value
+	    } else {
+		puts stderr "Configure -hardware {$value} when options(-hardware) is {$options(-hardware)}???"
 	    }
-	    # initialize hardware component
-	    if {[catch {sdr::hardware-$value ::hardware -radio $self} error]} {
-		# failed to create hardware handler
-		puts stderr "sdr::hardware-$value -radio $self failed: $error"
-		catch {rename ::hardware {}}
-		return
-	    }
-	    set options(-hardware) $value
-	} elseif {$options(-hardware) ne {} && value eq {}} {
-	    catch {rename ::hardware {}}
-	    set options(-hardware) $value
-	} else {
-	    puts stderr "Configure -hardware {$value} when options(-hardware) is {$options(-hardware)}???"
+	}
+    }
+    method {Configure -hardware-gain} {value} {
+	if {$options(-hardware) ne {}} {
+	    $data(hardware) configure -gain $value
 	}
     }
     # this is the base configuration option
@@ -301,7 +319,7 @@ snit::type sdr::radio-model {
 	    set options($option) $value
 	}
     }
-
+    
     ##
     ## maintain the list of dspservers
     ##
@@ -316,7 +334,7 @@ snit::type sdr::radio-model {
     method add-local {val} {
 	server-local-install {*}$val; # {name addr port}
     }
-
+    
     ##
     ## making, breaking, and testing a server connection
     ##
@@ -438,7 +456,7 @@ snit::type sdr::radio-model {
 	    }
 	}
     }
-
+    
     ##
     ## the -frequency specifies the carrier frequency tuned
     ## in the case of CW we want to tune offset from the 
@@ -469,7 +487,7 @@ snit::type sdr::radio-model {
     ##
     ## incoming packets from dspserver
     ##
-
+    
     # process spectrum records received from the server
     method process-spectrum {main sub sr lo spectrum} {
 	# spectrum record
@@ -561,5 +579,5 @@ snit::type sdr::radio-model {
     method spectrum-update {xy miny maxy avgy} {
 	foreach callback $data(spectrum-listeners) { {*}$callback $xy $miny $maxy $avgy }
     }
-
+    
 }

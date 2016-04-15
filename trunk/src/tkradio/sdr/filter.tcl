@@ -32,10 +32,7 @@ proc ::sdr::filter-parse {filter} {
 }
 
 proc ::sdr::filter-negate {filter} {
-    foreach {lo hi} [::sdr::filter-parse $filter] break
-    set lo [expr {-$lo}]
-    set hi [expr {-$hi}]
-    return "$hi .. $lo"
+    return [lreverse [lmap {x} [::sdr::filter-parse $filter] {expr {-$x}}]]
 }
 
 proc ::sdr::filter-bandwidth {filter} {
