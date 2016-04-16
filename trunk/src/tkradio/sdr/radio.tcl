@@ -64,16 +64,15 @@ snit::type sdr::radio {
     option -band -configuremethod Configure
     option -band-values -configuremethod Configure2
     option -frequency -default 14010000 -type sdrtype::hertz -configuremethod Configure
-    option -mode -default {CWU} -type sdrtype::mode -configuremethod Configure
+    option -mode -default CWL -type sdrtype::mode -configuremethod Configure
     option -mode-values -configuremethod Configure2
-    option -filter -configuremethod Configure
+    option -filter -default {-250 .. 250} -configuremethod Configure
     option -filter-values -configuremethod Configure2
     option -cw-pitch -default {600} -configuremethod Configure
     option -agc -default {SLOW} -type sdrtype::agc-mode -configuremethod Configure
     option -agc-values -configuremethod Configure
     option -sample-rate -default 3000 -configuremethod Configure2
     option -local-oscillator -default 0 -configuremethod Configure2
-    option -spectrum-freq -default 0 -configuremethod Configure
 
     component parent;		# parent
 
@@ -226,15 +225,23 @@ snit::type sdr::radio {
 	}
     }
     method {Configure -mode} {val} {
+	# a -mode implies a set of filters, but depending on the order of 
+	# configuration options we may get the -filter-values before or after
+	# the -mode, so the -filter-values may be wrong for the -filter.
+	# in a sense the -mode should contain all the parts of the mode,
+	# so demodulation, filter width and center, cw pitch, ...
+	# so it should be an array of settings, and the contents of the
+	# array may differ between -mode's
+	# so the voice -mode's have squelch settings and agc settings may
+	# vary between modes, too.
 	if {$options(-mode) ne $val} {
-	    if {$options(-mode) in {CWU CWL} || $val in {CWU CWL}} { set hasCW 1 } else { set hasCW 0 }
+	    set hasCW [expr {$options(-mode) in {CWU CWL} || $val in {CWU CWL}}]
 	    set options(-mode) $val
 	    $self configure -filter-values [sdr::filters-get $val]
-	    if {[lsearch $options(-filter-values) $options(-filter)] < 0} {
-		$self configure -filter [random-item $options(-filter-values)]
-	    }
 	    ::sdr::command::setmode $options(-mode)
 	    # these are only necessary when changing into or out of CW modes
+	    # but they can only be done when both mode, filter, and offset
+	    # have been set properly
 	    if {$hasCW} {
 		::sdr::command::setfrequency [$self mode-offset-frequency]
 		::sdr::command::setfilter {*}[$self mode-offset-filter]
@@ -244,6 +251,9 @@ snit::type sdr::radio {
     method {Configure -filter} {val} { 
 	if {$options(-filter) ne $val} {
 	    set options(-filter) $val
+	    if {[lsearch $options(-filter-values) $options(-filter)] < 0} {
+		$self configure -filter [random-item $options(-filter-values)]
+	    }
 	    ::sdr::command::setfilter {*}[$self mode-offset-filter]
 	}
     }
