@@ -440,10 +440,9 @@ snit::type sdr::radio {
 	    {q-server:*} {
 		# parse out server name and can-tx?
 	    }
-	    {\*hardware\? OK sdrplay} {
+	    {\*hardware\? OK *} {
 		# set up hardware specific model and ui
-		puts "configuring hardware from $answer"
-		$parent configure -hw [lindex $answer end]
+		$parent configure -hw [string tolower [lindex $answer end]]
 	    }
 	    {\*setattenuator*} {
 	    }

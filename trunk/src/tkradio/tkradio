@@ -68,6 +68,7 @@ snit::type tkradio {
 	# initialize connections
 	$connect add-listener status [mymethod channel-status]
 	$connect add-listener spectrum [list $radio process-spectrum]
+	$connect add-listener answer [list $radio process-answer]
     }
 
     method {Configure -ui} {val} {
@@ -92,7 +93,6 @@ snit::type tkradio {
     }
 
     method {Configure -hw} {value} {
-	puts stderr "tkradio configure -hw {$value}"
 	if {$options(-hw) ne $value} {
 	    if {$options(-hw) eq {} && $value ne {}} {
 		# load hardware component
