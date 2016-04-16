@@ -31,7 +31,6 @@ package require snit
 
 package require sdrtype::types;	# snit types for option checking
 package require sdr::server;	# the napan.com servers listing
-package require sdr::channel;	# the tcp connection to dspserver
 package require sdr::audio;	# audio playback (no mike as yet)
 package require sdr::command;	# the commands sent to dspserver
 package require sdr::filter;	# our filter syntax
@@ -60,7 +59,7 @@ snit::type sdr::radio {
     # tbc ...
 
     # options
-    option -parent -configuremethod Configure
+    option -parent -configuremethod Configure -readonly true
     option -service -configuremethod Configure
     option -service-values -configuremethod Configure2
     option -band -configuremethod Configure
@@ -73,8 +72,6 @@ snit::type sdr::radio {
     option -cw-pitch -default {600} -configuremethod Configure
     option -agc -default {SLOW} -type sdrtype::agc-mode -configuremethod Configure
     option -agc-values -configuremethod Configure
-    option -name -configuremethod Configure2
-    option -name-values -configuremethod Configure2
     option -sample-rate -default 3000 -configuremethod Configure2
     option -local-oscillator -default 0 -configuremethod Configure2
     option -spectrum-freq -default 0 -configuremethod Configure
@@ -95,21 +92,25 @@ snit::type sdr::radio {
     
     # constructor
     constructor {args} {
-	puts stderr "sdr::radio {$args}"
+	# puts stderr "sdr::radio {$args}"
+	$self configure {*}$args
+	$self configure -service-values [::sdr::band-data-services] -mode-values [sdrtype::mode cget -values]
+	    
 	# give the command dictionary our self
-	# hacky because how do we manage two or more?
-	set ::sdr::command::radio $self;	# hacky
-	$self configure \
-	    -service-values [::sdr::band-data-services] \
-	    -mode-values [sdrtype::mode cget -values] \
-	    {*}$args
-	# start listing servers
-	server-request [list {*}[mymethod configure] -name-values]
+	# hacky because how do we manage two or more selves?
+	# puts "sdr::radio::parent {$parent}"
+	set ::sdr::command::connect $parent.connect;	# hacky, hackier
+	# initialize connection
+	$parent.connect add-listener status [mymethod channel-status]
+	$parent.connect add-listener audio audio-out-data
+	$parent.connect add-listener spectrum [mymethod process-spectrum]
     }
 
     ##
     ## one thing QtRadio did nicely was remember what you had done and
-    ## bring it back
+    ## bring it back, 
+    ## but this kind of memory depends on there only being one radio
+    ## that is remembering the last settings
     ##
     # given a list of -option name, get the list of -option value pairs
     # needed to restore the options
@@ -192,6 +193,7 @@ snit::type sdr::radio {
     method {Configure -parent} {val} {
 	set options(-parent) $val
 	set parent $val
+	# set ::sdr::command::connect $parent.connect
     }
     method {Configure -service} {val} { 
 	# if the new service is different than the current service
@@ -282,28 +284,11 @@ snit::type sdr::radio {
     }
     
     ##
-    ## maintain the list of dspservers
-    ##
-    method update-names {names} {
-	if {$names ne [$win.name cget -values]} {
-	    # verbose-puts "update-names $options(-name) and $names"
-	    $win.name configure -values $names
-	    # set options(-name) $options(-name)
-	}
-    }
-    # add an unshared server that won't be found via napan.com
-    method add-local {val} {
-	server-local-install {*}$val; # {name addr port}
-    }
-    
-    ##
     ## making, breaking, and testing a server connection
     ##
-    
     # connect to a server
     method connect {} {
-	if {[$self is-connected]} { error "socket is already connected" }
-	set options(-channel) [::sdr::connect $self {*}[server-address-port $options(-name)]]
+	$parent connect
 	# following along with QtRadio/UI.cpp/UI::connected()
 	::sdr::command::setclient tkradio
 	::sdr::command::q-server
@@ -362,24 +347,18 @@ snit::type sdr::radio {
     }
     # disconnect from a server
     method disconnect {} { 
-	if { ! [$self is-connected]} { error "socket is not connected" }
-	verbose-puts "disconnecting self = $self"
-	::sdr::disconnect $self $options(-channel)
-	$self configure -channel {}
+	$parent disconnect
 	# stop spectrum timer (what spectrum timer?)
 	# set user none
-	# set passwrod none
+	# set password none
 	# set host {}
 	audio-out-stop
 	$parent configure -hw {}
     }
-    # is the radio connected to a server
-    method is-connected {} { return [expr {$options(-channel) ne {}}] }
     # toggle the connection state
     method connecttoggle {} {
-	if { ! [$self is-connected]} {
+	if { ! [$parent.connect is-connected]} {
 	    if {[catch {$self connect} error]} {
-		set options(-channel) {}
 		puts stderr $error\n$::errorInfo
 		switch $error {
 		    {*connection refused*} { 
@@ -411,9 +390,9 @@ snit::type sdr::radio {
     method channel-status {status} {
 	switch $status {
 	    * {
-		puts stderr $status
+		puts stderr "channel status: $status"
 		$self configure -channel-status {unknown error}
-		$self disconnect $self $options(-channel)
+		$self disconnect
 	    }
 	}
     }
@@ -499,11 +478,6 @@ snit::type sdr::radio {
 	}
 	return [list $xy $miny $maxy $avgy]
     }
-    # process audio stream from the dspserver
-    method process-audio {audio} {
-	# puts stderr "audio [string length $audio]"
-	audio-out-data $audio
-    }
     # process answers to queries to the dspserver
     method process-answer {answer} {
 	switch -glob $answer {
@@ -514,14 +488,20 @@ snit::type sdr::radio {
 		# set up hardware specific model and ui
 		$parent configure -hw [lindex $answer end]
 	    }
+	    {\*setattenuator*} {
+	    }
 	    default {
 		puts stderr "answer = {$answer}"
 	    }
 	}
     }
-    # monitor configuration options
-    method monitor {option prefix} {
-	trace variable options($option) w [list {*}[mymethod monitor-fired] $prefix]
+    ##
+    ## monitor our configuration options
+    ## 
+    method monitor {opts prefix} {
+	foreach opt $opts {
+	    trace variable options($opt) w [list {*}[mymethod monitor-fired] $prefix]
+	}
     }
     method monitor-fired {prefix name1 name2 op} {
 	{*}$prefix $name2 $options($name2)

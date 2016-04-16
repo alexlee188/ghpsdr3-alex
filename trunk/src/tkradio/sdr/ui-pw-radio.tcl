@@ -62,106 +62,134 @@ namespace eval ::sdrui {}
 
 snit::widgetadaptor sdrui::pw-radio {
     option -parent -readonly true -configuremethod Configure
-    option -radio -readonly true
     option -text -default {}
-    option -name -default {}
+    option -name -default {} -configuremethod Configure
     option -channel-status -default {}
-    option -hw -default {}
+    option -frequency -configuremethod Configure
+
+    component parent
+
+    component frequency
+    component meter
+    component service
+    component band
+    component mode
+    component filter
+    component name
+    component conn
+    component sw
+    
+    #delegate option -frequency -to frequency as -value
+    delegate option -service to service as -value
+    delegate option -service-values to service as -values
+    delegate option -band to band as -value
+    delegate option -band-values to band as -values
+    delegate option -mode to mode as -value
+    delegate option -mode-values to mode as -values
+    delegate option -filter to filter as -value
+    delegate option -filter-values to filter as -values
+    #delegate option -name to name as -value
+    delegate option -name-values to name as -values
+    #delegate option -frequency -to sw
+    delegate option -local-oscillator to sw
+    delegate option -sample-rate to sw
 
     delegate method * to hull
     delegate option * to hull
 
     variable data -array {
 	connect {connect}
-	hardware {}
     }
 
-    component parent
-    
     constructor args {
 	installhull using ttk::frame
 	$self configure {*}$args
 
-	verbose-puts "sdrui::pw-radio $win $args "
+	# verbose-puts "sdrui::pw-radio $win $args "
 
 	# frequency display
-	grid [ui::frequency-display $win.freq \
-		  -value [$self rget -frequency] \
-		  -command [list {*}[mymethod rconfigure] -frequency] \
-		 ] -row 0 -column 0 -rowspan 3
-	$self rmonitor -frequency
+	install frequency using ui::frequency-display $win.freq \
+	    -value [$parent.radio cget -frequency] \
+	    -command [list $parent.radio configure -frequency]
 
 	# s-meter
-	grid [sdrtk::meter $win.meter] -row 3 -column 0 -sticky nsew
-	$parent.radio meter-subscribe [list $win.meter update]
+	install meter using sdrtk::meter $win.meter
 
 	# radio service selector
-	grid [ui::optionmenu $win.service \
-		  -value [$self rget -service] \
-		  -values [$self rget -service-values] \
-		  -width [sdr::maxwidth [sdr::band-data-services]] \
-		  -command [list {*}[mymethod rconfigure] -service] \
-		 ] -row 0 -column 1 -sticky nsew
-	$self rmonitor -service -service-values
+	install service using ui::optionmenu $win.service \
+	    -value [$parent.radio cget -service] \
+	    -values [$parent.radio cget -service-values] \
+	    -width [sdr::maxwidth [sdr::band-data-services]] \
+	    -command [list $parent.radio configure -service]
 
 	# band selector
-	grid [ui::optionmenu $win.band \
-		  -value [$self rget -band] \
-		  -values [$self rget -band-values] \
-		  -width [sdr::maxwidth [sdr::band-data-all-bands]] \
-		  -command [list {*}[mymethod rconfigure] -band] \
-		 ] -row 0 -column 2 -sticky nsew
-	$self rmonitor -band -band-values
+	install band using ui::optionmenu $win.band \
+	    -value [$parent.radio cget -band] \
+	    -values [$parent.radio cget -band-values] \
+	    -width [sdr::maxwidth [sdr::band-data-all-bands]] \
+	    -command [list $parent.radio configure -band]
 
 	# mode selector
-	grid [ui::optionmenu $win.mode \
-		  -value [$self rget -mode] \
-		  -values [$self rget -mode-values] \
+	install mode using ui::optionmenu $win.mode \
+		  -value [$parent.radio cget -mode] \
+		  -values [$parent.radio cget -mode-values] \
 		  -width [sdr::maxwidth [sdrtype::mode cget -values]] \
-		  -command [list {*}[mymethod rconfigure] -mode] \
-		 ] -row 1 -column 1 -sticky nsew
-	$self rmonitor -mode -mode-values
+		  -command [list $parent.radio configure -mode]
 
 	# filter selector
-	grid [ui::optionmenu $win.filter \
-		  -value [$self rget -filter] \
-		  -values [sdr::filters-get [$self rget -mode]] \
-		  -width [sdr::maxwidth [sdr::filters-get-all]] \
-		  -command [list {*}[mymethod rconfigure] -filter] \
-		 ] -row 1 -column 2 -sticky nsew
-	$self rmonitor -filter -filter-values
+	install filter using ui::optionmenu $win.filter \
+	    -value [$parent.radio cget -filter] \
+	    -values [sdr::filters-get [$parent.radio cget -mode]] \
+	    -width [sdr::maxwidth [sdr::filters-get-all]] \
+	    -command [list $parent.radio configure -filter]
 
 	# server selector
-	grid [ui::optionmenu $win.name \
-		  -value [$self rget -name] \
-		  -values [$self rget -name-values] \
-		  -width 8 \
-		  -command [list {*}[mymethod rconfigure] -name] \
-		 ] -row 2 -column 1 -sticky nsew
-	$self rmonitor -name -name-values
+	install name using ui::optionmenu $win.name \
+	    -value [$parent cget -name] \
+	    -values [$parent cget -name-values] \
+	    -width 8 \
+	    -command [list $parent configure -name]
 
 	# connect to server
-	grid [ttk::checkbutton $win.conn \
-		  -textvar [myvar data(connect)] \
-		  -width 10 \
-		  -variable [myvar data(connect)] \
-		  -onvalue {disconnect} \
-		  -offvalue {connect} \
-		  -command [mymethod connecttoggle] \
-		 ] -row 2 -column 2 -sticky nsew
-	$self rmonitor -channel-status
+	install conn using ttk::checkbutton $win.conn \
+	    -textvar [myvar data(connect)] \
+	    -width 10 \
+	    -variable [myvar data(connect)] \
+	    -onvalue {disconnect} \
+	    -offvalue {connect} \
+	    -command [mymethod connecttoggle]
 
 	# spectrum and waterfall
-	grid [sdrtk::spectrum-waterfall $win.sw \
-		  -command [list {*}[mymethod rconfigure] -frequency] \
-		 ] -row 4 -column 0 -columnspan 3 -sticky nsew
-	$self rmonitor -frequency -local-oscillator -sample-rate
-	$parent.radio spectrum-subscribe [list $win.sw update]
+	install sw using sdrtk::spectrum-waterfall $win.sw \
+	    -command [list $parent.radio configure -frequency]
 
-	foreach option {-text -channel-status -name} {
-	    $self monitor $option [mymethod window-title]
-	}
+	# events
+	$self rmonitor \
+	    -frequency \
+	    -service -service-values \
+	    -band -band-values \
+	    -mode -mode-values \
+	    -filter -filter-values \
+	    -channel-status \
+	    -local-oscillator -sample-rate
+	$self pmonitor -name -name-values
+
+	$parent.radio meter-subscribe [list $win.meter update]
+	$parent.radio spectrum-subscribe [list $win.sw update]
+	$self monitor {-text -channel-status -name} [mymethod window-title]
 	
+	# layout
+	grid $frequency -row 0 -column 0 -rowspan 3
+	grid $service -row 0 -column 1 -sticky nsew
+	grid $band -row 0 -column 2 -sticky nsew
+	grid $mode -row 1 -column 1 -sticky nsew
+	grid $filter -row 1 -column 2 -sticky nsew
+	grid $name -row 2 -column 1 -sticky nsew
+	grid $conn -row 2 -column 2 -sticky nsew
+	grid $meter -row 3 -column 0 -sticky nsew
+	grid [ttk::button $win.tb1 -text {Test} -command [mymethod test]] -row 3 -column 1
+	grid $sw -row 4 -column 0 -columnspan 3 -sticky nsew
+
 	foreach c {0 1 2 3 4 5 6}  {
 	    grid columnconfigure $win $c -weight 1
 	}
@@ -169,126 +197,74 @@ snit::widgetadaptor sdrui::pw-radio {
 	grid rowconfigure $win 0 -weight 0
 	grid rowconfigure $win 1 -weight 0
 	grid rowconfigure $win 2 -weight 1
-		
-	# monitor the radio -hw option for activity
-	$self cmonitor $parent -hw
     }
 
     method {Configure -parent} {val} {
 	set options(-parent) $val
 	set parent $val
     }
+    method {Configure -frequency} {val} {
+	set options(-frequency) $val
+	$win.freq configure -value $val
+	$win.sw configure -frequency $val
+    }
+    method {Configure -name} {val} { 
+	set options(-name) $val
+	$win.name configure -value $val
+    }
+
+    method test {} {
+	puts "$frequency configure\n\t[join [$frequency configure] \n\t]"
+    }
+
     # rewrite the window title to reflect statusa
     method window-title {args} {
 	#puts "managing window title"
 	wm title . "$options(-text) -- $options(-name) $options(-channel-status)"
     }
 
-    # monitor configuration options
-    method monitor {option prefix} {
-	trace variable options($option) w [list {*}[mymethod monitor-fired] $prefix]
+    ##
+    ## monitor our configuration options
+    ## 
+    method monitor {opts prefix} {
+	foreach opt $opts {
+	    trace variable options($opt) w [list {*}[mymethod monitor-fired] $prefix]
+	}
     }
     method monitor-fired {prefix name1 name2 op} {
 	{*}$prefix $name2 $options($name2)
     }
     
     ##
-    ## manipulations on components of the radio
+    ## monitor radio or parent configuration options
     ##
     method cmonitor {c args} {
 	foreach option $args {
-	    $c monitor $option [list {*}[mymethod cmonitor-fired] $c]
-	    $self cmonitor-fired $c $option [$c cget $option]
+	    $c monitor $option [mymethod configure]
+	    # copy the initial values from the component
+	    $self configure $option [$c cget $option]
 	}
     }
-    method cmonitor-fired {c option value} {
-	# verbose-puts "cmonitor-fired in .radio $c $option $value"
-	switch -- $option {
-	    -main-meter -
-	    -subrx-meter { $win.meter configure $option $value }
-	    -frequency {
-		$win.freq configure -value $value
-		if {[winfo exists $win.sw]} {$win.sw configure $option $value}
-	    }
-	    -service { $win.service configure -value $value }
-	    -service-values { $win.service configure -values $value }
-	    -band { $win.band configure -value $value }
-	    -band-values { $win.band configure -values $value }
-	    -mode { $win.mode configure -value $value }
-	    -mode-values { $win.mode configure -values $value }
-	    -filter { $win.filter configure -value $value }
-	    -filter-values { $win.filter configure -values $value }
-	    -name { 
-		$win configure $option $value
-		catch {$win.name configure -value $value}
-	    }
-	    -name-values { $win.name configure -values $value }
-	    -channel-status { $win configure $option $value }
-	    -spectrum -
-	    -sample-rate -
-	    -local-oscillator { $win.sw configure $option $value }
-	    -hw {
-		# $win configure $option $value
-		# puts stderr "cmonitor $c -hw fired value={$value}"
-		# interesting problem here, need to create and display
-		# but need to undisplay and destroy, so the functions
-		# happen in opposite orders
-		# and the parent only knows to create when the ui triggers
-		set hw [$parent cget -hw]
-		set ui [$parent cget -ui]
-		puts stderr "parent $parent -hw is {$hw} -ui is {$ui}"
-		if {$hw ne $options(-hw)} {
-		    if {$options(-hw) eq {}} {
-			# load new hardware
-			if {[catch {package require sdrui::$ui-radio-$hw} error]} {
-			    # no such hardware ui module
-			    puts stderr "package require sdrui::$ui-radio-$hw failed: $error"
-			    return
-			}
-			if {[catch {sdrui::$ui-radio-$hw $win.hw -parent $parent} error]} {
-			    puts stderr "sdrui::$ui-radio-$hw $win.hw -parent $parent failed: $error"
-			    return
-			}
-			# choices, upper right
-			# grid $win.hdw -row 0 -column 7
-			# lower left
-			grid $win.hw -row 5 -column 0
-			set options(-hw) $hw
-		    } else {
-			grid forget $win.hw
-			destroy $win.hw
-			set options(-hw) {}
-		    }
-		}
-	    }
-	    default {
-		error "unknown cmonitor-fired $c for option {$option}"
-	    }
-	}
-    }
-    ##
-    ## manipulations on the radio model
-    ##
-    method rget {opt} { return [$parent.radio cget $opt] }
-    method rmonitor {args} {
-	$self cmonitor $parent.radio {*}$args
-    }
-    method rmonitor-fired {option value} {
-	verbose-puts "rmonitor-fired in .radio $option $value"
-    }
-    method rconfigure {option value} {
- 	$parent.radio configure $option $value
-    }
-    
+    method pmonitor {args} { $self cmonitor $parent {*}$args } 
+    method rmonitor {args} { $self cmonitor $parent.radio {*}$args }
     ##
     ## delegate the connection to the radio model
     ## 
     method connecttoggle {} {
 	$parent.radio connecttoggle
-	if {[$parent.radio is-connected]} {
+	if {[$parent.connect is-connected]} {
 	    set data(connect) {disconnect}
 	} else {
 	    set data(connect) {connect}
 	}
+    }
+    ##
+    ## map or unmap the hardware ui
+    ##
+    method map-hardware {} {
+	grid $win.hw -row 5 -column 0 -columnspan 7
+    }
+    method unmap-hardware {} {
+	grid forget $win.hw
     }
 }

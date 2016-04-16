@@ -7,54 +7,64 @@
 ##
 package provide sdr::server 1.0
 
+package require Tcl
+package require snit
 package require http 2.8.8
 
-namespace eval ::sdr {
-    set rservers [dict create];	# remote servers
-    set lservers [dict create];	# local servers
-    set listeners {}
-}
+snit::type sdr::server {
+    option -parent
+    
+    variable rservers [dict create];	# remote servers
+    variable lservers [dict create];	# local servers
+    variable servers [dict create]
+    variable listeners {}
+    
+    method request-complete {token} {
+	if {[http::status $token] eq {ok}} {
+	    # puts "request-complete and ok"
+	    set rservers [dict create]
+	    foreach line [split [string trim [http::data $token]] \n] {
+		# puts "found $line"
+		foreach {status call loc band rig ant time addr port x y} [split $line ~] break
+		dict set rservers $call [dict create addr $addr port $port loc $loc band $band rig $rig ant $ant time $time status $status]
+	    }
+	    set servers [dict merge $lservers $rservers]
+	    foreach cb $listeners {
+		# puts "calling back $cb [$self names]"
+		{*}$cb [$self names]
+		# puts "called back"
+	    }
+	    http::cleanup $token
+	    after 30000 [list {*}[mymethod request] {}]
+	} else {
+	    # puts "server-request-complete and not ok"
+	    http::cleanup $token
+	    after 2000 [list {*}[mymethod request] {}]
+	}
+    }
 
-proc server-request-complete {token} {
-    if {[http::status $token] eq {ok}} {
-	# puts "server-request-complete and ok"
-	set ::sdr::rservers [dict create]
-	foreach line [split [string trim [http::data $token]] \n] {
-	    # puts "found $line"
-	    foreach {status call loc band rig ant time addr port x y} [split $line ~] break
-	    dict set ::sdr::rservers $call [dict create addr $addr port $port loc $loc band $band rig $rig ant $ant time $time status $status]
+    method request {callback} {
+	# puts "server-request {$callback}"
+	if {$callback ne {} && [lsearch $listeners $callback] < 0} {
+	    lappend listeners $callback
 	}
-	foreach cb $::sdr::listeners {
-	    # puts "calling back $cb [server-names]"
-	    {*}$cb [server-names]
-	    # puts "called back"
+	# puts "info command http::* => {[info command http::*]}"
+	::http::geturl "http://napan.com/qtradio/qtradiolist.pl" -command [mymethod request-complete] -timeout 2000
+    }
+
+    method names {} { return [dict keys $servers] }
+
+    method exists {name} { return [dict exists $servers $name] }
+    method get {name key} { return [dict get $servers $name $key] }
+    method address-port {name} {
+	if {[$self exists $name]} {
+	    return [list [$self get $name addr] [$self get $name port]]
 	}
-	http::cleanup $token
-	after 30000 [list server-request {}]
-    } else {
-	# puts "server-request-complete and not ok"
-	http::cleanup $token
-	after 2000 [list server-request {}]
+	return {}
     }
-}
-proc server-request {callback} {
-    # puts "server-request {$callback}"
-    if {$callback ne {}} { lappend ::sdr::listeners $callback }
-    # puts "info command http::* => {[info command http::*]}"
-    ::http::geturl "http://napan.com/qtradio/qtradiolist.pl" -command server-request-complete -timeout 2000
-}
-proc server-names {} {
-    return [concat [dict keys $::sdr::lservers] [dict keys $::sdr::rservers]]
-}
-proc server-address-port {name} {
-    if {[dict exists $::sdr::rservers $name]} {
-	return [list [dict get $::sdr::rservers $name addr] [dict get $::sdr::rservers $name port]]
+    method add-local {name addr port} {
+	set dict [dict create addr $addr port $port]
+	dict set lservers $name $dict
+	dict set servers $name $dict
     }
-    if {[dict exists $::sdr::lservers $name]} {
-	return [list [dict get $::sdr::lservers $name addr] [dict get $::sdr::lservers $name port]]
-    }
-    return {}
-}
-proc server-local-install {name addr port} {
-    dict set ::sdr::lservers $name [dict create addr $addr port $port]
 }

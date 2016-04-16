@@ -23,11 +23,6 @@
 package provide sdr::audio 1.0
 
 package require pa::simple
-package require tcl::chan::memchan
-
-namespace eval ::sdr {}
-
-namespace eval ::sdr::audio {}
 
 proc audio-out-start {format rate} {
     switch $format {
@@ -35,20 +30,13 @@ proc audio-out-start {format rate} {
 	PCM { set format s16le }
 	default { error "unknown audio format: $format" }
     }
-    puts "pa::simple::new tkradio playback sdr $format 1 $rate"
-    if {[catch {pa::simple::new sdr playback sdr $format 1 $rate} error]} {
-	puts "error starting audio: $error"
-    }
-    # set ::sdr::audio::trace [open audio.trace wb]
+    # puts "pa::simple::new tkradio playback sdr $format 1 $rate"
+    pa::simple::new sdr playback sdr $format 1 $rate
 }
 proc audio-out-stop {} {
-    # if {[catch {::pa::simple::drain} error]} { puts "error draining: $error" }
-    if {[catch {::pa::simple::flush} error]} { puts "error flushing: $error" }
-    if {[catch {::pa::simple::free} error]} { puts "error freeing: $error" }
+    #::pa::simple::flush
+    #::pa::simple::free
 }
 proc audio-out-data {data} {
-    if {[catch {pa::simple::write $data} error]} {
-	puts "error writing audio: $error"
-    }
-    # puts -nonewline $::sdr::audio::trace $data
+    ::pa::simple::write $data
 }

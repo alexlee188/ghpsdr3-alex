@@ -17,7 +17,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 # 
 
-package provide sdr::channel 1.0
+package provide sdr::connect 1.0
 
 package require Tcl
 package require snit
@@ -27,14 +27,15 @@ package require snit
 ##
 namespace eval ::sdr {}
 
-snit::type sdr::connection {
+snit::type sdr::connect {
+    option -parent -readonly true
     option -host
     option -port
     option -status
 
     variable data -array {
 	channel {}
-	channel-status {}
+	status {}
 	spectrum-listeners {}
 	bandscope-listeners {}
 	audio-listeners {}
@@ -49,7 +50,7 @@ snit::type sdr::connection {
 	$self configure {*}$args
     }
 	
-    destructor {} {
+    destructor {
 	$self disconnect
     }
 
@@ -86,7 +87,8 @@ snit::type sdr::connection {
     ##
     ## connection management
     ##
-    method connect {} {
+    method connect {host port} {
+	$self configure -host $host -port $port
 	if {[catch {socket $options(-host) $options(-port)} data(channel)]} {
 	    $self process status "connection to $options(-host) $options(-port) refused: $error\n$::errorInfo"
 	}
@@ -97,12 +99,17 @@ snit::type sdr::connection {
 
     method disconnect {} {
 	fileevent $data(channel) readable {}
-	# fileevent $data(channel) writable {}
+	fileevent $data(channel) writable {}
 	close $data(channel)
+	set data(channel) {}
     }
 
+    method is-connected {} {
+	return [expr {$data(channel) ne {}}]
+    }
+    
     ##
-    ## reader
+    ## asynchronous reader
     ##
     method reader {} {
 	while {1} {
@@ -123,9 +130,9 @@ snit::type sdr::connection {
 			    $self process status "need longer spectrum buffer: $len < $end"
 			    return
 			}
-			set data [string range $buffer 15 $end]
+			set dat [string range $buffer 15 $end]
 			set buffer [string range $buffer $end+1 end]
-			$self process spectrum $main $sub $sr $lo $data
+			$self process spectrum $main $sub $sr $lo $dat
 			continue
 		    }
 		    \1 {		# audio
@@ -140,9 +147,9 @@ snit::type sdr::connection {
 			    $self process status "need a longer audio string: $len < $end"
 			    return
 			}
-			set data [string range $buffer 5 $end]
+			set dat [string range $buffer 5 $end]
 			set buffer [string range $buffer $end+1 end]
-			$self process audio $data
+			$self process audio $dat
 			continue
 		    }
 		    \2 {			# bandscope
@@ -164,9 +171,9 @@ snit::type sdr::connection {
 			    $self process status "need a longer answer string: $len < $end"
 			    return
 			}
-			set data [string range $buffer 3 $end-1]
+			set dat [string range $buffer 3 $end-1]
 			set buffer [string range $buffer $end end]
-			$self process answer $data
+			$self process answer $dat
 			continue
 		    }
 		    default {
@@ -197,7 +204,18 @@ snit::type sdr::connection {
 	}
     }
 
+    ##
+    ## asynchronous writer
+    ##
     method writer {} {
 	puts stderr "::sdr::writer $data(channel)"
     }
+
+    ##
+    ## synchronous write
+    method write {str} {
+	puts -nonewline $data(channel) $str
+    }
+
+    method flush {} { flush $data(channel) }
 }

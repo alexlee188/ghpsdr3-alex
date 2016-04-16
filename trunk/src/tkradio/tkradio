@@ -29,8 +29,8 @@ package require snit;		# sudo apt-get install tcllib
 ##
 package require sdrtype::types;	# snit types for option checking
 package require sdr::radio;	# the dspserver radio model
-#package require sdr::server;	# the napan.com servers listing
-#package require sdr::channel;	# the tcp connection to dspserver
+package require sdr::server;	# the napan.com servers listing
+package require sdr::connect;	# the tcp connection to dspserver
 #package require sdr::command;	# the commands sent to dspserver
 #package require sdr::audio;	# audio playback (no mike as yet)
 #package require sdr::filter;	# our filter syntax
@@ -44,15 +44,25 @@ snit::type tkradio {
     option -ui -configuremethod Configure			
     option -hw -configuremethod Configure
     option -verbose -default 0 -configuremethod Configure2
+    option -name -configuremethod Configure2
+    option -name-values -configuremethod Configure2
+
+    component server
+    component connect
     
     component radio
     component hw
     component ui
     component hwui
-    
+
     constructor {args} {
-	install radio using sdr::radio $self.radio -parent $self -service [sdr::get-last service]
+	install server using sdr::server $self.server -parent $self
+	install connect using sdr::connect $self.connect -parent $self
+	install radio using sdr::radio $self.radio -parent $self
+	$radio configure -service [sdr::get-last service]
+	$server request [list {*}[mymethod configure] -name-values]
     }
+
     method {Configure -ui} {val} {
 	if {$options(-ui) ne {}} {
 	    # destroy the old ui
@@ -73,98 +83,187 @@ snit::type tkradio {
 	pack [sdrui::$val-radio .radio -parent $self] -fill both -expand true
 	set ui .radio
     }
+
     method {Configure -hw} {value} {
 	if {$options(-hw) ne $value} {
 	    if {$options(-hw) eq {} && $value ne {}} {
 		# load hardware component
-		if {[catch {package require sdr::radio-$value} error]} {
+		set hardware sdr::radio-$value
+		if {[catch {package require $hardware} error]} {
 		    # no such hardware module
-		    puts stderr "package require sdr::radio-$value failed: $error"
+		    puts stderr "package require $hardware failed: $error"
 		    return
 		}
 		# initialize hardware component, 
-		if {[catch {sdr::radio-$value $self.hw -parent $self} error]} {
+		if {[catch {$hardware $self.hw -parent $self} error]} {
 		    # failed to create hardware handler
-		    puts stderr "sdr::hardware-$value -radio $self failed: $error"
+		    puts stderr "$hardware -radio $self failed: $error"
 		    return
 		}
 		# mark it as installed
 		set options(-hw) $value
 		set hw $self.hw
+
 		# now do the matching ui component
-		# ...
+		# if there is one!
+		if {$options(-ui) ne {}} {
+		    $self install-hwui
+		}
 	    } elseif {$options(-hw) ne {} && $value eq {}} {
 		set options(-hw) $value
 		catch {rename $hw {}}
 		set hw {}
+
+		$ui unmap-hardware
+		destroy $hwui
+		set hwui {}
 	    } else {
 		puts stderr "Configure -hw {$value} when options(-hw) is {$options(-hw)}???"
 	    }
 	}
 	
     }
+
     method Configure2 {option value} {
 	if {$options($option) ne $value} {
 	    set options($option) $value
 	}
     }
+
+    method install-hwui {} {
+	set hardwareui sdrui::$options(-ui)-radio-$options(-hw)
+	# load hardware ui package
+	if {[catch {package require $hardwareui} error]} {
+	    # no such hardware ui module
+	    puts stderr "package require $hardwareui failed: $error"
+	    return
+	}
+	# create hardware ui widget
+	if {[catch {$hardwareui $ui.hw -parent $self} error]} {
+	    puts stderr "$hardwareui $ui.hw -parent $self failed: $error"
+	    return
+	}
+	# map it into the ui
+	if {[catch {$ui map-hardware} error]} {
+	    puts stderr "$hardwareui failed to map"
+	    rename $ui.hw {}
+	    return
+	}
+	# save the component
+	set hwui $ui.hw
+    }
+
     method verbose-puts {msg} {
 	if {$options(-verbose)} { puts stderr $msg }
     }
-    # monitor configuration options
-    method monitor {option prefix} {
-	verbose-puts "monitor $option $prefix"
-	trace variable options($option) w [list {*}[mymethod monitor-fired] $prefix]
+
+    method connect {} {
+	if {[$connect is-connected]} { error "socket is already connected" }
+	$connect connect {*}[$server address-port $options(-name)]
+    }
+
+    method disconnect {} {
+	if { ! [$connect is-connected]} { error "socket is not connected" }
+	# verbose-puts "disconnecting self = $self"
+	$connect disconnect
+    }
+
+    ##
+    ## monitor our configuration options
+    ## 
+    method monitor {opts prefix} {
+	foreach opt $opts {
+	    trace variable options($opt) w [list {*}[mymethod monitor-fired] $prefix]
+	}
     }
     method monitor-fired {prefix name1 name2 op} {
-	verbose-puts "monitor-fired $prefix $name1 $name2 $op"
-	verbose-puts "calling $prefix $name2 $options($name2)"
 	{*}$prefix $name2 $options($name2)
-	verbose-puts "call returned"
     }
-    # process an argument
+
+    # process a command line argument
     method optarg {opt} {
 	upvar argc argc argv argv i i
-	if {$i == $argc-1} { uplevel error "missing arg for $opt option" }
+	if {$i == $argc-1} { 
+	    set list {}
+	    switch -- $opt {
+		-server { set list [$server get-names] }
+		-service { set list [sdr::band-data-services] }
+		-band { set list [$radio cget -band-values] }
+		-mode {	set list [$radio cget -mode-values] }
+		-filter { set list [$radio cget -filter-values] }
+	    }
+	    if {$list ne {}} {
+		set e "missing arg for $opt option: $list"
+	    } else {
+		set e "missing arg for $opt option"
+	    }
+	    error $e
+	}
 	set val [lindex $argv [incr i]]
-	$self verbose-puts "optarg $opt found $val"
+	# $self verbose-puts "optarg $opt found $val"
 	switch -- $opt {
-	    -local { $self.radio add-local $val }
-	    -name { $self.radio configure $opt $val }
+	    -local { $server add-local {*}$val }
 	    default { $self configure $opt $val }
 	}
     }
-    # process arguments
+
+    # process command line arguments to the tkradio script
     method process-argv {argv} {
-	set argc [llength $argv]
-	# load configuration
-	# current options
-	# memories
-	# last tuned points
-	
-	# specify options
-	for {set i 0} {$i < $argc} {incr i} {
-	    # accumulate arguments
-	    set opt [lindex $argv $i]
-	    switch -- $opt {
-		--				{ continue }
-		-b - --band			{ $self optarg -band }
-		-c - --connect			{ $self.radio connect }
-		-e - --filter			{ $self optarg -filter }
-		-f - --frequency		{ $self optarg -frequency }
-		-l - --local - --local-server	{ $self optarg -local }
-		-m - --mode			{ $self optarg -mode }
-		-n - --name - --name-of-server	{ $self optarg -name }
-		-s - --service			{ $self optarg -service }
-		-t - --text			{ $self optarg -text }
-		-u - --ui			{ $self optarg -ui }
-		-v - --verbose			{ $self optarg -verbose }
-		default { error "unrecognized option [lindex $argv $i]" }
+	if {[catch {
+	    set argc [llength $argv]
+	    # load saved configuration, including current options, saved memories,
+	    # and last tuned points
+	    
+	    # specify options
+	    for {set i 0} {$i < $argc} {incr i} {
+		# accumulate arguments
+		set opt [lindex $argv $i]
+		switch -- $opt {
+		    --					{ continue }
+		    -b - --band				{ $self optarg -band }
+		    -c - --connect			{ $self.radio connect }
+		    -e - --filter			{ $self optarg -filter }
+		    -f - --frequency			{ $self optarg -frequency }
+		    -l - --local - --local-server	{ $self optarg -local }
+		    -m - --mode				{ $self optarg -mode }
+		    -n - --name - --name-of-server	{ $self optarg -name }
+		    -s - --service			{ $self optarg -service }
+		    -t - --text				{ $self optarg -text }
+		    -u - --ui				{ $self optarg -ui }
+		    -v - --verbose			{ $self optarg -verbose }
+		    default { error "unrecognized option [lindex $argv $i]" }
+		}
 	    }
+	} error]} {
+	    if {$options(-verbose)} {
+		puts stderr $error\n$::errorInfo\n$usage 
+	    } else {
+		puts stderr $error$usage
+	    }
+	    exit 1
 	}
     }
+    variable usage {
+usage: tkradio -- <option> [<value>] ...
+    --
+    -b|--band <band> # <band> is a <service> specific band name
+    -c|--connect
+    -e|--filter <filter> # <filter> in form 'low .. high'
+    -f|--frequency <frequency> # <frequency> in Hertz
+    -l|--local|--local-server <local> # <local> in form 'name ip-address port' 
+    -m|--mode <mode> # <mode>
+    -n|--name|--name-of-server <name> # <name> the name or callsign of a dspserver
+    -s|--service <service> # 
+    -t|--text <text>
+    -u|--ui <ui>
+    -v|--verbose <level>
 }
 
+}
+
+# create an instance with an automatic name
 set tkr [tkradio %AUTO%]
+# define a global message reporter
 proc verbose-puts {msg} "$tkr verbose-puts \$msg"
+# process the command line arguments
 $tkr process-argv $argv

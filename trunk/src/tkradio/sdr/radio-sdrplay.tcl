@@ -137,4 +137,15 @@ snit::type sdr::radio-sdrplay {
 	set grbas [expr {$options(-gain-reduction)-$grlna-$grmix}]
 	set options(-gain-distribution) [format {%3d %3d %3d} $grbas $grlna $grmix]
     }
+    ##
+    ## monitor our configuration options
+    ## 
+    method monitor {opts prefix} {
+	foreach option $opts {
+	    trace variable options($option) w [list {*}[mymethod monitor-fired] $prefix]
+	}
+    }
+    method monitor-fired {prefix name1 name2 op} {
+	{*}$prefix $name2 $options($name2)
+    }
 }

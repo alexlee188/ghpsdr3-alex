@@ -31,7 +31,7 @@ namespace eval ::sdr {}
 
 namespace eval ::sdr::command {
     # the current channel
-    variable radio {}
+    variable connect {}
     
     # modes of demodulation available
     # should be part of sdrtypes
@@ -40,11 +40,13 @@ namespace eval ::sdr::command {
     dict unset modes-dict DRM;	# not implemented
     proc get-modes {} { return [dict keys ${::sdr::command::modes-dict}] }
     proc fix-mode {m} {
-	if {$m in [get-modes]} { 
-	    return [dict get ${::sdr::command::modes-dict} $m]
-	} else {
-	    error "unrecognized mode token $m"
+	if {$m in [dict values ${::sdr::command::modes-dict}]} {
+	    return $m
 	}
+	if {$m in [dict keys ${::sdr::command::modes-dict}]} { 
+	    return [dict get ${::sdr::command::modes-dict} $m]
+	}
+	error "unrecognized mode token $m"
     }
 
     # pwsmodes, spectrum types 
@@ -111,24 +113,22 @@ namespace eval ::sdr::command {
     }
     # send a command
     proc send-command {command} {
-	variable radio
-	if {[$radio is-connected]} {
-	    set c [$radio cget -channel]
-	    verbose-puts "send>> $command"
-	    puts -nonewline $c [fill-command 64 $command]
-	    flush $c
+	variable connect
+	if {[$connect is-connected]} {
+	    # verbose-puts "send>> $command"
+	    $connect write [fill-command 64 $command]
+	    $connect flush
 	}
     }
 
     # send mic audio data
     proc mic {audio} { 
-	variable radio
-	if {[$radio is-connected]} {
-	    set c [$radio cget -channel]
-	    verbose-puts "send>> mic ..."
-	    puts -nonewline $c {mic }
-	    puts -nonewline $c $audio
-	    flush $c
+	variable connect
+	if {[$connect is-connected]} {
+	    # verbose-puts "send>> mic ..."
+	    $connect write {mic }
+	    $connect write $audio
+	    $connect flush
 	}
     }	      
 
