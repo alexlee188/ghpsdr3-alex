@@ -32,12 +32,14 @@ package require sdr::radio;	# the dspserver radio model
 package require sdr::server;	# the napan.com servers listing
 package require sdr::connect;	# the tcp connection to dspserver
 #package require sdr::command;	# the commands sent to dspserver
-#package require sdr::audio;	# audio playback (no mike as yet)
+package require sdr::audio;	# audio playback (no mike as yet)
 #package require sdr::filter;	# our filter syntax
 #package require sdr::util;	# various utilities
 
 package require sdr::band-data;	# service and band information
 package require sdr::memory;	# memories for the radio
+
+snit::enum audio-format -values {ALAW:8000 PCM:48000}
 
 snit::type tkradio {
     option -id -default {tkradio}
@@ -46,6 +48,8 @@ snit::type tkradio {
     option -verbose -default 0 -configuremethod Configure2
     option -name -configuremethod Configure2
     option -name-values -configuremethod Configure2
+    option -audio-format -default ALAW:8000 -type audio-format
+    option -channel-status {}
 
     component server
     component connect
@@ -61,6 +65,9 @@ snit::type tkradio {
 	install radio using sdr::radio $self.radio -parent $self
 	$radio configure -service [sdr::get-last service]
 	$server request [list {*}[mymethod configure] -name-values]
+	# initialize connections
+	$connect add-listener status [mymethod channel-status]
+	$connect add-listener spectrum [list $radio process-spectrum]
     }
 
     method {Configure -ui} {val} {
@@ -156,17 +163,56 @@ snit::type tkradio {
     method verbose-puts {msg} {
 	if {$options(-verbose)} { puts stderr $msg }
     }
-
+    method get-audio-sample-format {} {
+	return [lindex [split $options(-audio-format) :] 0]
+    }
+    method get-audio-sample-rate {} {
+	return [lindex [split $options(-audio-format) :] 1]
+    }
+    ##
     method connect {} {
 	if {[$connect is-connected]} { error "socket is already connected" }
 	$connect connect {*}[$server address-port $options(-name)]
+	$connect add-listener audio audio-out-data
+	audio-out-start [$self get-audio-sample-format] [$self get-audio-sample-rate]
     }
 
     method disconnect {} {
 	if { ! [$connect is-connected]} { error "socket is not connected" }
 	# verbose-puts "disconnecting self = $self"
 	$connect disconnect
+	$connect sub-listener audio audio-out-data
+	audio-out-stop
     }
+    # toggle the connection state
+    method connecttoggle {} {
+	if { ! [$connect is-connected]} {
+	    if {[catch {$radio connect} error]} {
+		puts stderr "error in connect: $error\n$::errorInfo"
+		$self channel-status $error
+	    } else {
+		$self channel-status {connected}
+	    }
+	} else {
+	    if {[catch {$radio disconnect} error]} {
+		puts stderr "error in disconnect: $error\n$::errorInfo"
+		$self channel-status $error
+	    } else {
+		$self channel-status {disconnected}
+	    }
+	}
+	return [$connect is-connected]
+    }
+    method channel-status {status} {
+	switch $status {
+	    * {
+		puts stderr "channel status: $status"
+		$self configure -channel-status {unknown error}
+		# $radio disconnect
+	    }
+	}
+    }
+    
 
     ##
     ## monitor our configuration options
@@ -186,6 +232,7 @@ snit::type tkradio {
 	if {$i == $argc-1} { 
 	    set list {}
 	    switch -- $opt {
+		-audio-format { set list {ALAW:8000 PCM:48000} }
 		-server { set list [$server get-names] }
 		-service { set list [sdr::band-data-services] }
 		-band { set list [$radio cget -band-values] }
@@ -220,6 +267,7 @@ snit::type tkradio {
 		set opt [lindex $argv $i]
 		switch -- $opt {
 		    --					{ continue }
+		    -a - --audio-format			{ $self optarg -audio-format }
 		    -b - --band				{ $self optarg -band }
 		    -c - --connect			{ $self.radio connect }
 		    -e - --filter			{ $self optarg -filter }
@@ -243,9 +291,15 @@ snit::type tkradio {
 	    exit 1
 	}
     }
+    #
+    # also want
+    #  audio-format ALAW or PCM
+    #  audio-sample-rate 8000 or 48000
+    #
     variable usage {
 usage: tkradio -- <option> [<value>] ...
     --
+    -a|--audio-format <format> # is ALAW:8000 or PCM:48000
     -b|--band <band> # <band> is a <service> specific band name
     -c|--connect
     -e|--filter <filter> # <filter> in form 'low .. high'

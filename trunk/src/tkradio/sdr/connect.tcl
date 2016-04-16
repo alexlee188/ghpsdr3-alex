@@ -165,7 +165,10 @@ snit::type sdr::connect {
 			    $self process status "need a longer answer string: $len < 3"
 			    return
 			}
-			set samples [scan [string range $buffer 1 2] %d]
+			if {[scan [string range $buffer 1 2] %d samples] != 1} {
+			    $self process status "did not scan an answer size!"
+			    return
+			}
 			set end [expr {3+$samples}]
 			if {$len < $end} {
 			    $self process status "need a longer answer string: $len < $end"

@@ -31,7 +31,6 @@ package require snit
 
 package require sdrtype::types;	# snit types for option checking
 package require sdr::server;	# the napan.com servers listing
-package require sdr::audio;	# audio playback (no mike as yet)
 package require sdr::command;	# the commands sent to dspserver
 package require sdr::filter;	# our filter syntax
 package require sdr::util
@@ -75,8 +74,6 @@ snit::type sdr::radio {
     option -sample-rate -default 3000 -configuremethod Configure2
     option -local-oscillator -default 0 -configuremethod Configure2
     option -spectrum-freq -default 0 -configuremethod Configure
-    option -channel -configuremethod Configure
-    option -channel-status -configuremethod Configure2
 
     component parent;		# parent
 
@@ -100,10 +97,6 @@ snit::type sdr::radio {
 	# hacky because how do we manage two or more selves?
 	# puts "sdr::radio::parent {$parent}"
 	set ::sdr::command::connect $parent.connect;	# hacky, hackier
-	# initialize connection
-	$parent.connect add-listener status [mymethod channel-status]
-	$parent.connect add-listener audio audio-out-data
-	$parent.connect add-listener spectrum [mymethod process-spectrum]
     }
 
     ##
@@ -269,11 +262,6 @@ snit::type sdr::radio {
 	    }
 	}
     }
-    method {Configure -channel} {value} {
-	if {$options(-channel) ne $value} {
-	    set options(-channel) $value
-	}
-    }
     # this is the base configuration option
     # we just filter idempotent changes to avoid triggering
     # unnecessary activity on the wire
@@ -303,42 +291,44 @@ snit::type sdr::radio {
 	# ui enable subrx select
 	# ui enable mute subrx 
 	# ??? ::sdr::command::setpws $options(-pwsmode)
-	## do we want to do audio on this channel?
-	::sdr::command::setencoding 0
-	# select local audio device
-	::sdr::command::startaudiostream 2000 8000 1 0;	# get parameters from somewhere
-	audio-out-start ALAW 8000
+	## audio output encoding
+	::sdr::command::setencoding [$parent get-audio-sample-format]
+	## audio output buffer-size, sample-rate, channels, and input sample encoding
+	## changing buffer size is a waste of time, dspserver is stubborn
+	::sdr::command::startaudiostream 2000 [$parent get-audio-sample-rate] 1 ALAW
 	::sdr::command::setpan 0.5
 	::sdr::command::setagc $options(-agc)
-	# if we're going to muck with different spectra, ...
+	## squelch
+	# ::sdr::command::setsquelchval
+	# ::sdr::command::setsquelchstate
+	## if we're going to muck with different spectra, ...
 	# ::sdr::command::setpws $options(-pwsmode)
-	# set these when the ANF, NR, or NB is enabled
+	## set these when the ANF, NR, or NB is enabled
 	# ::sdr::command::setanfvals
 	# ::sdr::command::setnrvals
 	# ::sdr::command::setnbvals
-	# ::sdr::command::setsquelchval
-	# ::sdr::command::setsquelchstate
 	# ::sdr::command::setanf
 	# ::sdr::command::setnr
 	# ::sdr::command::setnb
-	# remote connected
+	## remote connected
 	::sdr::command::setrxdcblock 0
 	::sdr::command::settxdcblock 0
-	# ::sdr::command::setrxagcslope # this one was commented out
-	# ::sdr::command::setrxagcattack
-	# ::sdr::command::setrxagcdecay
-	# ::sdr::command::setrxagchang
-	# ::sdr::command::setfixedagc
-	# ::sdr::command::setrxagchangthreshold
-	# ::sdr::command::settxlevelerstate
-	# ::sdr::command::settxlevelermaxgain
-	# ::sdr::command::settxlevelerattack
-	# ::sdr::command::settxlevelerdecay
-	# ::sdr::command::settxlevelerhang
-	# ::sdr::command::settxalcstate
-	# ::sdr::command::settxalcattack
-	# ::sdr::command::settxalcdecay
-	# ::sdr::command::settxalchang
+	## this first one was commented out
+	# ::sdr::command::setrxagcslope $options(-rx-agc-slope)
+	# ::sdr::command::setrxagcattack $options(-rx-agc-attack)
+	# ::sdr::command::setrxagcdecay $options(-rx-agc-decay)
+	# ::sdr::command::setrxagchang $options(-rx-agc-hang)
+	# ::sdr::command::setfixedagc $options(-fixed-agc)
+	# ::sdr::command::setrxagchangthreshold $options(-rx-agc-hang-threshold)
+	# ::sdr::command::settxlevelerstate $options(-tx-leveler-state)
+	# ::sdr::command::settxlevelermaxgain $options(-tx-leveler-max-gain)
+	# ::sdr::command::settxlevelerattack $options(-tx-leveler-attack)
+	# ::sdr::command::settxlevelerdecay $options(-tx-leveler-decay)
+	# ::sdr::command::settxlevelerhang $options(-tx-leveler-hang)
+	# ::sdr::command::settxalcstate $options(-tx-alc-state)
+	# ::sdr::command::settxalcattack $options(-tx-alc-attack)
+	# ::sdr::command::settxalcdecay $options(-tx-alc-decay)
+	# ::sdr::command::settxalchang $options(-tx-alc-hang)
 	::sdr::command::*hardware?
 	# start spectrum
 	sdr::command::setfps 1024 4
@@ -352,51 +342,9 @@ snit::type sdr::radio {
 	# set user none
 	# set password none
 	# set host {}
-	audio-out-stop
 	$parent configure -hw {}
     }
-    # toggle the connection state
-    method connecttoggle {} {
-	if { ! [$parent.connect is-connected]} {
-	    if {[catch {$self connect} error]} {
-		puts stderr $error\n$::errorInfo
-		switch $error {
-		    {*connection refused*} { 
-			$self configure -channel-status {connection refused}
-		    }
-		    * {
-			$self configure -channel-status {unknown connect error}
-		    }
-		}
-	    } else {
-		set data(connect) {disconnect}
-		$self configure -channel-status {connected}
-	    }
-	} else {
-	    set data(connect) {disconnect}
-	    if {[catch {$self disconnect} error]} {
-		puts $error\n$::errorInfo
-		switch $error {
-		    * {
-			$self configure -channel-status {unknown disconnect error}
-		    }
-		}
-	    } else {
-		set options(-channel) {}
-		$self configure -channel-status {disconnected}
-	    }
-	}
-    }
-    method channel-status {status} {
-	switch $status {
-	    * {
-		puts stderr "channel status: $status"
-		$self configure -channel-status {unknown error}
-		$self disconnect
-	    }
-	}
-    }
-    
+
     ##
     ## the -frequency specifies the carrier frequency tuned
     ## in the case of CW we want to tune offset from the 

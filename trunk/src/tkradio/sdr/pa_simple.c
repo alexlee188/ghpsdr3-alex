@@ -76,6 +76,7 @@ static int _sample_formats(ClientData clientData, Tcl_Interp *interp, int argc, 
 }
 static int _new(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* const *objv) {
   if (argc != 7) return _error(interp, "usage: pa::simple::new name playback|record description sample-format channels rate");
+  if (pa.s != NULL) return _error(interp, "stream is already open");
   pa.appname = Tcl_GetString(objv[1]);
   char *ptmp = Tcl_GetString(objv[2]);
   if (strcmp(ptmp, "playback") == 0) pa.d = PA_STREAM_PLAYBACK;
@@ -107,7 +108,11 @@ static int _new(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* co
     return _error(interp, (char *)pa_strerror(error));
   return TCL_OK;
 }
-
+static int _is_open(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* const *objv) {
+  if (argc != 1) return _error(interp, "usage pa::simple::is-open");
+  Tcl_SetObjResult(interp, Tcl_NewBooleanObj(pa.s != NULL));
+  return TCL_OK;
+}
 static int _get_latency(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* const *objv) {
   if (argc != 1) return _error(interp, "usage pa::simple::get-latency");
   if (pa.s == NULL) return _error(interp, "pa::simple::get-latency stream is not open");
@@ -138,8 +143,10 @@ static int _write(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* 
   if (pa.d != PA_STREAM_PLAYBACK) return _error(interp, "pa::simple::write stream is not open for writing");
   int ninput;
   char *data = Tcl_GetByteArrayFromObj(objv[1], &ninput);
-  if (pa_simple_write(pa.s, data, ninput, &error) < 0)
+  if (pa_simple_write(pa.s, data, ninput, &error) < 0) {
+    fprintf(stderr, "write error on nbytes %d buffer %p: %s\n", ninput, data, (char *)pa_strerror(error));
     return _error(interp, (char *)pa_strerror(error));
+  }
   return TCL_OK;
 }
 static int _flush(ClientData clientData, Tcl_Interp *interp, int argc, Tcl_Obj* const *objv) {
@@ -182,6 +189,7 @@ int DLLEXPORT Pa_simple_Init(Tcl_Interp *interp) {
   Tcl_PkgProvide(interp, "pa::simple", "0.0.1");
   Tcl_CreateObjCommand(interp, "pa::simple::sample-formats", _sample_formats, NULL, NULL);
   Tcl_CreateObjCommand(interp, "pa::simple::new", _new, NULL, NULL);
+  Tcl_CreateObjCommand(interp, "pa::simple::is-open", _is_open, NULL, NULL);
   Tcl_CreateObjCommand(interp, "pa::simple::get-latency", _get_latency, NULL, NULL);
   Tcl_CreateObjCommand(interp, "pa::simple::read", _read, NULL, NULL);
   Tcl_CreateObjCommand(interp, "pa::simple::write", _write, NULL, NULL);

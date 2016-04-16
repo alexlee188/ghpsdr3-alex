@@ -55,12 +55,23 @@ namespace eval ::sdr::command {
 
     # the encodings of audio - numeric enumeration by index in list
     variable audio-encodings [dict create ALAW 0 PCM 1]
+    proc fix-encoding {e} {
+	if {$e in [dict values ${::sdr::command::audio-encodings}]} {
+	    return $e
+	}
+	if {$e in [dict keys ${::sdr::command::audio-encodings}]} { 
+	    return [dict get ${::sdr::command::audio-encodings} $e]
+	}
+	error "unrecognized audio encoding token $e"
+    }
 
     # the encodings of mic audio - numeric enumeration by index in list
+    # oh, can't do PCM on the microphone side?
     variable mic-audio-encodings [dict create ALAW 0]
 
     # audiostream defaults
-    variable audiostream-defaults [dict create buffer_size 2000 samplerate 8000 channels 1 encoding 0 mic-encoding 0]
+    # cannot seem to reduce the size of the audio buffer, which is a waste, that's a 1/4 second buffer!
+    variable audiostream-defaults [dict create buffer_size 2000 samplerate 8000 channels 1 encoding ALAW mic-encoding ALAW]
 
     # agc values
     variable agcmodes-dict [dict create FIXED 0 LONG 1 SLOW 2 MEDIUM 3 FAST 4]
@@ -169,10 +180,10 @@ namespace eval ::sdr::command {
     proc setanf {tf} { send-command "setanf [true-or-false $tf]" }
     proc setrxoutputgain {i} { send-command "setrxoutputgain $i" }
     proc setsubrxoutputgain {i} { send-command "setsubrxoutputgain $i" }
-    proc startaudiostream {ibufsize irate ichannels imicencoding} { send-command "startaudiostream $ibufsize $irate $ichannels $imicencoding" }
+    proc startaudiostream {ibufsize irate ichannels imicencoding} { send-command "startaudiostream $ibufsize $irate $ichannels [fix-encoding $imicencoding]" }
     proc startrtpstream {iport iencoding irate ichannels} { send-command "startrtpstream $iport $iencoding $irate $ichannels" }
     proc stopaudiostream {} { send-command "stopaudiostream" };  #  does nothing
-    proc setencoding {iencoding} { send-command "setencoding $iencoding" }
+    proc setencoding {iencoding} { send-command "setencoding [fix-encoding $iencoding]" }
     proc setsubrx {int} { send-command "setsubrx $int" }
     proc setsubrxfrequency {int} { send-command "setsubrxfrequency $int" }; #  offset from setfrequency
     proc setpan {f} { send-command "setpan $f" }

@@ -170,9 +170,8 @@ snit::widgetadaptor sdrui::pw-radio {
 	    -band -band-values \
 	    -mode -mode-values \
 	    -filter -filter-values \
-	    -channel-status \
 	    -local-oscillator -sample-rate
-	$self pmonitor -name -name-values
+	$self pmonitor -name -name-values -channel-status
 
 	$parent.radio meter-subscribe [list $win.meter update]
 	$parent.radio spectrum-subscribe [list $win.sw update]
@@ -251,8 +250,7 @@ snit::widgetadaptor sdrui::pw-radio {
     ## delegate the connection to the radio model
     ## 
     method connecttoggle {} {
-	$parent.radio connecttoggle
-	if {[$parent.connect is-connected]} {
+	if {[$parent connecttoggle]} {
 	    set data(connect) {disconnect}
 	} else {
 	    set data(connect) {connect}
