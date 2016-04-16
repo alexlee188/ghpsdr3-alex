@@ -92,6 +92,7 @@ snit::type tkradio {
     }
 
     method {Configure -hw} {value} {
+	puts stderr "tkradio configure -hw {$value}"
 	if {$options(-hw) ne $value} {
 	    if {$options(-hw) eq {} && $value ne {}} {
 		# load hardware component
@@ -175,11 +176,13 @@ snit::type tkradio {
 	$connect connect {*}[$server address-port $options(-name)]
 	$connect add-listener audio audio-out-data
 	audio-out-start [$self get-audio-sample-format] [$self get-audio-sample-rate]
+	$radio connect
     }
 
     method disconnect {} {
 	if { ! [$connect is-connected]} { error "socket is not connected" }
 	# verbose-puts "disconnecting self = $self"
+	$radio disconnect
 	$connect disconnect
 	$connect sub-listener audio audio-out-data
 	audio-out-stop
@@ -187,14 +190,14 @@ snit::type tkradio {
     # toggle the connection state
     method connecttoggle {} {
 	if { ! [$connect is-connected]} {
-	    if {[catch {$radio connect} error]} {
+	    if {[catch {$self connect} error]} {
 		puts stderr "error in connect: $error\n$::errorInfo"
 		$self channel-status $error
 	    } else {
 		$self channel-status {connected}
 	    }
 	} else {
-	    if {[catch {$radio disconnect} error]} {
+	    if {[catch {$self disconnect} error]} {
 		puts stderr "error in disconnect: $error\n$::errorInfo"
 		$self channel-status $error
 	    } else {

@@ -73,6 +73,8 @@ snit::type sdr::radio {
     option -agc-values -configuremethod Configure
     option -sample-rate -default 3000 -configuremethod Configure2
     option -local-oscillator -default 0 -configuremethod Configure2
+    option -spectrum-width 1024
+    option -spectrum-fps 4
 
     component parent;		# parent
 
@@ -83,7 +85,6 @@ snit::type sdr::radio {
 	spectrum-xs {}
 	spectrum-sr 0
 	spectrum-n 0
-	hardware {}
     }
     
     # constructor
@@ -185,7 +186,6 @@ snit::type sdr::radio {
     method {Configure -parent} {val} {
 	set options(-parent) $val
 	set parent $val
-	# set ::sdr::command::connect $parent.connect
     }
     method {Configure -service} {val} { 
 	# if the new service is different than the current service
@@ -284,9 +284,8 @@ snit::type sdr::radio {
     ##
     ## making, breaking, and testing a server connection
     ##
-    # connect to a server
     method connect {} {
-	$parent connect
+	# $parent connect
 	# following along with QtRadio/UI.cpp/UI::connected()
 	::sdr::command::setclient tkradio
 	::sdr::command::q-server
@@ -341,13 +340,12 @@ snit::type sdr::radio {
 	# ::sdr::command::settxalchang $options(-tx-alc-hang)
 	::sdr::command::*hardware?
 	# start spectrum
-	sdr::command::setfps 1024 4
+	sdr::command::setfps $options(-spectrum-width) $options(-spectrum-fps)
 	# enable notch filter false
-	return 1
+	# return 1
     }
-    # disconnect from a server
     method disconnect {} { 
-	$parent disconnect
+	# $parent disconnect
 	# stop spectrum timer (what spectrum timer?)
 	# set user none
 	# set password none
@@ -444,6 +442,7 @@ snit::type sdr::radio {
 	    }
 	    {\*hardware\? OK sdrplay} {
 		# set up hardware specific model and ui
+		puts "configuring hardware from $answer"
 		$parent configure -hw [lindex $answer end]
 	    }
 	    {\*setattenuator*} {

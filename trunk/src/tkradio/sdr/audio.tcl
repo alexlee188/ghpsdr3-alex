@@ -34,8 +34,8 @@ proc audio-out-start {format rate} {
     pa::simple::new sdr playback sdr $format 1 $rate
 }
 proc audio-out-stop {} {
-    #::pa::simple::flush
-    #::pa::simple::free
+    ::pa::simple::flush
+    ::pa::simple::free
 }
 proc audio-out-data {data} {
     ::pa::simple::write $data
