@@ -3,9 +3,19 @@ dspserver backend.
 
 This requires the following packages on Ubuntu 15.10 and later:
 
-     tcl tk build-essential tcllib libpulse-dev
+  $ sudo apt-get install tcl tk build-essential tcllib libpulse-dev
 
-which may be installed with "sudo apt-get install" or any other
-package management tool.  The tcl and tk packages may be installed
-by default, the build-essential bundle of packages is often installed
-by packages which require compilation.
+The tcl and tk packages may be installed by default, the
+build-essential bundle of packages is often installed by packages
+which require compilation.  If you have any other sound card programs
+installed you probably already have libpulse-dev installed, too.
+
+Given those packages, you should be able to build and install with:
+      
+  $ autoreconf -i && ./configure && make && sudo make install
+
+At which point you can run tkradio as:
+
+  $ tkradio
+
+which will start up with the plain window (pw) user interface.

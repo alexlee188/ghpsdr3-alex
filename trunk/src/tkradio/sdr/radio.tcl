@@ -30,8 +30,6 @@ package require Tcl
 package require snit
 
 package require sdrtype::types;	# snit types for option checking
-package require sdr::server;	# the napan.com servers listing
-package require sdr::command;	# the commands sent to dspserver
 package require sdr::filter;	# our filter syntax
 package require sdr::util
 
@@ -41,7 +39,75 @@ package require sdr::memory;	# memories for the radio
 
 # define the radio widget
 snit::type sdr::radio {
+    # options which have a dspserver command 
+    # that simply sends the option value to dspserver
+    # map the option to the command, used to set a monitor
+    # and to automatically send the option value when it changes
+    typevariable optionmonitor -array {
+	-frequency {}
+	-mode {}
+	-filter {}
+	-cw-pitch {}
+	-agc setagc
+	-spectrum-width {}
+	-spectrum-fps {}
+	-rx-agc-attack setrxagcattack
+	-rx-agc-decay setrxagcdecay
+	-rx-agc-fixed-gain setfixedagc
+	-rx-agc-hang setrxagchang
+	-rx-agc-hang-threshold setrxagchangthreshold
+	-rx-agc-max-gain {}
+	-rx-agc-slope setrxagcslope
 
+	-tx-alc-attack settxalcattack
+	-tx-alc-decay settxalcdecay
+	-tx-alc-hang settxalchang
+	-tx-alc-enable settxalcstate
+
+	-anf-delay {}
+	-anf-gain {}
+	-anf-leak {}
+	-anf-taps {}
+	-anf-enable setanf
+
+	-tx-leveler-attack settxlevelerattack
+	-tx-leveler-decay settxlevelerdecay
+	-tx-leveler-hang settxlevelerhang
+	-tx-leveler-max-gain settxlevelermaxgain
+	-tx-leveler-enable settxlevelerstate
+
+	-nb-threshold setnbvals
+	-nb-enable setnb
+
+	-nr-delay {}
+	-nr-gain {}
+	-nr-leak {}
+	-nr-taps {}
+	-nr-enable setnr
+
+	-rx-dc-block-enable setrxdcblock
+	-rx-dc-block-gain {}
+
+	-rx-iq-gain-correct {}
+	-rx-iq-phase-correct {}
+	-rx-iq-method {}
+	-rx-iq-mu {}
+	-rx-iq-on-off {}
+
+	-sdrom-threshold {}
+
+	-tx-iq-gain-correct
+	-tx-iq-phase-correct
+	-tx-iq-on-off {}
+	
+	-allow-tx {}
+	-tx-dc-block-enable settxdcblock
+
+	-pws-mode setpwsmode
+	-squelch-value setsquelchval
+	-squelch-enable setsquelchstate
+	-sub-rx-gain {}
+    }
     # options
     # -service is the radio service
     # -service-values lists the valid radio services
@@ -69,13 +135,74 @@ snit::type sdr::radio {
     option -filter -default {-250 .. 250} -configuremethod Configure
     option -filter-values -configuremethod Configure2
     option -cw-pitch -default {600} -configuremethod Configure
-    option -agc -default {SLOW} -type sdrtype::agc-mode -configuremethod Configure
-    option -agc-values -configuremethod Configure
-    option -sample-rate -default 3000 -configuremethod Configure2
-    option -local-oscillator -default 0 -configuremethod Configure2
+    option -agc -default {SLOW} -type sdrtype::agc-mode -configuremethod Configure2
+    option -agc-values -configuremethod Configure2
+    option -sample-rate -default 3000 -configuremethod Configure2;	# -sample-rate of dspserver from spectrum
+    option -local-oscillator -default 0 -configuremethod Configure2;	# -local-oscillator of dspserver from spectrum
     option -spectrum-width 1024
     option -spectrum-fps 4
+    
+    # more options, not implemented
+    option -rx-agc-attack -default 2
+    option -rx-agc-decay -default 250
+    option -rx-agc-fixed-gain -default 22
+    option -rx-agc-hang -default 250
+    option -rx-agc-hang-threshold -default 0
+    option -rx-agc-max-gain -default 75
+    option -rx-agc-slope -default 0
 
+    option -tx-alc-attack -default 2
+    option -tx-alc-decay -default 10
+    option -tx-alc-hang -default 500
+    option -tx-alc-enable -default 0
+
+    option -anf-delay -default 8
+    option -anf-gain -default 32
+    option -anf-leak -default 1
+    option -anf-taps -default 64
+    option -anf-enable -default 0
+
+    option -cw-pitch -default 600
+
+    option -tx-leveler-attack -default 2
+    option -tx-leveler-decay -default 500
+    option -tx-leveler-enable -default 0
+    option -tx-leveler-hang -default 500
+    option -tx-leveler-max-gain -default 5
+
+    option -nb-threshold -default 20
+    option -nb-enable -default 0
+
+    option -nr-delay -default 8
+    option -nr-gain -default 16
+    option -nr-leak -default 10
+    option -nr-taps -default 64
+    option -nr-enable -default 0
+
+    option -rx-dc-block-enable -default 0
+    option -rx-dc-block-gain -default 32
+
+    option -rx-iq-gain-correct -default 0
+    option -rx-iq-phase-correct -default 0
+    option -rx-iq-method -default 2
+    option -rx-iq-mu -default 25
+    option -rx-iq-on-off -default 2
+
+    option -sdrom-threshold -default 20
+
+    option -tx-iq-gain-correct -default 0
+    option -tx-iq-phase-correct -default 0
+    option -tx-iq-on-off=0 -default
+
+    option -allow-tx -default 0
+    option -tx-dc-block-enable -default 0
+
+    option -gain -default 100
+    option -pws-mode -default 0
+    option -squelch-value -default 0
+    option -squelch-enable -default 0
+    option -sub-rx-gain -default 100
+    
     component parent;		# parent
 
     # local data that is not options
@@ -92,16 +219,22 @@ snit::type sdr::radio {
 	# puts stderr "sdr::radio {$args}"
 	$self configure {*}$args
 	$self configure -service-values [::sdr::band-data-services] -mode-values [sdrtype::mode cget -values]
-	    
-	# give the command dictionary our self
-	# hacky because how do we manage two or more selves?
-	# puts "sdr::radio::parent {$parent}"
-	set ::sdr::command::connect $parent.connect;	# hacky, hackier
+	# we monitor changes in a set of options
+	# and automatically transmit new values
+	foreach opt [array names optionmonitor] {
+	    if {$optionmonitor($opt) eq {}} continue
+	    $self monitor $opt [mymethod option-transmit]
+	}
+    }
+
+    method option-transmit {opt val} {
+	$parent.command $optionmonitor($opt) $val
     }
 
     ##
     ## one thing QtRadio did nicely was remember what you had done and
     ## bring it back, 
+    ##
     ## but this kind of memory depends on there only being one radio
     ## that is remembering the last settings
     ##
@@ -221,7 +354,7 @@ snit::type sdr::radio {
     method {Configure -frequency} {val} {
 	if {$options(-frequency) != $val} {
 	    set options(-frequency) $val
-	    ::sdr::command::setfrequency [$self mode-offset-frequency]
+	    $parent.command setfrequency [$self mode-offset-frequency]
 	}
     }
     method {Configure -mode} {val} {
@@ -238,13 +371,13 @@ snit::type sdr::radio {
 	    set hasCW [expr {$options(-mode) in {CWU CWL} || $val in {CWU CWL}}]
 	    set options(-mode) $val
 	    $self configure -filter-values [sdr::filters-get $val]
-	    ::sdr::command::setmode $options(-mode)
+	    $parent.command setmode $options(-mode)
 	    # these are only necessary when changing into or out of CW modes
 	    # but they can only be done when both mode, filter, and offset
 	    # have been set properly
 	    if {$hasCW} {
-		::sdr::command::setfrequency [$self mode-offset-frequency]
-		::sdr::command::setfilter {*}[$self mode-offset-filter]
+		$parent.command setfrequency [$self mode-offset-frequency]
+		$parent.command setfilter {*}[$self mode-offset-filter]
 	    }
 	}
     }
@@ -254,21 +387,15 @@ snit::type sdr::radio {
 	    if {[lsearch $options(-filter-values) $options(-filter)] < 0} {
 		$self configure -filter [random-item $options(-filter-values)]
 	    }
-	    ::sdr::command::setfilter {*}[$self mode-offset-filter]
-	}
-    }
-    method {Configure -agc} {val} {
-	if {$options(-agc) ne $val} {
-	    set options(-agc) $val
-	    ::sdr::command::setagc $options(-agc)
+	    $parent.command setfilter {*}[$self mode-offset-filter]
 	}
     }
     method {Configure -cw-pitch} {val} {
 	if {$options(-cw-pitch) != $val} {
 	    set options(-cw-pitch) $val
 	    if {$options(-mode) in {CWU CWL}} {
-		::sdr::command::setfrequency [$self mode-offset-frequency]
-		::sdr::command::setfilter {*}[$self mode-offset-filter]
+		$parent.command setfrequency [$self mode-offset-frequency]
+		$parent.command setfilter {*}[$self mode-offset-filter]
 	    }
 	}
     }
@@ -285,62 +412,60 @@ snit::type sdr::radio {
     ## making, breaking, and testing a server connection
     ##
     method connect {} {
-	# $parent connect
-	# following along with QtRadio/UI.cpp/UI::connected()
-	::sdr::command::setclient tkradio
-	::sdr::command::q-server
-	# most of this should be done elsewhere
-	# it resembles a band change
-	::sdr::command::setfrequency [$self mode-offset-frequency]; # spectrum view follows
-	::sdr::command::setmode $options(-mode)
-	::sdr::command::setfilter {*}[$self mode-offset-filter]; # spectrum view follows
-	# ui disable connect action
-	# ui enable disconnect action
-	# no, no, no $self connecttoggle, already done
+	# following after QtRadio/UI.cpp/UI::connected()
+	$parent.command setclient tkradio
+	$parent.command q-server
+	# most of this should be done elsewhere, it resembles a band change
+	$parent.command setfrequency [$self mode-offset-frequency]; # spectrum view follows
+	$parent.command setmode $options(-mode)
+	$parent.command setfilter {*}[$self mode-offset-filter]; # spectrum view follows
 	# ui enable subrx select
 	# ui enable mute subrx 
-	# ??? ::sdr::command::setpws $options(-pwsmode)
 	## audio output encoding
-	::sdr::command::setencoding [$parent get-audio-sample-format]
+	$parent.command setencoding [$parent get-audio-sample-format]
 	## audio output buffer-size, sample-rate, channels, and input sample encoding
 	## changing buffer size is a waste of time, dspserver is stubborn
-	::sdr::command::startaudiostream 2000 [$parent get-audio-sample-rate] 1 ALAW
-	::sdr::command::setpan 0.5
-	::sdr::command::setagc $options(-agc)
+	$parent.command startaudiostream 2000 [$parent get-audio-sample-rate] 1 ALAW
+	$parent.command setpan 0.5
+	$parent.command setagc $options(-agc)
 	## squelch
-	# ::sdr::command::setsquelchval
-	# ::sdr::command::setsquelchstate
-	## if we're going to muck with different spectra, ...
-	# ::sdr::command::setpws $options(-pwsmode)
+	$parent.command setsquelchval $options(-squelch-value)
+	$parent.command setsquelchstate $options(-squelch-enable)
+	## spectrum type
+	$parent.command setpwsmode $options(-pws-mode)
 	## set these when the ANF, NR, or NB is enabled
-	# ::sdr::command::setanfvals
-	# ::sdr::command::setnrvals
-	# ::sdr::command::setnbvals
-	# ::sdr::command::setanf
-	# ::sdr::command::setnr
-	# ::sdr::command::setnb
+	$parent.command setanfvals $options(-anf-taps) $options(-anf-delay) $options(-anf-gain) $options(-anf-leak)
+	$parent.command setnrvals $options(-nr-taps) $options(-nr-delay) $options(-nr-gain) $options(-nr-leak)
+	$parent.command setnbvals $options(-nb-threshold)
+	$parent.command setanf $options(-anf-enable)
+	$parent.command setnr $options(-nr-enable)
+	$parent.command setnb $options(-nb-enable)
 	## remote connected
-	::sdr::command::setrxdcblock 0
-	::sdr::command::settxdcblock 0
-	## this first one was commented out
-	# ::sdr::command::setrxagcslope $options(-rx-agc-slope)
-	# ::sdr::command::setrxagcattack $options(-rx-agc-attack)
-	# ::sdr::command::setrxagcdecay $options(-rx-agc-decay)
-	# ::sdr::command::setrxagchang $options(-rx-agc-hang)
-	# ::sdr::command::setfixedagc $options(-fixed-agc)
-	# ::sdr::command::setrxagchangthreshold $options(-rx-agc-hang-threshold)
-	# ::sdr::command::settxlevelerstate $options(-tx-leveler-state)
-	# ::sdr::command::settxlevelermaxgain $options(-tx-leveler-max-gain)
-	# ::sdr::command::settxlevelerattack $options(-tx-leveler-attack)
-	# ::sdr::command::settxlevelerdecay $options(-tx-leveler-decay)
-	# ::sdr::command::settxlevelerhang $options(-tx-leveler-hang)
-	# ::sdr::command::settxalcstate $options(-tx-alc-state)
-	# ::sdr::command::settxalcattack $options(-tx-alc-attack)
-	# ::sdr::command::settxalcdecay $options(-tx-alc-decay)
-	# ::sdr::command::settxalchang $options(-tx-alc-hang)
-	::sdr::command::*hardware?
+	$parent.command setrxdcblock $options(-rx-dc-block-enable)
+	$parent.command settxdcblock $options(-tx-dc-block-enable)
+	## receive agc
+	## -rx-agc-slope was commented out
+	$parent.command setrxagcattack $options(-rx-agc-attack)
+	$parent.command setrxagcdecay $options(-rx-agc-decay)
+	$parent.command setrxagchang $options(-rx-agc-hang)
+	$parent.command setrxagchangthreshold $options(-rx-agc-hang-threshold)
+	$parent.command setfixedagc $options(-rx-agc-fixed-gain)
+	$parent.command setrxagcslope $options(-rx-agc-slope)
+	## transmit leveler
+	$parent.command settxlevelerstate $options(-tx-leveler-enable)
+	$parent.command settxlevelermaxgain $options(-tx-leveler-max-gain)
+	$parent.command settxlevelerattack $options(-tx-leveler-attack)
+	$parent.command settxlevelerdecay $options(-tx-leveler-decay)
+	$parent.command settxlevelerhang $options(-tx-leveler-hang)
+	## transmit alc
+	$parent.command settxalcattack $options(-tx-alc-attack)
+	$parent.command settxalcdecay $options(-tx-alc-decay)
+	$parent.command settxalchang $options(-tx-alc-hang)
+	$parent.command settxalcstate $options(-tx-alc-enable)
+	## hardare query
+	$parent.command *hardware?
 	# start spectrum
-	sdr::command::setfps $options(-spectrum-width) $options(-spectrum-fps)
+	$parent.command setfps $options(-spectrum-width) $options(-spectrum-fps)
 	# enable notch filter false
 	# return 1
     }

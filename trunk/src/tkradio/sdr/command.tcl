@@ -27,64 +27,58 @@
 # 
 package provide sdr::command 1.0
 
+package require Tcl
+package require snit
+
 namespace eval ::sdr {}
 
-namespace eval ::sdr::command {
-    # the current channel
-    variable connect {}
-    
+snit::type ::sdr::command {
+    ##
+    ## procs and variables which are independent of instance
+    ##
+
+    # use a dictionary to translate symbolic values and accept valid numeric values
+    proc fix-dict {m dict msg} {
+	if {$m in [dict values $dict]} {
+	    return $m
+	} elseif {$m in [dict keys $dict]} { 
+	    return [dict get $dict $m]
+	} else {
+	    error $msg
+	}
+    }
+
     # modes of demodulation available
     # should be part of sdrtypes
-    variable modes-dict [dict create LSB 0 USB 1 DSB 2 CWL 3 CWU 4 FM 5 AM 6 DIGU 7 SPEC 8 DIGL 9 SAM 10 DRM 11 ]
-    dict unset modes-dict SPEC;	# not implemented
-    dict unset modes-dict DRM;	# not implemented
-    proc get-modes {} { return [dict keys ${::sdr::command::modes-dict}] }
-    proc fix-mode {m} {
-	if {$m in [dict values ${::sdr::command::modes-dict}]} {
-	    return $m
-	}
-	if {$m in [dict keys ${::sdr::command::modes-dict}]} { 
-	    return [dict get ${::sdr::command::modes-dict} $m]
-	}
-	error "unrecognized mode token $m"
-    }
+    # leaving out SPEC 8 and DRM 11, not implemented
+    typevariable modes-dict [dict create LSB 0 USB 1 DSB 2 CWL 3 CWU 4 FM 5 AM 6 DIGU 7 DIGL 9 SAM 10 ]
+    proc get-modes {} { return [dict keys ${modes-dict}] }
+    proc fix-mode {m} { return [fix-dict $m ${modes-dict} "unrecognized mode token $m"] }
 
     # pwsmodes, spectrum types 
-    variable pwsmodes-dict [dict create PostFilter 0 PreFilter 1 SemiRaw 2 PostDet 4 ]
-    proc get-pwsmodes {} { return [dict keys ${::sdr::command::pwsmodes-dict}] }
+    typevariable pwsmodes-dict [dict create PostFilter 0 PreFilter 1 SemiRaw 2 PostDet 4 ]
+    proc get-pwsmodes {} { return [dict keys ${pwsmodes-dict}] }
+    proc fix-pwsmode {m} { return [fix-dict $m ${pwsmodes-dict} "unrecognized pws mode token $m"] }
 
     # the encodings of audio - numeric enumeration by index in list
-    variable audio-encodings [dict create ALAW 0 PCM 1]
-    proc fix-encoding {e} {
-	if {$e in [dict values ${::sdr::command::audio-encodings}]} {
-	    return $e
-	}
-	if {$e in [dict keys ${::sdr::command::audio-encodings}]} { 
-	    return [dict get ${::sdr::command::audio-encodings} $e]
-	}
-	error "unrecognized audio encoding token $e"
-    }
+    typevariable audio-encodings [dict create ALAW 0 PCM 1]
+    proc get-audio-encodings {} { return [dict keys ${audio-encodings}] }
+    proc fix-encoding {e} { return [fix-dict $e ${audio-encodings} "unrecognized audio encoding token $e"] }
 
     # the encodings of mic audio - numeric enumeration by index in list
     # oh, can't do PCM on the microphone side?
-    variable mic-audio-encodings [dict create ALAW 0]
+    typevariable mic-audio-encodings [dict create ALAW 0]
 
     # audiostream defaults
     # cannot seem to reduce the size of the audio buffer, which is a waste, that's a 1/4 second buffer!
-    variable audiostream-defaults [dict create buffer_size 2000 samplerate 8000 channels 1 encoding ALAW mic-encoding ALAW]
+    typevariable audiostream-defaults [dict create buffer_size 2000 samplerate 8000 channels 1 encoding ALAW mic-encoding ALAW]
 
     # agc values
-    variable agcmodes-dict [dict create FIXED 0 LONG 1 SLOW 2 MEDIUM 3 FAST 4]
-    proc get-agcmodes {} { return [dict keys ${::sdr::command::agcmodes-dict}] }
-    proc fix-agcmode {agc} {
-	if {[dict exists ${::sdr::command::agcmodes-dict} $agc]} {
-	    return [dict get ${::sdr::command::agcmodes-dict} $agc]
-	} else {
-	    error "unrecognized agc token $agc"
-	}
-    }
+    typevariable agcmodes-dict [dict create FIXED 0 LONG 1 SLOW 2 MEDIUM 3 FAST 4]
+    proc get-agcmodes {} { return [dict keys ${agcmodes-dict}] }
+    proc fix-agcmode {agc} { return [fix-dict $agc ${agcmodes-dict} "unrecognized agc token $agc"] }
 		    
-    # commands which slaves are permitted to run
+    # is cmd a command which slaves are permitted to run
     proc slave-permitted {cmd} {
 	switch $cmd {
 	    getspectrum -
@@ -97,217 +91,204 @@ namespace eval ::sdr::command {
 	}
     }
 
-    # not commands, helpers for formatting data
     # enforce an on|off representation of a boolean
-    proc on-or-off {v} {
-	switch $v {
-	    off - 0 - false { return off }
-	    on - 1 - true { return on }
-	    default { error "on-or-off invalid value {$v}" }
-	}
-    }
-    # enforce a true|false representation of a boolean
-    proc true-or-false {v} {
-	switch $v {
-	    false - 0 - off { return false }
-	    true - 1 - on { return true }
-	    default { error "true-or-false invalid value {$v}" }
-	}
-    }
+    typevariable on-or-off-dict [dict create off off 0 off false off on on 1 on true on]
+    proc on-or-off {v} { return [fix-dict $v ${on-or-off-dict} "on-or-off invalid value {$v}"] }
 
-    # not commands, helpers for formatting and sending packets
+    # enforce a true|false representation of a boolean
+    typevariable true-or-false-dict [dict create off false 0 false false false on true 1 true true true]
+    proc true-or-false {v} { return [fix-dict $v ${true-or-false-dict} "true-or-false invalid value {$v}"] }
+
     # fill a command string with zeroes to an $n byte block
-    proc fill-command {n command} {
+    proc fill {n command} {
 	binary scan $command c* b
 	while {[llength $b] < $n} { lappend b 0 }
 	return [binary format c* $b]
     }
+
+    ##
+    ## begin instance code
+    ##
+    option -parent -readonly true -configuremethod Configure
+
+    component parent
+    
+    method {Configure -parent} {value} { set parent $value }
+
     # send a command
-    proc send-command {command} {
-	variable connect
-	if {[$connect is-connected]} {
-	    # verbose-puts "send>> $command"
-	    $connect write [fill-command 64 $command]
-	    $connect flush
+    method send {command} {
+	if {[$parent.connect is-connected]} {
+	    verbose-puts "send>> $command"
+	    $parent.connect write [fill 64 $command]
+	    $parent.connect flush
 	}
     }
 
     # send mic audio data
-    proc mic {audio} { 
-	variable connect
-	if {[$connect is-connected]} {
-	    # verbose-puts "send>> mic ..."
-	    $connect write {mic }
-	    $connect write $audio
-	    $connect flush
+    method mic {audio} { 
+	if {[$parent.connect is-connected]} {
+	    verbose-puts "send>> mic ..."
+	    $parent.connect write {mic }
+	    $parent.connect write $audio
+	    $parent.connect flush
 	}
     }	      
 
     # queries - these are the only real dspserver commands with hyphens
     # query if we are master of the dspserver
-    proc q-master {} { send-command q-master }
+    method q-master {} { $self send q-master }
     # query the version of something
-    proc q-version {} { send-command q-version }
+    method q-version {} { $self send q-version }
     # query the local oscillator offset
-    proc q-loffset {} { send-command q-loffset }
+    method q-loffset {} { $self send q-loffset }
     # query about protocol 3
-    proc q-protocol3 {} { send-command q-protocol3 }
-    proc q-server {} { send-command q-server }
-    proc q-info {} { send-command q-info }
-    proc q-cantx {user password} { send-command "q-cantx#$user#$password" }
-    proc q-rtpport {} { send-command q-rtpport }
+    method q-protocol3 {} { $self send q-protocol3 }
+    method q-server {} { $self send q-server }
+    method q-info {} { $self send q-info }
+    method q-cantx {user password} { $self send "q-cantx#$user#$password" }
+    method q-rtpport {} { $self send q-rtpport }
     
     # commands in order of appearance in dspserver/client.c/readcb()
-    proc getspectrum {iwidth} { send-command "getspectrum $iwidth" }
-    proc setfrequency {ihz} { send-command "setfrequency $ihz" }
-    proc setpreamp {s} { send-command "setpreamp $s" }
-    proc setmode {imode} { send-command "setmode [fix-mode $imode]" }
-    proc setfilter {ilo ihi} { send-command "setfilter $ilo $ihi" }
-    proc setagc {iagc} { send-command "setagc [fix-agcmode $iagc]" }
-    proc setfixedagc {iagc} { send-command "setfixedagc $iagc" }
-    proc enablenotchfilter {ivfo iindex ienabled} { send-command "enablenotchfilter $ivfo $iindex $ienabled" }
-    proc setnotchfilter {ivfo iindex fbandwidth ffrequency} { send-command "setnotchfilter $ivfo $iindex $fbandwidth $ffrequency" }
-    proc setagctlevel {i} { send-command "setagctlevel $i" }
-    proc setrxgreqcmd {i} { send-command "setrxgreqcmd $i" }
-    proc setrx3bdgreq {pre b1 b2 b3} { send-command "setrx3bdgreq $pre $b1 $b2 $b3" }
-    proc setrx10bdgreq {pre b1 b2 b3 b4 b5 b6 b7 b8 b9 b10} { send-command "setrx10bdgreq $pre $b1 $b2 $b3 $b4 $b5 $b6 $b7 $b8 $b9 $b10" }
-    proc settxgreqcmd {i} { send-command "settxgreqcmd $i" }
-    proc settx3bdgreq {pre b1 b2 b3} { send-command "settx3bdgreq $pre $b1 $b2 $b3" }
-    proc settx10bdgreq {pre b1 b2 b3 b4 b5 b6 b7 b8 b9 b10} { send-command "settx10bdgreq $pre $b1 $b2 $b3 $b4 $b5 $b6 $b7 $b8 $b9 $b10" }
-    proc setnr {val} { send-command "setnr [true-or-false $val]" }
-    proc setnb {val} { send-command "setnb [true-or-false $val]" }
-    proc setsdrom {v} { send-command "setsdrom [true-or-false $v]" }
-    proc setanf {tf} { send-command "setanf [true-or-false $tf]" }
-    proc setrxoutputgain {i} { send-command "setrxoutputgain $i" }
-    proc setsubrxoutputgain {i} { send-command "setsubrxoutputgain $i" }
-    proc startaudiostream {ibufsize irate ichannels imicencoding} { send-command "startaudiostream $ibufsize $irate $ichannels [fix-encoding $imicencoding]" }
-    proc startrtpstream {iport iencoding irate ichannels} { send-command "startrtpstream $iport $iencoding $irate $ichannels" }
-    proc stopaudiostream {} { send-command "stopaudiostream" };  #  does nothing
-    proc setencoding {iencoding} { send-command "setencoding [fix-encoding $iencoding]" }
-    proc setsubrx {int} { send-command "setsubrx $int" }
-    proc setsubrxfrequency {int} { send-command "setsubrxfrequency $int" }; #  offset from setfrequency
-    proc setpan {f} { send-command "setpan $f" }
-    proc setsubrxpan {f} { send-command "setsubrxpan $f" }
-    proc record {s} { send-command "record $s" }; #  send to ozy $s
-    proc setanfvals {itaps idelay fgain fleakage} { send-command "setanfvals $itaps $idelay $fgain $fleakage" }
-    proc setnrvals {itaps idelay fgain fleakage} { send-command "setnrvals $itaps $idelay $fgain $fleakage" }
-    proc setrxagcattack {i} { send-command "setrxagcattack $i" }
-    proc setrxagcdecay {i} { send-command "setrxagcdecay $i" }
-    proc setrxagchang {i} { send-command "setrxagchang $i" }
-    proc setrxagchanglevel {f} { send-command "setrxagchanglevel $f" }
-    proc setrxagchangthreshold {i} { send-command "setrxagchangthreshold $i" }
-    proc setrxagcthresh {f} { send-command "setrxagcthresh $f" }
-    proc setrxagcmaxgain {f} { send-command "setrxagcmaxgain $f" }
-    proc setrxagcslope {i} { send-command "setrxagcslope $i" };    # int? is that right?
-    proc setnbvals {fthreshold} { send-command "setnbvals $fthreshold" }
-    proc setsdromvals {fthreshold} { send-command "setsdromvals $fthreshold" }
-    proc setpwsmode {istate} { send-command "setpwsmode $istate" }
-    proc setbin {istate} { send-command "setbin $istate" }
-    proc settxcompst {istate} { send-command "settxcompst $istate" }
-    proc settxcompvalue {f} { send-command "settxcompvalue $f" }
-    proc setoscphase {fphase} { send-command "setoscphase $fphase" }
-    proc setpanamode {imode} { send-command "setpanamode $imode" }
-    proc setrxmetermode {imode} { send-command "setrxmetermode $imode" }
-    proc settxmetermode {imode} { send-command "settxmetermode $imode" }
-    proc setrxdcblockgain {fgain} { send-command "setrxdcblockgain $fgain" }
-    proc setrxdcblock {istate} { send-command "setrxdcblock $istate" }
-    proc settxdcblock {istate} { send-command "settxdcblock $istate" }
-    proc mox {onoff user password} { send-command "mox [on-or-off $onoff] $user $password" }
-    proc settxamcarrierlevel {flevel user password} { send-command "settxamcarrierlevel $flevel $user $password" }
-    proc settxamcarrierlevel {flevel} { send-command "settxamcarrierlevel $flevel" }
-    proc settxalcstate {istate} { send-command "settxalcstate $istate" }
-    proc settxalcattack {i} { send-command "settxalcattack $i" }
-    proc settxalcdecay {i} { send-command "settxalcdecay $i" }
-    proc settxalcbot {f} { send-command "settxalcbot $f" }
-    proc settxalchang {i} { send-command "settxalchang $i" }
-    proc settxlevelerstate {i} { send-command "settxlevelerstate $i" }
-    proc settxlevelerattack {i} { send-command "settxlevelerattack $i" }
-    proc settxlevelerdecay {i} { send-command "settxlevelerdecay $i" }
-    proc settxlevelerhang {i} { send-command "settxlevelerhang $i" }
-    proc settxlevelermaxgain {i} { send-command "settxlevelermaxgain $i" }; # it was float for rx agc max gain?
-    proc settxagcff {i} { send-command "settxagcff $i" }
-    proc settxagcffcompression {f} { send-command "settxagcffcompression $f" }
-    proc setcorrecttxiqmu {f} { send-command "setcorrecttxiqmu $f" }
-    proc setcorrecttxiqw {f1 f2} { send-command "setcorrecttxiqw $f1 $f2" }
-    proc setfadelevel {i} { send-command "setfadelevel $i" }
-    proc setsquelchval {f} { send-command "setsquelchval $f" }
-    proc setsubrxquelchval {f} { send-command "setsubrxquelchval $f" }; # lost s in squelch
-    proc setsquelchstate {onoff} { send-command "setsquelchstate [on-or-off $onoff]" }
-    proc setsubrxquelchstate {onoff} { send-command "setsubrxquelchstate [on-or-off $onoff]" }; # lost s in squelch
-    proc setspectrumpolyphase {tf} { send-command "setspectrumpolyphase [true-or-false $tf]" }
-    proc setocoutputs {s} { send-command "setocoutputs $s" }; # to ozy?
-    proc setwindow {iwindow} { send-command "setwindow $iwindow" }
-    proc setclient {sclient} { send-command "setclient $sclient" }
-    proc setiqenable {tf} { send-command "setiqenable [true-or-false $tf]" }
-    proc setiqmethod {tf} { send-command "setiqmethod [true-or-false $tf]" }
-    proc settxiqenable {tf} { send-command "settxiqenable [true-or-false $tf]" }
-    proc testbutton {tf} { send-command "testbutton [true-or-false $tf]" }
-    proc testslider {i} { send-command "testslider $i" }
-    proc rxiqmuval {f} { send-command "rxiqmuval $f" }
-    proc txiqcorrectval {f1 f2} { send-command "txiqcorrectval $f1 $f2" }
-    proc txiqphasecorrectval {f} { send-command "txiqphasecorrectval $f" }
-    proc txiqgaincorrectval {f} { send-command "txiqgaincorrectval $f" }
-    proc rxiqphasecorrectval {f} { send-command "rxiqphasecorrectval $f" }
-    proc rxiqgaincorrectval {f} { send-command "rxiqgaincorrectval $f" }
-    proc rxiqcorrectwr {f1 f2} { send-command "rxiqcorrectwr $f1 $f2" }
-    proc rxiqcorrectwi {f1 f2} { send-command "rxiqcorrectwi $f1 $f2" }
-    proc setfps {iwidth ifps} { send-command "setfps $iwidth $ifps" }
-    proc zoom {izoom} { send-command "zoom $izoom" }
-    proc setmaster {suser spassword} { send-command "setmaster $suser $spassword" }
+    method getspectrum {iwidth} { $self send "getspectrum $iwidth" }
+    method setfrequency {ihz} { $self send "setfrequency $ihz" }
+    method setpreamp {s} { $self send "setpreamp $s" }
+    method setmode {imode} { $self send "setmode [fix-mode $imode]" }
+    method setfilter {ilo ihi} { $self send "setfilter $ilo $ihi" }
+    method setagc {iagc} { $self send "setagc [fix-agcmode $iagc]" }
+    method setfixedagc {iagc} { $self send "setfixedagc $iagc" }
+    method enablenotchfilter {ivfo iindex ienabled} { $self send "enablenotchfilter $ivfo $iindex $ienabled" }
+    method setnotchfilter {ivfo iindex fbandwidth ffrequency} { $self send "setnotchfilter $ivfo $iindex $fbandwidth $ffrequency" }
+    method setagctlevel {i} { $self send "setagctlevel $i" }
+    method setrxgreqcmd {i} { $self send "setrxgreqcmd $i" }
+    method setrx3bdgreq {pre b1 b2 b3} { $self send "setrx3bdgreq $pre $b1 $b2 $b3" }
+    method setrx10bdgreq {pre b1 b2 b3 b4 b5 b6 b7 b8 b9 b10} { $self send "setrx10bdgreq $pre $b1 $b2 $b3 $b4 $b5 $b6 $b7 $b8 $b9 $b10" }
+    method settxgreqcmd {i} { $self send "settxgreqcmd $i" }
+    method settx3bdgreq {pre b1 b2 b3} { $self send "settx3bdgreq $pre $b1 $b2 $b3" }
+    method settx10bdgreq {pre b1 b2 b3 b4 b5 b6 b7 b8 b9 b10} { $self send "settx10bdgreq $pre $b1 $b2 $b3 $b4 $b5 $b6 $b7 $b8 $b9 $b10" }
+    method setnr {val} { $self send "setnr [true-or-false $val]" }
+    method setnb {val} { $self send "setnb [true-or-false $val]" }
+    method setsdrom {v} { $self send "setsdrom [true-or-false $v]" }
+    method setanf {tf} { $self send "setanf [true-or-false $tf]" }
+    method setrxoutputgain {i} { $self send "setrxoutputgain $i" }
+    method setsubrxoutputgain {i} { $self send "setsubrxoutputgain $i" }
+    method startaudiostream {ibufsize irate ichannels imicencoding} { $self send "startaudiostream $ibufsize $irate $ichannels [fix-encoding $imicencoding]" }
+    method startrtpstream {iport iencoding irate ichannels} { $self send "startrtpstream $iport $iencoding $irate $ichannels" }
+    method stopaudiostream {} { $self send "stopaudiostream" };  #  does nothing
+    method setencoding {iencoding} { $self send "setencoding [fix-encoding $iencoding]" }
+    method setsubrx {int} { $self send "setsubrx $int" }
+    method setsubrxfrequency {int} { $self send "setsubrxfrequency $int" }; #  offset from setfrequency
+    method setpan {f} { $self send "setpan $f" }
+    method setsubrxpan {f} { $self send "setsubrxpan $f" }
+    method record {s} { $self send "record $s" }; #  send to ozy $s
+    method setanfvals {itaps idelay fgain fleakage} { $self send "setanfvals $itaps $idelay $fgain $fleakage" }
+    method setnrvals {itaps idelay fgain fleakage} { $self send "setnrvals $itaps $idelay $fgain $fleakage" }
+    method setrxagcattack {i} { $self send "setrxagcattack $i" }
+    method setrxagcdecay {i} { $self send "setrxagcdecay $i" }
+    method setrxagchang {i} { $self send "setrxagchang $i" }
+    method setrxagchanglevel {f} { $self send "setrxagchanglevel $f" }
+    method setrxagchangthreshold {i} { $self send "setrxagchangthreshold $i" }
+    method setrxagcthresh {f} { $self send "setrxagcthresh $f" }
+    method setrxagcmaxgain {f} { $self send "setrxagcmaxgain $f" }
+    method setrxagcslope {i} { $self send "setrxagcslope $i" };    # int? is that right?
+    method setnbvals {fthreshold} { $self send "setnbvals $fthreshold" }
+    method setsdromvals {fthreshold} { $self send "setsdromvals $fthreshold" }
+    method setpwsmode {istate} { $self send "setpwsmode $istate" }
+    method setbin {istate} { $self send "setbin $istate" }
+    method settxcompst {istate} { $self send "settxcompst $istate" }
+    method settxcompvalue {f} { $self send "settxcompvalue $f" }
+    method setoscphase {fphase} { $self send "setoscphase $fphase" }
+    method setpanamode {imode} { $self send "setpanamode $imode" }
+    method setrxmetermode {imode} { $self send "setrxmetermode $imode" }
+    method settxmetermode {imode} { $self send "settxmetermode $imode" }
+    method setrxdcblockgain {fgain} { $self send "setrxdcblockgain $fgain" }
+    method setrxdcblock {istate} { $self send "setrxdcblock $istate" }
+    method settxdcblock {istate} { $self send "settxdcblock $istate" }
+    method mox {onoff user password} { $self send "mox [on-or-off $onoff] $user $password" }
+    method settxamcarrierlevel {flevel user password} { $self send "settxamcarrierlevel $flevel $user $password" }
+    method settxamcarrierlevel {flevel} { $self send "settxamcarrierlevel $flevel" }
+    method settxalcstate {istate} { $self send "settxalcstate $istate" }
+    method settxalcattack {i} { $self send "settxalcattack $i" }
+    method settxalcdecay {i} { $self send "settxalcdecay $i" }
+    method settxalcbot {f} { $self send "settxalcbot $f" }
+    method settxalchang {i} { $self send "settxalchang $i" }
+    method settxlevelerstate {i} { $self send "settxlevelerstate $i" }
+    method settxlevelerattack {i} { $self send "settxlevelerattack $i" }
+    method settxlevelerdecay {i} { $self send "settxlevelerdecay $i" }
+    method settxlevelerhang {i} { $self send "settxlevelerhang $i" }
+    method settxlevelermaxgain {i} { $self send "settxlevelermaxgain $i" }; # it was float for rx agc max gain?
+    method settxagcff {i} { $self send "settxagcff $i" }
+    method settxagcffcompression {f} { $self send "settxagcffcompression $f" }
+    method setcorrecttxiqmu {f} { $self send "setcorrecttxiqmu $f" }
+    method setcorrecttxiqw {f1 f2} { $self send "setcorrecttxiqw $f1 $f2" }
+    method setfadelevel {i} { $self send "setfadelevel $i" }
+    method setsquelchval {f} { $self send "setsquelchval $f" }
+    method setsubrxquelchval {f} { $self send "setsubrxquelchval $f" }; # lost s in squelch
+    method setsquelchstate {onoff} { $self send "setsquelchstate [on-or-off $onoff]" }
+    method setsubrxquelchstate {onoff} { $self send "setsubrxquelchstate [on-or-off $onoff]" }; # lost s in squelch
+    method setspectrumpolyphase {tf} { $self send "setspectrumpolyphase [true-or-false $tf]" }
+    method setocoutputs {s} { $self send "setocoutputs $s" }; # to ozy?
+    method setwindow {iwindow} { $self send "setwindow $iwindow" }
+    method setclient {sclient} { $self send "setclient $sclient" }
+    method setiqenable {tf} { $self send "setiqenable [true-or-false $tf]" }
+    method setiqmethod {tf} { $self send "setiqmethod [true-or-false $tf]" }
+    method settxiqenable {tf} { $self send "settxiqenable [true-or-false $tf]" }
+    method testbutton {tf} { $self send "testbutton [true-or-false $tf]" }
+    method testslider {i} { $self send "testslider $i" }
+    method rxiqmuval {f} { $self send "rxiqmuval $f" }
+    method txiqcorrectval {f1 f2} { $self send "txiqcorrectval $f1 $f2" }
+    method txiqphasecorrectval {f} { $self send "txiqphasecorrectval $f" }
+    method txiqgaincorrectval {f} { $self send "txiqgaincorrectval $f" }
+    method rxiqphasecorrectval {f} { $self send "rxiqphasecorrectval $f" }
+    method rxiqgaincorrectval {f} { $self send "rxiqgaincorrectval $f" }
+    method rxiqcorrectwr {f1 f2} { $self send "rxiqcorrectwr $f1 $f2" }
+    method rxiqcorrectwi {f1 f2} { $self send "rxiqcorrectwi $f1 $f2" }
+    method setfps {iwidth ifps} { $self send "setfps $iwidth $ifps" }
+    method zoom {izoom} { $self send "zoom $izoom" }
+    method setmaster {suser spassword} { $self send "setmaster $suser $spassword" }
 
     ########################################################################
     # no such commands in dspserver
     # proc getbandscope {iwidth} { send-command "getbandscope $iwidth" }
-    # proc setalcstate {i} { send-command "setalcstate $i" }
 
     ########################################################################
     #
     # hardware
     #
-    proc *hardware? {} { send-command "*hardware?" }
+    method *hardware? {} { $self send "*hardware?" }
 
     # from hardware_hermes
-    namespace eval hermes {
-	proc *getserial? {} { sdr::command::send-command "*getserial?" }
-	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
-	proc *alextxrelay {i}  { sdr::command::send-command "*alextxrelay $i" }
-	proc *hermesmicboost {i} { sdr::command::send-command "*hermesmicboost $i" }
-	proc *settxdrive {i} { sdr::command::send-command "*settxdrive $i" }
-	proc *settxlineingain {i} { sdr::command::send-command "*settxlineingain $i" }
-	proc *dither {onoff} { sdr::command::send-command "*dither [on-or-off $onoff]" }
-	proc *preamp {onoff} { sdr::command::send-command "*preamp [on-or-off $onoff]" }
-	proc *random {onoff} { sdr::command::send-command "*random [on-or-off $onoff]" }
-    }
+    method hermes*getserial? {} { $self send "*getserial?" }
+    method hermes*setattenuator {i} { $self send "*setattenuator $i" }
+    method hermes*alextxrelay {i}  { $self send "*alextxrelay $i" }
+    method hermes*hermesmicboost {i} { $self send "*hermesmicboost $i" }
+    method hermes*settxdrive {i} { $self send "*settxdrive $i" }
+    method hermes*settxlineingain {i} { $self send "*settxlineingain $i" }
+    method hermes*dither {onoff} { $self send "*dither [on-or-off $onoff]" }
+    method hermes*preamp {onoff} { $self send "*preamp [on-or-off $onoff]" }
+    method hermes*random {onoff} { $self send "*random [on-or-off $onoff]" }
     # from hardware_hiqsdr
-    namespace eval hiqsdr {
-	proc *getserial? {} { sdr::command::send-command "*getserial?" }
-	proc *getpreselector? {i} { sdr::command::send-command "*getpreselector? $i" }
-	proc *getpreampstatus? {} { sdr::command::send-command "*getpreampstatus?" }
-	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
-	proc *selectantenna {i} { sdr::command::send-command "*selectantenna $i" }
-	proc *selectpresel {i} { sdr::command::send-command "*selectpresel $i" }
-	proc *activatepreamp {i} { sdr::command::send-command "*activatepreamp $i" }
-    }
-    namespace eval perseus {
-	proc *getserial? {} { sdr::command::send-command "*getserial?" }
-	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
-	proc *dither {i} { sdr::command::send-command "*dither $i" }
-	proc *preamp {i} { sdr::command::send-command "*preamp $i" }
-    }
-    namespace eval rtlsdr {
-	proc *getserial? {} { sdr::command::send-command "*getserial?" }
-	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
-    }
-    namespace eval sdr1000 {
-	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
-	proc *setspurreduction {i} { sdr::command::send-command "*setspurreduction $i" }
-	proc *getpaadc? {i} { sdr::command::send-command "*getpaadc? $i" }
-    }
-    namespace eval sdriq {
-	proc *getserial? {} { sdr::command::send-command "*getserial?" }
-	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
-    }
-    namespace eval sdrplay {
-	proc *setattenuator {i} { sdr::command::send-command "*setattenuator $i" }
-    }
+    method hiqsdr*getserial? {} { $self send "*getserial?" }
+    method hiqsdr*getpreselector? {i} { $self send "*getpreselector? $i" }
+    method hiqsdr*getpreampstatus? {} { $self send "*getpreampstatus?" }
+    method hiqsdr*setattenuator {i} { $self send "*setattenuator $i" }
+    method hiqsdr*selectantenna {i} { $self send "*selectantenna $i" }
+    method hiqsdr*selectpresel {i} { $self send "*selectpresel $i" }
+    method hiqsdr*activatepreamp {i} { $self send "*activatepreamp $i" }
+    # from hardware_perseus
+    method perseus*getserial? {} { $self send "*getserial?" }
+    method perseus*setattenuator {i} { $self send "*setattenuator $i" }
+    method perseus*dither {i} { $self send "*dither $i" }
+    method perseus*preamp {i} { $self send "*preamp $i" }
+    # from hardware_rtlsdr
+    method rtlsdr*getserial? {} { $self send "*getserial?" }
+    method rtlsdr*setattenuator {i} { $self send "*setattenuator $i" }
+    # from hardware_sdr1000
+    method sdr1000*setattenuator {i} { $self send "*setattenuator $i" }
+    method sdr1000*setspurreduction {i} { $self send "*setspurreduction $i" }
+    method sdr1000*getpaadc? {i} { $self send "*getpaadc? $i" }
+    # from hardware_sdriq
+    method sdriq*getserial? {} { $self send "*getserial?" }
+    method sdriq*setattenuator {i} { $self send "*setattenuator $i" }
+    # from hardware_sdrplay
+    method sdrplay*setattenuator {i} { $self send "*setattenuator $i" }
 }

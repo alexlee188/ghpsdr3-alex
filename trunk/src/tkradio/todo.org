@@ -5,11 +5,10 @@
 [x] teach automake to install sdr/* into $(prefix)/share/tcltk/sdr
 [ ] teach automake to clean up *~
 [ ] add agc option menu
-[ ] add detailed configuration panel
 [ ] incorporate tool tips
 [x] start audio playback
 [x] incorporate spectrum and waterfall 
-[ ] add gain control panel
+[x] add gain control panel
 [x] add s-meter
 [ ] add dB to s-meter display
 [ ] add dial
@@ -18,6 +17,7 @@
 [x] theme, just in red, needs more work
 [x] set up night vision theme
 [ ] theme tk menues?
+[ ] theme tk entries?
 [x] wire up service -> band -> channels -> frequency / mode / filter
 	cascade
 [x] wire up mode -> filter  cascade
@@ -42,3 +42,8 @@
 [ ] Implement filters on input events to lessen the demands made on
 	the hardware.  Some requests are easily done in dspserver with
 	no impact on the hardware.
+[ ] Rob Frohne's hermes is generating spikes all over the spectrum which
+	do not appear on QtRadio, don't understand how it fixes it.
+[ ] Implement the missing options in radio
+[ ] Implement a gui for adjusting the missing options, a scrolling panel
+	with collapsible groups.

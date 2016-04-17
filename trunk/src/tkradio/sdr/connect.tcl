@@ -89,9 +89,7 @@ snit::type sdr::connect {
     ##
     method connect {host port} {
 	$self configure -host $host -port $port
-	if {[catch {socket $options(-host) $options(-port)} data(channel)]} {
-	    $self process status "connection to $options(-host) $options(-port) refused: $error\n$::errorInfo"
-	}
+	set data(channel) [socket $options(-host) $options(-port)]
 	chan configure $data(channel) -blocking 0 -encoding binary -translation binary
 	fileevent $data(channel) readable [mymethod reader]
 	# fileevent $data(channel) writable [mymethod writer]

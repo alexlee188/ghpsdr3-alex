@@ -31,7 +31,7 @@ package require sdrtype::types;	# snit types for option checking
 package require sdr::radio;	# the dspserver radio model
 package require sdr::server;	# the napan.com servers listing
 package require sdr::connect;	# the tcp connection to dspserver
-#package require sdr::command;	# the commands sent to dspserver
+package require sdr::command;	# the commands sent to dspserver
 package require sdr::audio;	# audio playback (no mike as yet)
 #package require sdr::filter;	# our filter syntax
 #package require sdr::util;	# various utilities
@@ -53,6 +53,7 @@ snit::type tkradio {
 
     component server
     component connect
+    component command
     
     component radio
     component hw
@@ -62,6 +63,7 @@ snit::type tkradio {
     constructor {args} {
 	install server using sdr::server $self.server -parent $self
 	install connect using sdr::connect $self.connect -parent $self
+	install command using sdr::command $self.command -parent $self
 	install radio using sdr::radio $self.radio -parent $self
 	$radio configure -service [sdr::get-last service]
 	$server request [list {*}[mymethod configure] -name-values]
@@ -261,6 +263,11 @@ snit::type tkradio {
     method process-argv {argv} {
 	if {[catch {
 	    set argc [llength $argv]
+	    if {$argc == 0} {
+		# make a command line
+		set argv {-n local -l {local localhost 8000} -u pw}
+		set argc [llength $argv]
+	    }
 	    # load saved configuration, including current options, saved memories,
 	    # and last tuned points
 	    
@@ -324,3 +331,4 @@ set tkr [tkradio %AUTO%]
 proc verbose-puts {msg} "$tkr verbose-puts \$msg"
 # process the command line arguments
 $tkr process-argv $argv
+

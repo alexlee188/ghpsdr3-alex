@@ -26,7 +26,6 @@ package require Tcl
 package require snit
 
 package require sdr::util
-package require sdr::command
 
 namespace eval ::sdr {}
 
@@ -94,12 +93,12 @@ snit::type sdr::radio-sdrplay {
     method {Configure -gain-reduction} {dB} {
 	set options(-gain-reduction) $dB
 	$self compute-from -gain-reduction
-	sdr::command::sdrplay::*setattenuator $options(-gain-reduction)
+	$parent.command sdrplay*setattenuator $options(-gain-reduction)
     }
     method {Configure -gain} {dB} {
 	set options(-gain) $dB
 	$self compute-from -gain
-	sdr::command::sdrplay::*setattenuator $options(-gain-reduction)
+	$parent.command sdrplay*setattenuator $options(-gain-reduction)
     }
     method get-caps {} {
 	return $caps
