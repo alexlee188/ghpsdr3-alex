@@ -50,6 +50,8 @@ snit::type tkradio {
     option -name-values -configuremethod Configure2
     option -audio-format -default ALAW:8000 -type audio-format
     option -connect-status {}
+    option -sample-rate -default 3000 -configuremethod Configure2;	# -sample-rate of dspserver from spectrum
+    option -local-oscillator -default 0 -configuremethod Configure2;	# -local-oscillator of dspserver from spectrum
 
     component server
     component connect
@@ -64,6 +66,11 @@ snit::type tkradio {
 	tickle-spectrum {}
 	tickle-master {}
 	tickle-cantx {}
+	meter-listeners {}
+	spectrum-listeners {}
+	spectrum-xs {}
+	spectrum-sr 0
+	spectrum-n 0
     }
     
     constructor {args} {
@@ -75,8 +82,8 @@ snit::type tkradio {
 	$server request [list {*}[mymethod configure] -name-values]
 	# initialize connections
 	$connect add-listener status [mymethod connect-status]
-	$connect add-listener spectrum [list $radio process-spectrum]
-	$connect add-listener answer [list $radio process-answer]
+	$connect add-listener spectrum [mymethod process-spectrum]
+	$connect add-listener answer [mymethod process-answer]
     }
 
     ##
@@ -186,7 +193,6 @@ snit::type tkradio {
 		puts stderr "Configure -hw {$value} when options(-hw) is {$options(-hw)}???"
 	    }
 	}
-	
     }
 
     method Configure2 {option value} {
@@ -305,6 +311,95 @@ snit::type tkradio {
     }
 
     ##
+    ## incoming packets from dspserver
+    ##
+    
+    # process spectrum records received from the server
+    method process-spectrum {main sub sr lo spectrum} {
+	# spectrum record
+	# coming at the frame rate specified by setfps
+	# with the number of samples specified by setfps
+	# each sample is an unsigned byte which is the bin level
+	# measured as the dB's below zero
+	
+	# store some values as configuration options because
+	# they rarely change
+	$self configure -sample-rate $sr -local-oscillator $lo
+	# pass the rest into update methods that can be subscribed
+	$self meter-update $main $sub
+	$self spectrum-update {*}[$self xy $spectrum]
+	update idletasks
+    }
+    # convert incoming spectrum string from unsigned -dB in bytes
+    # into freq dB coordinates as floats
+    method xy {ystr} {
+	binary scan $ystr {c*} ys
+	# last byte is always 0
+	set ys [lrange $ys 0 end-1]
+	set n [llength $ys]
+	# recompute the x coordinates for the spectrum
+	if {$n != $data(spectrum-n) || $options(-sample-rate) != $data(spectrum-sr)} {
+	    set data(spectrum-n) $n
+	    set sr [set data(spectrum-sr) $options(-sample-rate)]
+	    set data(spectrum-xs) {}
+	    set maxf [expr {$sr/2.0}]
+	    set minf [expr {-$maxf}]
+	    set df [expr {double($sr)/$n}]
+	    set data(spectrum-xs)
+	    for {set i 0} {$i < $n} {incr i} {
+		lappend data(spectrum-xs) [expr {$minf+$i*$df}]
+	    }
+	}
+	set xs $data(spectrum-xs)
+	# this is how QtRadio extracts the spectrum bytes
+	set ys [lmap y $ys {expr {-($y&0xff)}}]
+	# keep min, max, and average levels
+	set miny [tcl::mathfunc::min {*}$ys]
+	set maxy [tcl::mathfunc::max {*}$ys]
+	set avgy [expr {[tcl::mathop::+ {*}$ys]/double($n)}]
+	
+	set xy {}
+	foreach x $xs y $ys {
+	    lappend xy $x $y
+	}
+	return [list $xy $miny $maxy $avgy]
+    }
+    # process answers to queries to the dspserver
+    method process-answer {answer} {
+	switch -glob $answer {
+	    {q-server:*} {
+		# parse out server name and can-tx?
+	    }
+	    {\*hardware\? OK *} {
+		# set up hardware specific model and ui
+		$self configure -hw [string tolower [lindex $answer end]]
+	    }
+	    {\*setattenuator*} {
+	    }
+	    default {
+		puts stderr "answer = {$answer}"
+	    }
+	}
+    }
+    ##
+    ## manage listeners
+    ##
+    # listen for meter updates
+    method meter-subscribe {callback} {
+	lappend data(meter-listeners) $callback
+    }
+    method meter-update {main subrx} {
+	foreach callback $data(meter-listeners) { {*}$callback $main $subrx }
+    }
+    # listen for spectrum updates
+    method spectrum-subscribe {callback} {
+	lappend data(spectrum-listeners) $callback
+    }
+    method spectrum-update {xy miny maxy avgy} {
+	foreach callback $data(spectrum-listeners) { {*}$callback $xy $miny $maxy $avgy }
+    }
+
+    ##
     ## monitor our configuration options
     ## 
     method monitor {opts prefix} {
@@ -312,6 +407,7 @@ snit::type tkradio {
 	    trace variable options($opt) w [list {*}[mymethod monitor-fired] $prefix]
 	}
     }
+
     method monitor-fired {prefix name1 name2 op} {
 	{*}$prefix $name2 $options($name2)
     }

@@ -46,13 +46,9 @@ snit::type sdr::connect {
     ##
     ## life cycle
     ##
-    constructor {args} {
-	$self configure {*}$args
-    }
+    constructor {args} { $self configure {*}$args }
 	
-    destructor {
-	$self disconnect
-    }
+    destructor { $self disconnect }
 
     ##
     ## listener management
@@ -110,6 +106,7 @@ snit::type sdr::connect {
     ## asynchronous reader
     ##
     method reader {} {
+	# this needs to assemble partial packets at some point
 	while {1} {
 	    if {[catch {read $data(channel)} buffer]} {
 		$self process status "error on read $data(channel), $error, $::errorInfo"

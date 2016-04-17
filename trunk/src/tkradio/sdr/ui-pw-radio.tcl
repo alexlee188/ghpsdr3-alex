@@ -169,12 +169,12 @@ snit::widgetadaptor sdrui::pw-radio {
 	    -service -service-values \
 	    -band -band-values \
 	    -mode -mode-values \
-	    -filter -filter-values \
+	    -filter -filter-values
+	$self pmonitor -name -name-values -connect-status \
 	    -local-oscillator -sample-rate
-	$self pmonitor -name -name-values -connect-status
 
-	$parent.radio meter-subscribe [list $win.meter update]
-	$parent.radio spectrum-subscribe [list $win.sw update]
+	$parent meter-subscribe [list $win.meter update]
+	$parent spectrum-subscribe [list $win.sw update]
 	$self monitor {-text -connect-status -name} [mymethod window-title]
 	
 	# layout

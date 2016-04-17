@@ -46,6 +46,7 @@ snit::type sdr::radio {
     # sdrom is called nb2 on the QtRadio menues
     #
     # ah, better idea, combine this with defaults.tcl, add in types with ranges
+    #
     # still need to add bandscope and panadapter commands for notch filters
     # and the graphic equalizers
     typevariable optionmonitor [dict create {*}{
@@ -169,8 +170,6 @@ snit::type sdr::radio {
     option -cw-pitch -default {600} -configuremethod Configure
     option -agc -default {SLOW} -type sdrtype::agc-mode -configuremethod Configure2
     option -agc-values -configuremethod Configure2
-    option -sample-rate -default 3000 -configuremethod Configure2;	# -sample-rate of dspserver from spectrum
-    option -local-oscillator -default 0 -configuremethod Configure2;	# -local-oscillator of dspserver from spectrum
     option -spectrum-width 1024
     option -spectrum-fps 4
     
@@ -255,11 +254,6 @@ snit::type sdr::radio {
 
     # local data that is not options
     variable data -array {
-	meter-listeners {}
-	spectrum-listeners {}
-	spectrum-xs {}
-	spectrum-sr 0
-	spectrum-n 0
     }
     
     # constructor
@@ -562,77 +556,6 @@ snit::type sdr::radio {
     }
     
     ##
-    ## incoming packets from dspserver
-    ##
-    
-    # process spectrum records received from the server
-    method process-spectrum {main sub sr lo spectrum} {
-	# spectrum record
-	# coming at the frame rate specified by setfps
-	# with the number of samples specified by setfps
-	# each sample is an unsigned byte which is the bin level
-	# measured as the dB's below zero
-	
-	# store some values as configuration options because
-	# they rarely change
-	$self configure -sample-rate $sr -local-oscillator $lo
-	# pass the rest into update methods that can be subscribed
-	$self meter-update $main $sub
-	$self spectrum-update {*}[$self xy $spectrum]
-	update
-    }
-    # convert incoming spectrum string from unsigned -dB in bytes
-    # into freq dB coordinates as floats
-    method xy {ystr} {
-	binary scan $ystr {c*} ys
-	# last byte is always 0
-	set ys [lrange $ys 0 end-1]
-	set n [llength $ys]
-	# recompute the x coordinates for the spectrum
-	if {$n != $data(spectrum-n) || $options(-sample-rate) != $data(spectrum-sr)} {
-	    set data(spectrum-n) $n
-	    set sr [set data(spectrum-sr) $options(-sample-rate)]
-	    set data(spectrum-xs) {}
-	    set maxf [expr {$sr/2.0}]
-	    set minf [expr {-$maxf}]
-	    set df [expr {double($sr)/$n}]
-	    set data(spectrum-xs)
-	    for {set i 0} {$i < $n} {incr i} {
-		lappend data(spectrum-xs) [expr {$minf+$i*$df}]
-	    }
-	}
-	set xs $data(spectrum-xs)
-	# this is how QtRadio extracts the spectrum bytes
-	set ys [lmap y $ys {expr {-($y&0xff)}}]
-	# keep min, max, and average levels
-	set miny [tcl::mathfunc::min {*}$ys]
-	set maxy [tcl::mathfunc::max {*}$ys]
-	set avgy [expr {[tcl::mathop::+ {*}$ys]/double($n)}]
-	
-	set xy {}
-	foreach x $xs y $ys {
-	    lappend xy $x $y
-	}
-	return [list $xy $miny $maxy $avgy]
-    }
-    # process answers to queries to the dspserver
-    method process-answer {answer} {
-	switch -glob $answer {
-	    {q-server:*} {
-		# parse out server name and can-tx?
-	    }
-	    {\*hardware\? OK *} {
-		# set up hardware specific model and ui
-		$parent configure -hw [string tolower [lindex $answer end]]
-	    }
-	    {\*setattenuator*} {
-	    }
-	    default {
-		puts stderr "answer = {$answer}"
-	    }
-	}
-    }
-    ##
     ## monitor our configuration options
     ## 
     method monitor {opts prefix} {
@@ -642,20 +565,6 @@ snit::type sdr::radio {
     }
     method monitor-fired {prefix name1 name2 op} {
 	{*}$prefix $name2 $options($name2)
-    }
-    # listen for meter updates
-    method meter-subscribe {callback} {
-	lappend data(meter-listeners) $callback
-    }
-    method meter-update {main subrx} {
-	foreach callback $data(meter-listeners) { {*}$callback $main $subrx }
-    }
-    # listen for spectrum updates
-    method spectrum-subscribe {callback} {
-	lappend data(spectrum-listeners) $callback
-    }
-    method spectrum-update {xy miny maxy avgy} {
-	foreach callback $data(spectrum-listeners) { {*}$callback $xy $miny $maxy $avgy }
     }
     
 }
