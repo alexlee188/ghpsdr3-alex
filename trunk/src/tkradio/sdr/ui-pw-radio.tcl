@@ -64,7 +64,7 @@ snit::widgetadaptor sdrui::pw-radio {
     option -parent -readonly true -configuremethod Configure
     option -text -default {}
     option -name -default {} -configuremethod Configure
-    option -channel-status -default {}
+    option -connect-status -default {}
     option -frequency -configuremethod Configure
 
     component parent
@@ -171,11 +171,11 @@ snit::widgetadaptor sdrui::pw-radio {
 	    -mode -mode-values \
 	    -filter -filter-values \
 	    -local-oscillator -sample-rate
-	$self pmonitor -name -name-values -channel-status
+	$self pmonitor -name -name-values -connect-status
 
 	$parent.radio meter-subscribe [list $win.meter update]
 	$parent.radio spectrum-subscribe [list $win.sw update]
-	$self monitor {-text -channel-status -name} [mymethod window-title]
+	$self monitor {-text -connect-status -name} [mymethod window-title]
 	
 	# layout
 	grid $frequency -row 0 -column 0 -rowspan 3
@@ -219,7 +219,7 @@ snit::widgetadaptor sdrui::pw-radio {
     # rewrite the window title to reflect statusa
     method window-title {args} {
 	#puts "managing window title"
-	wm title . "$options(-text) -- $options(-name) $options(-channel-status)"
+	wm title . "$options(-text) -- $options(-name) $options(-connect-status)"
     }
 
     ##

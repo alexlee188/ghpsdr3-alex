@@ -49,7 +49,7 @@ snit::type tkradio {
     option -name -configuremethod Configure2
     option -name-values -configuremethod Configure2
     option -audio-format -default ALAW:8000 -type audio-format
-    option -channel-status {}
+    option -connect-status {}
 
     component server
     component connect
@@ -60,6 +60,12 @@ snit::type tkradio {
     component ui
     component hwui
 
+    variable data -array {
+	tickle-spectrum {}
+	tickle-master {}
+	tickle-cantx {}
+    }
+    
     constructor {args} {
 	install server using sdr::server $self.server -parent $self
 	install connect using sdr::connect $self.connect -parent $self
@@ -68,9 +74,50 @@ snit::type tkradio {
 	$radio configure -service [sdr::get-last service]
 	$server request [list {*}[mymethod configure] -name-values]
 	# initialize connections
-	$connect add-listener status [mymethod channel-status]
+	$connect add-listener status [mymethod connect-status]
 	$connect add-listener spectrum [list $radio process-spectrum]
 	$connect add-listener answer [list $radio process-answer]
+    }
+
+    ##
+    ## found this method buried in QtRadio
+    ##
+    ## it used to poll for spectrum buffers before the setfps command
+    ## made that obsolete.  then it was overloaded to check for master
+    ## status 
+    ## then it was overloaded 
+    ## to count to 25 and send "q-master" and "q-info" and
+    ## to count to 50 and send "q-cantx#user"
+    ##
+    ## this periodic tickling may help keep things ticking
+    ## if pollspectrum is set
+    ##    the getspectrum happens at 
+    ## assuming 10 fps spectrum polling, 100 ms per poll,
+    ## the q-master polling happens at 2500 ms
+    ## if chkTX is set, the q-cantx#user polling happens at 5000 ms
+    ##
+    method tickle {} {
+	if {$pollspectrum} {
+	    $self.command getspectrum $option(-spectrum-width)
+	}
+	if {$infotick > 25} {
+	    $self.command q-master
+	    if {$amslave} { $self.command q-info }
+	    set infotick 0
+	}
+	if {$infotick2 == 0} {
+	    ## set to 0 wehen we first connect
+	    if {$chkTX} {
+		$self.command q-cantx user ## can we tx here?
+	    }
+	} elseif {$infotick2 > 50} {
+	    if {$chkTX} {
+		$self.command q-cantx user ## can we tx here?
+	    }
+	    set infotick2 0
+	}
+	incr infotick
+	incr infotick2
     }
 
     method {Configure -ui} {val} {
@@ -83,15 +130,23 @@ snit::type tkradio {
 	    return
 	}
 
-	# source sdr/theme-alt.tcl
-	ttk::style theme create night
-	if {[catch {package require ttk::theme::night} error]} {
-	    puts stderr "cannot require package ttk::theme::night"
+	# if the -ui loaded Tk
+	if { ! [catch {package present Tk} error]} {
+	    # setup theming
+	    # source sdr/theme-alt.tcl
+	    ttk::style theme create night
+	    if {[catch {package require ttk::theme::night} error]} {
+		puts stderr "cannot require package ttk::theme::night"
+	    } else {
+		ttk::style theme use night
+	    }
+	    # build the graphical ui
+	    pack [sdrui::$val-radio .radio -parent $self] -fill both -expand true
+	    set ui .radio
 	} else {
-	    ttk::style theme use night
+	    # build the non-graphical ui
+	    set ui [sdrui::$val-radio $self.ui -parent $self]
 	}
-	pack [sdrui::$val-radio .radio -parent $self] -fill both -expand true
-	set ui .radio
     }
 
     method {Configure -hw} {value} {
@@ -179,6 +234,10 @@ snit::type tkradio {
 	$connect add-listener audio audio-out-data
 	audio-out-start [$self get-audio-sample-format] [$self get-audio-sample-rate]
 	$radio connect
+	$self tickle-master
+	# only do this if there's a transmitter attached
+	# I suspect that is the meaning of the N in one of the connection messages
+	# $self tickle-cantx
     }
 
     method disconnect {} {
@@ -194,30 +253,56 @@ snit::type tkradio {
 	if { ! [$connect is-connected]} {
 	    if {[catch {$self connect} error]} {
 		puts stderr "error in connect: $error\n$::errorInfo"
-		$self channel-status $error
+		$self connect-status $error
 	    } else {
-		$self channel-status {connected}
+		$self connect-status {connected}
 	    }
 	} else {
 	    if {[catch {$self disconnect} error]} {
 		puts stderr "error in disconnect: $error\n$::errorInfo"
-		$self channel-status $error
+		$self connect-status $error
 	    } else {
-		$self channel-status {disconnected}
+		$self connect-status {disconnected}
 	    }
 	}
 	return [$connect is-connected]
     }
-    method channel-status {status} {
+
+    method connect-status {status} {
 	switch $status {
 	    * {
-		puts stderr "channel status: $status"
-		$self configure -channel-status {unknown error}
+		puts stderr "connect status: $status"
+		$self configure -connect-status {unknown error}
 		# $radio disconnect
 	    }
 	}
     }
     
+    # these background loops probe the connection
+    # for failure and collect useful status information
+    method tickle-spectrum {} {
+	if {[catch {getspectrum $options(-spectrum-width)} error]} {
+	    $self connect-status $error
+	} else {
+	    set data(tickle-spectrum) [after [expr {int(1000/$options(-spectrum-fps))}] [mymethod tickle-spectrum]]
+	}
+    }
+    
+    method tickle-master {} {
+	if {[catch {$command q-master; $command q-info} error]} {
+	    $self connect-status $error
+	} else {
+	    set data(tickle-master) [after 2000 [mymethod tickle-master]]
+	}
+    }
+
+    method tickle-cantx {} {
+	if {[catch {$command cantx $options(-user)} error]} {
+	    $self connect-status $error
+	} else {
+	    set data(tickle-cantx)  [after 4000 [mymethod tickle-cantx]]
+	}
+    }
 
     ##
     ## monitor our configuration options
@@ -331,4 +416,4 @@ set tkr [tkradio %AUTO%]
 proc verbose-puts {msg} "$tkr verbose-puts \$msg"
 # process the command line arguments
 $tkr process-argv $argv
-
+if {[$tkr cget -ui] eq {repl}} { vwait forever }

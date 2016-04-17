@@ -17,7 +17,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 # 
 
-package provide sdrui::repl-radio
+package provide sdrui::repl-radio 1.0
 
 package require Tcl
 package require snit
@@ -32,30 +32,29 @@ snit::type sdrui::repl-radio {
 	fileevent stdin readable [myproc repl]
     }
     
-    variable input
-    
+    typevariable input {}
+
     proc repl {} {
-	gets stdin line
-	append input $line
-	if {[info complete $input]} {
-	    if {[catch {eval $input} error]} {
-		puts stdout $error\n$::errorInfo
-	    } else {
-		puts stdout $error
+	if {[gets stdin line] < 0} {
+	    # eof on stdin
+	    fileevent stdin readable {}
+	    set ::forever 0
+	    return
+	}
+	append input $line\n
+	if { ! [info complete $input]} {
+	    set prompt {> }
+	} else {
+	    if {$input ne "\n"} {
+		catch {eval uplevel #0 [list $input]} result
+		if {[string length $result]} {
+		    puts stdout $result
+		}
 	    }
 	    set input {}
 	    set prompt {$ }
-	} else {
-	    set prompt {> }
 	}
+	puts -nonewline stdout $prompt
 	flush stdout
-	if {[eof stdin]} {
-	    fileevent stdin readable {}
-	} else {
-	    puts -nonewline stdout $prompt
-	    flush stdout
-	}
     }
 }
-
-sdrui::repl %AUTO%

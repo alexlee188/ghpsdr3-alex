@@ -81,6 +81,7 @@ namespace eval ::sdr::defaults {
 	{radio -pws-mode 0}
 	{radio -squelch-value 0}
 	{radio -sub-rx-gain 100}
+    }
 }
 
 proc sdr::check-defaults {parent} {
