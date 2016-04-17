@@ -18,3 +18,6 @@ bin_SCRIPTS = tkradio
 
 word-count:
 	wc tkradio sdr/*.tcl
+
+qt-word-count:
+	wc ../QtRadio/*.[ch]*

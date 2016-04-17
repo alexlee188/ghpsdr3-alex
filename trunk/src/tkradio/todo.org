@@ -3,26 +3,16 @@
 [x] move dspserver enumeration definitions into sdr/commands.tcl
 [x] teach automake to rebuild sdr/pkgIndex.tcl
 [x] teach automake to install sdr/* into $(prefix)/share/tcltk/sdr
-[ ] teach automake to clean up *~
-[ ] add agc option menu
-[ ] incorporate tool tips
 [x] start audio playback
 [x] incorporate spectrum and waterfall 
-[x] add gain control panel
 [x] add s-meter
-[ ] add dB to s-meter display
-[ ] add dial
 [x] figure out how to theme interface all in black and grey background,
 	red or green or orange or white foreground
 [x] theme, just in red, needs more work
 [x] set up night vision theme
-[ ] theme tk menues?
-[ ] theme tk entries?
 [x] wire up service -> band -> channels -> frequency / mode / filter
 	cascade
 [x] wire up mode -> filter  cascade
-[ ] why reduced noise from subrx?  in QtRadio?
-[ ] why audio stalls without spectrum?
 [x] socket can get closed while socket reader is running?
 [x] crash when disconnecting, thought it was due to tcl-threads, turns
 	out that even without tcl-threads there are threads, but did
@@ -36,9 +26,28 @@
 	it closed it, runs much better when it doesn't access freed
 	memory.  Still testing, but it fails much less often if it
 	isn't fixed.
+[x] Implement sdrplay.
+[ ] Implement hermes.
+[ ] Implement rtlsdr.
+[ ] Implement hiqsdr.
+[ ] Implement perseus.
+[ ] Implement sdr1000.
+[ ] Implement sdriq.
+[ ] teach automake to clean up *~
+[ ] add agc option menu
+[ ] incorporate tool tips
+[ ] add gain control panel
+[ ] add dB to s-meter display
+[ ] add dial
+[ ] theme tk menues?  menues come in standard color scheme.
+[ ] theme tk entries?  entries come partly in standard color scheme.
+[ ] theme checkbutton on/off markers.
+[ ] why reduced noise from subrx?  in QtRadio?
+[ ] why audio stalls without spectrum?
+[ ] why clicking from sdrplay?
+[ ] is there more stalling because I'm not periodically polling?
 [ ] Scroll waterfall pixels when tuning, so they stay aligned with
 	their previous traces.
-[ ] Implement hardware functions.
 [ ] Implement filters on input events to lessen the demands made on
 	the hardware.  Some requests are easily done in dspserver with
 	no impact on the hardware.
@@ -47,3 +56,9 @@
 [ ] Implement the missing options in radio
 [ ] Implement a gui for adjusting the missing options, a scrolling panel
 	with collapsible groups.
+[ ] Add back various decorations and labels on panel between spectrum
+	and waterfall.
+[ ] Identify frequency and level with tooltip on spectrum and waterfall.
+[ ] Get working connection status feedback.
+[ ] Find the missing dspserver commands.
+[ ] find the padding used on the frequency-display and apply it to the meter.

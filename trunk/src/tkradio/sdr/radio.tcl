@@ -43,7 +43,12 @@ snit::type sdr::radio {
     # that simply sends the option value to dspserver
     # map the option to the command, used to set a monitor
     # and to automatically send the option value when it changes
-    typevariable optionmonitor -array {
+    # sdrom is called nb2 on the QtRadio menues
+    #
+    # ah, better idea, combine this with defaults.tcl, add in types with ranges
+    # still need to add bandscope and panadapter commands for notch filters
+    # and the graphic equalizers
+    typevariable optionmonitor [dict create {*}{
 	-frequency {}
 	-mode {}
 	-filter {}
@@ -51,12 +56,14 @@ snit::type sdr::radio {
 	-agc setagc
 	-spectrum-width {}
 	-spectrum-fps {}
+
+	-rx-agc-fixed-gain setfixedagc
+
 	-rx-agc-attack setrxagcattack
 	-rx-agc-decay setrxagcdecay
-	-rx-agc-fixed-gain setfixedagc
 	-rx-agc-hang setrxagchang
 	-rx-agc-hang-threshold setrxagchangthreshold
-	-rx-agc-max-gain {}
+	-rx-agc-max-gain setrxagcmaxgain
 	-rx-agc-slope setrxagcslope
 
 	-tx-alc-attack settxalcattack
@@ -86,28 +93,53 @@ snit::type sdr::radio {
 	-nr-enable setnr
 
 	-rx-dc-block-enable setrxdcblock
-	-rx-dc-block-gain {}
+	-rx-dc-block-gain setrxdcblockgain
 
-	-rx-iq-gain-correct {}
-	-rx-iq-phase-correct {}
-	-rx-iq-method {}
-	-rx-iq-mu {}
-	-rx-iq-on-off {}
+	-rx-iq-gain-correct rxiqgaincorrectval
+	-rx-iq-phase-correct rxiqphasecorrectval
+	-rx-iq-method setiqmethod
+	-rx-iq-mu rxiqmuval
+	-rx-iq-enable setiqenable
 
-	-sdrom-threshold {}
+	-rx-gr-eq-enable setrxgreqcmd
+	
+	-tx-gr-eq-enable settxgreqcmd
+	
+	-sdrom-threshold setsdromvals
+	-sdrom-enable setsdrom
 
-	-tx-iq-gain-correct
-	-tx-iq-phase-correct
-	-tx-iq-on-off {}
+	-tx-iq-gain-correct txiqgaincorrectval
+	-tx-iq-phase-correct txiqphasecorrectval
+	-tx-iq-enable settxiqenable
 	
 	-allow-tx {}
+
+	-tx-dc-block-gain {} 
 	-tx-dc-block-enable settxdcblock
 
 	-pws-mode setpwsmode
 	-squelch-value setsquelchval
 	-squelch-enable setsquelchstate
 	-sub-rx-gain {}
-    }
+
+	-rx-output-gain setrxoutputgain
+
+	-sub-rx-frequency setsubrxfrequency
+	-sub-rx subrx
+	-sub-rx-gain setsubrxoutputgain
+	-sub-rx-pan setsubrxpan
+	
+	-preamp setpreamp
+	-record record
+	-tx-am-carrier-level settxamcarrierlevel
+
+	-mox mox
+
+	-zoom zoom
+	-window window
+	-spectrum-polyphase setspectrumpolyphase
+	
+    }]
     # options
     # -service is the radio service
     # -service-values lists the valid radio services
@@ -186,13 +218,14 @@ snit::type sdr::radio {
     option -rx-iq-phase-correct -default 0
     option -rx-iq-method -default 2
     option -rx-iq-mu -default 25
-    option -rx-iq-on-off -default 2
+    option -rx-iq-enable -default 2
 
     option -sdrom-threshold -default 20
+    option -sdrom-enable -default 0
 
     option -tx-iq-gain-correct -default 0
     option -tx-iq-phase-correct -default 0
-    option -tx-iq-on-off=0 -default
+    option -tx-iq-enable -default 0
 
     option -allow-tx -default 0
     option -tx-dc-block-enable -default 0
@@ -203,6 +236,21 @@ snit::type sdr::radio {
     option -squelch-enable -default 0
     option -sub-rx-gain -default 100
     
+    option -mox -default 0
+    option -preamp -default 0
+    option -record -default 0
+    option -rx-gr-eq-enable -default 0
+    option -rx-output-gain -default 0
+    option -spectrum-polyphase -default 0
+    option -sub-rx -default 0
+    option -sub-rx-frequency -default 0
+    option -sub-rx-pan -default 0.5
+    option -tx-am-carrier-level -default 0.5
+    option -tx-dc-block-gain
+    option -tx-gr-eq-enable
+    option -window
+    option -zoom
+
     component parent;		# parent
 
     # local data that is not options
@@ -221,14 +269,22 @@ snit::type sdr::radio {
 	$self configure -service-values [::sdr::band-data-services] -mode-values [sdrtype::mode cget -values]
 	# we monitor changes in a set of options
 	# and automatically transmit new values
-	foreach opt [array names optionmonitor] {
-	    if {$optionmonitor($opt) eq {}} continue
+	foreach opt [dict keys $optionmonitor] {
+	    if {[$self info options $opt] eq {}} {
+		# puts "option $opt is not defined"
+		continue
+	    }
+	    if {[dict get $optionmonitor $opt] eq {}} {
+		# puts "option $opt is skipped"
+		continue
+	    }
 	    $self monitor $opt [mymethod option-transmit]
+	    # puts [format {%24s %24s} $opt $optionmonitor($opt)]
 	}
     }
 
     method option-transmit {opt val} {
-	$parent.command $optionmonitor($opt) $val
+	$parent.command [dict get $optionmonitor $opt] $val
     }
 
     ##
