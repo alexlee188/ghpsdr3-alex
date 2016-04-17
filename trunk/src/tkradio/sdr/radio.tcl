@@ -603,7 +603,7 @@ snit::type sdr::radio {
 	}
 	set xs $data(spectrum-xs)
 	# this is how QtRadio extracts the spectrum bytes
-	set ys [lmap y $ys {expr {-($y&0xfff)}}]
+	set ys [lmap y $ys {expr {-($y&0xff)}}]
 	# keep min, max, and average levels
 	set miny [tcl::mathfunc::min {*}$ys]
 	set maxy [tcl::mathfunc::max {*}$ys]
