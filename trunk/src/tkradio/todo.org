@@ -75,4 +75,6 @@
 	set just the option, the default value of the option, the limits on
 	the values of the option, and the dspserver commands that include
 	the option value.  And maybe a documentation string.
+[ ] implement a self describing format for the hardware modules, so they
+	can get an automatic gui?
 

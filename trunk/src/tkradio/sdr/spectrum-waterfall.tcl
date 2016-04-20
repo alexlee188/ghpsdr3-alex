@@ -121,7 +121,7 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
 
     method Retune {opt val} {
 	if {$options($opt) != $val} {
-	    if {$opt eq {-frequency}} { puts "$self Retune $opt $val" }
+	    # if {$opt eq {-frequency}} { puts "$self Retune $opt $val" }
 	    set options($opt) $val
 	    if { ! $options(-no-spectrum)} { $spectrum configure $opt $val }
 	    if { ! $options(-no-waterfall)} { $waterfall configure $opt $val }

@@ -41,7 +41,7 @@ typedef struct {
 
 #include <mirsdrapi-rsp.h>	/* for pointless typedefs */
 
-#define SAMPLE_RATE_TIMING 0	/* check the sample rate delivered */
+#define SAMPLE_RATE_TIMING 1	/* check the sample rate delivered */
 
 #define DECIMATE_BY_DROP 0	/* decimate by dropping samples */
 #define DECIMATE_BY_AVERAGE 1	/* decimate by averaging samples */

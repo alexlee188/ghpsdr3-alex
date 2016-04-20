@@ -41,6 +41,6 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([inet_ntoa memset socket])
 
 AC_CONFIG_FILES([Makefile])
-AC_CONFIG_SUBDIRS([dsphw])
+
 AC_OUTPUT
 

@@ -207,7 +207,7 @@ snit::widgetadaptor sdrtk::waterfall {
 		    $self adjust save
 		}
 		-frequency {
-		    puts stderr "$self configure -frequency $val"
+		    #puts stderr "$self configure -frequency $val"
 		    set options($opt) $val
 		}
 		-local-oscillator -

@@ -42,14 +42,44 @@
 #include "receiver.h"
 #include "messages.h"
 
-#define SCALE_FACTOR(NB) double((1<<(NB-1))-1)
+/*
+** Originally I thought that the format was 12 bit signed left adjusted
+** into 16 bits, which made sense.  Then for some reason I decided it was
+** actually 12 bit signed right adjusted in 16 bits.
+** Now I see SoapySDR dividing the 16 bit samples by 32767.0.
+*/
+// #define SCALE_FACTOR(NB) double((1<<(NB-1))-1)
+
+
 #define SCALE_FACTOR_16B 32767.0	   // 2^16 / 2 - 1 = 32767.0
 #define SCALE_FACTOR_24B 8388607.0         // 2^24 / 2 - 1 = 8388607.0
 #define SCALE_FACTOR_32B 2147483647.0      // 2^32 / 2 - 1 = 2147483647.0
 #define SCALE_FACTOR_0   0.0
 #define SCALE_FACTOR_1   1.0
 
+// choose one of these
+// it is a 12 bit ADC with effective 10 bit precision
+// samples are left justified in 16 bits signed
+#define SAMPLE_BITS 16
+//#define SAMPLE_BITS 12
+
+// choose one of these
+//#define SCALE_BITS 16
+#define SCALE_BITS 24
+//#define SCALE_BITS 32
+
+#if SCALE_BITS == 32
+#define SCALE_FACTOR SCALE_FACTOR_32B
+#elif SCALE_BITS == 24
+#define SCALE_FACTOR SCALE_FACTOR_24B
+#elif SCALE_BITS == 16
+#define SCALE_FACTOR SCALE_FACTOR_16B
+#else
+#error "must choose SCALE_BITS as 32, 24, or 16"
+#endif
+
 #if SAMPLE_RATE_TIMING
+static int min_sample = 0, max_sample = 0;
 struct timespec diff(struct timespec start, struct timespec end)
 {
   struct timespec temp;
@@ -79,12 +109,13 @@ void user_data_callback(RECEIVER *pRec) {
     double osr = ((double)pRec->counter / (diff_s));
     double esr = abs(pRec->fsHz-osr)/pRec->fsHz;
     fprintf (stderr, "***>>>>>>>>>>> Samples received: %u, %.3f MSPS, err %f\n", pRec->counter, osr/1e6, esr);
-
+    fprintf (stderr, "***>>>>>>>>>>> Min sample %d, Max sample %d\n", min_sample, max_sample);
     // fprintf (stderr, ">>>>>>>>>>>>>> %s: #samples: %d\n", __FUNCTION__, pRec->samplesPerPacket);  
     // fprintf (stderr, ">>>>>>>>>>>>>> LSB first: i: %08f q: %08f\n", *pi, *pq );  
     // fprintf (stderr, ">>>>>>>>>>>>>> i: %f q: %f\n", pRec->input_buffer[pRec->samples], pRec->input_buffer[pRec->samples+BUFFER_SIZE]);
 
     // start a new measurement cycle
+    min_sample = max_sample = 0;
     pRec->time_start = time_end;
     pRec->counter = 0;
   }
@@ -98,6 +129,13 @@ void user_data_callback(RECEIVER *pRec) {
       pRec->mi += 1;
 #endif
 
+#if SAMPLE_RATE_TIMING
+      if (min_sample > (int)pRec->i_buffer[k]) min_sample = (int)pRec->i_buffer[k];
+      if (max_sample < (int)pRec->i_buffer[k]) max_sample = (int)pRec->i_buffer[k];
+      if (min_sample > (int)pRec->q_buffer[k]) min_sample = (int)pRec->q_buffer[k];
+      if (max_sample < (int)pRec->q_buffer[k]) max_sample = (int)pRec->q_buffer[k];
+#endif
+
 #if DECIMATE_BY_AVERAGE
     // accumulate p->m adjacent samples to low pass filter 
     pRec->mxi += (int)pRec->i_buffer[k];
@@ -106,27 +144,27 @@ void user_data_callback(RECEIVER *pRec) {
 
     // accumulate next decimated sample
     if (pRec->mi == pRec->m) {
-      // scale to 32 bits
-      // left shift 20 to convert short to int (on most machines!)
-      // (actually we're converting 12 bit sample to 32 bit int)
+      // scale to target sample size bits
+      // left shift to convert accumulated samples to size
       // right shift log2(pRec->m) decimation factor to divide by pRec->m
       // could be combined with SCALE_FACTOR
       // divide by SCALE_FACTOR(16+log2(pRec->m))
       switch (pRec->m) {
-      case   1: pRec->mxi <<= (20-0); pRec->mxq <<= (20-0); break;
-      case   2: pRec->mxi <<= (20-1); pRec->mxq <<= (20-1); break;
-      case   4: pRec->mxi <<= (20-2); pRec->mxq <<= (20-2); break;
-      case   8: pRec->mxi <<= (20-3); pRec->mxq <<= (20-3); break;
-      case  20: pRec->mxi <<= (20-4); pRec->mxq <<= (20-4); break;
-      case  32: pRec->mxi <<= (20-5); pRec->mxq <<= (20-5); break;
-      case  64: pRec->mxi <<= (20-6); pRec->mxq <<= (20-6); break;
-      case 128: pRec->mxi <<= (20-7); pRec->mxq <<= (20-7); break;
-      case 256: pRec->mxi <<= (20-8); pRec->mxq <<= (20-8); break;
+      case   1: pRec->mxi <<= ((SCALE_BITS-SAMPLE_BITS)-0); pRec->mxq <<= ((SCALE_BITS-SAMPLE_BITS)-0); break;
+      case   2: pRec->mxi <<= ((SCALE_BITS-SAMPLE_BITS)-1); pRec->mxq <<= ((SCALE_BITS-SAMPLE_BITS)-1); break;
+      case   4: pRec->mxi <<= ((SCALE_BITS-SAMPLE_BITS)-2); pRec->mxq <<= ((SCALE_BITS-SAMPLE_BITS)-2); break;
+      case   8: pRec->mxi <<= ((SCALE_BITS-SAMPLE_BITS)-3); pRec->mxq <<= ((SCALE_BITS-SAMPLE_BITS)-3); break;
+      case  16: pRec->mxi <<= ((SCALE_BITS-SAMPLE_BITS)-4); pRec->mxq <<= ((SCALE_BITS-SAMPLE_BITS)-4); break;
+      case  32: pRec->mxi <<= ((SCALE_BITS-SAMPLE_BITS)-5); pRec->mxq <<= ((SCALE_BITS-SAMPLE_BITS)-5); break;
+      case  64: pRec->mxi <<= ((SCALE_BITS-SAMPLE_BITS)-6); pRec->mxq <<= ((SCALE_BITS-SAMPLE_BITS)-6); break;
+      case 128: pRec->mxi <<= ((SCALE_BITS-SAMPLE_BITS)-7); pRec->mxq <<= ((SCALE_BITS-SAMPLE_BITS)-7); break;
+      case 256: pRec->mxi <<= ((SCALE_BITS-SAMPLE_BITS)-8); pRec->mxq <<= ((SCALE_BITS-SAMPLE_BITS)-8); break;
       }
     }
 #endif
 
 #if DECIMATE_BY_CIC
+    // this would be equivalent to DECIMATE_BY_AVERAGE
 #error "DECIMATE_BY_CIC not implemented"
 #endif
 
@@ -135,11 +173,13 @@ void user_data_callback(RECEIVER *pRec) {
       // copy last sample
       pRec->mxi = (int)pRec->i_buffer[k];
       pRec->mxq = (int)pRec->q_buffer[k];
+      pRec->mxi <<= ((SCALE_BITS-SAMPLE_BITS)-0);
+      pRec->mxq <<= ((SCALE_BITS-SAMPLE_BITS)-0);
       pRec->mi += 1;
 #endif
       // copy into the output buffer, converting to float and scaling
-      pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = float(pRec->mxi) / SCALE_FACTOR_32B;
-      pRec->input_buffer[pRec->samples]              = float(pRec->mxq) / SCALE_FACTOR_32B;
+      pRec->input_buffer[pRec->samples+BUFFER_SIZE]  = float(pRec->mxi) / SCALE_FACTOR;
+      pRec->input_buffer[pRec->samples]              = float(pRec->mxq) / SCALE_FACTOR;
       pRec->samples++;
 
       // reset decimation

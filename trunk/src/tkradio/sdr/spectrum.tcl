@@ -164,7 +164,7 @@ snit::widgetadaptor sdrtk::spectrum {
     }
 
     method {Retune -frequency} {val} {
-	puts stderr "$self Retune -frequency $val"
+	# puts stderr "$self Retune -frequency $val"
 	set options(-frequency) $val
     }
 				 

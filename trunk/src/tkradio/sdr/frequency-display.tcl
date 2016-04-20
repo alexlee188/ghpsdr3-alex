@@ -55,7 +55,7 @@ snit::widgetadaptor ui::frequency-display {
     method {Configure -value} {val} {
 	set val [$self clamp-frequency $val]
 	if {$options(-value) != $val} {
-	    puts "$self configure -value $val"
+	    # puts "$self configure -value $val"
 	    set options(-value) $val
 	    $self redraw
 	}
