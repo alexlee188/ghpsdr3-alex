@@ -54,6 +54,9 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
     # options to here
     option -command {}
 
+    option -no-spectrum 0
+    option -no-waterfall 0
+    
     variable data -array {
 	miny 0
 	maxy 0
@@ -67,8 +70,12 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
 	installhull using ttk::panedwindow -orient vertical
 	install spectrum using sdrtk::spectrum $win.s -command [mymethod Tune]
 	install waterfall using sdrtk::waterfall $win.w -command [mymethod Tune]
-	$hull add $spectrum -weight 0
-	$hull add $waterfall -weight 1
+	if { ! $options(-no-spectrum)} { 
+	    $hull add $spectrum -weight 0 
+	}
+	if { ! $options(-no-waterfall)} {
+	    $hull add $waterfall -weight 1
+	}
 	$self configure {*}$args
     }
 
@@ -105,15 +112,20 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
     }
     
     method Dispatch {opt val} {
-	set options($opt) $val
-	$spectrum configure $opt $val
-	$waterfall configure $opt $val
+	if {$options($opt) != $val} {
+	    set options($opt) $val
+	    if { ! $options(-no-spectrum)} { $spectrum configure $opt $val }
+	    if { ! $options(-no-waterfall)} { $waterfall configure $opt $val }
+	}
     }
 
     method Retune {opt val} {
-	set options($opt) $val
-	$spectrum configure $opt $val
-	$waterfall configure $opt $val
+	if {$options($opt) != $val} {
+	    if {$opt eq {-frequency}} { puts "$self Retune $opt $val" }
+	    set options($opt) $val
+	    if { ! $options(-no-spectrum)} { $spectrum configure $opt $val }
+	    if { ! $options(-no-waterfall)} { $waterfall configure $opt $val }
+	}
     }
 
     method update {xy miny maxy avgy} {
@@ -121,8 +133,8 @@ snit::widgetadaptor sdrtk::spectrum-waterfall {
 	set data(maxy) [expr {($data(maxy)+$maxy)/2.0}]
 	set data(avgy) [expr {($data(avgy)+$avgy)/2.0}]
 	# puts "avg $data(avgy) min $data(miny) max $data(maxy)"
-	$spectrum update $xy $data(miny) $data(maxy) $data(avgy)
-	$waterfall update $xy $data(miny) $data(maxy) $data(avgy)
+	if { ! $options(-no-spectrum)} { $spectrum update $xy $data(miny) $data(maxy) $data(avgy) }
+	if { ! $options(-no-waterfall)} { $waterfall update $xy $data(miny) $data(maxy) $data(avgy) }
     }
     
 }

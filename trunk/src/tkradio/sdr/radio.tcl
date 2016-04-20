@@ -403,6 +403,7 @@ snit::type sdr::radio {
     }
     method {Configure -frequency} {val} {
 	if {$options(-frequency) != $val} {
+	    puts stderr "$self configure -frequency $val"
 	    set options(-frequency) $val
 	    $parent.command setfrequency [$self mode-offset-frequency]
 	}

@@ -98,7 +98,8 @@ snit::type sdr::radio-sdrplay {
     method {Configure -gain} {dB} {
 	set options(-gain) $dB
 	$self compute-from -gain
-	$parent.command sdrplay*setattenuator $options(-gain-reduction)
+	# puts "send $parent.command sdrplay*setattenuator $options(-gain-reduction)"
+	$parent.command sdrplay*setattenuator $options(-gain-reduction)	
     }
     method get-caps {} {
 	return $caps

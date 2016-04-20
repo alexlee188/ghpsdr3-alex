@@ -1,2 +1,2 @@
 #!/bin/sh
-tkradio -- -n AD5DZ -l 'AD5DZ localhost 8000' -e '-250 .. 250'
+tkradio -- -n local -l 'local localhost 8000' -u pw

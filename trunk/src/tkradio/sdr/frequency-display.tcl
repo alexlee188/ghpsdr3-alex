@@ -53,8 +53,12 @@ snit::widgetadaptor ui::frequency-display {
 	return [expr {max($options(-min),min($val,$options(-max)))}]
     }
     method {Configure -value} {val} {
-	set options(-value) [$self clamp-frequency $val]
-	$self redraw
+	set val [$self clamp-frequency $val]
+	if {$options(-value) != $val} {
+	    puts "$self configure -value $val"
+	    set options(-value) $val
+	    $self redraw
+	}
     }
     # if the top or bottom of a digit is tapped, increase or lower the value of the digit.
     # but if the release is outside the window then cancel the change.

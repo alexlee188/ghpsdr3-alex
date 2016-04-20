@@ -46,6 +46,7 @@ snit::type tkradio {
     option -ui -configuremethod Configure			
     option -hw -configuremethod Configure
     option -verbose -default 0 -configuremethod Configure2
+    option -performance -default 0 -configuremethod Configure2
     option -name -configuremethod Configure2
     option -name-values -configuremethod Configure2
     option -audio-format -default ALAW:8000 -type audio-format
@@ -53,6 +54,14 @@ snit::type tkradio {
     option -sample-rate -default 3000 -configuremethod Configure2;	# -sample-rate of dspserver from spectrum
     option -local-oscillator -default 0 -configuremethod Configure2;	# -local-oscillator of dspserver from spectrum
 
+    option -q-master {}
+    option -q-info-slave {}
+    option -q-info-frequency {}
+    option -q-info-mode {}
+    option -q-info-zoom {}
+    option -q-info-left {}
+    option -q-info-right {}
+    
     component server
     component connect
     component command
@@ -84,47 +93,7 @@ snit::type tkradio {
 	$connect add-listener status [mymethod connect-status]
 	$connect add-listener spectrum [mymethod process-spectrum]
 	$connect add-listener answer [mymethod process-answer]
-    }
-
-    ##
-    ## found this method buried in QtRadio
-    ##
-    ## it used to poll for spectrum buffers before the setfps command
-    ## made that obsolete.  then it was overloaded to check for master
-    ## status 
-    ## then it was overloaded 
-    ## to count to 25 and send "q-master" and "q-info" and
-    ## to count to 50 and send "q-cantx#user"
-    ##
-    ## this periodic tickling may help keep things ticking
-    ## if pollspectrum is set
-    ##    the getspectrum happens at 
-    ## assuming 10 fps spectrum polling, 100 ms per poll,
-    ## the q-master polling happens at 2500 ms
-    ## if chkTX is set, the q-cantx#user polling happens at 5000 ms
-    ##
-    method tickle {} {
-	if {$pollspectrum} {
-	    $self.command getspectrum $option(-spectrum-width)
-	}
-	if {$infotick > 25} {
-	    $self.command q-master
-	    if {$amslave} { $self.command q-info }
-	    set infotick 0
-	}
-	if {$infotick2 == 0} {
-	    ## set to 0 wehen we first connect
-	    if {$chkTX} {
-		$self.command q-cantx user ## can we tx here?
-	    }
-	} elseif {$infotick2 > 50} {
-	    if {$chkTX} {
-		$self.command q-cantx user ## can we tx here?
-	    }
-	    set infotick2 0
-	}
-	incr infotick
-	incr infotick2
+	$self performance-init $options(-performance)
     }
 
     method {Configure -ui} {val} {
@@ -275,7 +244,7 @@ snit::type tkradio {
     }
 
     method connect-status {status} {
-	switch $status {
+	switch -glob $status {
 	    * {
 		puts stderr "connect status: $status"
 		$self configure -connect-status {unknown error}
@@ -375,6 +344,42 @@ snit::type tkradio {
 		$self configure -hw [string tolower [lindex $answer end]]
 	    }
 	    {\*setattenuator*} {
+		# confirmation of setting
+	    }
+	    {q-master:master} -
+	    {q-master:slave} {
+		# I am the slave
+		$self configure -q-master [string range $answer 9 end]
+	    }
+	    {q-info:*;} {
+		foreach {name value} [split $answer {;}] {
+		    switch $name {
+			q-info:s {
+			    # am i a slave client or the master, true for slave
+			    $self configure -q-info-slave $value
+			}
+			f {
+			    # -frequency, but offset by -cw-pitch if -mode in CWU CWL
+			    $self configure -q-info-frequency $value
+			}
+			m {
+			    # -mode, but in numeric form
+			    $self configure -q-info-mode $value
+			}
+			z {
+			    # -zoom, 
+			    $self configure -q-info-zoom $value
+			}
+			l {
+			    # left end of band pass, perhaps offset by -cw-pitch
+			    $self configure -q-info-left $value
+			} 
+			r {
+			    # right end of band pass, perhaps offset by -cw-pitch
+			    $self configure -q-info-right $value
+			}
+		    }
+		}
 	    }
 	    default {
 		puts stderr "answer = {$answer}"
@@ -410,6 +415,28 @@ snit::type tkradio {
 
     method monitor-fired {prefix name1 name2 op} {
 	{*}$prefix $name2 $options($name2)
+    }
+
+    # gather performance statistics
+    method performance-init {period} {
+	if {$period > 0} {
+	    set ss [clock milliseconds]
+	    set fd [open /proc/[pid]/stat r]
+	    lappend ss [lindex [read $fd] 13]; # utime
+	    seek $fd 0
+	    after $period [list {*}[mymethod performance] $period $fd $ss]
+	}
+    }
+
+    method performance {period fd ls} {
+	# set ss [lrange [read $fd] 13 16];	# utime, stime, cutime, cstime
+	set ss [clock milliseconds]
+	lappend ss [lindex [read $fd] 13]; # utime
+	seek $fd 0
+	set ds [lmap l $ls s $ss {expr {$s-$l}}]
+	puts [format {t %5d u %2d r %2d rb %5d w %2d wb %4d p %d saa %d %d %d} {*}$ds {*}[$connect snap-data]]
+	# puts [format {u %2d r %2d rb %5d w %2d wb %4d} {*}[lmap l $ls s $ss {expr {$s-$l}}]]
+	after $period [list {*}[mymethod performance] $period $fd $ss]
     }
 
     # process a command line argument
@@ -466,6 +493,7 @@ snit::type tkradio {
 		    -l - --local - --local-server	{ $self optarg -local }
 		    -m - --mode				{ $self optarg -mode }
 		    -n - --name - --name-of-server	{ $self optarg -name }
+		    -p - --performance			{ $self optarg -performance }
 		    -s - --service			{ $self optarg -service }
 		    -t - --text				{ $self optarg -text }
 		    -u - --ui				{ $self optarg -ui }
@@ -498,9 +526,10 @@ usage: tkradio -- <option> [<value>] ...
     -l|--local|--local-server <local> # <local> in form 'name ip-address port' 
     -m|--mode <mode> # <mode>
     -n|--name|--name-of-server <name> # <name> the name or callsign of a dspserver
-    -s|--service <service> # 
+    -p|--performance <period-in-ms> # report performance statistics
+    -s|--service <service> # which radio service to start
     -t|--text <text>
-    -u|--ui <ui>
+    -u|--ui <ui> # user interface tag
     -v|--verbose <level>
 }
 

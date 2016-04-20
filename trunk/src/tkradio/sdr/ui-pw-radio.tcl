@@ -65,7 +65,7 @@ snit::widgetadaptor sdrui::pw-radio {
     option -text -default {}
     option -name -default {} -configuremethod Configure
     option -connect-status -default {}
-    option -frequency -configuremethod Configure
+    option -frequency -default 100000 -configuremethod Configure
 
     component parent
 
@@ -195,7 +195,9 @@ snit::widgetadaptor sdrui::pw-radio {
 
 	grid rowconfigure $win 0 -weight 0
 	grid rowconfigure $win 1 -weight 0
-	grid rowconfigure $win 2 -weight 1
+	grid rowconfigure $win 2 -weight 0
+	grid rowconfigure $win 3 -weight 0
+	grid rowconfigure $win 4 -weight 1
     }
 
     method {Configure -parent} {val} {
@@ -203,13 +205,18 @@ snit::widgetadaptor sdrui::pw-radio {
 	set parent $val
     }
     method {Configure -frequency} {val} {
-	set options(-frequency) $val
-	$win.freq configure -value $val
-	$win.sw configure -frequency $val
+	# puts stderr "$self configure -frequency $val"
+	if {$options(-frequency) != $val} {
+	    set options(-frequency) $val
+	    $win.freq configure -value $val
+	    $win.sw configure -frequency $val
+	}
     }
     method {Configure -name} {val} { 
-	set options(-name) $val
-	$win.name configure -value $val
+	if {$options(-name) ne $val} {
+	    set options(-name) $val
+	    $win.name configure -value $val
+	}
     }
 
     method test {} {

@@ -198,9 +198,24 @@ snit::widgetadaptor sdrtk::waterfall {
     }
 
     method Configure {opt val} {
-	array set save [array get options]
-	set options($opt) $val
-	$self adjust save
+	if {$options($opt) != $val} {
+	    switch -- $opt {
+		-scale -
+		-offset {
+		    array set save [array get options]
+		    set options($opt) $val
+		    $self adjust save
+		}
+		-frequency {
+		    puts stderr "$self configure -frequency $val"
+		    set options($opt) $val
+		}
+		-local-oscillator -
+		-sample-rate {
+		    set options($opt) $val
+		}
+	    }
+	}
     }
 
 }

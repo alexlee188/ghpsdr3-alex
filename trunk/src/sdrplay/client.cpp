@@ -156,10 +156,11 @@ void user_data_callback(RECEIVER *pRec) {
 
 void *helper_thread (void *arg) {
   RECEIVER *pRec = (RECEIVER *)arg;
-
   printf(" !!!!!!!!! helper_thread: [%p]\n",  pRec);
   while (1) {
-    if (read_IQ_buffer(pRec) != 0) {
+    while ( can_read_command(pRec) )
+      do_read_command(pRec);
+    if ( ! pRec->connected || read_IQ_buffer(pRec) != 0) {
       struct timespec timeout = { 0, 1000000 };
       nanosleep(&timeout, NULL);
       continue;
@@ -213,171 +214,91 @@ void* client_thread(void* arg) {
   return 0;
 }
 
+const char *start_iq(CLIENT *client) {
+  printf("xxxxxxxxxxxxxxxxxxx Starting async data acquisition... CLIENT REQUESTED %d port\n", client->iq_port);
+  RECEIVER *pRec = &receiver[client->receiver];
+
+  pRec->samples = 0; // empties output buffer
+  pRec->command_write_index = pRec->command_read_index = 0;
+  start_receiver(pRec);
+  // create the thread to service the hardware
+  pthread_t thread_id;
+  if( pthread_create(&thread_id,NULL,helper_thread,pRec) < 0) {
+    perror("pthread_create helper_thread failed");
+    exit(1);
+  }
+  return OK;
+}
+
+const char *stop_iq(CLIENT *client) {
+  // try to terminate audio thread
+  RECEIVER *pRec = &receiver[client->receiver];
+  close (pRec->audio_socket);
+  printf("Quitting...\n");
+  stop_receiver(pRec);
+  return OK;
+}
+
 const char* parse_command(CLIENT* client,char* command) {
     
-  char* token;
+#define NTOKEN 4  
+  char* token[NTOKEN];
 
   fprintf(stderr,"parse_command: '%s'\n",command);
 
-  token=strtok(command," \r\n");
-  if(token!=NULL) {
-    if(strcmp(token,"attach")==0) {
-      // select receiver
-      token=strtok(NULL," \r\n");
-      if(token!=NULL) {
-	int rx=atoi(token);
-	return attach_receiver(rx,client);
-      } else {
-	return INVALID_COMMAND;
-      }
-    } else if(strcmp(token,"detach")==0) {
-      // select receiver
-      token=strtok(NULL," \r\n");
-      if(token!=NULL) {
-	int rx=atoi(token);
-	return detach_receiver(rx,client);
-      } else {
-	return INVALID_COMMAND;
-      }
-    } else if(strcmp(token,"frequency")==0) {
-      // set frequency
-      token=strtok(NULL," \r\n");
-      if(token!=NULL) {
-	long f=atol(token);
-	return set_frequency (client,f);
-      } else {
-	return INVALID_COMMAND;
-      }
-    } else if(strcmp(token,"start")==0) {
-      token=strtok(NULL," \r\n");
-      if(token!=NULL) {
-	if(strcmp (token,"iq")==0) {
-	  token=strtok(NULL," \r\n");
-	  if(token!=NULL) {
-	    client->iq_port=atoi(token);
-	  }
+  // parse all tokens
+  token[0] = strtok(command, " \r\n");
+  for (int i = 1; token[i-1] != NULL && i < NTOKEN; i += 1)
+    token[i] = strtok(NULL, " \r\n");
 
-	  printf("xxxxxxxxxxxxxxxxxxx Starting async data acquisition... CLIENT REQUESTED %d port\n", client->iq_port);
-
-	  (receiver[client->receiver]).samples = 0; // empties output buffer
-	  start_receiver(&receiver[client->receiver]);
-	  pthread_t thread_id;
-	  // create the thread to listen for TCP connections
-	  int r = pthread_create(&thread_id,NULL,helper_thread,&(receiver[client->receiver]));
-	  if( r < 0) {
-	    perror("pthread_create helper_thread failed");
-	    exit(1);
-	  }
-
-	} else if(strcmp(token,"bandscope")==0) {
-	  token=strtok(NULL," \r\n");
-	  if(token!=NULL) {
-	    client->bs_port=atoi(token);
-	  }
-	  return OK;
-	} else {
-	  // invalid command string
-	  return INVALID_COMMAND;
-	}
-      } else {
-	// invalid command string
-	return INVALID_COMMAND;
-      }
-    } else if(strcmp(token,"preamp")==0) {
-      // set frequency
-      token=strtok(NULL," \r\n");
-      if(token!=NULL) {
-	if (strcmp(token,"on")==0) {
-	  return set_preamp (client,true);
-	}
-	if (strcmp(token,"off")==0) {
-	  return set_preamp (client,false);
-	}
-	return INVALID_COMMAND;
-      } else {
-	return INVALID_COMMAND;
-      }
-    } else if(strcmp(token,"dither")==0) {
-      // set frequency
-      token=strtok(NULL," \r\n");
-      if(token!=NULL) {
-	if (strcmp(token,"on")==0) {
-	  return set_dither (client,true);
-	}
-	if (strcmp(token,"off")==0) {
-	  return set_dither (client,false);
-	}
-	return INVALID_COMMAND;
-      } else {
-	return INVALID_COMMAND;
-      }
-    } else if(strcmp(token,"setattenuator")==0) {
-      // set attenuator
-      token=strtok(NULL," \r\n");
-      if(token!=NULL) {
-	long av=atol(token);
-	return set_attenuator (client,av);
-      } else {
-	return INVALID_COMMAND;
-      }
-    } else if(strcmp(token,"random")==0) {
-      // set frequency
-      token=strtok(NULL," \r\n");
-      if(token!=NULL) {
-	if (strcmp(token,"on")==0) {
-	  return set_random (client,true);
-	}
-	if (strcmp(token,"off")==0) {
-	  return set_random (client,false);
-	}
-	return INVALID_COMMAND;
-      } else {
-	return INVALID_COMMAND;
-      }
-    } else if(strcmp(token,"stop")==0) {
-      token=strtok(NULL," \r\n");
-      if(token!=NULL) {
-	if(strcmp(token,"iq")==0) {
-	  token=strtok(NULL," \r\n");
-	  if(token!=NULL) {
-	    client->iq_port=-1;
-	  }
-	  // try to terminate audio thread
-	  close ((receiver[client->receiver]).audio_socket);
-	  printf("Quitting...\n");
-	  stop_receiver(&receiver[client->receiver]);
-	  return OK;
-	} else if(strcmp(token,"bandscope")==0) {
-	  client->bs_port=-1;
-	} else {
-	  // invalid command string
-	  return INVALID_COMMAND;
-	}
-      } else {
-	// invalid command string
-	return INVALID_COMMAND;
-      }
-    } else if(strcmp(token,"quit")==0) {
-      return QUIT_ASAP;
-
-    } else if(strcmp(token,"hardware?")==0) {
-      fprintf (stderr, "*****************************\n");
-      return "OK sdrplay";
-
-    } else if(strcmp(token,"getserial?")==0) {
-      static char buf[50];
-      snprintf (buf, sizeof(buf), "OK N/A");
-      return buf;
-
-    } else {
-      // invalid command string
-      fprintf (stderr, "***************************** INVALID_COMMAND: %s\n", token);
-      return INVALID_COMMAND;
-    }
-  } else {
-    // empty command string
-    return INVALID_COMMAND;
+  if(token[0] == NULL) {
+    return INVALID_COMMAND;	// empty command string
+  } else if(strcmp(token[0],"attach")==0 && token[1]!=NULL) {
+    return attach_receiver(atoi(token[1]),client); // select receiver
+  } else if(strcmp(token[0],"detach")==0 && token[1]!=NULL) {
+    return detach_receiver(atoi(token[1]),client);	// select receiver
+  } else if(strcmp(token[0],"frequency")==0 && token[1]!=NULL) {
+    return set_frequency (client,atol(token[1])); // set frequency
+  } else if(strcmp(token[0],"start")==0 && token[1]!=NULL && strcmp(token[1],"iq")==0 && token[2]==NULL) {
+    return start_iq(client);
+  } else if(strcmp(token[0],"start")==0 && token[1]!=NULL && strcmp(token[1],"iq")==0 && token[2]!=NULL) {
+    client->iq_port=atoi(token[2]);
+    return start_iq(client);
+  } else if(strcmp(token[0],"start")==0 && token[1]!=NULL && strcmp(token[1],"bandscope")==0 && token[2]==NULL) {
+    return OK;
+  } else if(strcmp(token[0],"start")==0 && token[1]!=NULL && strcmp(token[1],"bandscope")==0 && token[2]!=NULL) {
+    client->bs_port=atoi(token[2]);
+    return OK;
+  } else if(strcmp(token[0],"preamp")==0 && token[1]!=NULL && strcmp(token[1],"on")==0) {
+    return set_preamp (client,true);
+  } else if(strcmp(token[0],"preamp")==0 && token[1]!=NULL && strcmp(token[1],"off")==0) {
+    return set_preamp (client,false);
+  } else if(strcmp(token[0],"dither")==0 && token[1]!=NULL && strcmp(token[1],"on")==0) {
+    return set_dither(client,true);
+  } else if(strcmp(token[0],"dither")==0 && token[1]!=NULL && strcmp(token[1],"off")==0) {
+    return set_dither(client,false);
+  } else if(strcmp(token[0],"setattenuator")==0 && token[1]!=NULL) {
+    return set_attenuator (client,atol(token[1]));      // set attenuator
+  } else if(strcmp(token[0],"random")==0 && token[1]!=NULL && strcmp(token[1],"on")==0) {
+    return set_random(client,true);
+  } else if(strcmp(token[0],"random")==0 && token[1]!=NULL && strcmp(token[1],"off")==0) {
+    return set_random(client,false);
+  } else if(strcmp(token[0],"stop")==0 && token[1]!=NULL && strcmp(token[1],"iq")==0 && token[2]==NULL) {
+    return stop_iq(client);
+  } else if(strcmp(token[0],"stop")==0 && token[1]!=NULL && strcmp(token[1],"iq")==0 && token[2]!=NULL) {
+    client->iq_port=-1;
+    return stop_iq(client);
+  } else if(strcmp(token[0],"stop")==0 && token[1]!=NULL && strcmp(token[1],"bandscope")==0) {
+    client->bs_port=-1;
+    return OK;
+  } else if(strcmp(token[0],"quit")==0) {
+    return QUIT_ASAP;
+  } else if(strcmp(token[0],"hardware?")==0) {
+    return "OK sdrplay";
+  } else if(strcmp(token[0],"getserial?")==0) {
+    return "OK N/A";
   }
-  return INVALID_COMMAND;
+  fprintf (stderr, "***************************** INVALID_COMMAND: %s\n", token[0]);
+  return INVALID_COMMAND;  // invalid command string
 }
 

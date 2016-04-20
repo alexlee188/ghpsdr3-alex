@@ -135,9 +135,8 @@ int translateIF(int ift, RECEIVER *pRec) {
   return 0;
 }
 
-struct bands {
-  double minHz, maxHz, minGain, maxGain;
-} bands[] = {
+/* min rf, max rf, min dB, max dB */
+band_desc bands[] = {
   {     100000,   11999999, -4,  98 },
   {   12000000,   29999999, -4,  98 },
   {   30000000,   59999999, -4,  98  },
@@ -148,13 +147,18 @@ struct bands {
   { 1000000000, 2000000000, 24, 105 }
 };
 
+band_desc *find_band(int rfHz) {
+  for (unsigned int i = 0; i < sizeof(bands)/sizeof(bands[0]); i += 1)
+    if (rfHz >= bands[i].minHz && rfHz <= bands[i].maxHz)
+      return &bands[i];
+  return NULL;
+}
+
 void set_gain_limits(RECEIVER *pRec) {
-  for (unsigned int i = 0; i < sizeof(bands)/sizeof(bands[0]); i += 1) {
-    if (pRec->rfHz >= bands[i].minHz && pRec->rfHz <= bands[i].maxHz) {
-      pRec->minGain = bands[i].minGain;
-      pRec->maxGain = bands[i].maxGain;
-      return;
-    }
+  band_desc *bp = find_band(pRec->rfHz);
+  if (bp != NULL) {
+    pRec->minGain = bp->minGain;
+    pRec->maxGain = bp->maxGain;
   }
 }
 
@@ -263,71 +267,132 @@ const char* detach_receiver (int rx, CLIENT* client) {
     return OK;
 }
 
-const char* set_frequency (CLIENT* client, long frequency) {
-      
-    if(client->state==RECEIVER_DETACHED) {
-        return CLIENT_DETACHED;
-    }
-
-    if(client->receiver<0) {
-        return RECEIVER_INVALID;
-    }
-
-    RECEIVER *pRec = &receiver[client->receiver];
-
-    double diff = double(frequency) - pRec->rfHz;
-
-    if (diff != 0) {
-      pRec->rfHz = double(frequency);
-      set_gain_limits(pRec);
-
-      if (pRec->connected) {
-	if (fabs(diff) > 10000.0) {
-	  restart_receiver(pRec);
-	} else {
-	  // mir_sdr_SetRf(diff, 0, 0);
-	  mir_sdr_SetRf(pRec->rfHz, 1, 0);
-	}
+// can write a command if the incremented write pointer is not equal to the read pointer
+int can_write_command(RECEIVER *pRec) {
+  return ((pRec->command_write_index+1)%NCOMMANDS) != pRec->command_read_index;
+}
+void do_write_command(RECEIVER *pRec, int cmd) {
+  if ( ! can_write_command(pRec)) {
+    fprintf(stderr, "attempting to write a non-existent command into circular buffer\n");
+    exit(1);
+  }
+  command *cp = pRec->commands+pRec->command_write_index;
+  cp->cmd = cmd;
+  cp->gr = pRec->gRdB;		// most of these may not apply
+  cp->fs = pRec->fsHz;
+  cp->rf = pRec->rfHz;
+  cp->bw = pRec->bwType;
+  cp->ift = pRec->ifType;
+  pRec->command_write_index = (pRec->command_write_index+1)%NCOMMANDS;
+}
+// can read a command if the read pointer does not equal the write pointer
+int can_read_command(RECEIVER *pRec) {
+  return pRec->command_read_index != pRec->command_write_index;
+}
+void do_read_command(RECEIVER *pRec) {
+  if ( ! can_read_command(pRec)) {
+    fprintf(stderr, "attempting to read a non-existent command from circular buffer\n");
+    exit(1);
+  }
+  command *cp = pRec->commands+pRec->command_read_index;
+  switch (cp->cmd) {
+  case CMD_INIT: {
+    if ( ! pRec->connected) {
+      int r = mir_sdr_Init(cp->gr, double(cp->fs) / 1.0e6, double(cp->rf) / 1.0e6, mir_sdr_Bw_MHzT(cp->bw), mir_sdr_If_kHzT(cp->ift), &pRec->samplesPerPacket);
+      if (r != 0) {
+	fprintf(stdout, "mir_sdr_Init returned %d: %s\n", r, error_string(r));
+	exit(1);
       }
+      if (pRec->dcMode) mir_sdr_SetDcMode(4,1);
+      // reset decimation
+      pRec->mi = 0; pRec->mxi = 0; pRec->mxq = 0;
+      pRec->connected = 1;
     }
+    break;
+  }
+  case CMD_UNINIT: {
+    if (pRec->connected) {
+      int r = mir_sdr_Uninit();
+      if (r != 0) fprintf(stderr, "WARNING: Failed to stop: %d: %s.\n", r, error_string(r));
+      pRec->connected = 0;
+    }
+    break;
+  }
+  case CMD_SETRF: {
+    if (pRec->connected) {
+      int r = mir_sdr_SetRf(double(cp->rf)/1.0, 1, 0);
+      if (r != 0) fprintf(stderr, "WARNING: Tuning error: %d: %s.\n", r, error_string(r));
+    }
+    break;
+  }
+  case CMD_SETGR: {
+    if (pRec->connected) {
+      int r = mir_sdr_SetGr(cp->gr, 1, 0);
 
-    return OK;
+      if (r != 0) fprintf(stderr, "WARNING: Failed to set tuner gain: %d.\n", r);
+    }
+    break;
+  }
+  }
+  pRec->command_read_index = (pRec->command_read_index+1)%NCOMMANDS;
+}
+
+void start_receiver(RECEIVER *pRec) {
+  do_write_command(pRec, CMD_INIT);
+}
+
+void stop_receiver(RECEIVER *pRec) {
+  do_write_command(pRec, CMD_UNINIT);
+}
+
+const char* set_frequency (CLIENT* client, long frequency) {
+  if(client->state==RECEIVER_DETACHED) return CLIENT_DETACHED;
+  if(client->receiver<0) return RECEIVER_INVALID;
+
+  RECEIVER *pRec = &receiver[client->receiver];
+  int f = int(frequency);
+
+  if (f == pRec->rfHz) return OK;
+
+  band_desc *bp = find_band(int(frequency));
+
+  if (bp == pRec->band) {
+    pRec->rfHz = f;
+    do_write_command(pRec, CMD_SETRF);
+  } else {
+    pRec->rfHz = f;
+    pRec->band = bp;
+    set_gain_limits(pRec);
+    stop_receiver(pRec);
+    start_receiver(pRec);
+  }
+  return OK;
 }
 
 const char* set_preamp (CLIENT* client, bool preamp)
 {
-//  receiver[client->receiver].ppc->preamp = preamp;
-//
     return NOT_IMPLEMENTED_COMMAND;
-    return OK;
 }
 
 const char* set_dither (CLIENT* client, bool dither)
 {
-//  receiver[client->receiver].ppc->dither = dither;
-//
     return NOT_IMPLEMENTED_COMMAND;
-    return OK;
 }
 
 const char* set_random (CLIENT* client, bool)
 {
     return NOT_IMPLEMENTED_COMMAND;
-    return OK;
 }
 
 const char* set_attenuator (CLIENT* client, int new_level_in_dB)
 {
-  
-  int r = mir_sdr_SetGr(new_level_in_dB, 1, 0);
-
-  if (r != 0)
-    fprintf(stderr, "WARNING: Failed to set tuner gain: %d.\n", r);
-  else {
-    RECEIVER *pRec = &receiver[client->receiver];
+  if(client->state==RECEIVER_DETACHED) return CLIENT_DETACHED;
+  if(client->receiver<0) return RECEIVER_INVALID;
+  RECEIVER *pRec = &receiver[client->receiver];
+  if (pRec->gRdB != new_level_in_dB) {
     pRec->gRdB = new_level_in_dB;
     pRec->gain_dB = pRec->maxGain - new_level_in_dB;
-    fprintf(stderr, "Tuner gain reduction set to %d dB.\n", new_level_in_dB);
+    do_write_command(pRec, CMD_SETGR);
   }
   return OK;
 }
@@ -384,38 +449,6 @@ void send_IQ_buffer (RECEIVER *pRec) {
  
         }
     }
-}
-
-void restart_receiver(RECEIVER *pRec) {
-  if (pRec->connected) stop_receiver(pRec);
-  start_receiver(pRec);
-}
-
-void start_receiver(RECEIVER *pRec) {
-
-  int r = mir_sdr_Init(pRec->gRdB, pRec->fsHz / 1e6, pRec->rfHz / 1e6, pRec->bwType, pRec->ifType, &pRec->samplesPerPacket);
-
-  if (r != 0) {
-    fprintf(stdout, "mir_sdr_Init returned %d: %s\n", r, error_string(r));
-    exit(1);
-  }
-
-  if (pRec->dcMode) {
-    mir_sdr_SetDcMode(4,1);
-  }
-
-  // reset decimation
-  pRec->mi = 0; pRec->mxi = 0; pRec->mxq = 0;
-
-  pRec->connected = 1;
-}
-
-void stop_receiver(RECEIVER *pRec) {
-  int r = mir_sdr_Uninit();
-
-  if (r != 0) fprintf(stderr, "WARNING: Failed to stop: %d: %s.\n", r, error_string(r));
-
-  pRec->connected = 0;
 }
 
 int read_IQ_buffer(RECEIVER *pRec) {

@@ -41,31 +41,6 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([inet_ntoa memset socket])
 
 AC_CONFIG_FILES([Makefile])
-
+AC_CONFIG_SUBDIRS([dsphw])
 AC_OUTPUT
-
-#
-# check the compiler option really working
-#
-corw=`gcc -Q --help=target -march=native`
-
-echo \
-"-----------------------------------------------------
-
-${PACKAGE_NAME} Version ${PACKAGE_VERSION}
-
-Prefix: '${prefix}'.
-Compiler: '${CC} ${CFLAGS} ${CPPFLAGS}'
-Now type 'make @<:@<target>@:>@'
-
- where the optional <target> is:
-
-    all           - build all binaries
-    install       - install everything
-
-Compiler options in use:
-
-${corw}
-
------------------------------------------------------"
 

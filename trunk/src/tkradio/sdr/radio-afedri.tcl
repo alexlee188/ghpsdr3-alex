@@ -18,10 +18,10 @@
 # 
 
 #
-# a hardware module for the hiqsdr
-# hiqsdr transceiver, DDC/DUC, Ahlstrom design
+# a hardware module for the afedri receiver, DDC
+# {100kHz .. 36MHz}
 #
-package provide sdr::radio-hiqsdr 1.0
+package provide sdr::radio-afedri 1.0
 
 package require Tcl
 package require snit
@@ -30,12 +30,12 @@ package require sdr::util
 
 namespace eval ::sdr {}
 
-snit::type sdr::radio-hiqsdr {
+snit::type sdr::radio-afedri {
     option -parent -readonly true -configuremethod Configure
     
     # the low and high frequencies tuned
     variable caps [dict create {*}{
-	range {30kHz .. 62MHz} 
+	range {100kHz .. 36MHz} 
     }]
 
     component parent
@@ -62,4 +62,6 @@ snit::type sdr::radio-hiqsdr {
 	{*}$prefix $name2 $options($name2)
     }
 }
-
+# funcube dongle pro receiver
+# {500kHz .. 2000MHz}
+# 

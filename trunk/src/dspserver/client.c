@@ -122,12 +122,12 @@ static unsigned char mic_buffer[MIC_ALAW_BUFFER_SIZE];
 #endif
 
 #define RTP_BUFFER_SIZE 400
-#define RTP_TIMER_NS (RTP_BUFFER_SIZE/8 * 1000000)
+#define RTP_TIMER_NS (RTP_BUFFER_SIZE/8 * 1000000) /* 50 ms */
 static unsigned char rtp_buffer[RTP_BUFFER_SIZE];
 static timer_t rtp_tx_timerid;
 
 // For timer based spectrum data (instead of sending one spectrum frame per getspectrum command from clients)
-#define SPECTRUM_TIMER_NS (20*1000000)
+#define SPECTRUM_TIMER_NS (20*1000000) /* 20 ms */
 static timer_t spectrum_timerid;
 static unsigned long spectrum_timestamp = 0;
 
@@ -415,6 +415,7 @@ void rtp_tx_timer_handler(union sigval usv){
 
 void spectrum_timer_handler(union sigval usv){            // this is called every 20 ms
         client_entry *item;
+	//static nspectra = 0;	/* ad5dz */
         
         sem_wait(&bufferevent_semaphore);
         item = TAILQ_FIRST(&Client_list);
@@ -468,6 +469,7 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
                     bufferevent_write(item->bev, client_samples, BUFFER_HEADER_SIZE+item->samples);
                     free(client_samples);
                     item->frame_counter = (item->fps == 0) ? 50 : 50 / item->fps;
+		    //nspectra += 1; /* ad5dz */
                 }
             }
             sem_wait(&bufferevent_semaphore);
@@ -475,6 +477,10 @@ void spectrum_timer_handler(union sigval usv){            // this is called ever
         sem_post(&bufferevent_semaphore);
 
         spectrum_timestamp++;
+	// if ((spectrum_timestamp % 50) == 0) { /* ad5dz */
+	// fprintf(stderr, "%d spectra/second\n", nspectra);
+	// nspectra = 0;
+	//}
 }
 
 void* rtp_tx_thread(void *arg){
