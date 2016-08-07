@@ -4,8 +4,9 @@ bin_PROGRAMS = dspserver
 
 noinst_LIBRARIES = libsdrutil.a
 
-dspserver_CFLAGS = -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function $(THREAD_DEBUG_CFLAGS) @SIMD_FLAGS@
-dspserver_LDADD = ../DttSP/libDttSP.a libsdrutil.a -lrt -lssl -lcrypto 
+dspserver_CFLAGS = -O3 -Wall -I$(top_srcdir)/trunk/src/DttSP -Wno-unused-function \
+-L$(top_srcdir)/trunk/src/DttSP -L. $(THREAD_DEBUG_CFLAGS) @SIMD_FLAGS@
+dspserver_LDADD = -lDttSP -lsdrutil -lrt -lssl -lcrypto 
 
 dspserver_SOURCES = main.c\
          ozy.c\

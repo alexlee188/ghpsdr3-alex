@@ -19,6 +19,7 @@ depcomp
 install-sh
 missing
 stamp-h1
+.dirstamp
 trunk/src/DttSP/Makefile
 trunk/src/DttSP/Makefile.in
 trunk/src/QtRadio/GITSTR
@@ -48,6 +49,7 @@ trunk/src/QtRadio/ui_Bookmark.h
 trunk/src/QtRadio/ui_BookmarksDialog.h
 trunk/src/QtRadio/ui_BookmarksEditDialog.h
 trunk/src/QtRadio/ui_Configure.h
+trunk/src/QtRadio/ui_EqualizerDialog.h
 trunk/src/QtRadio/ui_KeypadDialog.h
 trunk/src/QtRadio/ui_UI.h
 trunk/src/QtRadio/ui_ctl.h
@@ -89,5 +91,4 @@ trunk/src/usrp/build-aux/ltsugar.m4
 trunk/src/usrp/build-aux/ltversion.m4
 trunk/src/usrp/build-aux/lt~obsolete.m4
 trunk/src/usrp/ltmain.sh
-
-
+trunk/src/sdr1000/sdr1000
