@@ -361,15 +361,16 @@ Frequency::Frequency()
 }
 
 FrequencyInfo Frequency::getFrequencyInfo(long long f) {
-    FrequencyInfo result=info.at(info.size()-1);
-    qDebug() << "The Initial value of getFrequencyInfo(long long f) = " << f;
+  FrequencyInfo result=info.at(info.size()-1);
+  qDebug() << "The Initial value of getFrequencyInfo(long long f) = " << f;
 
-    for(int i=0;i<info.size();i++) {
-        result=info.at(i);
-        if(result.isFrequency(f)) {
-            break;
-        }
-    qDebug() << "The return value of getFrequencyInfo(long long f) = " << i;
+  int i;
+  for(i=0;i<info.size();i++) {
+    result=info.at(i);
+    if(result.isFrequency(f)) {
+      break;
     }
-        return result;
+  }
+  qDebug() << "The return value index of getFrequencyInfo(long long f) = " << i;
+  return result;
 }

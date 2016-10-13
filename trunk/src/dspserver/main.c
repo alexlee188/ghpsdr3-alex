@@ -79,7 +79,11 @@
 * 
 */
 
+<<<<<<< HEAD
 const char *version = "20140115;-opengl"; //YYYYMMDD; text desc
+=======
+const char *version = "20150424;-master"; //YYYYMMDD; text desc
+>>>>>>> master
 
 // main.c
 

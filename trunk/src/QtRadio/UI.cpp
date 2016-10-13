@@ -366,6 +366,8 @@ UI::UI(const QString server, unsigned short rigctl_port) {
     connect(rtp,SIGNAL(rtp_set_session(RtpSession*)),audio,SLOT(rtp_set_rtpSession(RtpSession*)));
     connect(this,SIGNAL(rtp_send(unsigned char*,int)),rtp,SLOT(send(unsigned char*,int)));
     connect(&configure,SIGNAL(RxIQcheckChanged(bool)),this,SLOT(RxIQcheckChanged(bool)));
+    connect(&configure,SIGNAL(RxIQmethodChanged(bool)),this,SLOT(RxIQmethodChanged(bool)));
+    connect(&configure,SIGNAL(TxIQcheckChanged(bool)),this,SLOT(TxIQcheckChanged(bool)));
     connect(&configure,SIGNAL(RxIQspinChanged(double)),this,SLOT(RxIQspinChanged(double)));
     connect(&configure,SIGNAL(spinBox_cwPitchChanged(int)),this,SLOT(cwPitchChanged(int)));
 //    connect(widget.ctlFrame,SIGNAL(testBtnClick(bool)),this,SLOT(testButtonClick(bool)));
@@ -2422,7 +2424,7 @@ void UI::printWindowTitle(QString message)
     }
     setWindowTitle("QtRadio - Server: " + servername + " " + configure.getHost() + "(Rx "
                    + QString::number(configure.getReceiver()) +") .. "
-                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  21 May 2014"); // KD0OSS  Fixed Qt version format
+                   + getversionstring() +  message + "  [" + QString("Qt: %1").arg(QT_VERSION, 0, 16) + "]  26 Apr 2015"); // KD0OSS  Fixed Qt version format
     lastmessage = message;
 }
 
@@ -2732,6 +2734,21 @@ void UI::RxIQcheckChanged(bool state)
     QString command;
 
     command.clear(); QTextStream(&command) << "SetIQEnable " << (state ? "true":"false");
+    connection.sendCommand(command);
+}
+
+void UI::RxIQmethodChanged(bool state){
+    QString command;
+
+    command.clear(); QTextStream(&command) << "SetIQmethod " << (state ? "true":"false");
+    connection.sendCommand(command);
+}
+
+void UI::TxIQcheckChanged(bool state)
+{
+    QString command;
+
+    command.clear(); QTextStream(&command) << "SetTXIQEnable " << (state ? "true":"false");
     connection.sendCommand(command);
 }
 

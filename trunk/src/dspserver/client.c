@@ -2022,6 +2022,38 @@ void readcb(struct bufferevent *bev, void *ctx){
             } else {
                 goto badcommand;
             }
+        } else if(strncmp(cmd,"setiqmethod",11)==0) {
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if(strcmp(tokens[0],"true")==0) {
+                   SetCorrectIQMethod(1);
+            } else if(strcmp(tokens[0],"false")==0) {
+                   SetCorrectIQMethod(0);
+            } else {
+                goto badcommand;
+            }
+        } else if(strncmp(cmd,"settxiqenable",13)==0) {
+            if (tokenize_cmd(&saveptr, tokens, 1) != 1)
+                goto badcommand;
+            if(strcmp(tokens[0],"true")==0) {
+                if (config.no_correct_iq == 0) {
+                   SetCorrectTXIQEnable(1);
+                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(1)\n"); 
+                } else {
+                   SetCorrectTXIQEnable(0);
+                   sdr_log(SDR_LOG_INFO,"IGNORING (due to --no-correctiq option): setiqenable true, SetCorrectIQEnable(0)\n");
+                }
+            } else if(strcmp(tokens[0],"false")==0) {
+                if (config.no_correct_iq == 0) {
+                   SetCorrectTXIQEnable(0);
+                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
+                } else {
+                   SetCorrectTXIQEnable(0);
+                   sdr_log(SDR_LOG_INFO,"SetCorrectIQEnable(0)\n");
+                }
+            } else {
+                goto badcommand;
+            }
         } else if(strncmp(cmd,"testbutton",10)==0) {
             if (tokenize_cmd(&saveptr, tokens, 1) != 1)
                 goto badcommand;

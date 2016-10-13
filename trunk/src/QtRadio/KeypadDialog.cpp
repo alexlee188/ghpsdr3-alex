@@ -66,19 +66,18 @@ void KeypadDialog::clear() {
 }
 
 void KeypadDialog::commitFrequency() {
-    if ((long long)(frequency.toDouble() * 1000000.0)!=0)
-        emit setKeypadFrequency((long long)(frequency.toDouble() * 1000000.0));
+  long long f = frequency.toDouble() * 1000000.0;
+  if (f!=0) emit setKeypadFrequency(f);
 }
 
 void KeypadDialog::clicked(QAbstractButton* button) {
-    qDebug()<<"KeypadDialog::clicked "<<button->text();
-    if(button->text()=="&OK") {
-        commitFrequency();
-    } else if(button->text()=="Reset") {
-        frequency="";
-        showFrequency();
-    } else {
-    }
+  if(button->text()=="OK"){
+    commitFrequency();
+  } else if(button->text()=="Reset") {
+    frequency="";
+    showFrequency();
+  } else {
+  }
 }
 
 void KeypadDialog::key_0() {

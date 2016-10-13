@@ -302,7 +302,6 @@ void Audio::get_audio_devices(QComboBox* comboBox) {
         if(i==0) {
             audio_device=device_info;
         }
-        i++;
     }
 
     qDebug() << "Audio::get_audio_devices: default is " << audio_device.deviceName();

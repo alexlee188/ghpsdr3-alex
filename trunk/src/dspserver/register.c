@@ -68,7 +68,7 @@ void *doReg(){
     while(1){
         sem_wait(&status_sem);
         len = snprintf(sCmd, sizeof(sCmd),
-                       "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl",
+                       "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://napan.com/qtradio/qtradioreg.pl",
                        call, location, band, rig, ant, dspstatus);
         sem_post(&status_sem);
         if (len > sizeof(sCmd)) {
@@ -102,7 +102,7 @@ void init_register(const char *scfile){
             fprintf(file,"%s\n","# default file is located at ~/dspserver.conf when dsp server is started with --share");
             fprintf(file,"%s\n","# The information below will be supplied to a web database which will aid QtRadio");
             fprintf(file,"%s\n","# users find active dspservers to connect to.  You may also see the current list at");
-            fprintf(file,"%s\n","# http://napan.ca/qtradio/qtradio.pl");
+            fprintf(file,"%s\n","# http://napan.com/qtradio.pl");
             fprintf(file,"%s\n","# valid fields are call, location, band, rig and ant");
             fprintf(file,"%s\n","# lines must end with ; and any characters after a # is a comment and ignored");
             fprintf(file,"%s\n","# field values must be enclosed with \" ie: \"xxxx\"");
@@ -223,7 +223,7 @@ void *doUpdate(void *arg){
         char sCmd[DSP_CMD_BUFSIZE];
 
         if (snprintf(sCmd, sizeof(sCmd),
-                    "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://qtradio.napan.ca/qtradio/qtradioreg.pl",
+                    "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=%s'  http://napan.com/qtradio/qtradioreg.pl",
                     call, location, band, rig, ant,(char *)arg) > sizeof(sCmd)) {
             sdr_log(SDR_LOG_ERROR, "Registration string was too long\n");
             return NULL;
@@ -254,7 +254,7 @@ void doRemove(){
 	int result;
     char sCmd[DSP_CMD_BUFSIZE];
     if (snprintf(sCmd, sizeof(sCmd),
-                "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=Down'  http://qtradio.napan.ca/qtradio/qtradioreg.pl",
+                "wget -q -O - --post-data 'call=%s&location=%s&band=%s&rig=%s&ant=%s&status=Down'  http://napan.com/qtradio/qtradioreg.pl",
                 call, location, band, rig, ant) > sizeof(sCmd)) {
         sdr_log(SDR_LOG_ERROR, "Registration string was too long\n");
         return;

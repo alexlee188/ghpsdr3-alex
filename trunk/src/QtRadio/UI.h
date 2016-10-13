@@ -314,6 +314,8 @@ public slots:
     void setProtocol3(bool p);
     void closeServers ();
     void RxIQcheckChanged(bool state);
+    void RxIQmethodChanged(bool state);
+    void TxIQcheckChanged(bool state);
     void RxIQspinChanged(double num);
     void setRxIQPhase(double value); //KD0OSS
     void setRxIQGain(double value); //KD0OSS

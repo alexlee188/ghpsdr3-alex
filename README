@@ -2,7 +2,12 @@ This is a modification of the excellent Software Defined Radio software by John 
 
 http://openhpsdr.org/wiki/index.php?title=Ghpsdr3
 
-Highlights of some of the many changes:
+Changes in the AB9IL fork:
+  1)  FM filter bandwidths increased up to 200 kHz.
+  2)  FM demodulator bandwidth increased to 200 kHz.
+  3)  LSB / USB filter passbands adjusted for crisper response when narrow and deeper lows when wide.
+  
+Highlights of some of the many other changes:
 
 softrock     - Rx and Tx.  Pulse and Jack audio.  Connects up to 4 radios using Jack.  Works with all softrocks.
 dspserver    - The LO offset (usually set to 9000 Hz in Si570 controlled softrocks, a la PSDR-IQ) can be set via command line argument --lo

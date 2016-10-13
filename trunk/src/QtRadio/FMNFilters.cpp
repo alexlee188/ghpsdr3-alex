@@ -28,21 +28,20 @@
 #include "Filters.h"
 
 FMNFilters::FMNFilters() {
-    filters[0].init("80k",-40000,40000);
-    filters[1].init("12k",-6000,6000);
-    filters[2].init("10k",-5000,5000);
-    filters[3].init("8k",-4000,4000);
-    filters[4].init("6.6k",-3300,3300);
-    filters[5].init("5.2k",-2600,2600);
-    filters[6].init("4.0k",-2000,2000);
-    filters[7].init("3.1k",-1550,1550);
-    filters[8].init("2.9k",-1450,1450);
-    filters[9].init("2.4k",-1200,1200);
-    filters[10].init("Vari",-2600,2600);
+    filters[0].init("200k",-100000,100000);
+    filters[1].init("160k",-80000,80000);
+    filters[2].init("80k",-40000,40000);
+    filters[3].init("40k",-20000,20000);
+    filters[4].init("20k",-10000,10000);
+    filters[5].init("10k",-5000,5000);
+    filters[6].init("7k",-3500,3500);
+    filters[7].init("5k",-2500,2500);
+    filters[8].init("3k",-1500,1500);
+    filters[9].init("2.5k",-1250,1250);
+    filters[10].init("Vari",-15000,15000);
 
-    selectFilter(4);
+    selectFilter(6);
 }
 
 FMNFilters::~FMNFilters() {
 }
-

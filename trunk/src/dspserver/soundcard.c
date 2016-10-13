@@ -83,6 +83,20 @@ fprintf(stderr,"setSoundcard: %d\n",card);
             multimeterCalibrationOffset=-240.0f - 25.0f;
             displayCalibrationOffset=-240.0f - 18.0f;
             break;
+        case U7_KX3:
+            // G0HWW's figs - XG3 @ -73dBm for S9
+            // into KX3 with preamp +20dB and Asus XONAR U7
+            // with 2700Hz bandwidth - best effort calibration
+            multimeterCalibrationOffset=  -73.0f - 5.0f;
+            displayCalibrationOffset=  -107.31f + 20.0f;
+            break;
+        case FCDProPlus:
+            // G0HWW's figs - XG3 @ -73dBm for S9
+            // into fcdpp-server.py with gains: -p -m -i 0
+            // with 2700Hz bandwidth - best effort calibration
+            multimeterCalibrationOffset=  -73.0f -10.0f;
+            displayCalibrationOffset=  -107.31f + 15.0f;
+            break;
     }
 
     fprintf(stderr,"setSoundcard %f %f\n",multimeterCalibrationOffset,displayCalibrationOffset);
@@ -117,6 +131,10 @@ int getSoundcardId(char* name) {
         id=HPSDR;
     } else if(strcmp(name,"SDR-IQ")==0) {
         id=SDR_IQ;
+    } else if(strcmp(name,"U7_KX3")==0) {
+        id=U7_KX3;
+    } else if(strcmp(name,"FCDProPlus")==0) {
+        id=FCDProPlus;
     }
 fprintf(stderr,"getSoundcardId: %s id=%d\n",name,id);
     return id;

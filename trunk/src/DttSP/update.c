@@ -1307,6 +1307,26 @@ SetCorrectIQEnable(int setit)
 }
 
 DttSP_EXP void
+SetCorrectIQMethod(int setit)
+{
+	extern int RXIQ_method;
+	sem_wait(&top[0].sync.upd.sem);
+
+	RXIQ_method = setit;
+	//fprintf(stderr,"setit = %d\n",setit),fflush(stderr);
+	sem_post(&top[0].sync.upd.sem);
+}
+
+DttSP_EXP void
+SetCorrectTXIQEnable(int setit)
+{
+	extern int TXIQdoit;
+	sem_wait(&top[0].sync.upd.sem);
+	TXIQdoit = setit;
+	sem_post(&top[0].sync.upd.sem);
+}
+
+DttSP_EXP void
 SetCorrectRXIQMu (unsigned int thread, unsigned int subrx, double mu)
 {
 	sem_wait(&top[thread].sync.upd.sem);
