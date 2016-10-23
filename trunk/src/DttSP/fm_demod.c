@@ -113,7 +113,7 @@ newFMD (REAL samprate,
 
 	fm->lock = 0.5;
 	fm->afc = 0.0;
-	fm->cvt = (REAL) (0.45 * samprate / (M_PI * f_bandwid));
+	fm->cvt = (REAL) (4.5 * samprate / (M_PI * f_bandwid));
 
 	return fm;
 }
