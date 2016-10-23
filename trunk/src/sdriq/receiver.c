@@ -97,7 +97,7 @@ const char* attach_receiver(int rx, CLIENT* client)
     //    return RECEIVER_INVALID;
     //}
 
-    gain_sdriq (0, -20);
+    gain_sdriq (0, 0);
     //gain_sdriq (1, 1);
 
     freq_sdriq (7050000);
