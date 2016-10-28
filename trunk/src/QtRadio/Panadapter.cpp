@@ -1197,7 +1197,7 @@ void Panadapter::addNotchFilter(int index)   // KD0OSS
     for (int i=0;i<9;i++)
     {
         if (i == notchFilterIndex) continue;
-        if (abs(notchFilterFO[notchFilterIndex] - notchFilterFO[i]) <= 100)
+        if (fabs(notchFilterFO[notchFilterIndex] - notchFilterFO[i]) <= 100)
             return;
     }
     notchFilterBW[notchFilterIndex] = 400.0;
@@ -1206,7 +1206,7 @@ void Panadapter::addNotchFilter(int index)   // KD0OSS
     notchFilterEnabled[notchFilterIndex] = true;
     drawNotchFilter(1, notchFilterIndex, false);
 
-    double audio_freq = abs((notchFilterFO[notchFilterIndex] - frequency)); // Convert to audio frequency in Hz
+    double audio_freq = fabs((notchFilterFO[notchFilterIndex] - frequency)); // Convert to audio frequency in Hz
     command.clear();
     QTextStream(&command) << "setnotchfilter " << 0 << " " << index << " " << notchFilterBW[notchFilterIndex] << " " << audio_freq;
     connection->sendCommand(command);
@@ -1244,7 +1244,7 @@ void Panadapter::updateNotchFilter(int index)   // KD0OSS
                 }
                 else
                     enableNotchFilter(i, true);
-                audio_freq = abs((notchFilterFO[i] - frequency)); // Convert to audio frequency in Hz
+                audio_freq = fabs((notchFilterFO[i] - frequency)); // Convert to audio frequency in Hz
                 command.clear();
                 QTextStream(&command) << "setnotchfilter " << 0 << " " << i << " " << notchFilterBW[i] << " " << audio_freq;
                 connection->sendCommand(command);
@@ -1268,7 +1268,7 @@ void Panadapter::updateNotchFilter(int index)   // KD0OSS
             QTimer::singleShot(1000,this,SLOT(redrawItems()));
 
             enableNotchFilter(index, true);
-        audio_freq = abs((notchFilterFO[index] - frequency)); // Convert to audio frequency in Hz
+        audio_freq = fabs((notchFilterFO[index] - frequency)); // Convert to audio frequency in Hz
         command.clear();
         QTextStream(&command) << "setnotchfilter " << 0 << " " << index << " " << notchFilterBW[index] << " " << audio_freq;
         connection->sendCommand(command);
