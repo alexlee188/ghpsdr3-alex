@@ -79,7 +79,7 @@
 * 
 */
 
-const char *version = "20161023;-opengl"; //YYYYMMDD; text desc
+const char *version = "20161029;-opengl"; //YYYYMMDD; text desc
 
 // main.c
 
