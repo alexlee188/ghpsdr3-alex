@@ -164,7 +164,7 @@ void *helper_thread (void *arg)
         // int r = rtlsdr_wait_async(pRec->cfg.rtl, user_data_callback, pRec);
         int r = rtlsdr_read_async(pRec->cfg.rtl, user_data_callback, pRec,
                                   1,    // buf_num,
-                                  16384  // uint32_t buf_len
+                                  32768  // uint32_t buf_len
                                   );
         if ( r < 0) {
             printf(" !!!!!!!!! wait async input error: [%d]\n", r );
