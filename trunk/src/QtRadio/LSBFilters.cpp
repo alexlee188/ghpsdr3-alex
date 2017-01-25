@@ -29,22 +29,22 @@
 #include "Filters.h"
 
 LSBFilters::LSBFilters() {
+    qDebug() << "LSBFilters";
 
-    filters[0].init("5.0k",-5050,-50);
-    filters[1].init("4.4k",-4450,-50);
-    filters[2].init("3.8k",-3900,-100);
-    filters[3].init("3.3k",-3450,-150);
-    filters[4].init("2.9k",-3050,-150);
-    filters[5].init("2.7k",-2900,-200);
-    filters[6].init("2.4k",-2600,-200);
-    filters[7].init("2.1k",-2400,-300);
-    filters[8].init("1.8k",-2150,-350);
-    filters[9].init("1.0k",-1400,-400);
+    filters[0].init("7.0k",-7050,50);
+    filters[1].init("5.0k",-5050,-50);
+    filters[2].init("4.4k",-4450,-50);
+    filters[3].init("3.8k",-3900,-100);
+    filters[4].init("3.3k",-3450,-150);
+    filters[5].init("2.9k",-3050,-150);
+    filters[6].init("2.7k",-2900,-200);
+    filters[7].init("2.4k",-2700,-300);
+    filters[8].init("2.1k",-2450,-350);
+    filters[9].init("1.7k",-2100,-400);
     filters[10].init("Vari",-5050,-50);
 
-    selectFilter(3);
+    selectFilter(4);
 }
 
 LSBFilters::~LSBFilters() {
 }
-
