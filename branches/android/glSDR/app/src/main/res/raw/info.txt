@@ -1,6 +1,8 @@
 <h3>glSDR</h3>
-Version 49<br>
-Copyright 2012-15 Alex Lee<br>
+Version 50<br>
+Copyright 2012-15 Alex Lee<br><br>
+Privacy Policy<br>
+<b>http://ec2-54-179-162-196.ap-southeast-1.compute.amazonaws.com/privacypolicy.html</b><br><br>
 <b>http://napan.ca/ghpsdr3/index.php/Main_Page</b><br><br>
 List of servers<br>
 <b>http://napan.com/qtradio/qtradio.pl</b><br><br>
