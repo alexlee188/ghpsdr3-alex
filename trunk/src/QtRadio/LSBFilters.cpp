@@ -31,7 +31,7 @@
 LSBFilters::LSBFilters() {
     qDebug() << "LSBFilters";
     
-    filters[0].init("7.0k",-7075,75);
+    filters[0].init("7.0k",-7075,-75);
     filters[1].init("5.0k",-5075,-75);
     filters[2].init("4.4k",-4475,-75);
     filters[3].init("3.8k",-3900,-100);
