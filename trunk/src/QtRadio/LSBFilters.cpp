@@ -30,10 +30,10 @@
 
 LSBFilters::LSBFilters() {
     qDebug() << "LSBFilters";
-
-    filters[0].init("7.0k",-7050,50);
-    filters[1].init("5.0k",-5050,-50);
-    filters[2].init("4.4k",-4450,-50);
+    
+    filters[0].init("7.0k",-7075,-75);
+    filters[1].init("5.0k",-5075,-75);
+    filters[2].init("4.4k",-4475,-75);
     filters[3].init("3.8k",-3900,-100);
     filters[4].init("3.3k",-3450,-150);
     filters[5].init("2.9k",-3050,-150);
@@ -41,7 +41,7 @@ LSBFilters::LSBFilters() {
     filters[7].init("2.4k",-2700,-300);
     filters[8].init("2.1k",-2450,-350);
     filters[9].init("1.7k",-2100,-400);
-    filters[10].init("Vari",-5050,-50);
+    filters[10].init("Vari",-7075,-75);
 
     selectFilter(4);
 }
