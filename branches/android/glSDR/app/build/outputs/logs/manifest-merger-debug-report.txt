@@ -1,6 +1,14 @@
 -- Merging decision tree log ---
 manifest
 ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:2:1-28:12
+INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:2:1-28:12
+INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:2:1-28:12
+INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:2:1-28:12
+MERGED from [com.android.support:appcompat-v7:21.0.0] /home/alex/.gradle/caches/transforms-1/files-1.1/appcompat-v7-21.0.0.aar/e1af4fc514bc8770123cfcfcd50bb16c/AndroidManifest.xml:14:4-17:12
+MERGED from [com.android.support:support-v4:21.0.0] /home/alex/.gradle/caches/transforms-1/files-1.1/support-v4-21.0.0.aar/a95b5d3db50d57e6585fd3fa3eec2608/AndroidManifest.xml:14:4-17:12
+INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:2:1-28:12
+INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:2:1-28:12
+INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:2:1-28:12
 	package
 		ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:3:7-25
 		INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml
@@ -9,16 +17,22 @@ ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidMa
 		ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:5:7-33
 		INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml
 		INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:2:11-69
 	android:versionCode
 		ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:4:7-31
 		INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml
 		INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml
-	xmlns:android
-		ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:2:11-69
 uses-sdk
 ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:6:5-71
-MERGED from [com.android.support:appcompat-v7:21.0.0] /home/alex/.android/build-cache/f143e576699b15636f7f66933e0c23378d8056bf/output/AndroidManifest.xml:15:5-42
-MERGED from [com.android.support:support-v4:21.0.0] /home/alex/.android/build-cache/866c3b56c9b1c7e8539d5c5c4e25cea2708508b9/output/AndroidManifest.xml:15:5-42
+INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:6:5-71
+INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:6:5-71
+MERGED from [com.android.support:appcompat-v7:21.0.0] /home/alex/.gradle/caches/transforms-1/files-1.1/appcompat-v7-21.0.0.aar/e1af4fc514bc8770123cfcfcd50bb16c/AndroidManifest.xml:15:5-42
+MERGED from [com.android.support:appcompat-v7:21.0.0] /home/alex/.gradle/caches/transforms-1/files-1.1/appcompat-v7-21.0.0.aar/e1af4fc514bc8770123cfcfcd50bb16c/AndroidManifest.xml:15:5-42
+MERGED from [com.android.support:support-v4:21.0.0] /home/alex/.gradle/caches/transforms-1/files-1.1/support-v4-21.0.0.aar/a95b5d3db50d57e6585fd3fa3eec2608/AndroidManifest.xml:15:5-42
+MERGED from [com.android.support:support-v4:21.0.0] /home/alex/.gradle/caches/transforms-1/files-1.1/support-v4-21.0.0.aar/a95b5d3db50d57e6585fd3fa3eec2608/AndroidManifest.xml:15:5-42
+INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:6:5-71
+INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:6:5-71
 	android:targetSdkVersion
 		ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:6:41-69
 		INJECTED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml
@@ -57,8 +71,10 @@ ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidMa
 		ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:12:9-34
 application
 ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:17:5-26:19
-MERGED from [com.android.support:appcompat-v7:21.0.0] /home/alex/.android/build-cache/f143e576699b15636f7f66933e0c23378d8056bf/output/AndroidManifest.xml:16:5-19
-MERGED from [com.android.support:support-v4:21.0.0] /home/alex/.android/build-cache/866c3b56c9b1c7e8539d5c5c4e25cea2708508b9/output/AndroidManifest.xml:16:5-19
+MERGED from [com.android.support:appcompat-v7:21.0.0] /home/alex/.gradle/caches/transforms-1/files-1.1/appcompat-v7-21.0.0.aar/e1af4fc514bc8770123cfcfcd50bb16c/AndroidManifest.xml:16:5-19
+MERGED from [com.android.support:appcompat-v7:21.0.0] /home/alex/.gradle/caches/transforms-1/files-1.1/appcompat-v7-21.0.0.aar/e1af4fc514bc8770123cfcfcd50bb16c/AndroidManifest.xml:16:5-19
+MERGED from [com.android.support:support-v4:21.0.0] /home/alex/.gradle/caches/transforms-1/files-1.1/support-v4-21.0.0.aar/a95b5d3db50d57e6585fd3fa3eec2608/AndroidManifest.xml:16:5-19
+MERGED from [com.android.support:support-v4:21.0.0] /home/alex/.gradle/caches/transforms-1/files-1.1/support-v4-21.0.0.aar/a95b5d3db50d57e6585fd3fa3eec2608/AndroidManifest.xml:16:5-19
 	android:label
 		ADDED from /home/alex/ghpsdr3-alex/branches/android/glSDR/app/src/main/AndroidManifest.xml:17:48-80
 	android:icon
