@@ -37,7 +37,7 @@ class Renderer implements GLSurfaceView.Renderer {
 	private float[] mScaleMatrix = new float[16];   // scaling
 	private float[] mVMatrix = new float[16]; 		// modelview
 
-	private final int MAX_CL_WIDTH = 2048;
+	private final int MAX_CL_WIDTH = 2*2560;
 	private final int MAX_CL_HEIGHT = 512;
 	
 	private Context mContext;
