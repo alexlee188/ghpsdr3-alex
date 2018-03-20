@@ -16,7 +16,7 @@ _UsingSDK = false
 greaterThan(QT_MAJOR_VERSION, 4) {
     message("Using Qt5")
     QT       += core gui widgets multimedia
-
+DEFINES += HAVE_RTCP_ORTP
 
 #    INCLUDEPATH += /opt/qt5/include
 #    INCLUDEPATH += /opt/qt5/include/QtMultimedia
