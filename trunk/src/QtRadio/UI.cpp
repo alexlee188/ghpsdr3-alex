@@ -447,6 +447,13 @@ UI::~UI() {
     rtp->deleteLater();
     codec2_destroy(mic_codec2);
     equalizer->deleteLater();
+
+    // RWO: terminate rtp thread and wait for it to terminate
+    if (rtp_thread)
+    {
+        rtp_thread->quit();
+        rtp_thread->wait();
+    }
 }
 
 void UI::actionAbout() {
