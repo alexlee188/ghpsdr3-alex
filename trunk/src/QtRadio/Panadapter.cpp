@@ -990,11 +990,15 @@ void Panadapter::setZoom(int value){
     // KD0OSS ***************************
     static int vzoom;
 
+
     if (sampleZoom)
         zoom = value;
     else
     {
-        setMatrix(QMatrix((value * 0.01)+1, 0.0, 0.0, 1.0, 1.0, 1.0));
+	QTransform T = QTransform().translate(0, 0).
+			scale((value*0.01)+1, 1).
+			translate(0, 0);
+        setTransform(T);
         vzoom = value;
     }
 
