@@ -27,6 +27,7 @@
 #include <QSettings>
 #include <QPainter>
 #include <QtCore>
+#include <QScrollBar>
 #if QT_VERSION >= 0x050000
 #include <QtWidgets/QMessageBox>
 #else
@@ -2911,6 +2912,9 @@ void UI::on_zoomSpectrumSlider_sliderMoved(int position)
     else
         viewZoomLevel = position;
     widget.spectrumView->setZoom(position);
+    int slider_min = widget.spectrumView->horizontalScrollBar()->minimum();
+    int slider_max = widget.spectrumView->horizontalScrollBar()->maximum();
+    widget.spectrumView->horizontalScrollBar()->setSliderPosition((slider_min+slider_max)/2);
 }
 
 void UI::rigSetPTT(int enabled){

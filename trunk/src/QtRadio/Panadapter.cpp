@@ -995,9 +995,7 @@ void Panadapter::setZoom(int value){
         zoom = value;
     else
     {
-	QTransform T = QTransform().translate(0, 0).
-			scale((value*0.01)+1, 1).
-			translate(0, 0);
+	QTransform T = QTransform().scale((value*0.01)+1, 1);
         setTransform(T);
         vzoom = value;
     }
