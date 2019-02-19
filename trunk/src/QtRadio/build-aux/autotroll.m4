@@ -229,7 +229,7 @@ dnl Memo: AC_ARG_WITH(package, help-string, [if-given], [if-not-given])
 
   #
   # detecting major version
-  qmake_version_sed=['/^.*\([0-9]\)\.[0-9]\.[0-9].*$/!d;s//\1/']
+  qmake_version_sed=['/^.*\([0-9]\+\)\.[0-9]\+\.[0-9]\+.*$/!d;s//\1/']
   QT_VM=`$QMAKE --version 2>&1 | sed "$qmake_version_sed"`
 
   # default for standard QtSDK and binary packages before U11.04
@@ -580,7 +580,7 @@ AC_DEFUN([AT_REQUIRE_QT_VERSION],
   AC_CACHE_CHECK([for Qt's version], [at_cv_QT_VERSION],
   [echo "$as_me:$LINENO: Running $QMAKE --version:" >&AS_MESSAGE_LOG_FD
   $QMAKE --version >&AS_MESSAGE_LOG_FD 2>&1
-  qmake_version_sed=['/^.*\([0-9]\.[0-9]\.[0-9]\).*$/!d;s//\1/']
+  qmake_version_sed=['/^.*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*$/!d;s//\1/']
   at_cv_QT_VERSION=`$QMAKE --version 2>&1 | sed "$qmake_version_sed"`])
   if test x"$at_cv_QT_VERSION" = x; then
     AX_INSTEAD_IF([$2], [Cannot detect Qt's version.])
@@ -588,7 +588,7 @@ AC_DEFUN([AT_REQUIRE_QT_VERSION],
   fi
   AC_SUBST([QT_VERSION], [$at_cv_QT_VERSION])
   AS_VERSION_COMPARE([$QT_VERSION], [$1],
-    [AX_INSTEAD_IF([$2; break;], [This package requires Qt $1 or above.])])
+    [AX_INSTEAD_IF([$2; break;], [This package requires Qt $1 or above, not $at_cv_QT_VERSION.])])
 
   # Run the user code
   $3
