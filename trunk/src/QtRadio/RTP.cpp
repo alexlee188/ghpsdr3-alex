@@ -14,7 +14,7 @@ qDebug() << "RTP::RTP";
 
     ortp_init();
     ortp_scheduler_init();
-    ortp_set_log_level_mask(ORTP_DEBUG|ORTP_MESSAGE|ORTP_WARNING|ORTP_ERROR);
+    ortp_set_log_level_mask(ORTP_LOG_DOMAIN, ORTP_DEBUG|ORTP_MESSAGE|ORTP_WARNING|ORTP_ERROR);
 
 }
 
