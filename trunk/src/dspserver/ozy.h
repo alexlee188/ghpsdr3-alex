@@ -86,8 +86,8 @@ extern int hpsdr;
 extern int hpsdr_local;
 
 // values saved from last change to send to slaves
-long long lastFreq;
-int lastMode;
+extern long long lastFreq;
+extern int lastMode;
 
 
 /* --------------------------------------------------------------------------*/

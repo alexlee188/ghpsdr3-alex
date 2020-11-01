@@ -35,6 +35,7 @@ Bridgewater, NJ 08807
 #include <sys/types.h>
 #include <unistd.h>
 
+DiversityControl diversity;
 /////////////////////////////////////////////////////////////////////////
 
 // elementary defaults

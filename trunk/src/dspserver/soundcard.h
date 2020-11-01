@@ -41,10 +41,10 @@
 #define U7_KX3 10
 #define FCDProPlus 11
 
-int soundcard;
+extern int soundcard;
 
-float multimeterCalibrationOffset;
-float displayCalibrationOffset;
+extern float multimeterCalibrationOffset;
+extern float displayCalibrationOffset;
 
 int getSoundcardId(char *name);
 void setSoundcard(int card);

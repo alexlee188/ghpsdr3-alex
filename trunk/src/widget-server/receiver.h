@@ -39,7 +39,7 @@ typedef struct _receiver {
     float output_buffer[BUFFER_SIZE*2];
 } RECEIVER;
 
-RECEIVER receiver[MAX_RECEIVERS];
+extern RECEIVER receiver[MAX_RECEIVERS];
 
 char* attach_receiver(int rx,CLIENT* client);
 char* detach_receiver(int rx,CLIENT* client);

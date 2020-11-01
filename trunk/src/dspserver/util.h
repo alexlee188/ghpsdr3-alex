@@ -61,7 +61,7 @@ struct sdr_thread_id {
  */
 #define SDR_THREAD_ID { 0, PTHREAD_MUTEX_INITIALIZER }
 
-volatile int sdr__threads_debug;
+extern volatile int sdr__threads_debug;
 
 void sdr_log(enum SDRLogLevel level, char *fmt, ...);
 

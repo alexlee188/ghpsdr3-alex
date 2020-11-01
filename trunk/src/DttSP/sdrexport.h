@@ -79,7 +79,7 @@ Bridgewater, NJ 08807
 /* RX/TX both */
 //------------------------------------------------------------------------
 
-DiversityControl diversity;
+extern DiversityControl diversity;
 
 extern struct _uni
 {

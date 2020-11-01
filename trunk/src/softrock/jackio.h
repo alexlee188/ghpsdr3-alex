@@ -44,9 +44,9 @@ int process(jack_nframes_t number_of_frames, void *arg);
 void jack_shutdown (void *arg);
 
 /* global jack variables. */
-jack_client_t *softrock_client;
-jack_port_t *audio_input_port_left[MAX_RECEIVERS], *audio_input_port_right[MAX_RECEIVERS];
-jack_port_t *audio_output_port_left[MAX_RECEIVERS], *audio_output_port_right[MAX_RECEIVERS]; 
+extern jack_client_t *softrock_client;
+extern jack_port_t *audio_input_port_left[MAX_RECEIVERS], *audio_input_port_right[MAX_RECEIVERS];
+extern jack_port_t *audio_output_port_left[MAX_RECEIVERS], *audio_output_port_right[MAX_RECEIVERS]; 
 
 #endif
 

@@ -44,6 +44,9 @@
 
 #define SMALL_PACKETS
 
+unsigned char setRecord;
+FILE *file;
+
 static int iq_socket;
 static struct sockaddr_in iq_addr;
 static int iq_length;

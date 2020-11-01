@@ -30,8 +30,8 @@
 
 #define BUFFER_SIZE 1024
 
-unsigned char setRecord;
-FILE *file;
+extern unsigned char setRecord;
+extern FILE *file;
 
 typedef struct _receiver {
     int id;
@@ -52,7 +52,7 @@ typedef struct _buffer {
     unsigned char data[500];
 } BUFFER;
 
-RECEIVER receiver[MAX_RECEIVERS];
+extern RECEIVER receiver[MAX_RECEIVERS];
 
 #ifdef __cplusplus
  extern "C" {

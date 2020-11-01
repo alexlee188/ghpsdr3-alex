@@ -57,7 +57,7 @@ typedef struct _receiver {
     float output_buffer[BUFFER_SIZE*2];
 } RECEIVER;
 
-RECEIVER receiver[MAX_RECEIVERS];
+extern RECEIVER receiver[MAX_RECEIVERS];
 
 
 void  init_receivers(void);

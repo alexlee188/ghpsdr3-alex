@@ -42,7 +42,7 @@ typedef struct _receiver {
     float output_buffer[BUFFER_SIZE*4]; // Left Audio, Right Audio, Tx I, Tx Q
 } RECEIVER;
 
-RECEIVER receiver[MAX_RECEIVERS];
+extern RECEIVER receiver[MAX_RECEIVERS];
 
 void init_receivers(void) ;
 char* attach_receiver(int rx,CLIENT* client);

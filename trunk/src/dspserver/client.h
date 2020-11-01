@@ -57,10 +57,10 @@
 #include <event2/bufferevent_ssl.h>
 
 // added by KD0OSS ******
-int panadapterMode;
-int numSamples;
-int rxMeterMode;
-int txMeterMode;
+extern int panadapterMode;
+extern int numSamples;
+extern int rxMeterMode;
+extern int txMeterMode;
 // **********************
 
 // added by KD0OSS
@@ -92,7 +92,7 @@ enum Window
 //    LAST,
 };
 
-enum CLIENT_CONNECTION {
+extern enum CLIENT_CONNECTION {
 	connection_unknown,
 	connection_tcp = 0,
 	connection_rtp
@@ -124,7 +124,7 @@ void *memory_thread(void *);
 void client_set_timing(void);
 void setprintcountry(void);
 void answer_question(char *message, char *clienttype, struct bufferevent *bev);
-char servername[21];
+extern char servername[21];
 void printversion(void);
 static SSL_CTX *evssl_init(void);
 

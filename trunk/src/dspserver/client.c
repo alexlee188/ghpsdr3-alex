@@ -81,6 +81,14 @@
 
 static int timing=0;
 
+char servername[21];
+int panadapterMode;
+int numSamples;
+int rxMeterMode;
+int txMeterMode;
+long long lastFreq;
+int lastMode;
+
 static int rtp_tx_init_done = 0;
 
 static pthread_t client_thread_id, tx_thread_id, rtp_tx_thread_id;

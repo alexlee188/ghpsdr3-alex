@@ -35,6 +35,11 @@ static int buffers;
 static jack_ringbuffer_t * rb_left[MAX_RECEIVERS];
 static jack_ringbuffer_t * rb_right[MAX_RECEIVERS];
 
+jack_client_t *softrock_client;
+jack_port_t *audio_input_port_left[MAX_RECEIVERS], *audio_input_port_right[MAX_RECEIVERS];
+jack_port_t *audio_output_port_left[MAX_RECEIVERS], *audio_output_port_right[MAX_RECEIVERS]; 
+
+
 
 int init_jack_audio()
 {
